@@ -16,11 +16,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, User, LogOut, LayoutDashboard, Bell, Heart, Search, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Sun, Moon, Newspaper, Bot, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
+import { Menu, LogOut, LayoutDashboard, Bell, Heart, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { useTheme } from "next-themes";
-import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { useNotifications } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -34,7 +32,6 @@ export function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
   const { t, i18n } = useTranslation();
@@ -83,7 +80,7 @@ export function AppHeader() {
       <SheetContent side="right" className="w-72 p-0">
         <div className="p-4 border-b">
           <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-            <BrandMark size={44} showWordmark />
+            <BrandMark size={40} showWordmark />
           </Link>
         </div>
         <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-6rem)]">
@@ -119,10 +116,10 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="flex h-16 items-center pl-3 pr-2 lg:pl-3 lg:pr-6 gap-2">
+      <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center gap-2 px-4 sm:gap-3">
         {/* Logo — always the first element on the left (standard convention) */}
-        <Link to="/" className="flex items-center gap-2 shrink-0" aria-label={logoWordmarkText}>
-          <BrandMark size={40} showWordmark />
+        <Link to="/" className="flex shrink-0 items-center" aria-label={logoWordmarkText}>
+          <BrandMark size={42} showWordmark className="sm:[&>span:first-child]:h-11 sm:[&>span:first-child]:w-11" />
           {site.showBetaLabel && (
             <span className="px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-coral bg-coral/10 border border-coral/30 rounded-full leading-tight">
               Beta
@@ -133,14 +130,14 @@ export function AppHeader() {
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
             so items never wrap below the header border. */}
         {!isAuthenticated && (
-        <nav className="hidden lg:flex items-center gap-0.5 ml-3 min-w-0 flex-nowrap">
+        <nav className="ml-4 hidden min-w-0 flex-nowrap items-center gap-1 lg:flex">
 
 
           {primaryNav.map(item => (
             <Link
               key={item.url}
               to={item.url}
-              className={`shrink-0 whitespace-nowrap px-2.5 py-2 rounded-lg text-sm transition-colors flex items-center gap-1 ${
+              className={`flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-3 text-sm transition-colors ${
                 isNavActive(item.url)
                   ? "text-primary font-medium bg-accent/50"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -181,26 +178,6 @@ export function AppHeader() {
 
         {/* Language switcher */}
         <LanguageSwitcher />
-
-        {/* Dark mode toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative min-h-11 min-w-11 shrink-0"
-          onClick={() => {
-            const next = theme === "dark" ? "light" : "dark";
-            setTheme(next);
-            // Persisted through the one settings registry so Profile agrees.
-            void runSettingSkill("set-light-or-dark", next).catch(() => {});
-          }}
-          title={t("nav.toggleTheme")}
-          aria-label={t("nav.toggleTheme")}
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">{t("nav.toggleTheme")}</span>
-        </Button>
-
 
         {/* Auth section */}
         {isAuthenticated ? (
@@ -289,11 +266,11 @@ export function AppHeader() {
             </DropdownMenu>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden sm:inline-flex">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden h-10 px-3 sm:inline-flex">
               {t("common.signIn")}
             </Button>
-            <Button variant="coral" className="shrink-0" onClick={() => navigate("/auth?mode=signup")}>
+            <Button variant="coral" className="h-10 shrink-0 px-4 shadow-sm sm:px-5" onClick={() => navigate("/auth?mode=signup")}>
               {t("common.getStarted")}
             </Button>
           </div>

@@ -1,9 +1,7 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, Moon, Sun, MessageCircle} from "lucide-react";
+import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "next-themes";
-import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -23,7 +21,6 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { theme, setTheme } = useTheme();
 
   const { data: unread = 0 } = useQuery({
     queryKey: ["nn-unread"],
@@ -95,19 +92,6 @@ export function SafetyShell({ children }: { children: ReactNode }) {
               </Button>
             )}
             <LanguageSwitcher />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                const next = theme === "dark" ? "light" : "dark";
-                setTheme(next);
-                void runSettingSkill("set-light-or-dark", next).catch(() => {});
-              }}
-              aria-label={L("切换主题", "Toggle theme")}
-            >
-              <Sun className="h-5 w-5 dark:hidden" />
-              <Moon className="hidden h-5 w-5 dark:block" />
-            </Button>
             {isAuthenticated ? (
               <Button variant="ghost" size="icon" onClick={() => navigate("/me")} aria-label={L("我的", "Me")}>
                 <UserIcon className="h-5 w-5" />

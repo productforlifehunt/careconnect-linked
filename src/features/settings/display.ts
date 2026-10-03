@@ -4,7 +4,6 @@
  * skills in src/lib/ai-dynamic-knowledge.ts.
  */
 import { useEffect } from "react";
-import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchAppSettings,
@@ -16,7 +15,6 @@ export { applyDisplaySettings };
 
 /** Mount once, high in the tree. */
 export function useApplyDisplaySettings() {
-  const { setTheme } = useTheme();
   const { data } = useQuery({
     queryKey: ["appSettings"],
     queryFn: () => fetchAppSettings(),
@@ -27,8 +25,4 @@ export function useApplyDisplaySettings() {
   useEffect(() => {
     applyDisplaySettings(display);
   }, [display.text_size, display.reduce_motion]);
-
-  useEffect(() => {
-    if (display.theme) setTheme(display.theme);
-  }, [display.theme, setTheme]);
 }
