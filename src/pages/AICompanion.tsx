@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useTranslation } from "react-i18next";
 import {
   Shield, Heart, Wand2, MessageCircle, Lock, AlertTriangle,
@@ -12,6 +13,9 @@ import {
 const AICompanion = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { openAssistant } = useAIAssistant();
+  // The floating assistant is the single AI entry point — open it directly.
+  const openAi = () => (isAuthenticated ? openAssistant() : navigate("/auth?mode=signup"));
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
 

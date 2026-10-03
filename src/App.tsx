@@ -54,7 +54,6 @@ import ChallengedArticleDetail from "./pages/ChallengedArticleDetail";
 // Doctor consultation feature removed (compliance/risk avoidance — not a paid feature on this app)
 import Calendar from "./pages/Calendar";
 import Resources from "./pages/Resources";
-import AICompanionChatPage from "./pages/AICompanionChatPage";
 import JoinGroup from "./pages/JoinGroup";
 import XianyuListings from "./pages/XianyuListings";
 import SafetyApp from "./pages/safety/SafetyApp";
@@ -166,8 +165,6 @@ function AppRoutes() {
       {/* /consultation route removed — see compliance decision */}
       <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
       <Route path="/resources" element={<Resources />} />
-      <Route path="/ai-companion/chat" element={<RequireAuth><AICompanionChatPage /></RequireAuth>} />
-      <Route path="/ai-companion/chat/:threadId" element={<RequireAuth><AICompanionChatPage /></RequireAuth>} />
 
       {/* Old / guessable paths people and older links still use: send them to
           the real page instead of a dead end. */}
@@ -175,9 +172,9 @@ function AppRoutes() {
       <Route path="/notifications" element={<Navigate to="/inbox?tab=notifications" replace />} />
       <Route path="/messages" element={<Navigate to="/inbox?tab=messages" replace />} />
       <Route path="/chat" element={<Navigate to="/inbox?tab=messages" replace />} />
-      <Route path="/ai" element={<Navigate to="/ai-companion/chat" replace />} />
-      <Route path="/assistant" element={<Navigate to="/ai-companion/chat" replace />} />
-      <Route path="/companion" element={<Navigate to="/ai-companion/chat" replace />} />
+      <Route path="/ai" element={<Navigate to="/ai-companion" replace />} />
+      <Route path="/assistant" element={<Navigate to="/ai-companion" replace />} />
+      <Route path="/companion" element={<Navigate to="/ai-companion" replace />} />
       <Route path="/help" element={<Navigate to="/resources" replace />} />
       <Route path="/learn" element={<Navigate to="/resources" replace />} />
       <Route path="/appointments" element={<Navigate to="/calendar" replace />} />
