@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
-import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio } from "lucide-react";
+import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { parseAIJson, speakTextStreaming, streamChatTextOnly, streamChatWithVoice, trimMessagesToCharLimit, transcribeAudio, VoiceRecorder, type StreamControls } from "@/lib/ai";
