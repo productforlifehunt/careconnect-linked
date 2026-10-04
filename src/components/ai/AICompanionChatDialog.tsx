@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bot, History, Plus, X, MessageSquare } from "lucide-react";
+import { Bot, History, Plus, X, MessageSquare, Pencil, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
 import { useSite } from "@/contexts/SiteContext";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import { AICompanionChat } from "@/components/ai/AICompanionChat";
-import { createAiThread, listAiThreads, type AiThread } from "@/lib/ai-threads";
+import { createAiThread, listAiThreads, touchAiThread, type AiThread } from "@/lib/ai-threads";
 
 const ACTIVE_THREAD_KEY = "ai-active-thread";
 
@@ -93,6 +93,15 @@ export function AICompanionChatDialog({
   }, [open, threaded, refresh, pick]);
 
   const untitled = isZh ? "新对话" : "New conversation";
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const saveName = async (id: string) => {
+    const name = draft.trim();
+    setEditing(null);
+    if (!name) return;
+    setThreads((list) => list.map((t) => (t.id === id ? { ...t, title: name } : t)));
+    try { await touchAiThread(id, name); await refresh(); } catch { /* keep local name */ }
+  };
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -116,20 +125,20 @@ export function AICompanionChatDialog({
                   <button
                     type="button"
                     onClick={() => setListOpen((v) => !v)}
-                    className="p-1.5 rounded-md hover:bg-accent text-muted-foreground"
-                    aria-label={isZh ? "历史对话" : "Past conversations"}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-accent text-xs text-muted-foreground"
                     aria-expanded={listOpen}
                   >
                     <History className="h-4 w-4" />
+                    {isZh ? "所有对话" : "All chats"}
                   </button>
                   <button
                     type="button"
                     onClick={() => void newThread()}
                     disabled={busy}
-                    className="p-1.5 rounded-md hover:bg-accent text-muted-foreground disabled:opacity-50"
-                    aria-label={isZh ? "新建对话" : "New chat"}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-accent text-xs text-muted-foreground disabled:opacity-50"
                   >
                     <Plus className="h-4 w-4" />
+                    {isZh ? "新建对话" : "New chat"}
                   </button>
                 </>
               )}
@@ -147,15 +156,34 @@ export function AICompanionChatDialog({
                 <p className="p-2 text-xs text-muted-foreground">{isZh ? "还没有保存的对话" : "No saved conversations yet"}</p>
               )}
               {threads.map((t) => (
-                <button
+                <div
                   key={t.id}
-                  type="button"
-                  onClick={() => pick(t.id)}
-                  className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${t.id === activeThread ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"}`}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${t.id === activeThread ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted"}`}
                 >
                   <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{t.title || untitled}</span>
-                </button>
+                  {editing === t.id ? (
+                    <input
+                      autoFocus
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") void saveName(t.id); if (e.key === "Escape") setEditing(null); }}
+                      className="flex-1 min-w-0 rounded border bg-background px-1.5 py-0.5 text-sm text-foreground"
+                    />
+                  ) : (
+                    <button type="button" onClick={() => pick(t.id)} className="flex-1 min-w-0 truncate text-left">
+                      {t.title || untitled}
+                    </button>
+                  )}
+                  {editing === t.id ? (
+                    <button type="button" onClick={() => void saveName(t.id)} className="p-1 rounded hover:bg-accent" aria-label={isZh ? "保存名字" : "Save name"}>
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => { setEditing(t.id); setDraft(t.title); }} className="p-1 rounded hover:bg-accent text-muted-foreground" aria-label={isZh ? "改名" : "Rename"}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}

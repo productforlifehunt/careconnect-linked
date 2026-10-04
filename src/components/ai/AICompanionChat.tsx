@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
-import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio } from "lucide-react";
+import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { parseAIJson, speakTextStreaming, streamChatTextOnly, streamChatWithVoice, trimMessagesToCharLimit, transcribeAudio, VoiceRecorder, type StreamControls } from "@/lib/ai";
@@ -171,7 +171,10 @@ function guideEntries(family: string | undefined): GuideEntry[] {
 /** Reply mode: text only / read aloud / live back-and-forth talk. Remembered. */
 const READ_ALOUD_KEY = "ai-read-aloud";
 const MODE_KEY = "ai-reply-mode";
-export type ReplyMode = "text" | "read" | "live";
+export type ReplyMode = "text" | "read" | "live" | "call";
+/** Simulated family call setup (who to play + what to say). Saved in this browser. */
+const CALL_KEY = "ai-family-call";
+type CallConfig = { name: string; prompt: string };
 /**
  * Live mode instruction. Kept here (not in the shared persona prompt) so the
  * few extra words are only paid for while the user is actually talking.
@@ -236,18 +239,44 @@ export function AICompanionChat({
   const [mode, setMode] = useState<ReplyMode>(() => {
     try {
       const saved = localStorage.getItem(MODE_KEY);
-      if (saved === "text" || saved === "read" || saved === "live") return saved;
+      if (saved === "text" || saved === "read" || saved === "live" || saved === "call") return saved;
       return localStorage.getItem(READ_ALOUD_KEY) === "1" ? "read" : "text";
     } catch { return "text"; }
   });
   const readAloud = mode === "read";
-  const liveMode = mode === "live";
+  // Family call is live talk with a family-member role on top.
+  const liveMode = mode === "live" || mode === "call";
   const liveRef = useRef(liveMode);
   liveRef.current = liveMode;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const [callCfg, setCallCfg] = useState<CallConfig>(() => {
+    try { return { name: "", prompt: "", ...JSON.parse(localStorage.getItem(CALL_KEY) || "{}") }; }
+    catch { return { name: "", prompt: "" }; }
+  });
+  const callRef = useRef(callCfg);
+  callRef.current = callCfg;
+  const saveCall = (next: CallConfig) => {
+    setCallCfg(next);
+    try { localStorage.setItem(CALL_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  /** Extra instruction for spoken modes; the family-call role is added only in call mode. */
+  const voiceStyle = () => {
+    if (!liveRef.current) return "";
+    const base = isZh ? LIVE_STYLE.zh : LIVE_STYLE.en;
+    if (modeRef.current !== "call") return base;
+    const { name, prompt } = callRef.current;
+    const who = name.trim() || (isZh ? "一位家人" : "a family member");
+    const role = isZh
+      ? `现在是模拟家属来电：你扮演“${who}”给对方打电话，用这位家人的口吻和称呼说话，不提自己是 AI 助手。${prompt.trim() ? `家属的设定和要说的话：${prompt.trim()}` : ""}`
+      : `This is a simulated family phone call: you play "${who}" calling them, speaking in that family member's voice and terms of address, without mentioning being an AI assistant. ${prompt.trim() ? `The family member's setup and what to say: ${prompt.trim()}` : ""}`;
+    return `${base}\n${role}`;
+  };
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const voiceRef = useRef<StreamControls | null>(null);
   const readAloudRef = useRef(readAloud);
   readAloudRef.current = readAloud;
+
 
 
   const stopSpeaking = () => {
@@ -339,7 +368,7 @@ export function AICompanionChat({
     const scope = request.contextScope
       ?? (request.contextPrompt ? undefined : { topics: ["app-basics", "care-tips"] as const });
     if (!scope) {
-      const liveOnly = liveRef.current ? (isZh ? LIVE_STYLE.zh : LIVE_STYLE.en) : "";
+      const liveOnly = voiceStyle();
       return [request.contextPrompt, liveOnly].filter(Boolean).join("\n\n") || undefined;
     }
     let resolved = "";
@@ -356,7 +385,7 @@ export function AICompanionChat({
     } catch (e) {
       console.warn("AI context resolution failed, continuing without facts:", e);
     }
-    const live = liveRef.current ? (isZh ? LIVE_STYLE.zh : LIVE_STYLE.en) : "";
+    const live = voiceStyle();
     return [request.contextPrompt, resolved, live].filter(Boolean).join("\n\n") || undefined;
   };
 
@@ -603,6 +632,7 @@ export function AICompanionChat({
             { id: "text" as const, icon: MessageSquare, zh: "文字", en: "Text" },
             { id: "read" as const, icon: Volume2, zh: "朗读", en: "Read aloud" },
             { id: "live" as const, icon: Radio, zh: "即时对话", en: "Live talk" },
+            { id: "call" as const, icon: PhoneCall, zh: "来电", en: "Family call" },
           ]).map((opt) => {
             const Icon = opt.icon;
             const on = mode === opt.id;
@@ -620,10 +650,32 @@ export function AICompanionChat({
             );
           })}
         </div>
-        {liveMode && (
+        {mode === "live" && (
           <p className="text-xs text-muted-foreground">
             {isZh ? "按住麦克风说话，松手就会马上回答，一句一句读出来。" : "Hold the microphone and talk — the reply comes back spoken, sentence by sentence."}
           </p>
+        )}
+        {mode === "call" && (
+          <div className="space-y-1.5 rounded-xl border p-2">
+            <p className="text-xs text-muted-foreground">
+              {isZh
+                ? "模拟家属来电（不是真实来电）。写下扮演谁、怎么说话、要说的话；按住麦克风对话。声音克隆以后再加。"
+                : "Simulated family call (not a real call). Describe who to play, how they talk and what to say; hold the mic to talk. Voice cloning comes later."}
+            </p>
+            <input
+              value={callCfg.name}
+              onChange={(e) => saveCall({ ...callCfg, name: e.target.value })}
+              placeholder={isZh ? "扮演谁，例如：女儿小红" : "Who calls, e.g. daughter Amy"}
+              className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+            />
+            <textarea
+              value={callCfg.prompt}
+              onChange={(e) => saveCall({ ...callCfg, prompt: e.target.value })}
+              rows={3}
+              placeholder={isZh ? "例如：叫他爸，语气轻松。告诉他今天来的阿姨是我们请来帮忙的，不要赶她走。" : "e.g. Call him Dad, keep it light. Tell him the helper today is someone we asked to come — please let her stay."}
+              className="w-full resize-none rounded-md border bg-background px-2 py-1 text-xs"
+            />
+          </div>
         )}
         {micError && <p className="text-xs text-destructive">{micError}</p>}
         {request.onComplete && (
