@@ -11,6 +11,7 @@
  */
 import { currentAppScope } from "@/features/shared/app-scope";
 import { getWPToken } from "@/services/wp-auth";
+import { detectSite } from "@/contexts/SiteContext";
 
 export type NotifyChannel = "inbox" | "push" | "email" | "sms";
 
@@ -25,6 +26,8 @@ export interface NotifyInput {
   phone?: string | null;
   channels?: Partial<Record<NotifyChannel, boolean>>;
   idempotency_key?: string;
+  /** Visual/email identity; data scope remains unchanged for shared backends. */
+  brand?: "challenged" | "carecnc" | "notchsafety";
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
@@ -37,7 +40,10 @@ export function notifyFunctionName(): "challenged-notify" | "carecnc-notify" {
 
 export async function sendNotification(input: NotifyInput | NotifyInput[]): Promise<boolean> {
   const fn = notifyFunctionName();
-  const payload = Array.isArray(input) ? { notifications: input } : input;
+  const detected = detectSite();
+  const brand = detected === "notchsafety" ? "notchsafety" : detected === "carecnc" ? "carecnc" : "challenged";
+  const branded = (item: NotifyInput): NotifyInput => ({ ...item, brand });
+  const payload = Array.isArray(input) ? { notifications: input.map(branded) } : branded(input);
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
       method: "POST",

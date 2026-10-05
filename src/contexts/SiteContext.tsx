@@ -348,27 +348,37 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     html.classList.remove("site-carecnc", "site-challenged", "site-notchsafety", "site-esm-survey");
     html.classList.add(config.cssClass);
 
-    // Update page title
+    // Keep every browser/share surface aligned with the current brand and language.
     const localizedName = config.family === "challenged" ? "忆畅"
       : config.family === "carecnc" ? "护畅"
       : config.family === "notchsafety" ? "诺驰安全" : config.name;
-    document.title = isChinese && ["challenged", "carecnc", "notchsafety"].includes(config.family ?? "")
+    const localizedTitle = isChinese && ["challenged", "carecnc", "notchsafety"].includes(config.family ?? "")
       ? `${localizedName}${config.showBetaLabel ? "（测试版）" : ""}` : config.metaTitle;
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", isChinese && config.family === "notchsafety"
+    const localizedDescription = isChinese && config.family === "notchsafety"
       ? "家人位置、地点提醒与紧急求助。"
       : isChinese && config.family === "carecnc" ? "查找护理服务，预约并协调照护。"
       : isChinese && config.family === "challenged" ? "失智症照护知识、家庭协作与位置安全。"
-      : config.metaDescription);
-    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (favicon) {
-      favicon.href =
-        config.family === "notchsafety"
-          ? "/favicon-notchsafety.png"
-          : config.family === "carecnc"
-            ? (isChinese ? "/favicon-huchang.png" : "/favicon-carecnc-en.png")
-            : (isChinese && config.family === "challenged" ? "/favicon-yichang.png" : "/favicon-challenged.png");
-    }
+      : config.metaDescription;
+    const faviconHref = config.family === "notchsafety"
+      ? "/favicon-notchsafety.png"
+      : config.family === "carecnc"
+        ? (isChinese ? "/favicon-huchang.png" : "/favicon-carecnc-en.png")
+        : (isChinese && config.family === "challenged" ? "/favicon-yichang.png" : "/favicon-challenged.png");
+
+    document.documentElement.lang = isChinese ? "zh-CN" : "en";
+    document.title = localizedTitle;
+    const setMeta = (selector: string, content: string) => {
+      const meta = document.querySelector<HTMLMetaElement>(selector);
+      meta?.setAttribute("content", content);
+    };
+    setMeta('meta[name="description"]', localizedDescription);
+    setMeta('meta[name="author"]', localizedName);
+    setMeta('meta[property="og:title"]', localizedTitle);
+    setMeta('meta[property="og:description"]', localizedDescription);
+    setMeta('meta[name="twitter:title"]', localizedTitle);
+    setMeta('meta[name="twitter:description"]', localizedDescription);
+    document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.setAttribute("href", faviconHref);
+    document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]')?.setAttribute("href", faviconHref);
 
   }, [config, isChinese]);
 

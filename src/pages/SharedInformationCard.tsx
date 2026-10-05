@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IdCard, Phone, Loader2, ShieldOff, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
+import { useSite } from "@/contexts/SiteContext";
+import { BrandMark } from "@/components/BrandMark";
 
 export default function SharedInformationCard() {
   const { i18n } = useTranslation();
+  const site = useSite();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { token } = useParams<{ token: string }>();
@@ -131,7 +134,10 @@ export default function SharedInformationCard() {
             />
           </CardContent>
         </Card>
-        <p className="text-center text-[11px] text-muted-foreground mt-4">{Z("由忆畅分享", "Shared via ChallengeD")}</p>
+        <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+          <BrandMark size={20} />
+          <span>{isCN ? `由${site.name}分享` : `Shared via ${site.name}`}</span>
+        </div>
       </div>
 
     </div>

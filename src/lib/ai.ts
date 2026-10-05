@@ -393,7 +393,7 @@ async function fetchTTSBlobURL(
   if (!trimmed) return null;
   try {
     const { data, error } = await supabase.functions.invoke("ai?task=chat-voice", {
-      body: { text: trimmed, voice, format: "mp3", engine },
+      body: { text: trimmed, voice, format: "mp3", engine, site: detectSite() },
     });
     if (error || data?.error || !data?.audio) {
       console.error("TTS chunk failed:", error || data?.error);
