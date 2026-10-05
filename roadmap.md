@@ -2,6 +2,12 @@
 
 - [x] Replace the outdated five-topic rows with the verified frontend article, CCT217 anchor, CCT218 note, REL255/256, and link-snapshot facts.
 
+## Locale-specific brand audit
+
+- [x] Align the three brand names and marks across shared header, homepage footer, and browser tabs in English and Chinese.
+- [x] Use the requested homepage image for each ChallengeD and CareCNC language variant; verify all six variants visually.
+- [x] Explain how family voice references and provider-specific cloned voice IDs are stored without claiming a portable voiceprint.
+
 # UI/UX verification roadmap
 
 ## NotchSafety shared homepage and knowledge-topic audit

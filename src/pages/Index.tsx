@@ -53,7 +53,7 @@ const Index = () => {
             src={
               isSafety
                 ? heroImageNotchSafety
-                : site.id === "carecnc"
+                : site.id === "carecnc" && isChinese
                 ? heroImageCarecnc
                 : isChinese && site.family === "challenged"
                 ? heroImageCn
@@ -312,7 +312,7 @@ const Index = () => {
             ))}
           </div>
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            {t("common.copyright", { brand: t(`site.${site.id}.footerBrand`) })}
+            {t("common.copyright", { brand: site.name })}
           </div>
         </div>
       </footer>

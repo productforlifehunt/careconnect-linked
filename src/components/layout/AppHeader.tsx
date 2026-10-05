@@ -41,8 +41,9 @@ export function AppHeader() {
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
   const paidCare = site.features.paidCaregivers;
-  const logoWordmarkText = isCareCNC
-    ? (isChinese ? "护畅" : "Care cnc")
+  const logoWordmarkText = site.family === "notchsafety"
+    ? (isChinese ? "诺驰安全" : "Notch Safety")
+    : isCareCNC ? (isChinese ? "护畅" : "CareCNC")
     : (isChinese ? "忆畅" : "ChallengeD");
 
   const publicNav = buildPublicNav({ site, t, isChinese });

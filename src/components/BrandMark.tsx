@@ -58,7 +58,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         height={size}
         style={box}
         role="img"
-        aria-label={isChinese ? "诺驰安全" : "NotchSafety"}
+        aria-label={isChinese ? "诺驰安全" : "Notch Safety"}
         className="text-primary"
       >
         {/* Flat shield, single brand colour, no gradient and no background plate */}
@@ -84,8 +84,8 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
         style={box}
         className="rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm"
       >
-        <span className="text-primary-foreground font-bold tracking-tight" style={{ fontSize: Math.round(size * 0.27) }}>Care</span>
-        <span className="text-primary-foreground font-bold tracking-tight" style={{ fontSize: Math.round(size * 0.27) }}>cnc</span>
+        <span className="text-primary-foreground font-bold" style={{ fontSize: Math.round(size * 0.27) }}>Care</span>
+        <span className="text-primary-foreground font-bold" style={{ fontSize: Math.round(size * 0.27) }}>CNC</span>
       </div>
     );
   } else {
@@ -102,17 +102,17 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
   }
 
   const wordmark = isCareCNC
-    ? (isChinese ? "护畅" : "Care cnc")
+    ? (isChinese ? "护畅" : "CareCNC")
     : brand === "challenged"
-      ? "ChallengeD"
+      ? (isChinese ? "忆畅" : "ChallengeD")
       : site.family === "notchsafety" && isChinese
         ? "诺驰安全"
-        : null;
+        : site.family === "notchsafety" ? "Notch Safety" : null;
 
   return (
     <span className={`flex items-center gap-2 ${className}`}>
       {icon}
-      {showWordmark && brand !== "carecnc" && (
+      {showWordmark && (
         <span className="font-bold text-lg tracking-tight">
           {wordmark ? (
             <span className="text-foreground">{wordmark}</span>
