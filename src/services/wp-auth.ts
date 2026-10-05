@@ -169,6 +169,29 @@ export async function wpValidateToken(): Promise<WPUser | null> {
 }
 
 /**
+ * Renew the stored sign-in token (WordPress tokens last 60 minutes).
+ * Returns false when there is no token or WordPress refuses to renew it.
+ */
+export async function wpRefreshToken(): Promise<boolean> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  try {
+    const response = await fetch(buildWPUrl('simple-jwt-login/v1/auth/refresh'), {
+      method: 'POST',
+      headers: buildWPHeaders(null, 'application/json'),
+      body: JSON.stringify({ JWT: token }),
+    });
+    const data = await response.json().catch(() => null);
+    const next = response.ok && data?.success ? data.data?.jwt : null;
+    if (!next) return false;
+    localStorage.setItem(TOKEN_KEY, next);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Clear WP auth state.
  */
 export function wpLogout(): void {
