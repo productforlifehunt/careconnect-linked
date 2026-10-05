@@ -270,7 +270,7 @@ const Index = () => {
               { title: isChinese ? "开始使用" : "Get started", links: [
                 { label: isChinese ? "创建账号" : "Create account", href: "/auth?mode=signup" },
                 { label: isChinese ? "登录" : "Sign in", href: "/auth" },
-                { label: isChinese ? "工作方式" : "How it works", href: "/how-it-works" },
+                { label: isChinese ? "创建家庭圈子" : "Create a family circle", href: "/auth?mode=signup" },
               ] },
               { title: isChinese ? "隐私与帮助" : "Privacy & help", links: [
                 { label: isChinese ? "信任与安全" : "Trust & safety", href: "/trust-safety" },
