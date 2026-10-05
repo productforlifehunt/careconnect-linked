@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useTranslation } from "react-i18next";
+import { useSite } from "@/contexts/SiteContext";
 import {
   Shield, Heart, Wand2, MessageCircle, Lock, AlertTriangle,
   CheckCircle, Bot, Phone, Video, Headphones, ArrowRight, Eye
@@ -17,7 +18,16 @@ const AICompanion = () => {
   // The floating assistant is the single AI entry point — open it directly.
   const openAi = () => (isAuthenticated ? openAssistant() : navigate("/auth?mode=signup"));
   const { t, i18n } = useTranslation();
+  const site = useSite();
   const isChinese = i18n.language?.startsWith("zh");
+  const assistantName = isChinese
+    ? (site.family === "carecnc" ? "护畅AI助手" : site.family === "notchsafety" ? "诺驰安全AI助手" : "小忆AI")
+    : `${site.name} AI Assistant`;
+  const copy = (key: string) => String(t(`aiCompanion.${key}`))
+    .replaceAll("ChallengeD Assistant", assistantName)
+    .replaceAll("ChallengeD", site.name)
+    .replaceAll("小忆AI", assistantName)
+    .replaceAll("忆畅", site.name);
 
   return (
     <div className="min-h-full">

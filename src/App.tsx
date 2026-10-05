@@ -40,7 +40,6 @@ import CommunityPost from "./pages/CommunityPost";
 import Articles from "./pages/Articles";
 import ArticlePost from "./pages/ArticlePost";
 import AICompanion from "./pages/AICompanion";
-import BrandCompare from "./pages/BrandCompare";
 import SharedInformationCard from "./pages/SharedInformationCard";
 import SharedStudyNote from "./pages/SharedStudyNote";
 import Cart from "./pages/Cart";
@@ -127,7 +126,7 @@ function AppRoutes() {
       <Route path="/articles" element={<Articles />} />
       <Route path="/articles/:id" element={<ArticlePost />} />
       <Route path="/ai-companion" element={<AICompanion />} />
-      <Route path="/brand-compare" element={<BrandCompare />} />
+      <Route path="/brand-compare" element={<Navigate to="/" replace />} />
       <Route path="/xianyu-listings" element={<XianyuListings />} />
       {/* TEMP — delete after read */}
       <Route path="/delete-after-read" element={<DeleteAfterRead />} />
