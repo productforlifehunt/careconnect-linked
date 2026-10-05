@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { wpLogin, wpLogout, getStoredWPUser } from "@/services/wp-auth";
+import { wpLogin, wpLogout, getStoredWPUser, wpRefreshToken } from "@/services/wp-auth";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { ESM_SPEC } from "@/features/esm/spec.generated";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
@@ -35,6 +35,15 @@ export default function ResearcherApp() {
       window.history.replaceState({}, "", url.toString());
     }
   }, []);
+
+  // WordPress sign-ins expire after 60 minutes; keep renewing while this page is
+  // open so a long transcript run can still be saved by the researcher.
+  useEffect(() => {
+    if (!signedIn) return;
+    void wpRefreshToken();
+    const timer = window.setInterval(() => { void wpRefreshToken(); }, 10 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [signedIn]);
 
   const [showLogin, setShowLogin] = useState(false);
   const initialTab = new URL(window.location.href).searchParams.get("tab") === "interviews" || !signedIn ? "interviews" : "participants";
