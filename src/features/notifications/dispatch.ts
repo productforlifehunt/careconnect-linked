@@ -4,6 +4,7 @@
  * Each app has exactly ONE notification edge function:
  *   ChallengeD → `challenged-notify`
  *   CareCNC    → `carecnc-notify`
+ *   Notch Safety shares ChallengeD's data scope but carries its own brand.
  *
  * Those functions own every channel (in-app inbox row, web push, email, SMS)
  * and enforce the user's notification preferences, so the frontend never writes

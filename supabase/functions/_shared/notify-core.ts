@@ -2,7 +2,7 @@
  * Unified notification core — ONE dispatcher per app.
  *
  * Every outbound message for an app (in-app inbox row, web push, email, SMS)
- * goes through exactly one edge function (`challenged-notify` / `carecnc-notify`)
+ * goes through exactly one data-scope edge function (`challenged-notify` / `carecnc-notify`)
  * so there is a single place to audit, and no channel can double-send.
  *
  * Backend of record is WordPress (JetEngine CCTs), reached through the same
@@ -253,7 +253,8 @@ async function sendEmail(app: AppKey, req: NotifyRequest): Promise<ChannelResult
   const user = Deno.env.get("SMTP_USER");
   const pass = Deno.env.get("SMTP_PASSWORD");
   const brand = req.brand === "notchsafety" ? "Notch Safety" : req.brand === "carecnc" || app === "carecnc" ? "CareCNC" : "ChallengeD";
-  const from = Deno.env.get("SMTP_FROM") ?? `${brand} <no-reply@challenged-dementia.com>`;
+  const fallbackAddress = app === "carecnc" ? "no-reply@carecnc.com" : "no-reply@challenged-dementia.com";
+  const from = Deno.env.get("SMTP_FROM") ?? `${brand} <${fallbackAddress}>`;
   if (!host || !user || !pass || !req.email) return "not_configured";
 
   try {
