@@ -23,11 +23,11 @@ const AICompanion = () => {
   const assistantName = isChinese
     ? (site.family === "carecnc" ? "护畅AI助手" : site.family === "notchsafety" ? "诺驰安全AI助手" : "小忆AI")
     : `${site.name} AI Assistant`;
-  const copy = (key: string) => String(copy(key))
-    .replaceAll("ChallengeD Assistant", assistantName)
-    .replaceAll("ChallengeD", site.name)
-    .replaceAll("小忆AI", assistantName)
-    .replaceAll("忆畅", site.name);
+  const copy = (key: string) => String(t(`aiCompanion.${key}`))
+    .replace(/ChallengeD Assistant/g, assistantName)
+    .replace(/ChallengeD/g, site.name)
+    .replace(/小忆AI/g, assistantName)
+    .replace(/忆畅/g, site.name);
 
   return (
     <div className="min-h-full">
