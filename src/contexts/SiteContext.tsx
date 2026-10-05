@@ -361,11 +361,13 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       : isChinese && config.family === "carecnc" ? "查找护理服务，预约并协调照护。"
       : isChinese && config.family === "challenged" ? "失智症照护知识、家庭协作与位置安全。"
       : config.metaDescription;
-    const faviconHref = config.family === "notchsafety"
+    const faviconHref = config.family === "researcher" || config.family === "esm_survey"
+      ? "/favicon-research.svg"
+      : config.family === "notchsafety"
       ? "/favicon-notchsafety.png"
       : config.family === "carecnc"
         ? (isChinese ? "/favicon-huchang.png" : "/favicon-carecnc-en.png")
-        : (isChinese && config.family === "challenged" ? "/favicon-yichang.png" : "/favicon-challenged.png");
+        : (isChinese ? "/favicon-yichang.png" : "/favicon-challenged.png");
 
     document.documentElement.lang = isChinese ? "zh-CN" : "en";
     document.title = localizedTitle;
@@ -379,8 +381,16 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMeta('meta[property="og:description"]', localizedDescription);
     setMeta('meta[name="twitter:title"]', localizedTitle);
     setMeta('meta[name="twitter:description"]', localizedDescription);
-    document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.setAttribute("href", faviconHref);
-    document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]')?.setAttribute("href", faviconHref);
+    // Replace (not just re-point) the icon links: Chrome keeps showing a cached
+    // tab icon when only the href attribute of an existing <link> changes.
+    (["icon", "apple-touch-icon"] as const).forEach((rel) => {
+      document.querySelectorAll(`link[rel="${rel}"]`).forEach((el) => el.remove());
+      const link = document.createElement("link");
+      link.rel = rel;
+      link.href = faviconHref;
+      if (faviconHref.endsWith(".svg")) link.type = "image/svg+xml";
+      document.head.appendChild(link);
+    });
 
   }, [config, isChinese]);
 
