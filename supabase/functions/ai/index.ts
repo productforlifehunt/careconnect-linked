@@ -692,11 +692,12 @@ async function handleVoice(req: Request): Promise<Response> {
   }
 
   try {
-    const { text, voice, format, engine } = await req.json() as {
+    const { text, voice, format, engine, site } = await req.json() as {
       text: string;
       voice?: string;
       format?: string;
       engine?: "lovable" | "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
+      site?: string;
     };
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {
@@ -758,6 +759,9 @@ async function handleVoice(req: Request): Promise<Response> {
         ? "openai/gpt-audio"
         : "openai/gpt-audio-mini";
       providerLabel = `openrouter-${modelSlug.split("/")[1]}`;
+      const providerTitle = site === "carecnc"
+        ? "CareCNC AI Assistant"
+        : site === "notchsafety" ? "Notch Safety AI Assistant" : "ChallengeD AI Assistant";
 
       // Audio output via streaming SSE. Use MP3 to avoid PCM concat artifacts
       // (sample-rate guesswork, click/echo at chunk boundaries).
@@ -766,8 +770,8 @@ async function handleVoice(req: Request): Promise<Response> {
         headers: {
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://challenged-dementia.com",
-          "X-Title": "ChallengeD AI Companion",
+          "HTTP-Referer": req.headers.get("origin") ?? "https://challenged-dementia.com",
+          "X-Title": providerTitle,
         },
         body: JSON.stringify({
           model: modelSlug,

@@ -42,7 +42,7 @@ const PERSONAS: Record<AISiteId, Persona> = {
   },
   notchsafety: {
     zh: "诺驰安全AI助手",
-    en: "NotchSafety AI Assistant",
+    en: "Notch Safety AI Assistant",
     roleZh: "你主要帮助用户和家人处理位置与安全问题。",
     roleEn: "You mainly help the user and their cared ones with location safety.",
   },

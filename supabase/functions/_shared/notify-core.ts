@@ -2,7 +2,7 @@
  * Unified notification core — ONE dispatcher per app.
  *
  * Every outbound message for an app (in-app inbox row, web push, email, SMS)
- * goes through exactly one edge function (`challenged-notify` / `carecnc-notify`)
+ * goes through exactly one data-scope edge function (`challenged-notify` / `carecnc-notify`)
  * so there is a single place to audit, and no channel can double-send.
  *
  * Backend of record is WordPress (JetEngine CCTs), reached through the same
@@ -20,6 +20,7 @@
 export const WP_BASE = "https://app.challenged-dementia.com/afresh";
 
 export type AppKey = "challenged" | "carecnc";
+export type NotifyBrand = AppKey | "notchsafety";
 
 /** a60 on CCT 185 / a61 on CCT 186 */
 const APP_CODE: Record<AppKey, string> = { challenged: "b59", carecnc: "b60" };
@@ -82,6 +83,8 @@ export interface NotifyRequest {
   message: string;
   /** in-app route, e.g. "/bookings?id=12" */
   action_url?: string | null;
+  /** Presentation identity; separate from the shared CCT data scope. */
+  brand?: NotifyBrand;
   /** recipient email; required only when the email channel should fire */
   email?: string | null;
   /** recipient phone in E.164; required only for SMS */
@@ -249,9 +252,9 @@ async function sendEmail(app: AppKey, req: NotifyRequest): Promise<ChannelResult
   const host = Deno.env.get("SMTP_HOST");
   const user = Deno.env.get("SMTP_USER");
   const pass = Deno.env.get("SMTP_PASSWORD");
-  const from =
-    Deno.env.get("SMTP_FROM") ??
-    (app === "challenged" ? "ChallengeD <no-reply@challenged-dementia.com>" : "CareCNC <no-reply@challenged-dementia.com>");
+  const brand = req.brand === "notchsafety" ? "Notch Safety" : req.brand === "carecnc" || app === "carecnc" ? "CareCNC" : "ChallengeD";
+  const fallbackAddress = app === "carecnc" ? "no-reply@carecnc.com" : "no-reply@challenged-dementia.com";
+  const from = Deno.env.get("SMTP_FROM") ?? `${brand} <${fallbackAddress}>`;
   if (!host || !user || !pass || !req.email) return "not_configured";
 
   try {

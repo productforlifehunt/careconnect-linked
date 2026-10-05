@@ -1,5 +1,5 @@
 /**
- * CareCNC (忆畅) — the ONE notification endpoint for this app.
+ * CareCNC — the ONE notification endpoint for this app.
  * Every CareCNC in-app / push / email / SMS message is dispatched here.
  */
 import { dispatch, type NotifyRequest } from "../_shared/notify-core.ts";

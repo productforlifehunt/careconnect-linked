@@ -4,8 +4,8 @@
 
 ## Locale-specific brand audit
 
-- [x] Align the three brand names and marks across shared header, homepage footer, and browser tabs in English and Chinese.
-- [x] Use the requested homepage image for each ChallengeD and CareCNC language variant; verify all six variants visually.
+- [ ] Align the three brand names and marks across every applicable page, popup, share surface, notification identity, and browser metadata in English and Chinese.
+- [ ] Use the requested homepage image for every ChallengeD, CareCNC, and NotchSafety language variant; verify all six variants visually.
 - [x] Explain how family voice references and provider-specific cloned voice IDs are stored without claiming a portable voiceprint.
 
 # UI/UX verification roadmap

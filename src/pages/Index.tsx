@@ -14,7 +14,6 @@ import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
 import heroImageCn from "@/assets/hero-image-cn.jpg";
 import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
-import heroImageNotchSafety from "@/assets/hero-notchsafety.jpg";
 import { BrandMark } from "@/components/BrandMark";
 import type { Profile } from "@/types/care-connector";
 import { searchCnCities } from "@/data/china-cities";
@@ -52,7 +51,7 @@ const Index = () => {
           <img
             src={
               isSafety
-                ? heroImageNotchSafety
+                ? (isChinese ? heroImageCarecnc : heroImage)
                 : site.id === "carecnc" && isChinese
                 ? heroImageCarecnc
                 : isChinese && site.family === "challenged"
