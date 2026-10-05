@@ -53,7 +53,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => navigate(isAuthenticated ? "/map" : "/")}
             className="flex shrink-0 items-center gap-2"
-            aria-label={L("诺驰安全首页", "NotchSafety home")}
+            aria-label={L("诺驰安全首页", "Notch Safety home")}
           >
             <span className="hidden sm:flex">
               <BrandMark size={28} showWordmark />
