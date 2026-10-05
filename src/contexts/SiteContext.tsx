@@ -349,9 +349,11 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     html.classList.add(config.cssClass);
 
     // Keep every browser/share surface aligned with the current brand and language.
-    const localizedName = config.family === "challenged" ? "忆畅"
-      : config.family === "carecnc" ? "护畅"
-      : config.family === "notchsafety" ? "诺驰安全" : config.name;
+    const localizedName = isChinese
+      ? config.family === "challenged" ? "忆畅"
+        : config.family === "carecnc" ? "护畅"
+        : config.family === "notchsafety" ? "诺驰安全" : config.name
+      : config.name;
     const localizedTitle = isChinese && ["challenged", "carecnc", "notchsafety"].includes(config.family ?? "")
       ? `${localizedName}${config.showBetaLabel ? "（测试版）" : ""}` : config.metaTitle;
     const localizedDescription = isChinese && config.family === "notchsafety"
