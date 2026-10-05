@@ -1,6 +1,6 @@
 ## Knowledge-topic archive documentation
 
-- [ ] Replace the outdated five-topic rows with the verified frontend article, CCT217 anchor, CCT218 note, REL255/256, and link-snapshot facts.
+- [x] Replace the outdated five-topic rows with the verified frontend article, CCT217 anchor, CCT218 note, REL255/256, and link-snapshot facts.
 
 # UI/UX verification roadmap
 
