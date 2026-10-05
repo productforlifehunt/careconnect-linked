@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
 import heroImageCn from "@/assets/hero-image-cn.jpg";
 import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
+import heroImageNotchSafety from "@/assets/hero-notchsafety.jpg";
 import { BrandMark } from "@/components/BrandMark";
 import type { Profile } from "@/types/care-connector";
 import { searchCnCities } from "@/data/china-cities";
@@ -24,6 +25,7 @@ const Index = () => {
   const site = useSite();
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
+  const isSafety = site.family === "notchsafety";
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
 
@@ -49,19 +51,25 @@ const Index = () => {
         <div className="absolute inset-0">
           <img
             src={
-              site.id === "carecnc"
+              isSafety
+                ? heroImageNotchSafety
+                : site.id === "carecnc"
                 ? heroImageCarecnc
                 : isChinese && site.family === "challenged"
                 ? heroImageCn
                 : heroImage
             }
-            alt={isChinese ? "用心的护理" : "Compassionate caregiving"}
+            alt={isSafety ? (isChinese ? "家人一起查看位置地图" : "A family viewing their location map together") : (isChinese ? "用心的护理" : "Compassionate caregiving")}
+            width={1536}
+            height={864}
             className="w-full h-full object-cover"
           />
           <div
             className={
               site.id === "carecnc"
                 ? "absolute inset-0 bg-gradient-to-r from-card/85 via-card/40 to-transparent"
+                : isSafety
+                ? "absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent"
                 : "absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/40"
             }
           />
@@ -70,7 +78,7 @@ const Index = () => {
           <div className="max-w-3xl">
             <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-[1.1] tracking-tight animate-fade-in max-w-[14ch] ${site.id === "carecnc" ? "text-foreground" : "text-primary-foreground"}`}>
               {t(`site.${site.id}.heroTitle`)}{" "}
-              <span className="text-coral inline-block whitespace-nowrap">{t(`site.${site.id}.heroHighlight`)}</span>
+              <span className={`${isSafety ? "text-primary-foreground" : "text-coral"} inline-block whitespace-nowrap`}>{t(`site.${site.id}.heroHighlight`)}</span>
             </h1>
             <p className={`text-base sm:text-lg md:text-xl mb-6 sm:mb-8 animate-fade-in max-w-[38rem] ${site.id === "carecnc" ? "text-foreground/80" : "text-primary-foreground/90"}`} style={{ animationDelay: "0.1s" }}>
               {t(`site.${site.id}.heroSubtitle`)}
@@ -253,7 +261,22 @@ const Index = () => {
               </div>
               <p className="text-sm text-muted-foreground">{t(`site.${site.id}.footerTagline`)}</p>
             </div>
-            {[
+            {(isSafety ? [
+              { title: isChinese ? "家人安全" : "Family safety", links: [
+                { label: isChinese ? "实时地图" : "Live map", href: "/auth" },
+                { label: isChinese ? "地点提醒" : "Place alerts", href: "/auth" },
+                { label: isChinese ? "家庭圈子" : "Family circle", href: "/auth" },
+              ] },
+              { title: isChinese ? "开始使用" : "Get started", links: [
+                { label: isChinese ? "创建账号" : "Create account", href: "/auth?mode=signup" },
+                { label: isChinese ? "登录" : "Sign in", href: "/auth" },
+                { label: isChinese ? "创建家庭圈子" : "Create a family circle", href: "/auth?mode=signup" },
+              ] },
+              { title: isChinese ? "隐私与帮助" : "Privacy & help", links: [
+                { label: isChinese ? "信任与安全" : "Trust & safety", href: "/trust-safety" },
+                { label: isChinese ? "紧急求助" : "Emergency SOS", href: "/auth" },
+              ] },
+            ] : [
               { title: t("home.forFamilies"), links: [
                 ...(paidCare ? [{ label: t("home.findCaregivers"), href: "/search" }] : []),
                 { label: t("nav.howItWorks"), href: "/how-it-works" },
@@ -275,7 +298,7 @@ const Index = () => {
                 { label: t("common.signUp"), href: "/auth?mode=signup" },
                 { label: t("common.signIn"), href: "/auth" },
               ] },
-            ].map((col) => (
+            ]).map((col) => (
               <div key={col.title}>
                 <h4 className="font-semibold text-foreground mb-3 text-sm">{col.title}</h4>
                 <ul className="space-y-2">

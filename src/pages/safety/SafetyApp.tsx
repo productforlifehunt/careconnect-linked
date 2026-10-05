@@ -12,15 +12,15 @@ import Inbox from "@/pages/Inbox";
 import Profile from "@/pages/Profile";
 import Onboarding from "@/pages/Onboarding";
 import AICompanion from "@/pages/AICompanion";
+import Index from "@/pages/Index";
 import { SafetyShell } from "./SafetyShell";
-import SafetyLanding from "./SafetyLanding";
 
 /**
  * NotchSafety — a *variant* of the care app, not a second app.
  *
- * Only two things are its own: the marketing landing page and this shell
- * (header + bottom bar, family-locator wording). Every functional screen is the
- * exact same file the care app uses; the path only picks which tab opens.
+ * It uses the shared public homepage with family-location content, plus this
+ * shell (header + bottom bar, family-locator wording). Every functional screen
+ * is the exact same file the care app uses; the path only picks which tab opens.
  */
 export default function SafetyApp() {
   const location = useLocation();
@@ -41,7 +41,7 @@ export default function SafetyApp() {
         <Routes>
           <Route
             path="/"
-            element={!isLoading && isAuthenticated ? <Navigate to="/map" replace /> : <SafetyLanding />}
+            element={!isLoading && isAuthenticated ? <Navigate to="/map" replace /> : <Index />}
           />
           {/* Same GPSTracking file — path selects the tab (map / zones / alerts). */}
           <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />

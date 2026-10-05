@@ -223,7 +223,10 @@ function parseSlug(raw: string): { brand: SiteId; release: SiteRelease } | null 
  * compliance-heavy areas: the paid caregiver marketplace, senior facilities
  * and the open discussion community.
  */
-function featuresFor(release: SiteRelease): SiteFeatures {
+function featuresFor(release: SiteRelease, brand: SiteId): SiteFeatures {
+  if (brand === "notchsafety") {
+    return { paidCaregivers: false, facilities: false, community: false };
+  }
   const trimmed = release.channel === "beta" || release.channel === "public";
   return {
     paidCaregivers: !trimmed,
@@ -326,7 +329,7 @@ export function resolveSite(slug: string = detectSiteSlug()): SiteConfig {
     ...brand,
     metaTitle: showBetaLabel ? `${brand.metaTitle} (Beta)` : brand.metaTitle,
     release: parsed.release,
-    features: featuresFor(parsed.release),
+    features: featuresFor(parsed.release, parsed.brand),
     showBetaLabel,
   };
 }

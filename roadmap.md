@@ -1,5 +1,12 @@
 # UI/UX verification roadmap
 
+## NotchSafety shared homepage and knowledge-topic audit
+
+- [x] Route NotchSafety `/` through the same shared homepage file as ChallengeD and CareCNC.
+- [x] Keep NotchSafety family-location-only by disabling caregiver marketplace, facilities, and community content.
+- [x] Verify all three homepage variants in English/Chinese and desktop/mobile widths.
+- [x] Audit all five ChallengeD topic collections, title anchors, and study-note persistence against the current implementation.
+
 ## Shared page header correction
 
 - [x] Correct only the shared page header: logo scale, navigation spacing, control sizing, and one aligned inner grid.
