@@ -196,7 +196,12 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           ) : (
             <div className="space-y-1">
               <p className="font-medium text-foreground">{rec.meta.title || displayName(path)}</p>
-              {rec.meta.notes && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{rec.meta.notes}</p>}
+              {rec.meta.notes && (
+                <div className="pt-1">
+                  <p className="text-xs text-muted-foreground">Notes / 备注</p>
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{rec.meta.notes}</p>
+                </div>
+              )}
               {rec.meta.instructions && (
                 <div className="space-y-2 pt-1">
                   <Button
@@ -252,7 +257,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate transcript and translation / 生成转录与翻译
+              Generate new translations and transcriptions / 生成新的翻译与转录
             </Button>
             <Button variant={showArchive ? "secondary" : "outline"} onClick={() => setShowArchive(true)} disabled={!archive}>
               <Archive className="mr-2 h-4 w-4" />Transcript archive / 转录归档
