@@ -283,11 +283,11 @@ export function detectSite(): SiteId {
 
 const notchSafetyConfig: BrandConfig = {
   ...careCNCConfig,
-  id: "notchsafety", family: "notchsafety", name: "NotchSafety",
+  id: "notchsafety", family: "notchsafety", name: "Notch Safety",
   tagline: "Know everyone is safe.",
   logoText: "Notch", logoAccent: "Safety",
-  footerBrand: "NotchSafety",
-  metaTitle: "NotchSafety — Family location & safe zones",
+  footerBrand: "Notch Safety",
+  metaTitle: "Notch Safety — Family location & safe zones",
   metaDescription: "See where your family is, get alerts when they leave or enter a safe zone, and send SOS in one tap.",
   cssClass: "site-notchsafety", brandSlug: "notchsafety",
   navLabels: { ...careCNCConfig.navLabels, gpsTracking: "Map" },
@@ -338,6 +338,8 @@ const SiteContext = createContext<SiteConfig>(resolveSite("challenged"));
 
 export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const config = useMemo(() => resolveSite(), []);
+  const { i18n: language } = useTranslation();
+  const isChinese = language.language?.startsWith("zh");
 
   // Apply CSS class to <html> for theme override
   useEffect(() => {
@@ -347,20 +349,28 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
     html.classList.add(config.cssClass);
 
     // Update page title
-    document.title = config.metaTitle;
+    const localizedName = config.family === "challenged" ? "忆畅"
+      : config.family === "carecnc" ? "护畅"
+      : config.family === "notchsafety" ? "诺驰安全" : config.name;
+    document.title = isChinese && ["challenged", "carecnc", "notchsafety"].includes(config.family ?? "")
+      ? `${localizedName}${config.showBetaLabel ? "（测试版）" : ""}` : config.metaTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute("content", config.metaDescription);
+    if (metaDesc) metaDesc.setAttribute("content", isChinese && config.family === "notchsafety"
+      ? "家人位置、地点提醒与紧急求助。"
+      : isChinese && config.family === "carecnc" ? "查找护理服务，预约并协调照护。"
+      : isChinese && config.family === "challenged" ? "失智症照护知识、家庭协作与位置安全。"
+      : config.metaDescription);
     const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     if (favicon) {
       favicon.href =
         config.family === "notchsafety"
           ? "/favicon-notchsafety.png"
           : config.family === "carecnc"
-            ? "/favicon-carecnc.png"
-            : "/favicon-challenged.png";
+            ? (isChinese ? "/favicon-huchang.png" : "/favicon-carecnc-en.png")
+            : (isChinese && config.family === "challenged" ? "/favicon-yichang.png" : "/favicon-challenged.png");
     }
 
-  }, [config]);
+  }, [config, isChinese]);
 
   return <SiteContext.Provider value={config}>{children}</SiteContext.Provider>;
 };
@@ -386,6 +396,7 @@ export const useSite = (): SiteConfig => {
   const isChallenged = base.family === "challenged";
   return {
     ...base,
+    name: isChallenged ? "忆畅" : base.family === "carecnc" ? "护畅" : base.name,
     caredOneSingular: isChallenged ? "被护理者" : "被照顾者",
     careGroupSingular: isChallenged ? "护理群组" : "照护小组",
     navLabels: {
