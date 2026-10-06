@@ -10,7 +10,7 @@ import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
   loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
-import { wpLogin, wpRefreshToken } from "@/services/wp-auth";
+import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
@@ -81,7 +81,15 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
 function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canEdit: boolean; onSaved: () => void; onDeleted: () => void }) {
   const path = rec.path;
   const [audio, setAudio] = useState("");
-  const [meta, setMeta] = useState<Meta>(rec.meta);
+  // Unsaved edits are kept in this browser so a refresh or sign-in expiry never wipes them.
+  const draftKey = `interview-meta-draft:${path}`;
+  const [meta, setMetaState] = useState<Meta>(() => {
+    try { const d = JSON.parse(localStorage.getItem(draftKey) || "null"); if (d && typeof d === "object") return { ...rec.meta, ...d }; } catch { /* none */ }
+    return rec.meta;
+  });
+  const setMeta = (next: Meta) => { setMetaState(next); localStorage.setItem(draftKey, JSON.stringify(next)); };
+  const dirty = meta.title !== rec.meta.title || meta.notes !== rec.meta.notes || meta.instructions !== rec.meta.instructions;
+  const retry = useRef<(() => Promise<void>) | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
@@ -107,9 +115,29 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     return () => abort.current?.abort();
   }, [path]);
 
+  /** Runs a researcher-only action; if the sign-in has expired, asks for the password and retries. */
+  const asResearcher = async (action: () => Promise<void>) => {
+    await wpEnsureFreshToken();
+    try { await action(); setNeedSignIn(false); }
+    catch (e) {
+      if (!/only the researcher/i.test(String((e as Error)?.message))) throw e;
+      retry.current = action;
+      setNeedSignIn(true);
+      throw new Error("Your researcher sign-in has expired. Enter the password below — nothing you typed or generated is lost. / 研究者登录已过期，请在下方输入密码，已输入和已生成的内容都不会丢失。");
+    }
+  };
+
   const save = async () => {
     setSaving(true); setSaved(""); setError("");
-    try { await saveMeta(path, meta); setSaved("Saved / 已保存"); onSaved(); }
+    try {
+      await asResearcher(async () => {
+        const stored = await saveMeta(path, meta);
+        localStorage.removeItem(draftKey);
+        setMetaState(stored);
+        setSaved("Saved / 已保存");
+        onSaved();
+      });
+    }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
@@ -132,19 +160,11 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     if (archive && !window.confirm("A transcript archive already exists. Saving will overwrite it. Confirm? / 已有转录归档，保存将覆盖原有归档，确认覆盖？")) return;
     setSaving(true); setError("");
     try {
-      // Sign-ins last 60 minutes; renew before saving so a long run is not lost.
-      await wpRefreshToken();
-      let savedArchive: TranscriptArchive;
-      try {
-        savedArchive = await saveTranscriptArchive(path, lines);
-      } catch (e) {
-        if (!/only the researcher/i.test(String((e as Error)?.message))) throw e;
-        setNeedSignIn(true);
-        throw new Error("Your researcher sign-in has expired. Enter the password below to save — the transcript stays on screen. / 研究者登录已过期，请在下方输入密码后保存，转录内容不会丢失。");
-      }
-      setNeedSignIn(false);
+      let savedArchive: TranscriptArchive | null = null;
+      await asResearcher(async () => { savedArchive = await saveTranscriptArchive(path, lines); });
+      if (!savedArchive) throw new Error("Archive could not be saved. / 归档保存失败");
       const check = await loadTranscriptArchive(path);
-      if (!check || check.lines.length !== savedArchive.lines.length) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败");
+      if (!check || check.lines.length !== (savedArchive as TranscriptArchive).lines.length) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败");
       setArchive(check);
       setSaved(`Transcript archive saved (${check.lines.length} sentences) / 转录归档已保存（${check.lines.length} 句）`);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
@@ -157,8 +177,11 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
       await wpLogin("researcher", password);
       setPassword(""); setNeedSignIn(false);
     } catch { setError("Wrong password. / 密码错误。"); setSaving(false); return; }
-    setSaving(false);
-    await storeArchive();
+    const action = retry.current;
+    retry.current = null;
+    if (!action) { setSaving(false); return; }
+    try { await action(); setSaved("Saved / 已保存"); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSaving(false); }
   };
 
   const share = () => {
@@ -187,10 +210,11 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 <Button variant="destructive" disabled={saving} onClick={async () => {
                   if (!window.confirm("Delete this recording and its notes? This cannot be undone. / 删除这条录音和备注？不可恢复。")) return;
                   setSaving(true); setError("");
-                  try { await deleteRecording(path); onDeleted(); }
+                  try { await asResearcher(async () => { await deleteRecording(path); localStorage.removeItem(draftKey); onDeleted(); }); }
                   catch (e) { setError(e instanceof Error ? e.message : String(e)); setSaving(false); }
                 }}><Trash2 className="mr-2 h-4 w-4" />Delete / 删除</Button>
-                {saved && <span className="text-sm text-muted-foreground">{saved}</span>}
+                {dirty && !saving && <span className="text-sm text-destructive">Unsaved changes — click Save / 有未保存的修改，请点保存</span>}
+                {saved && !dirty && <span className="text-sm text-muted-foreground">{saved}</span>}
               </div>
             </div>
           ) : (
@@ -275,7 +299,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           {canEdit && needSignIn && (
             <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); void reSignIn(); }}>
               <Input type="password" autoComplete="current-password" placeholder="Researcher password / 研究者密码" value={password} onChange={(e) => setPassword(e.target.value)} className="max-w-xs" />
-              <Button type="submit" disabled={saving || !password}>Sign in and save / 登录并保存</Button>
+              <Button type="submit" disabled={saving || !password}>Sign in and continue / 登录并继续</Button>
             </form>
           )}
           {saved && !canEdit ? null : saved && <p className="text-sm text-muted-foreground">{saved}</p>}
