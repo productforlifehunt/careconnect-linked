@@ -132,7 +132,7 @@ async function loadAll(): Promise<Participant[]> {
     Promise.all(kinds.map((k) => wordpressFetch<Record<string, { child_object_id: string }[]>>(`jet-rel/${ESM_REL[k]}`).catch(() => ({})))),
     Promise.all(kinds.map((k) => wordpressCCTFetch<Record<string, any>[]>(ESM_CCT[k]).catch(() => []))),
   ]);
-  const byId = kinds.map((_, i) => new Map((tables[i] || []).map((r) => [String(r._ID ?? r.id), r])));
+  const byId = kinds.map((_, i) => new Map((tables[i] || []).map((r) => [String(r.id ?? r._ID), r])));
   const map = new Map<string, Participant>();
   kinds.forEach((k, i) => {
     Object.entries(rels[i] || {}).forEach(([userId, links]) => {
@@ -146,7 +146,7 @@ async function loadAll(): Promise<Participant[]> {
     const users = await wpAdminOps<{ id: number; name: string; email?: string }[]>("get_user_names", { ids }).catch(() => null);
     (users || []).forEach((u) => { const p = map.get(String(u.id)); if (p) p.name = u.name || u.email || p.name; });
   }
-  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.cct_created).localeCompare(String(b.cct_created)))));
+  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))));
   return [...map.values()].filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0).sort((a, b) => Number(a.id) - Number(b.id));
 }
 
@@ -188,7 +188,7 @@ function Dashboard() {
           {(["screening", "hourly", "daily"] as Kind[]).map((k) => (
             <TabsContent key={k} value={k} className="mt-4 space-y-3">
               {current.rows[k].length === 0 && <p className="text-muted-foreground">No answers yet.</p>}
-              {current.rows[k].map((row) => <AnswerCard key={row._ID} kind={k} row={row} start={studyStart(current)} canEdit={isResearcher()} />)}
+              {current.rows[k].map((row) => <AnswerCard key={row.id} kind={k} row={row} start={studyStart(current)} canEdit={isResearcher()} />)}
             </TabsContent>
           ))}
         </Tabs>
@@ -218,16 +218,21 @@ async function autoTranslate(texts: string[]): Promise<Record<string, string>> {
 /** Splits a stored timestamp (ISO text or unix seconds/ms) into a local day number and clock time. */
 function parseStamp(value: unknown): { day: number | null; hour: number | null; minute: string } {
   const text = String(value ?? "").trim();
-  if (/^\d{9,13}$/.test(text)) {
-    const d = new Date(text.length > 10 ? Number(text) : Number(text) * 1000);
+  if (/^\d{9,13}$/.test(text) || /Z$|[+-]\d{2}:\d{2}$/.test(text)) {
+    const d = /^\d+$/.test(text) ? new Date(text.length > 10 ? Number(text) : Number(text) * 1000) : new Date(text);
     return { day: Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000), hour: d.getHours(), minute: String(d.getMinutes()).padStart(2, "0") };
   }
   const m = text.match(/(\d{4})-(\d{2})-(\d{2})/);
   const t = text.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
   return { day: m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000) : null, hour: t ? Number(t[1]) : null, minute: t ? t[2] : "" };
 }
+/** When a row's answers happened: its first dated answer, else when it was saved. */
+function rowStamp(kind: Kind, row: Record<string, any>): unknown {
+  const dated = ESM_SPEC.find((i) => i.cct === CCT_NO[kind] && (i.type === "datetime" || i.type === "date") && parseStamp(row[i.column]).day !== null);
+  return dated ? row[dated.column] : row.created_at;
+}
 function studyStart(p: Participant): number | null {
-  const days = [...p.rows.hourly, ...p.rows.daily].map((r) => parseStamp(r.cct_created).day).filter((d): d is number => d !== null);
+  const days = [...p.rows.hourly.map((r) => rowStamp("hourly", r)), ...p.rows.daily.map((r) => rowStamp("daily", r))].map((v) => parseStamp(v).day).filter((d): d is number => d !== null);
   return days.length ? Math.min(...days) : null;
 }
 function studyTime(value: unknown, start: number | null): string {
@@ -266,9 +271,9 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
     setSaving(true); setSaveError("");
     try {
       await wpEnsureFreshToken();
-      await wordpressCCTFetch(ESM_CCT[kind], { id: row._ID, method: "POST", body: changed });
-      const fresh = await wordpressCCTFetch<Record<string, any>>(ESM_CCT[kind], { id: row._ID });
-      setRow(fresh && typeof fresh === "object" && "_ID" in fresh ? fresh : { ...row, ...changed });
+      await wordpressCCTFetch(ESM_CCT[kind], { id: row.id, method: "POST", body: changed });
+      const fresh = await wordpressCCTFetch<Record<string, any>>(ESM_CCT[kind], { id: row.id });
+      setRow(fresh && typeof fresh === "object" && "id" in fresh ? fresh : { ...row, ...changed });
       setEditing(false);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Save failed");
@@ -278,7 +283,7 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-sm text-muted-foreground">Saved {studyTime(row.cct_created, start)}</CardTitle>
+        <CardTitle className="text-sm text-muted-foreground">Saved {studyTime(row.created_at, start)}</CardTitle>
         {canEdit && !editing && (
           <Button size="sm" variant="outline" onClick={() => { setDraft({ ...row }); setEditing(true); }}>Edit / 编辑</Button>
         )}
