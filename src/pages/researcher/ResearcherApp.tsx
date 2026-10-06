@@ -30,6 +30,8 @@ const INTERVIEW_PARTICIPANTS = [
   { aliases: ["梁国强", "Liang Guoqiang"], title: "Network5, Caregiver1: Liang Guoqiang，57, Son, Primary Caregiver, working (middle school teacher)" },
   { aliases: ["梁静", "Liang Jing"], title: "Network5, Caregiver2: Liang Jing，27, Grand daughter, Secondary Caregiver, working" },
   { aliases: ["刘卫东", "Liu Weidong"], title: "Network6, Caregiver1: Liu Weidong, 73, husband, Primary Caregiver, retired" },
+  { aliases: ["陈建国", "Chen Jianguo"], title: "Network7, Caregiver1: Chen Jianguo, husband, Primary Caregiver, retired" },
+  { aliases: ["李淑芬", "Li Shufen", "lishufenesm01"], title: "Network7, Caregiver2: Li Shufen, 62, younger sister of the PWD, Secondary Caregiver, retired" },
 ];
 
 const interviewParticipant = (name: string) => INTERVIEW_PARTICIPANTS.find((participant) => participant.aliases.includes(name));
