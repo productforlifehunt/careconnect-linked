@@ -315,6 +315,8 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
   const [saveError, setSaveError] = useState("");
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [trError, setTrError] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
 
   const freeTexts = useMemo(
     () => items.filter((i) => !i.options && (i.type === "text" || i.type === "longtext")).map((i) => String(row[i.column] ?? "")).filter((t) => HAN.test(t)),
@@ -343,12 +345,35 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
     } finally { setSaving(false); }
   };
 
+  const remove = async () => {
+    setSaving(true); setSaveError("");
+    try {
+      await wpEnsureFreshToken();
+      await wordpressCCTFetch(ESM_CCT[kind], { id: row.id, method: "DELETE" });
+      setDeleted(true);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Delete failed");
+    } finally { setSaving(false); setConfirmDelete(false); }
+  };
+
+  if (deleted) return null;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
         <CardTitle className="text-sm text-muted-foreground">{studyTime(rowStamp(kind, row), start, studyDay)}</CardTitle>
-        {canEdit && !editing && (
-          <Button size="sm" variant="outline" onClick={() => { setDraft({ ...row }); setEditing(true); }}>Edit / 编辑</Button>
+        {canEdit && !editing && !confirmDelete && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => { setDraft({ ...row }); setEditing(true); }}>Edit / 编辑</Button>
+            <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>Delete / 删除</Button>
+          </div>
+        )}
+        {canEdit && confirmDelete && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-destructive">Delete this record? / 确定删除这条记录？</span>
+            <Button size="sm" variant="ghost" disabled={saving} onClick={() => setConfirmDelete(false)}>Cancel / 取消</Button>
+            <Button size="sm" variant="destructive" disabled={saving} onClick={remove}>{saving ? "Deleting… / 删除中…" : "Yes, delete / 确认删除"}</Button>
+          </div>
         )}
         {canEdit && editing && (
           <div className="flex gap-2">
