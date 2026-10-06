@@ -16,21 +16,23 @@ const RESEARCHER = "researcher";
 type Kind = "screening" | "hourly" | "daily";
 const CCT_NO: Record<Kind, string> = { screening: "318", hourly: "319", daily: "317" };
 
-// Use the exact identity wording from each saved interview title so the
-// participant list and interview archive cannot disagree about a person's name.
-const INTERVIEW_NAMES: Record<string, string> = {
-  "李婷": "Li Ting",
-  "张磊": "Zhang Lei",
-  "梁静": "Liang Jing",
-  "刘卫东": "Liu Weidong",
-  "梁国强": "Liang Guoqiang",
-  "王国强": "Wang Guoqiang",
-  "孙志强": "Sun Zhiqiang",
-  "王慧兰": "Wang Huilan",
-  "赵桂兰": "Zhao Guilan",
-  "王海涛": "Wang Hai Tao",
-  "钱建华": "Qian Jianhua",
-};
+// Keep the participant column identical to the saved interview titles and
+// Network → Caregiver sequence. Chinese aliases are the WordPress display names.
+const INTERVIEW_PARTICIPANTS = [
+  { aliases: ["张磊", "Zhang Lei"], title: "Network1, Caregiver1: Zhang Lei，34，Son，Primary caregiver" },
+  { aliases: ["李婷", "Li Ting"], title: "Network1, Caregiver2: Li Ting，32，Daughter in law，Secondary caregiver" },
+  { aliases: ["赵桂兰", "Zhao Guilan"], title: "Network2, Caregiver1: Zhao Guilan，69, Wife, Primary Caregiver" },
+  { aliases: ["王海涛", "Wang Hai Tao"], title: "Network2, Caregiver2: Wang Hai Tao，40, Son, Secondary Caregiver" },
+  { aliases: ["钱建华", "Qian Jianhua"], title: "Network2, Caregiver3: Qian Jianhua, friend of the PWD, Secondary Caregiver" },
+  { aliases: ["孙志强", "Sun Zhiqiang"], title: "Network3, Caregiver1: Sun Zhiqiang，67, Son, Primary Caregiver, working" },
+  { aliases: ["王慧兰", "Wang Huilan"], title: "Network3, Caregiver2: Wang Huilan，65, Daughter in law, Secondary Caregiver, working" },
+  { aliases: ["王国强", "Wang Guoqiang"], title: "Network4, Caregiver1: Wang Guoqiang，husband, Primary Caregiver, working (retired working part time)" },
+  { aliases: ["梁国强", "Liang Guoqiang"], title: "Network5, Caregiver1: Liang Guoqiang，57, Son, Primary Caregiver, working (middle school teacher)" },
+  { aliases: ["梁静", "Liang Jing"], title: "Network5, Caregiver2: Liang Jing，27, Grand daughter, Secondary Caregiver, working" },
+  { aliases: ["刘卫东", "Liu Weidong"], title: "Network6, Caregiver1: Liu Weidong, 73, husband, Primary Caregiver, retired" },
+];
+
+const interviewParticipant = (name: string) => INTERVIEW_PARTICIPANTS.find((participant) => participant.aliases.includes(name));
 
 interface Participant {
   id: string;
@@ -164,11 +166,17 @@ async function loadAll(): Promise<Participant[]> {
       const p = map.get(String(u.id));
       if (!p) return;
       const storedName = u.name || u.email || p.name;
-      p.name = INTERVIEW_NAMES[storedName] || storedName;
+       p.name = interviewParticipant(storedName)?.title || storedName;
     });
   }
   map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => compareStudyRows(k, a, b))));
-  return [...map.values()].filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0).sort((a, b) => Number(a.id) - Number(b.id));
+  return [...map.values()]
+    .filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0)
+    .sort((a, b) => {
+      const left = INTERVIEW_PARTICIPANTS.findIndex((participant) => participant.title === a.name);
+      const right = INTERVIEW_PARTICIPANTS.findIndex((participant) => participant.title === b.name);
+      return (left < 0 ? Number.POSITIVE_INFINITY : left) - (right < 0 ? Number.POSITIVE_INFINITY : right) || Number(a.id) - Number(b.id);
+    });
 }
 
 function Dashboard() {
@@ -185,16 +193,15 @@ function Dashboard() {
   const current = data.find((p) => p.id === selected);
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[220px_1fr]">
+    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[320px_1fr]">
       <aside className="space-y-1">
-        <p className="mb-2 text-sm text-muted-foreground">{data.length} participants</p>
         {data.map((p) => (
           <button
             key={p.id}
             onClick={() => setSelected(p.id)}
             className={`w-full rounded-md px-3 py-2 text-left text-sm ${p.id === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"}`}
           >
-            <div className="font-medium">{p.name}</div>
+            <div className="whitespace-normal break-words font-medium leading-snug">{p.name}</div>
             <div className="text-xs opacity-80">{p.rows.hourly.length} hourly · {p.rows.daily.length} daily · {p.rows.screening.length} screening</div>
           </button>
         ))}
