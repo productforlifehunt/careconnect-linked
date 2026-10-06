@@ -209,7 +209,7 @@ function Dashboard() {
           {(["screening", "hourly", "daily"] as Kind[]).map((k) => (
             <TabsContent key={k} value={k} className="mt-4 space-y-3">
               {current.rows[k].length === 0 && <p className="text-muted-foreground">No answers yet.</p>}
-              {current.rows[k].map((row) => <AnswerCard key={row.id} kind={k} row={row} start={studyStart(current)} canEdit={isResearcher()} />)}
+              {current.rows[k].map((row, index) => <AnswerCard key={row.id} kind={k} row={row} start={studyStart(current)} studyDay={k === "daily" ? index + 1 : undefined} canEdit={isResearcher()} />)}
             </TabsContent>
           ))}
         </Tabs>
@@ -293,15 +293,16 @@ function studyStart(p: Participant): number | null {
   const days = [...p.rows.hourly.map((r) => rowStamp("hourly", r)), ...p.rows.daily.map((r) => rowStamp("daily", r))].map((v) => parseStamp(v).day).filter((d): d is number => d !== null);
   return days.length ? Math.min(...days) : null;
 }
-function studyTime(value: unknown, start: number | null): string {
+function studyTime(value: unknown, start: number | null, studyDay?: number): string {
   const { day, hour, minute } = parseStamp(value);
   const parts: string[] = [];
-  if (day !== null && start !== null) parts.push(`Study day ${day - start + 1} / 研究第 ${day - start + 1} 天`);
+  const displayedDay = studyDay ?? (day !== null && start !== null ? day - start + 1 : null);
+  if (displayedDay !== null) parts.push(`Study day ${displayedDay} / 研究第 ${displayedDay} 天`);
   if (hour !== null) parts.push(`${hour < 12 ? "上午" : "下午"} ${hour % 12 || 12}:${minute}`);
   return parts.length || day !== null ? parts.join(" · ") : String(value ?? "");
 }
 
-function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row: Record<string, any>; start: number | null; canEdit: boolean }) {
+function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind: Kind; row: Record<string, any>; start: number | null; studyDay?: number; canEdit: boolean }) {
   const items = useMemo(() => ESM_SPEC.filter((i) => i.cct === CCT_NO[kind]), [kind]);
   const [row, setRow] = useState(initialRow);
   const [editing, setEditing] = useState(false);
@@ -341,7 +342,7 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-sm text-muted-foreground">{studyTime(rowStamp(kind, row), start)}</CardTitle>
+        <CardTitle className="text-sm text-muted-foreground">{studyTime(rowStamp(kind, row), start, studyDay)}</CardTitle>
         {canEdit && !editing && (
           <Button size="sm" variant="outline" onClick={() => { setDraft({ ...row }); setEditing(true); }}>Edit / 编辑</Button>
         )}
