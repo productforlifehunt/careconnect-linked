@@ -188,7 +188,7 @@ function Dashboard() {
   const current = data.find((p) => p.id === selected);
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[320px_1fr]">
+    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <aside className="space-y-1">
         {data.map((p) => (
           <button

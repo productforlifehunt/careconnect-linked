@@ -70,7 +70,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
   const current = items?.find((r) => r.path === selected);
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[320px_1fr]">
+    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <aside className="space-y-2">
         {canEdit && (
           <>
