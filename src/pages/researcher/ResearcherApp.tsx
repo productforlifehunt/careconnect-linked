@@ -167,7 +167,7 @@ async function loadAll(): Promise<Participant[]> {
       p.name = INTERVIEW_NAMES[storedName] || storedName;
     });
   }
-  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))));
+  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => compareStudyRows(k, a, b))));
   return [...map.values()].filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0).sort((a, b) => Number(a.id) - Number(b.id));
 }
 
@@ -274,6 +274,20 @@ function parseStamp(value: unknown): { day: number | null; hour: number | null; 
 function rowStamp(kind: Kind, row: Record<string, any>): unknown {
   const dated = ESM_SPEC.find((i) => i.cct === CCT_NO[kind] && (i.type === "datetime" || i.type === "date") && parseStamp(row[i.column]).day !== null);
   return dated ? row[dated.column] : row.created_at;
+}
+/** Study answers run chronologically: day 1–7, then morning–evening within each day. */
+function compareStudyRows(kind: Kind, a: Record<string, any>, b: Record<string, any>): number {
+  const left = parseStamp(rowStamp(kind, a));
+  const right = parseStamp(rowStamp(kind, b));
+  const leftDay = left.day ?? Number.POSITIVE_INFINITY;
+  const rightDay = right.day ?? Number.POSITIVE_INFINITY;
+  if (leftDay !== rightDay) return leftDay - rightDay;
+  const leftMinutes = left.hour === null ? Number.POSITIVE_INFINITY : left.hour * 60 + Number(left.minute || 0);
+  const rightMinutes = right.hour === null ? Number.POSITIVE_INFINITY : right.hour * 60 + Number(right.minute || 0);
+  if (leftMinutes !== rightMinutes) return leftMinutes - rightMinutes;
+  const createdOrder = String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""));
+  if (createdOrder !== 0) return createdOrder;
+  return Number(a.id ?? a._ID ?? 0) - Number(b.id ?? b._ID ?? 0);
 }
 function studyStart(p: Participant): number | null {
   const days = [...p.rows.hourly.map((r) => rowStamp("hourly", r)), ...p.rows.daily.map((r) => rowStamp("daily", r))].map((v) => parseStamp(v).day).filter((d): d is number => d !== null);
