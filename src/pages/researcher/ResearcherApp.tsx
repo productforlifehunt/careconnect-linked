@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { wpLogin, wpLogout, getStoredWPUser, wpRefreshToken } from "@/services/wp-auth";
+import { wpLogin, wpLogout, getStoredWPUser, wpRefreshToken, wpEnsureFreshToken } from "@/services/wp-auth";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { ESM_SPEC } from "@/features/esm/spec.generated";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
@@ -37,12 +37,20 @@ export default function ResearcherApp() {
   }, []);
 
   // WordPress sign-ins expire after 60 minutes; keep renewing while this page is
-  // open so a long transcript run can still be saved by the researcher.
+  // open, and again whenever the tab/laptop wakes up (timers pause during sleep).
   useEffect(() => {
     if (!signedIn) return;
+    const renew = () => { void wpEnsureFreshToken(); };
     void wpRefreshToken();
-    const timer = window.setInterval(() => { void wpRefreshToken(); }, 10 * 60 * 1000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(renew, 5 * 60 * 1000);
+    const onVisible = () => { if (document.visibilityState === "visible") renew(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", renew);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", renew);
+    };
   }, [signedIn]);
 
   const [showLogin, setShowLogin] = useState(false);
