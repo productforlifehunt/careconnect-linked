@@ -197,10 +197,22 @@ function Dashboard() {
 
 function AnswerCard({ kind, row }: { kind: Kind; row: Record<string, any> }) {
   const items = useMemo(() => ESM_SPEC.filter((i) => i.cct === CCT_NO[kind]), [kind]);
+  const timeOnly = (value: unknown) => {
+    const text = String(value ?? "").trim();
+    const match = text.match(/(?:T|\s)(\d{1,2}):(\d{2})/);
+    if (!match) return text;
+    const hour = Number(match[1]);
+    const minute = match[2];
+    const period = hour < 12 ? "上午" : "下午";
+    const shownHour = hour % 12 || 12;
+    return `${period} ${shownHour}:${minute}`;
+  };
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm text-muted-foreground">Saved {row.cct_created}</CardTitle>
+        <CardTitle className="text-sm text-muted-foreground">
+          Saved {kind === "screening" ? row.cct_created : timeOnly(row.cct_created)}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <dl className="space-y-2 text-sm">
@@ -218,7 +230,9 @@ function AnswerCard({ kind, row }: { kind: Kind; row: Record<string, any> }) {
             }
             const shown = item.options
               ? String(v).split(",").map((c) => item.options!.find((o) => o.value === c.trim())?.label ?? c).join(", ")
-              : String(v);
+              : kind !== "screening" && item.type === "datetime"
+                ? timeOnly(v)
+                : String(v);
             return (
               <div key={item.id}>
                 <dt className="text-muted-foreground">{item.label}</dt>

@@ -97,3 +97,11 @@
 - [x] Let only the researcher overwrite a completed transcript archive; let every viewer read that archive in a separate view.
 - [x] Fix interrupted requests with buffered responses and bounded retries; verified 21/21 sections, 114 fresh and archived lines as researcher and guest.
 - [ ] Participants viewing their own interviews — waiting on user: recordings are not linked to participants yet ("先不关联").
+# Fifteen-participant transcript reconciliation
+
+- [x] Match each of the 15 participants to the authoritative interview Q&A supplied in chat; do not infer identity from recording titles.
+- [x] Check every Screening, Hourly, and Daily answer against the matching Q&A for direct contradictions; preserve explicit non-answers and blank unsupported fields.
+- [ ] Correct confirmed mismatches only through the WordPress/JetEngine visual interface.
+- [x] Hide calendar dates in researcher Hourly/Daily displays while retaining AM/PM and clock time.
+- [ ] Verify all 15 participants after the confirmed Liang Yu screening correction is saved through the WordPress/JetEngine visual interface.
+
