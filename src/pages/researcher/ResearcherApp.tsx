@@ -202,17 +202,35 @@ const TR_CACHE_KEY = "researcher-auto-translation-v1";
 function readTrCache(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(TR_CACHE_KEY) || "{}"); } catch { return {}; }
 }
-async function autoTranslate(texts: string[]): Promise<Record<string, string>> {
+// Cards ask at the same time; gather them into one request per screen.
+let pending: { texts: Set<string>; waiters: ((c: Record<string, string>) => void)[]; fail: ((e: unknown) => void)[] } | null = null;
+function autoTranslate(texts: string[]): Promise<Record<string, string>> {
   const cache = readTrCache();
-  const missing = [...new Set(texts.filter((t) => !cache[t]))];
-  if (missing.length) {
-    const { data, error } = await supabase.functions.invoke("ai?task=chat-translate", { body: { texts: missing } });
-    if (error) throw error;
-    const out: string[] = data?.translations || [];
-    missing.forEach((t, i) => { if (out[i]) cache[t] = out[i]; });
-    try { localStorage.setItem(TR_CACHE_KEY, JSON.stringify(cache)); } catch { /* full */ }
-  }
-  return cache;
+  const missing = texts.filter((t) => !cache[t]);
+  if (!missing.length) return Promise.resolve(cache);
+  return new Promise((resolve, reject) => {
+    if (!pending) {
+      pending = { texts: new Set(), waiters: [], fail: [] };
+      window.setTimeout(async () => {
+        const batch = pending!; pending = null;
+        try {
+          const list = [...batch.texts];
+          const c = readTrCache();
+          for (let i = 0; i < list.length; i += 20) {
+            const chunk = list.slice(i, i + 20);
+            const { data, error } = await supabase.functions.invoke("ai?task=chat-translate", { body: { texts: chunk } });
+            if (error) throw error;
+            const out: string[] = data?.translations || [];
+            chunk.forEach((t, j) => { if (out[j]) c[t] = out[j]; });
+          }
+          try { localStorage.setItem(TR_CACHE_KEY, JSON.stringify(c)); } catch { /* full */ }
+          batch.waiters.forEach((w) => w(c));
+        } catch (e) { batch.fail.forEach((f) => f(e)); }
+      }, 100);
+    }
+    missing.forEach((t) => pending!.texts.add(t));
+    pending.waiters.push(resolve); pending.fail.push(reject);
+  });
 }
 
 /** Splits a stored timestamp (ISO text or unix seconds/ms) into a local day number and clock time. */
@@ -283,7 +301,7 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-sm text-muted-foreground">Saved {studyTime(row.created_at, start)}</CardTitle>
+        <CardTitle className="text-sm text-muted-foreground">{studyTime(rowStamp(kind, row), start)}</CardTitle>
         {canEdit && !editing && (
           <Button size="sm" variant="outline" onClick={() => { setDraft({ ...row }); setEditing(true); }}>Edit / 编辑</Button>
         )}
