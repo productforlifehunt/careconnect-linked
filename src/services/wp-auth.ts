@@ -145,8 +145,13 @@ export async function wpValidateToken(): Promise<WPUser | null> {
 
     const exp = typeof payload.exp === 'number' ? payload.exp : null;
     if (exp && exp * 1000 <= Date.now()) {
-      wpLogout();
-      return null;
+      // Never silently sign out: try to renew the token first so the
+      // researcher session effectively never expires while the app is used.
+      const renewed = await wpRefreshToken();
+      if (!renewed) {
+        wpLogout();
+        return null;
+      }
     }
 
     const verifiedUser = await fetchCurrentWpUser(token);

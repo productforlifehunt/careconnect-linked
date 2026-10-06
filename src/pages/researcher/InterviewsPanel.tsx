@@ -281,10 +281,10 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate new translations and transcriptions / 生成新的翻译与转录
+              Generate New Translation and Transcription / 生成新的翻译与转录 (may take 20–30 minutes)
             </Button>
-            <Button variant={showArchive ? "secondary" : "outline"} onClick={() => setShowArchive(true)} disabled={!archive}>
-              <Archive className="mr-2 h-4 w-4" />Transcript archive / 转录归档
+            <Button variant="destructive" onClick={() => setShowArchive(true)} disabled={!archive}>
+              <Archive className="mr-2 h-4 w-4" />View Archived Translation and Transcription / 查看已归档的翻译与转录
             </Button>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
             {canEdit && complete && !running && lines.length > 0 && !showArchive && (
