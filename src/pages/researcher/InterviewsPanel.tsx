@@ -70,7 +70,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
   const current = items?.find((r) => r.path === selected);
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[320px_1fr]">
+    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <aside className="space-y-2">
         {canEdit && (
           <>
@@ -298,11 +298,11 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate New Translation and Transcription / 生成新的翻译与转录 (may take 20–30 minutes)
             </Button>
-            <Button variant="destructive" onClick={() => setShowArchive(true)} disabled={!archive}>
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive(true)} disabled={!archive}>
               <Archive className="mr-2 h-4 w-4" />View Archived Translation and Transcription / 查看已归档的翻译与转录
             </Button>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
