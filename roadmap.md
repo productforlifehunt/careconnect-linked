@@ -102,6 +102,6 @@
 - [ ] Match each of the 15 participants to the authoritative archived interview Q&A.
 - [ ] Check every Screening, Hourly, and Daily answer against the matching transcript; preserve explicit non-answers and blank unsupported fields.
 - [ ] Correct confirmed mismatches only through the WordPress/JetEngine visual interface.
-- [ ] Hide calendar dates in researcher Hourly/Daily displays while retaining AM/PM and clock time.
+- [x] Hide calendar dates in researcher Hourly/Daily displays while retaining AM/PM and clock time.
 - [ ] Verify all 15 participants in the researcher dashboard and report each result.
 
