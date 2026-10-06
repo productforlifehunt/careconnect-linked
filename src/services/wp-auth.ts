@@ -192,6 +192,18 @@ export async function wpRefreshToken(): Promise<boolean> {
 }
 
 /**
+ * Renews the token when it expires within `marginMs` (or already expired).
+ * Returns false when no usable token remains.
+ */
+export async function wpEnsureFreshToken(marginMs = 15 * 60 * 1000): Promise<boolean> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  const exp = decodeJwtPayload(token)?.exp;
+  if (typeof exp === 'number' && exp * 1000 - Date.now() > marginMs) return true;
+  return wpRefreshToken();
+}
+
+/**
  * Clear WP auth state.
  */
 export function wpLogout(): void {
