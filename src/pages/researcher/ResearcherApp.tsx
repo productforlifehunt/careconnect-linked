@@ -47,6 +47,8 @@ function isResearcher() {
 /** Researcher dashboard: every participant's answers; only the researcher account can edit. */
 export default function ResearcherApp() {
   const [signedIn, setSignedIn] = useState(isResearcher());
+  const initialTab = new URL(window.location.href).searchParams.get("tab") === "participants" ? "participants" : "interviews";
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -73,9 +75,6 @@ export default function ResearcherApp() {
     };
   }, [signedIn]);
 
-  const [showLogin, setShowLogin] = useState(false);
-  const initialTab = new URL(window.location.href).searchParams.get("tab") === "interviews" || !signedIn ? "interviews" : "participants";
-
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
@@ -84,26 +83,22 @@ export default function ResearcherApp() {
           {signedIn ? (
             <Button variant="ghost" size="sm" onClick={() => { wpLogout(); setSignedIn(false); }}>Sign out</Button>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => setShowLogin((v) => !v)}>Researcher sign in / 研究者登录</Button>
+            <Button variant="ghost" size="sm" onClick={() => setActiveTab("participants")}>Researcher sign in / 研究者登录</Button>
           )}
         </div>
       </header>
-      {showLogin && !signedIn ? (
-        <Login onDone={() => { setSignedIn(true); setShowLogin(false); }} />
-      ) : signedIn ? (
-        <Tabs defaultValue={initialTab}>
-          <div className="mx-auto max-w-5xl px-4 pt-4">
-            <TabsList>
-              <TabsTrigger value="participants">Participants / 参与者</TabsTrigger>
-              <TabsTrigger value="interviews">Interviews / 访谈记录</TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value="participants"><Dashboard /></TabsContent>
-          <TabsContent value="interviews"><InterviewsPanel canEdit /></TabsContent>
-        </Tabs>
-      ) : (
-        <InterviewsPanel canEdit={false} />
-      )}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="mx-auto max-w-5xl px-4 pt-4">
+          <TabsList>
+            <TabsTrigger value="participants">Participants / 参与者</TabsTrigger>
+            <TabsTrigger value="interviews">Interviews / 访谈记录</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="participants">
+          {signedIn ? <Dashboard /> : <Login onDone={() => setSignedIn(true)} />}
+        </TabsContent>
+        <TabsContent value="interviews"><InterviewsPanel canEdit={signedIn} /></TabsContent>
+      </Tabs>
     </div>
   );
 }
