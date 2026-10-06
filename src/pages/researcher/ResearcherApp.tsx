@@ -16,6 +16,22 @@ const RESEARCHER = "researcher";
 type Kind = "screening" | "hourly" | "daily";
 const CCT_NO: Record<Kind, string> = { screening: "318", hourly: "319", daily: "317" };
 
+// Use the exact identity wording from each saved interview title so the
+// participant list and interview archive cannot disagree about a person's name.
+const INTERVIEW_NAMES: Record<string, string> = {
+  "李婷": "Li Ting",
+  "张磊": "Zhang Lei",
+  "梁静": "Liang Jing",
+  "刘卫东": "Liu Weidong",
+  "梁国强": "Liang Guoqiang",
+  "王国强": "Wang Guoqiang",
+  "孙志强": "Sun Zhiqiang",
+  "王慧兰": "Wang Huilan",
+  "赵桂兰": "Zhao Guilan",
+  "王海涛": "Wang Hai Tao",
+  "钱建华": "Qian Jianhua",
+};
+
 interface Participant {
   id: string;
   name: string;
@@ -144,7 +160,12 @@ async function loadAll(): Promise<Participant[]> {
   const ids = [...map.keys()];
   if (ids.length) {
     const users = await wpAdminOps<{ id: number; name: string; email?: string }[]>("get_user_names", { ids }).catch(() => null);
-    (users || []).forEach((u) => { const p = map.get(String(u.id)); if (p) p.name = u.name || u.email || p.name; });
+    (users || []).forEach((u) => {
+      const p = map.get(String(u.id));
+      if (!p) return;
+      const storedName = u.name || u.email || p.name;
+      p.name = INTERVIEW_NAMES[storedName] || storedName;
+    });
   }
   map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))));
   return [...map.values()].filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0).sort((a, b) => Number(a.id) - Number(b.id));
@@ -198,7 +219,9 @@ function Dashboard() {
 }
 
 const HAN = /[\u4e00-\u9fff]/;
-const TR_CACHE_KEY = "researcher-auto-translation-v1";
+// Version 2 invalidates translations generated before this task was corrected
+// to the non-reasoning model configuration.
+const TR_CACHE_KEY = "researcher-auto-translation-v2";
 function readTrCache(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(TR_CACHE_KEY) || "{}"); } catch { return {}; }
 }
@@ -378,7 +401,7 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
                 <dd className="text-foreground whitespace-pre-wrap">{shown}</dd>
                 {isFree && (
                   <dd className="mt-1 rounded-md bg-muted px-3 py-2">
-                    <span className="block text-xs text-muted-foreground">Auto translation (ChatGPT-5-nano, long reasoning) / 自动翻译</span>
+                    <span className="block text-xs text-muted-foreground">Auto translation (ChatGPT 5 nano, non-reasoning) / 自动翻译（ChatGPT 5 nano，无推理）</span>
                     <span className="whitespace-pre-wrap text-foreground">{tr ?? (trError ? "Translation unavailable right now." : "Translating…")}</span>
                   </dd>
                 )}

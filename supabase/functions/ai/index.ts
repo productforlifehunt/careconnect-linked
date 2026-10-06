@@ -1198,7 +1198,7 @@ const TASKS = [
 ] as const;
 type AITask = typeof TASKS[number];
 
-// ═══ TRANSLATE: Chinese research answers → English (gpt-5-nano, high reasoning) ═══
+// ═══ TRANSLATE: Chinese research answers → English (gpt-5-nano, no reasoning) ═══
 async function handleTranslate(req: Request): Promise<Response> {
   const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   const key = Deno.env.get("LOVABLE_API_KEY");
@@ -1211,7 +1211,7 @@ async function handleTranslate(req: Request): Promise<Response> {
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "openai/gpt-5-nano",
-      reasoning_effort: "high",
+      reasoning_effort: "none",
       messages: [
         { role: "system", content: "Translate each Chinese caregiver diary answer into faithful, natural English. Keep names in pinyin with the Chinese in brackets on first use, keep meaning exact, add nothing. Return JSON." },
         { role: "user", content: JSON.stringify({ texts }) },
