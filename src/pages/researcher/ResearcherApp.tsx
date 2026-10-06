@@ -215,27 +215,27 @@ async function autoTranslate(texts: string[]): Promise<Record<string, string>> {
   return cache;
 }
 
-/** Local calendar day number (days since epoch) of a stored timestamp. */
-function dayNumber(value: unknown): number | null {
-  const m = String(value ?? "").match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (!m) return null;
-  return Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000);
+/** Splits a stored timestamp (ISO text or unix seconds/ms) into a local day number and clock time. */
+function parseStamp(value: unknown): { day: number | null; hour: number | null; minute: string } {
+  const text = String(value ?? "").trim();
+  if (/^\d{9,13}$/.test(text)) {
+    const d = new Date(text.length > 10 ? Number(text) : Number(text) * 1000);
+    return { day: Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000), hour: d.getHours(), minute: String(d.getMinutes()).padStart(2, "0") };
+  }
+  const m = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const t = text.match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);
+  return { day: m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000) : null, hour: t ? Number(t[1]) : null, minute: t ? t[2] : "" };
 }
 function studyStart(p: Participant): number | null {
-  const days = [...p.rows.hourly, ...p.rows.daily].map((r) => dayNumber(r.cct_created)).filter((d): d is number => d !== null);
+  const days = [...p.rows.hourly, ...p.rows.daily].map((r) => parseStamp(r.cct_created).day).filter((d): d is number => d !== null);
   return days.length ? Math.min(...days) : null;
 }
 function studyTime(value: unknown, start: number | null): string {
-  const text = String(value ?? "").trim();
-  const d = dayNumber(text);
+  const { day, hour, minute } = parseStamp(value);
   const parts: string[] = [];
-  if (d !== null && start !== null) parts.push(`Study day ${d - start + 1} / 研究第 ${d - start + 1} 天`);
-  const match = text.match(/(?:T|\s)(\d{1,2}):(\d{2})/);
-  if (match) {
-    const hour = Number(match[1]);
-    parts.push(`${hour < 12 ? "上午" : "下午"} ${hour % 12 || 12}:${match[2]}`);
-  }
-  return parts.length ? parts.join(" · ") : d !== null ? "" : text;
+  if (day !== null && start !== null) parts.push(`Study day ${day - start + 1} / 研究第 ${day - start + 1} 天`);
+  if (hour !== null) parts.push(`${hour < 12 ? "上午" : "下午"} ${hour % 12 || 12}:${minute}`);
+  return parts.length || day !== null ? parts.join(" · ") : String(value ?? "");
 }
 
 function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row: Record<string, any>; start: number | null; canEdit: boolean }) {
