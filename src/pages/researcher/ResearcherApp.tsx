@@ -167,7 +167,7 @@ async function loadAll(): Promise<Participant[]> {
       p.name = INTERVIEW_NAMES[storedName] || storedName;
     });
   }
-  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))));
+  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => compareStudyRows(k, a, b))));
   return [...map.values()].filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0).sort((a, b) => Number(a.id) - Number(b.id));
 }
 
@@ -209,7 +209,7 @@ function Dashboard() {
           {(["screening", "hourly", "daily"] as Kind[]).map((k) => (
             <TabsContent key={k} value={k} className="mt-4 space-y-3">
               {current.rows[k].length === 0 && <p className="text-muted-foreground">No answers yet.</p>}
-              {current.rows[k].map((row) => <AnswerCard key={row.id} kind={k} row={row} start={studyStart(current)} canEdit={isResearcher()} />)}
+              {current.rows[k].map((row, index) => <AnswerCard key={row.id} kind={k} row={row} start={studyStart(current)} studyDay={k === "daily" ? index + 1 : undefined} canEdit={isResearcher()} />)}
             </TabsContent>
           ))}
         </Tabs>
@@ -275,19 +275,34 @@ function rowStamp(kind: Kind, row: Record<string, any>): unknown {
   const dated = ESM_SPEC.find((i) => i.cct === CCT_NO[kind] && (i.type === "datetime" || i.type === "date") && parseStamp(row[i.column]).day !== null);
   return dated ? row[dated.column] : row.created_at;
 }
+/** Study answers run chronologically: day 1–7, then morning–evening within each day. */
+function compareStudyRows(kind: Kind, a: Record<string, any>, b: Record<string, any>): number {
+  const left = parseStamp(rowStamp(kind, a));
+  const right = parseStamp(rowStamp(kind, b));
+  const leftDay = left.day ?? Number.POSITIVE_INFINITY;
+  const rightDay = right.day ?? Number.POSITIVE_INFINITY;
+  if (leftDay !== rightDay) return leftDay - rightDay;
+  const leftMinutes = left.hour === null ? Number.POSITIVE_INFINITY : left.hour * 60 + Number(left.minute || 0);
+  const rightMinutes = right.hour === null ? Number.POSITIVE_INFINITY : right.hour * 60 + Number(right.minute || 0);
+  if (leftMinutes !== rightMinutes) return leftMinutes - rightMinutes;
+  const createdOrder = String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""));
+  if (createdOrder !== 0) return createdOrder;
+  return Number(a.id ?? a._ID ?? 0) - Number(b.id ?? b._ID ?? 0);
+}
 function studyStart(p: Participant): number | null {
   const days = [...p.rows.hourly.map((r) => rowStamp("hourly", r)), ...p.rows.daily.map((r) => rowStamp("daily", r))].map((v) => parseStamp(v).day).filter((d): d is number => d !== null);
   return days.length ? Math.min(...days) : null;
 }
-function studyTime(value: unknown, start: number | null): string {
+function studyTime(value: unknown, start: number | null, studyDay?: number): string {
   const { day, hour, minute } = parseStamp(value);
   const parts: string[] = [];
-  if (day !== null && start !== null) parts.push(`Study day ${day - start + 1} / 研究第 ${day - start + 1} 天`);
+  const displayedDay = studyDay ?? (day !== null && start !== null ? day - start + 1 : null);
+  if (displayedDay !== null) parts.push(`Study day ${displayedDay} / 研究第 ${displayedDay} 天`);
   if (hour !== null) parts.push(`${hour < 12 ? "上午" : "下午"} ${hour % 12 || 12}:${minute}`);
   return parts.length || day !== null ? parts.join(" · ") : String(value ?? "");
 }
 
-function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row: Record<string, any>; start: number | null; canEdit: boolean }) {
+function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind: Kind; row: Record<string, any>; start: number | null; studyDay?: number; canEdit: boolean }) {
   const items = useMemo(() => ESM_SPEC.filter((i) => i.cct === CCT_NO[kind]), [kind]);
   const [row, setRow] = useState(initialRow);
   const [editing, setEditing] = useState(false);
@@ -327,7 +342,7 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-sm text-muted-foreground">{studyTime(rowStamp(kind, row), start)}</CardTitle>
+        <CardTitle className="text-sm text-muted-foreground">{studyTime(rowStamp(kind, row), start, studyDay)}</CardTitle>
         {canEdit && !editing && (
           <Button size="sm" variant="outline" onClick={() => { setDraft({ ...row }); setEditing(true); }}>Edit / 编辑</Button>
         )}
