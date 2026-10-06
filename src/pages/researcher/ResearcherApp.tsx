@@ -216,13 +216,14 @@ function autoTranslate(texts: string[]): Promise<Record<string, string>> {
         try {
           const list = [...batch.texts];
           const c = readTrCache();
-          for (let i = 0; i < list.length; i += 20) {
-            const chunk = list.slice(i, i + 20);
+          const chunks: string[][] = [];
+          for (let i = 0; i < list.length; i += 4) chunks.push(list.slice(i, i + 4));
+          await Promise.all(chunks.map(async (chunk) => {
             const { data, error } = await supabase.functions.invoke("ai?task=chat-translate", { body: { texts: chunk } });
             if (error) throw error;
             const out: string[] = data?.translations || [];
             chunk.forEach((t, j) => { if (out[j]) c[t] = out[j]; });
-          }
+          }));
           try { localStorage.setItem(TR_CACHE_KEY, JSON.stringify(c)); } catch { /* full */ }
           batch.waiters.forEach((w) => w(c));
         } catch (e) { batch.fail.forEach((f) => f(e)); }
