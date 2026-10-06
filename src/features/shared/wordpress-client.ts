@@ -133,6 +133,13 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
           (/jwt/i.test(text) && /(invalid|expired|verification)/i.test(text)) ||
           /simple-jwt-login-middleware/i.test(text) ||
           /errorCode"\s*:\s*\d{1,2}/i.test(text); // simple-jwt-login auth error codes (incl. 14 = expired)
+        // The researcher page renews its own sign-in and must never be reloaded
+        // mid-edit (unsaved notes or a running transcript would be lost).
+        const onResearcherPage = typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("__site") === "researcher";
+        if (looksLikeAuthFailure && token && onResearcherPage) {
+          throw new Error("Session expired. Please log in again.");
+        }
         if (looksLikeAuthFailure && token) {
           localStorage.removeItem("cc_wp_token");
           localStorage.removeItem("cc_wp_user");
