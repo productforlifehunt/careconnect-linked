@@ -160,13 +160,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     if (archive && !window.confirm("A transcript archive already exists. Saving will overwrite it. Confirm? / 已有转录归档，保存将覆盖原有归档，确认覆盖？")) return;
     setSaving(true); setError("");
     try {
-      let savedArchive: TranscriptArchive | null = null;
-      await asResearcher(async () => { savedArchive = await saveTranscriptArchive(path, lines); });
-      if (!savedArchive) throw new Error("Archive could not be saved. / 归档保存失败");
-      const check = await loadTranscriptArchive(path);
-      if (!check || check.lines.length !== (savedArchive as TranscriptArchive).lines.length) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败");
-      setArchive(check);
-      setSaved(`Transcript archive saved (${check.lines.length} sentences) / 转录归档已保存（${check.lines.length} 句）`);
+      await asResearcher(async () => {
+        const savedArchive = await saveTranscriptArchive(path, lines);
+        const check = await loadTranscriptArchive(path);
+        if (!check || check.lines.length !== savedArchive.lines.length) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败");
+        setArchive(check);
+        setSaved(`Transcript archive saved (${check.lines.length} sentences) / 转录归档已保存（${check.lines.length} 句）`);
+      });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
@@ -180,7 +180,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     const action = retry.current;
     retry.current = null;
     if (!action) { setSaving(false); return; }
-    try { await action(); setSaved("Saved / 已保存"); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    try { await action(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
 
