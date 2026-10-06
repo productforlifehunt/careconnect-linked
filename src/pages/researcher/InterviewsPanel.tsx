@@ -14,6 +14,21 @@ import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
+const interviewOrder = (a: Recording, b: Recording) => {
+  const parse = (recording: Recording) => {
+    const title = titleOf(recording);
+    const network = title.match(/\bNetwork\s*(\d+)/i);
+    const caregiver = title.match(/\bCaregiver\s*(\d+)/i);
+    return {
+      network: network ? Number(network[1]) : Number.POSITIVE_INFINITY,
+      caregiver: caregiver ? Number(caregiver[1]) : Number.POSITIVE_INFINITY,
+      title,
+    };
+  };
+  const left = parse(a);
+  const right = parse(b);
+  return left.network - right.network || left.caregiver - right.caregiver || left.title.localeCompare(right.title);
+};
 
 /**
  * Interview records. Anyone with the page can listen and regenerate transcripts;
@@ -26,7 +41,11 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const refresh = () => listRecordings().then((d) => { setItems(d); setSelected((s) => (s && d.some((r) => r.path === s) ? s : d[0]?.path || "")); }).catch((e) => setError(e.message));
+  const refresh = () => listRecordings().then((d) => {
+    const ordered = [...d].sort(interviewOrder);
+    setItems(ordered);
+    setSelected((s) => (s && ordered.some((r) => r.path === s) ? s : ordered[0]?.path || ""));
+  }).catch((e) => setError(e.message));
   useEffect(() => { refresh(); }, []);
   useEffect(() => {
     if (!selected) return;
@@ -51,7 +70,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
   const current = items?.find((r) => r.path === selected);
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[240px_1fr]">
+    <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[320px_1fr]">
       <aside className="space-y-2">
         {canEdit && (
           <>
@@ -68,7 +87,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
         {items?.map((r) => (
           <button key={r.path} onClick={() => setSelected(r.path)}
             className={`w-full rounded-md px-3 py-2 text-left text-sm ${r.path === selected ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}>
-            <div className="truncate font-medium">{titleOf(r)}</div>
+             <div className="whitespace-normal break-words font-medium leading-snug">{titleOf(r)}</div>
             <div className="text-xs opacity-80">{mb(r.size)}</div>
           </button>
         ))}
