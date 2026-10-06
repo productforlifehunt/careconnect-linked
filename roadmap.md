@@ -107,8 +107,8 @@
 
 # Context-mapping sticky-note logic corrections
 
-- [ ] Leave Zhang Lei and Li Ting unchanged.
-- [ ] Re-review Zhao Guilan through Liu Weidong conservatively: preserve approximately coherent informal-chat details and change only clear interview conflicts or obviously unrelated answers.
-- [ ] Apply every confirmed correction through the researcher editing interface, without deleting or renumbering any CCT or relation.
-- [ ] Reopen every changed record and verify the saved values person by person.
+- [x] Leave Zhang Lei and Li Ting unchanged.
+- [x] Re-review Zhao Guilan through Liu Weidong conservatively: preserve approximately coherent informal-chat details and change only clear interview conflicts or obviously unrelated answers.
+- [x] Apply every confirmed correction through the researcher editing interface, without deleting or renumbering any CCT or relation.
+- [x] Reopen every changed record and verify the saved values person by person.
 
