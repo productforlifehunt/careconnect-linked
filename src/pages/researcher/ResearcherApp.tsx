@@ -219,7 +219,9 @@ function Dashboard() {
 }
 
 const HAN = /[\u4e00-\u9fff]/;
-const TR_CACHE_KEY = "researcher-auto-translation-v1";
+// Version 2 invalidates translations generated before this task was corrected
+// to the non-reasoning model configuration.
+const TR_CACHE_KEY = "researcher-auto-translation-v2";
 function readTrCache(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(TR_CACHE_KEY) || "{}"); } catch { return {}; }
 }
@@ -399,7 +401,7 @@ function AnswerCard({ kind, row: initialRow, start, canEdit }: { kind: Kind; row
                 <dd className="text-foreground whitespace-pre-wrap">{shown}</dd>
                 {isFree && (
                   <dd className="mt-1 rounded-md bg-muted px-3 py-2">
-                    <span className="block text-xs text-muted-foreground">Auto translation (ChatGPT-5-nano, non-reasoning) / 自动翻译（ChatGPT-5-nano，无推理）</span>
+                    <span className="block text-xs text-muted-foreground">Auto translation (ChatGPT 5 nano, non-reasoning) / 自动翻译（ChatGPT 5 nano，无推理）</span>
                     <span className="whitespace-pre-wrap text-foreground">{tr ?? (trError ? "Translation unavailable right now." : "Translating…")}</span>
                   </dd>
                 )}
