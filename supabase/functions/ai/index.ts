@@ -1194,9 +1194,36 @@ async function handleTranscribe(req: Request): Promise<Response> {
 const TASKS = [
   "chat-chat", "chat-vision", "chat-voice",
   "vision-chat", "vision-vision", "vision-voice",
-  "voice-chat", "voice-vision",
+  "voice-chat", "voice-vision", "chat-translate",
 ] as const;
 type AITask = typeof TASKS[number];
+
+// ═══ TRANSLATE: Chinese research answers → English (gpt-5-nano, high reasoning) ═══
+async function handleTranslate(req: Request): Promise<Response> {
+  const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) return json({ error: "AI not configured" }, 500);
+  let texts: string[] = [];
+  try { const b = await req.json(); texts = Array.isArray(b?.texts) ? b.texts.map((t: unknown) => String(t ?? "").slice(0, 4000)).slice(0, 60) : []; } catch { /* empty */ }
+  if (!texts.length) return json({ translations: [] });
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "openai/gpt-5-nano",
+      reasoning_effort: "high",
+      messages: [
+        { role: "system", content: "Translate each Chinese caregiver diary answer into faithful, natural English. Keep names in pinyin with the Chinese in brackets on first use, keep meaning exact, add nothing. Return JSON." },
+        { role: "user", content: JSON.stringify({ texts }) },
+      ],
+      response_format: { type: "json_schema", json_schema: { name: "translations", strict: true, schema: { type: "object", additionalProperties: false, required: ["translations"], properties: { translations: { type: "array", items: { type: "string" } } } } } },
+    }),
+  });
+  if (!res.ok) { const t = await res.text(); console.error("translate error", res.status, t); return json({ error: `AI ${res.status}` }, res.status === 402 || res.status === 429 ? res.status : 502); }
+  const data = await res.json();
+  try { const out = JSON.parse(data?.choices?.[0]?.message?.content || "{}"); return json({ translations: out.translations || [] }); }
+  catch { return json({ error: "bad AI output" }, 502); }
+}
 
 function parseTasks(url: URL): AITask[] {
   const raw = (url.searchParams.get("task") || "").toLowerCase();
@@ -1223,6 +1250,8 @@ serve(async (req) => {
   if (tasks.includes("chat-voice")) return handleVoice(req);
 
   if (tasks.includes("voice-chat")) return handleTranscribe(req);
+
+  if (tasks.includes("chat-translate")) return handleTranslate(req);
 
   if (tasks.includes("chat-chat")) {
     // Streaming is the default; body.stream === false gives a single JSON reply.
