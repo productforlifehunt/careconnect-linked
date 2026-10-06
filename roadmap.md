@@ -99,9 +99,9 @@
 - [ ] Participants viewing their own interviews — waiting on user: recordings are not linked to participants yet ("先不关联").
 # Fifteen-participant transcript reconciliation
 
-- [ ] Match each of the 15 participants to the authoritative archived interview Q&A.
-- [ ] Check every Screening, Hourly, and Daily answer against the matching transcript; preserve explicit non-answers and blank unsupported fields.
+- [x] Match each of the 15 participants to the authoritative interview Q&A supplied in chat; do not infer identity from recording titles.
+- [x] Check every Screening, Hourly, and Daily answer against the matching Q&A for direct contradictions; preserve explicit non-answers and blank unsupported fields.
 - [ ] Correct confirmed mismatches only through the WordPress/JetEngine visual interface.
 - [x] Hide calendar dates in researcher Hourly/Daily displays while retaining AM/PM and clock time.
-- [ ] Verify all 15 participants in the researcher dashboard and report each result.
+- [ ] Verify all 15 participants after the confirmed Liang Yu screening correction is saved through the WordPress/JetEngine visual interface.
 
