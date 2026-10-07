@@ -193,6 +193,8 @@ ATTITUDE_EN.forEach((text, index) => { ZH[text] = ATTITUDE_ZH[index]; });
 
 export function translateSurveyText(text: string | undefined, isChinese: boolean): string | undefined {
   if (!text || !isChinese) return text;
+  // Exact match first, so labels that start with a number ("6 months - 1 year") keep it.
+  if (ZH[text.trim()]) return ZH[text.trim()];
   const clean = text.replace(/^\d+(?:\.\d+)*\s+/, "").trim();
   if (ZH[clean]) return ZH[clean];
   const caseInsensitive = Object.entries(ZH).find(([english]) => english.toLocaleLowerCase() === clean.toLocaleLowerCase());
