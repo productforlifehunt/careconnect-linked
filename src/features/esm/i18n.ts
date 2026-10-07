@@ -34,6 +34,8 @@ const ZH: Record<string, string> = {
   "Employment Status": "就业状况", "Marital Status": "婚姻状况", "Self-Rated Health": "自评健康状况",
   "Relationship to Care Recipient": "与被护理者的关系", "Other detail": "其他情况说明",
   "Duration of Caregiving": "已照护多长时间", "Hours of Care Per Week": "每周照护时长",
+  "If you provide round-the-clock or almost round-the-clock care, enter 24 × 7 = 168. If you only care during the day, or for a certain number of hours a day, enter an approximate daily number × 7.":
+    "如果您是全天候看护，或基本全天看护，可以填写 24 小时 × 7 = 168。如果您只是白天照顾，或每天平均照顾若干小时，可以填写每天大概的小时数 × 7。",
   "Distance from Care Recipient": "与被护理者的居住距离", "Care Recipient Age": "被护理者年龄",
   "Care Recipient Gender": "被护理者性别", "Type of Dementia": "失智症类型",
   "Years Since Diagnosis": "确诊至今的年数", "Dementia Stage (Clinical Dementia Rating)": "失智症阶段",

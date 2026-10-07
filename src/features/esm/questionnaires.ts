@@ -38,6 +38,10 @@ const otherValues = (parent: SpecItem | undefined): string[] =>
 
 const byId = new Map(ESM_SPEC.map((item) => [item.id, item]));
 
+/** Hint shown under the weekly care hours questions. */
+export const HOURS_HELP =
+  "If you provide round-the-clock or almost round-the-clock care, enter 24 × 7 = 168. If you only care during the day, or for a certain number of hours a day, enter an approximate daily number × 7.";
+
 function toQuestion(item: SpecItem): Question {
   const type: Question["type"] =
     item.type === "datetime"
@@ -63,6 +67,9 @@ function toQuestion(item: SpecItem): Question {
     question.text = "Who was involved?";
     question.help =
       "Add the people who took part. Each person is saved once and can be picked again in later entries.";
+  }
+  if (item.id === "c318_a10" || item.id === "c318_a140") {
+    question.help = HOURS_HELP;
   }
   if (item.id === "c319_a03") {
     question.showIf = { id: "c319_a01", equals: ["b02"] };
