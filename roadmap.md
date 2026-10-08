@@ -1,3 +1,8 @@
+## Screening question provenance labels
+
+- [x] Add Chinese translations and original questionnaire/item references to all 146 researcher screening fields, including editing mode.
+- [x] Verify source mapping against the supplied questionnaire; explicitly retain unnumbered ADL/IADL, single-item 1.6, shared 2.1.2 and Other follow-up references. Real researcher login confirmed Age, ADL, ADKS30, DAS20 and editing labels; build OK.
+
 ## Knowledge-topic archive documentation
 
 - [x] Replace the outdated five-topic rows with the verified frontend article, CCT217 anchor, CCT218 note, REL255/256, and link-snapshot facts.
