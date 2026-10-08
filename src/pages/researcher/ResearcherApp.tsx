@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wpLogin, wpLogout, getStoredWPUser, wpRefreshToken, wpEnsureFreshToken } from "@/services/wp-auth";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { ESM_SPEC } from "@/features/esm/spec.generated";
+import { screeningSource } from "@/features/esm/screening-source";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
 import { wpAdminOps } from "@/services/woocommerce-api";
 import InterviewsPanel from "./InterviewsPanel";
@@ -405,6 +406,18 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
         {saveError && <p className="mb-2 text-sm text-destructive">{saveError}</p>}
         <dl className="space-y-2 text-sm">
           {items.map((item) => {
+            const source = kind === "screening" ? screeningSource(item) : null;
+            const title = (
+              <>
+                <span className="block">{item.label}{source && ` / ${source.chineseLabel}`}</span>
+                {source && (
+                  <span className="mt-1 block text-xs leading-relaxed">
+                    <span className="block">{source.source}</span>
+                    <span className="block">{source.reference}</span>
+                  </span>
+                )}
+              </>
+            );
             if (editing) {
               const v = draft[item.column] ?? "";
               const set = (val: any) => setDraft((d) => ({ ...d, [item.column]: val }));
@@ -435,7 +448,7 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
               }
               return (
                 <div key={item.id}>
-                  <dt className="mb-1 text-muted-foreground">{item.label}</dt>
+                  <dt className="mb-1 text-muted-foreground">{title}</dt>
                   <dd>{field}</dd>
                 </div>
               );
@@ -460,7 +473,7 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
             const tr = isFree ? translations[String(v)] : undefined;
             return (
               <div key={item.id}>
-                <dt className="text-muted-foreground">{item.label}</dt>
+                <dt className="text-muted-foreground">{title}</dt>
                 <dd className="text-foreground whitespace-pre-wrap">{shown}</dd>
                 {isFree && (
                   <dd className="mt-1 rounded-md bg-muted px-3 py-2">

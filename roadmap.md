@@ -1,3 +1,8 @@
+## Screening question provenance labels
+
+- [ ] Add Chinese translations and original questionnaire/item references to every researcher screening title, including editing mode.
+- [ ] Verify all screening references against the supplied original questionnaire and check the rendered page.
+
 ## Knowledge-topic archive documentation
 
 - [x] Replace the outdated five-topic rows with the verified frontend article, CCT217 anchor, CCT218 note, REL255/256, and link-snapshot facts.
