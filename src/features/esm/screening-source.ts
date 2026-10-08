@@ -1,6 +1,11 @@
 import { ESM_SPEC, type SpecItem } from "./spec.generated";
 import { translateSurveyText } from "./i18n";
 
+/** Only cite explicitly defined scale bounds, never infer them from option codes. */
+export function scaleRangeLabel(item: SpecItem): string | null {
+  return item.scale ? `Scale / 量表范围：${item.scale.min}–${item.scale.max}` : null;
+}
+
 /** Original document references, not storage IDs or generated answer-key order. */
 export function screeningSource(item: SpecItem) {
   const heading = item.block || item.group;
