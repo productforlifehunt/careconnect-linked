@@ -6,18 +6,18 @@ import { screeningItemsForRole, screeningRole, screeningSource } from "@/feature
 describe("role-specific researcher screening", () => {
   it("primary ends at DAS20 and excludes every secondary personal question", () => {
     const items = screeningItemsForRole("primary");
-    expect(items).toHaveLength(133);
+    expect(items).toHaveLength(135);
     expect(items.at(-1)?.label).toBe("I would like to get to know people with dementia better.");
     expect(items.every((i) => i.group.startsWith("1."))).toBe(true);
   });
-  it("secondary contains 13 personal items followed by all 30 ADKS and 20 DAS", () => {
+  it("secondary contains 11 personal fields including follow-ups, then all 30 ADKS and 20 DAS", () => {
     const items = screeningItemsForRole("secondary");
-    expect(items).toHaveLength(63);
+    expect(items).toHaveLength(61);
     expect(items.filter((i) => i.code.startsWith("1.7.1."))).toHaveLength(30);
     expect(items.filter((i) => i.code.startsWith("1.7.2."))).toHaveLength(20);
-    expect(items.slice(0, 13).every((i) => i.group.startsWith("2."))).toBe(true);
+    expect(items.slice(0, 11).every((i) => i.group.startsWith("2."))).toBe(true);
     expect(items.every((i) => i.group.startsWith("2.") || i.code.startsWith("1.7."))).toBe(true);
-    for (const item of items.slice(13)) {
+    for (const item of items.slice(11)) {
       const source = screeningSource(item, "secondary");
       expect(source.source).toContain("Secondary caregiver screening");
       expect(source.reference).toContain("Original section 2.2.");
@@ -38,7 +38,7 @@ describe("role-specific researcher screening", () => {
       expect(screen.getByText((text) => text.startsWith("I would like to get to know people with dementia better."))).toBeTruthy();
       fireEvent.click(screen.getByRole("button", { name: "Edit / 编辑" }));
       expect(screen.queryByText((text) => text.startsWith(forbidden))).toBeNull();
-      expect(document.querySelectorAll("dt")).toHaveLength(role === "primary" ? 133 : 63);
+      expect(document.querySelectorAll("dt")).toHaveLength(role === "primary" ? 135 : 61);
       cleanup();
     });
   }
