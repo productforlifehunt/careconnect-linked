@@ -1,3 +1,4 @@
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,8 @@ interface Participant {
   rows: Record<Kind, Record<string, any>[]>;
 }
 
+const PROTECTED_RECORDINGS = new Set(["1790784395705_69.wav"]);
+
 function isResearcher() {
   return getStoredWPUser()?.user_login === RESEARCHER;
 }
@@ -77,6 +80,22 @@ export default function ResearcherApp() {
     };
   }, [signedIn]);
 
+  const rec = new URL(window.location.href).searchParams.get("rec") || "";
+  if (!signedIn && PROTECTED_RECORDINGS.has(rec)) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background px-4 text-center">
+        <h1 className="text-xl font-semibold text-foreground">This site is under construction / 本页面正在建设中</h1>
+        <p className="text-sm text-muted-foreground">Only the admin can sign in. / 仅管理员可登录。</p>
+        <Dialog open>
+          <DialogContent className="[&>button]:hidden">
+            <DialogTitle>Admin sign in / 管理员登录</DialogTitle>
+            <Login onDone={() => setSignedIn(true)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
@@ -99,7 +118,7 @@ export default function ResearcherApp() {
         <TabsContent value="participants">
           {signedIn ? <Dashboard /> : <Login onDone={() => setSignedIn(true)} />}
         </TabsContent>
-        <TabsContent value="interviews"><InterviewsPanel canEdit={signedIn} /></TabsContent>
+        <TabsContent value="interviews"><InterviewsPanel key={String(signedIn)} canEdit={signedIn} /></TabsContent>
       </Tabs>
     </div>
   );

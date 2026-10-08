@@ -12,7 +12,7 @@ const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
 const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
 // Leaked links: these recordings are disabled for everyone (play, list, archive).
-const DISABLED = new Set(["1790784395705_69.wav"]);
+const PROTECTED = new Set(["1790784395705_69.wav"]);
 
 export interface Meta { title: string; notes: string; instructions: string }
 interface Line { s: "A" | "B"; zh: string; en: string; t: number }
@@ -33,10 +33,13 @@ Deno.serve(async (req) => {
     return { title: String(m.title || ""), notes: String(m.notes || ""), instructions: String(m.instructions || "") };
   };
 
+  const researcher = await isResearcher(req).catch(() => false);
+  const locked = (p: string) => PROTECTED.has(p) && !researcher;
+
   if (body.action === "list") {
     const { data, error } = await store.list("", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
     if (error) return json({ error: error.message }, 500);
-    const files = (data || []).filter((f) => f.id && !DISABLED.has(f.name));
+    const files = (data || []).filter((f) => f.id && !locked(f.name));
     const metas = await Promise.all(files.map((f) => readMeta(f.name)));
     return json({
       items: files.map((f, i) => ({
@@ -51,7 +54,8 @@ Deno.serve(async (req) => {
 
   if (body.action === "play_url") {
     const path = String(body.path || "");
-    if (!validPath(path) || DISABLED.has(path)) return json({ error: "Invalid recording" }, 400);
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (locked(path)) return json({ error: "protected", protected: true }, 403);
     const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
     if (error) return json({ error: error.message }, 404);
     return json({ url: data.signedUrl });
@@ -59,14 +63,15 @@ Deno.serve(async (req) => {
 
   if (body.action === "load_archive") {
     const path = String(body.path || "");
-    if (!validPath(path) || DISABLED.has(path)) return json({ error: "Invalid recording" }, 400);
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (locked(path)) return json({ error: "protected", protected: true }, 403);
     const { data, error } = await store.download(`archive/${path}.json`);
     if (error || !data) return json({ archive: null });
     const archive = await data.text().then((text) => JSON.parse(text)).catch(() => null);
     return json({ archive });
   }
 
-  if (!(await isResearcher(req))) return json({ error: "Only the researcher can add or edit recordings." }, 403);
+  if (!researcher) return json({ error: "Only the researcher can add or edit recordings." }, 403);
 
   if (body.action === "upload_url") {
     const name = String(body.name || "").trim();
