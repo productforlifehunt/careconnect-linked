@@ -1,18 +1,38 @@
 import { ESM_SPEC, type SpecItem } from "./spec.generated";
 import { translateSurveyText } from "./i18n";
 
+export type ScreeningRole = "primary" | "secondary";
+
+/** Interview role takes priority over legacy rows containing both personal sections. */
+export function screeningRole(name: string, row: Record<string, unknown>): ScreeningRole | null {
+  if (/\bSecondary caregiver\b/i.test(name)) return "secondary";
+  if (/\bPrimary caregiver\b/i.test(name)) return "primary";
+  const primaryAge = Number(row.a02) > 0;
+  const secondaryAge = Number(row.a134) > 0;
+  return primaryAge === secondaryAge ? null : primaryAge ? "primary" : "secondary";
+}
+
+export function screeningItemsForRole(role: ScreeningRole): SpecItem[] {
+  const personal = ESM_SPEC.filter((item) => item.cct === "318" && item.group.startsWith(role === "primary" ? "1." : "2."));
+  return role === "primary" ? personal : [
+    ...personal,
+    ...ESM_SPEC.filter((item) => item.cct === "318" && item.code.startsWith("1.7.")),
+  ];
+}
+
 /** Only cite explicitly defined scale bounds, never infer them from option codes. */
 export function scaleRangeLabel(item: SpecItem): string | null {
   return item.scale ? `Scale / 量表范围：${item.scale.min}–${item.scale.max}` : null;
 }
 
 /** Original document references, not storage IDs or generated answer-key order. */
-export function screeningSource(item: SpecItem) {
-  const heading = item.block || item.group;
+export function screeningSource(item: SpecItem, role?: ScreeningRole | null) {
+  const sharedSecondary = role === "secondary" && item.code.startsWith("1.7.");
+  const heading = sharedSecondary ? (item.block || item.group).replace(/^1\.7\./, "2.2.") : item.block || item.group;
   const headingCode = heading.match(/^\d+(?:\.\d+)*/)?.[0] ?? "";
   const name = heading.replace(/^\d+(?:\.\d+)*\s+/, "");
   const chineseName = translateSurveyText(name, true) ?? name;
-  const root = item.group.startsWith("2.")
+  const root = role === "secondary" || item.group.startsWith("2.")
     ? "Secondary caregiver screening / 其他护理者初筛"
     : "Primary caregiver screening / 主护理者初筛";
   // ADL/IADL items are unnumbered in the original. Their generated `code`
@@ -35,7 +55,9 @@ export function screeningSource(item: SpecItem) {
   return {
     chineseLabel: translateSurveyText(item.label, true) ?? item.label,
     source: `${root} · ${name} / ${chineseName}`,
-    reference: unnumbered
+    reference: sharedSecondary
+      ? `Original section ${headingCode}, item ${position} (shared original question ${item.code}) / 原问卷 ${headingCode} 节，第 ${position} 题（共用原题 ${item.code}）`
+      : unnumbered
       ? `Original section ${reference}, listed item ${position} / 原问卷 ${reference} 节，第 ${position} 项（原文未单独编号）`
       : singleSectionItem
         ? "Original section 1.6, sole item / 原问卷 1.6 节，唯一题目（原文未单独编号）"
