@@ -11,6 +11,8 @@ import { isResearcher } from "../_shared/wp-researcher.ts";
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
 const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
+// Leaked links: these recordings are disabled for everyone (play, list, archive).
+const DISABLED = new Set(["1790784395705_69.wav"]);
 
 export interface Meta { title: string; notes: string; instructions: string }
 interface Line { s: "A" | "B"; zh: string; en: string; t: number }
