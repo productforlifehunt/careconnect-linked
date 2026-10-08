@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wpLogin, wpLogout, getStoredWPUser, wpRefreshToken, wpEnsureFreshToken } from "@/services/wp-auth";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { ESM_SPEC } from "@/features/esm/spec.generated";
-import { screeningSource } from "@/features/esm/screening-source";
+import { screeningSource, scaleRangeLabel } from "@/features/esm/screening-source";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
 import { wpAdminOps } from "@/services/woocommerce-api";
 import InterviewsPanel from "./InterviewsPanel";
@@ -407,9 +407,11 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
         <dl className="space-y-2 text-sm">
           {items.map((item) => {
             const source = kind === "screening" ? screeningSource(item) : null;
+            const range = scaleRangeLabel(item);
             const title = (
               <>
                 <span className="block">{item.label}{source && ` / ${source.chineseLabel}`}</span>
+                {range && <span className="block text-xs font-medium leading-relaxed text-foreground">{range}</span>}
                 {source && (
                   <span className="mt-1 block text-xs leading-relaxed">
                     <span className="block">{source.source}</span>
