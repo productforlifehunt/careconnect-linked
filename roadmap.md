@@ -3,6 +3,7 @@
 - [x] Separate researcher primary/secondary viewing and editing using original Sections 1 and 2, preserve shared ADKS/DAS, and verify role boundaries with mixed legacy records. Rendered-component tests verify both viewing and editing; 190/190 tests pass, build OK. Primary ends at DAS20; secondary uses 2.1 then all 50 shared items with 2.2 provenance. Stored answers untouched.
 - [x] Add Chinese translations and original questionnaire/item references to all 146 researcher screening fields, including editing mode.
 - [x] Verify source mapping against the supplied questionnaire; explicitly retain unnumbered ADL/IADL, single-item 1.6, shared 2.1.2 and Other follow-up references. Real researcher login confirmed Age, ADL, ADKS30, DAS20 and editing labels; build OK.
+- [x] Correct secondary-caregiver provenance to the uploaded numbering exactly: Education Level is unnumbered in Section 2.1; personal items retain 2.1.1–2.1.8; shared scales cite only Sections 2.2.1/2.2.2 and their listed item positions.
 
 ## Knowledge-topic archive documentation
 

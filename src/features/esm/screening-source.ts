@@ -38,6 +38,10 @@ export function screeningSource(item: SpecItem, role?: ScreeningRole | null) {
   // ADL/IADL items are unnumbered in the original. Their generated `code`
   // incorrectly inherits 1.2.6, so cite the actual section and listed position.
   const unnumbered = headingCode === "1.2.7" || headingCode === "1.2.8";
+  // The supplied Section 2.1 source numbers Age and Gender, then leaves
+  // Education Level unnumbered before continuing at 2.1.3. Do not inherit
+  // Gender's generated duplicate code.
+  const unnumberedSecondaryEducation = role === "secondary" && item.id === "c318_a136";
   const singleSectionItem = item.code === "1.6";
   const position = unnumbered
     ? ESM_SPEC.filter((candidate) => candidate.cct === item.cct && candidate.block === heading).findIndex((candidate) => candidate.id === item.id) + 1
@@ -49,14 +53,14 @@ export function screeningSource(item: SpecItem, role?: ScreeningRole | null) {
       ? " · Caregiver distress / 护理者困扰"
       : / severity$/.test(item.label)
         ? " · Severity / 严重程度"
-        : item.code === "2.1.2"
-          ? " · Shared original number / 原文两项共用此题号"
-          : "";
+        : "";
   return {
     chineseLabel: translateSurveyText(item.label, true) ?? item.label,
     source: `${root} · ${name} / ${chineseName}`,
     reference: sharedSecondary
-      ? `Original section ${headingCode}, item ${position} (shared original question ${item.code}) / 原问卷 ${headingCode} 节，第 ${position} 题（共用原题 ${item.code}）`
+      ? `Original section ${headingCode}, item ${position} / 原问卷 ${headingCode} 节，第 ${position} 题`
+      : unnumberedSecondaryEducation
+        ? "Original section 2.1, Education Level (unnumbered) / 原问卷 2.1 节，教育程度（原文未单独编号）"
       : unnumbered
       ? `Original section ${reference}, listed item ${position} / 原问卷 ${reference} 节，第 ${position} 项（原文未单独编号）`
       : singleSectionItem
