@@ -1,5 +1,6 @@
 ## Screening question provenance labels
 
+- [x] Separate researcher primary/secondary viewing and editing using original Sections 1 and 2, preserve shared ADKS/DAS, and verify role boundaries with mixed legacy records. Rendered-component tests verify both viewing and editing; 190/190 tests pass, build OK. Primary ends at DAS20; secondary uses 2.1 then all 50 shared items with 2.2 provenance. Stored answers untouched.
 - [x] Add Chinese translations and original questionnaire/item references to all 146 researcher screening fields, including editing mode.
 - [x] Verify source mapping against the supplied questionnaire; explicitly retain unnumbered ADL/IADL, single-item 1.6, shared 2.1.2 and Other follow-up references. Real researcher login confirmed Age, ADL, ADKS30, DAS20 and editing labels; build OK.
 
@@ -35,7 +36,7 @@
 - [x] Update the supported questionnaire fields through the WordPress/JetEngine interface only; blank unsupported or unasked answers through the interface.
 - [x] Second batch (梁静, 钱建华, 陈志明, 林小梅; re-sent 孙志强/孙思敏/王慧兰/赵桂兰/王海涛 identical) corrected and re-read in WordPress.
 - [x] Verify every corrected participant and every changed answer in the researcher dashboard against the interview transcript (15/15 read).
-- [ ] Waiting on user: should 梁国强/赵桂兰/孙志强 primary records keep the secondary-member section answers? Symptom distress shown as 0 where the interview gave no rating.
+- [x] User clarified role-specific questionnaire display: primary records hide secondary-member fields in viewing and editing; existing stored answers remain untouched.
 
 ## ChallengeD Logo consistency
 

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { wpLogin, wpLogout, getStoredWPUser, wpRefreshToken, wpEnsureFreshToken } from "@/services/wp-auth";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { ESM_SPEC } from "@/features/esm/spec.generated";
-import { screeningSource, scaleRangeLabel } from "@/features/esm/screening-source";
+import { screeningSource, scaleRangeLabel, screeningRole, screeningItemsForRole } from "@/features/esm/screening-source";
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
 import { wpAdminOps } from "@/services/woocommerce-api";
 import InterviewsPanel from "./InterviewsPanel";
@@ -233,7 +233,7 @@ function Dashboard() {
           {(["screening", "hourly", "daily"] as Kind[]).map((k) => (
             <TabsContent key={k} value={k} className="mt-4 space-y-3">
               {current.rows[k].length === 0 && <p className="text-muted-foreground">No answers yet.</p>}
-              {current.rows[k].map((row, index) => <AnswerCard key={row.id} kind={k} row={row} start={studyStart(current)} studyDay={k === "daily" ? index + 1 : undefined} canEdit={isResearcher()} />)}
+              {current.rows[k].map((row, index) => <AnswerCard key={row.id} kind={k} row={row} participantName={current.name} start={studyStart(current)} studyDay={k === "daily" ? index + 1 : undefined} canEdit={isResearcher()} />)}
             </TabsContent>
           ))}
         </Tabs>
@@ -326,8 +326,11 @@ function studyTime(value: unknown, start: number | null, studyDay?: number): str
   return parts.length || day !== null ? parts.join(" · ") : String(value ?? "");
 }
 
-function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind: Kind; row: Record<string, any>; start: number | null; studyDay?: number; canEdit: boolean }) {
-  const items = useMemo(() => ESM_SPEC.filter((i) => i.cct === CCT_NO[kind]), [kind]);
+export function AnswerCard({ kind, row: initialRow, participantName = "", start, studyDay, canEdit }: { kind: Kind; row: Record<string, any>; participantName?: string; start: number | null; studyDay?: number; canEdit: boolean }) {
+  const role = kind === "screening" ? screeningRole(participantName, initialRow) : null;
+  const items = useMemo(() => kind === "screening"
+    ? role ? screeningItemsForRole(role) : []
+    : ESM_SPEC.filter((i) => i.cct === CCT_NO[kind]), [kind, role]);
   const [row, setRow] = useState(initialRow);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, any>>({});
@@ -403,10 +406,11 @@ function AnswerCard({ kind, row: initialRow, start, studyDay, canEdit }: { kind:
         )}
       </CardHeader>
       <CardContent>
+        {kind === "screening" && !role && <p className="text-sm text-destructive">Caregiver role cannot be determined from this record. / 此记录无法确定护理者角色。</p>}
         {saveError && <p className="mb-2 text-sm text-destructive">{saveError}</p>}
         <dl className="space-y-2 text-sm">
           {items.map((item) => {
-            const source = kind === "screening" ? screeningSource(item) : null;
+            const source = kind === "screening" ? screeningSource(item, role) : null;
             const range = scaleRangeLabel(item);
             const title = (
               <>
