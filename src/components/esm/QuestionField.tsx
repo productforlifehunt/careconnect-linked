@@ -21,7 +21,7 @@ interface Props {
   value: AnswerValue;
   onChange: (value: AnswerValue) => void;
   /** Extra options merged in at runtime, e.g. the participant's care network. */
-  extraOptions?: { value: string; label: string }[];
+  extraOptions?: { value: string; label: string }[] | undefined;
 }
 
 export function QuestionField({ question, value, onChange, extraOptions }: Props) {

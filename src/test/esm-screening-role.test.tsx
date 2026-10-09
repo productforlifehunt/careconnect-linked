@@ -27,17 +27,17 @@ describe("role-specific researcher screening", () => {
   it("secondary provenance follows the supplied Section 2.1 numbering exactly", () => {
     const items = screeningItemsForRole("secondary").slice(0, 11);
     const references = Object.fromEntries(items.map((item) => [item.id, screeningSource(item, "secondary").reference]));
-    expect(references.c318_a134).toContain("Original question 2.1.1");
-    expect(references.c318_a135).toContain("Original question 2.1.2");
-    expect(references.c318_a136).toBe("Original section 2.1, Education Level (unnumbered) / 原问卷 2.1 节，教育程度（原文未单独编号）");
-    expect(references.c318_a137).toContain("Original question 2.1.3");
-    expect(references.c318_a1371).toContain("Original question 2.1.3");
-    expect(references.c318_a138).toContain("Original question 2.1.4");
-    expect(references.c318_a1381).toContain("Original question 2.1.4");
-    expect(references.c318_a139).toContain("Original question 2.1.5");
-    expect(references.c318_a140).toContain("Original question 2.1.6");
-    expect(references.c318_a142).toContain("Original question 2.1.7");
-    expect(references.c318_a143).toContain("Original question 2.1.8");
+    expect(references["c318_a134"]).toContain("Original question 2.1.1");
+    expect(references["c318_a135"]).toContain("Original question 2.1.2");
+    expect(references["c318_a136"]).toBe("Original section 2.1, Education Level (unnumbered) / 原问卷 2.1 节，教育程度（原文未单独编号）");
+    expect(references["c318_a137"]).toContain("Original question 2.1.3");
+    expect(references["c318_a1371"]).toContain("Original question 2.1.3");
+    expect(references["c318_a138"]).toContain("Original question 2.1.4");
+    expect(references["c318_a1381"]).toContain("Original question 2.1.4");
+    expect(references["c318_a139"]).toContain("Original question 2.1.5");
+    expect(references["c318_a140"]).toContain("Original question 2.1.6");
+    expect(references["c318_a142"]).toContain("Original question 2.1.7");
+    expect(references["c318_a143"]).toContain("Original question 2.1.8");
   });
   it("interview role overrides mixed legacy rows without guessing ambiguous roles", () => {
     const mixed = { a02: 34, a134: 32 };

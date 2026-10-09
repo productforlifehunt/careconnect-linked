@@ -10,7 +10,7 @@ function assertFeatureReady(_feature: WordPressFeatureKey): void {
 
 function resolveEndpoint(feature: WordPressFeatureKey, args?: Record<string, any>): string {
   const entry = wordpressSchema[feature];
-  return typeof entry.endpoint === "function" ? entry.endpoint(args) : entry.endpoint;
+  return typeof entry.endpoint === "function" ? entry.endpoint(args ?? {}) : entry.endpoint;
 }
 
 function mergeParams(feature: WordPressFeatureKey, params?: Record<string, any>) {
@@ -28,8 +28,8 @@ function castResult<T>(value: unknown): T {
 export async function listWordPressFeature<T = any>(
   feature: WordPressFeatureKey,
   args?: {
-    endpointArgs?: Record<string, any>;
-    params?: Record<string, any>;
+    endpointArgs?: Record<string, any> | undefined;
+    params?: Record<string, any> | undefined;
   },
 ): Promise<T> {
   assertFeatureReady(feature);
@@ -44,8 +44,8 @@ export async function listWordPressFeature<T = any>(
 export async function getWordPressFeature<T = any>(
   feature: WordPressFeatureKey,
   args?: {
-    endpointArgs?: Record<string, any>;
-    params?: Record<string, any>;
+    endpointArgs?: Record<string, any> | undefined;
+    params?: Record<string, any> | undefined;
   },
 ): Promise<T> {
   assertFeatureReady(feature);
@@ -61,8 +61,8 @@ export async function createWordPressFeature<T = any>(
   feature: WordPressFeatureKey,
   input: any,
   args?: {
-    endpointArgs?: Record<string, any>;
-    params?: Record<string, any>;
+    endpointArgs?: Record<string, any> | undefined;
+    params?: Record<string, any> | undefined;
   },
 ): Promise<T> {
   assertFeatureReady(feature);
@@ -81,9 +81,9 @@ export async function updateWordPressFeature<T = any>(
   feature: WordPressFeatureKey,
   input: any,
   args?: {
-    endpointArgs?: Record<string, any>;
-    params?: Record<string, any>;
-    method?: string;
+    endpointArgs?: Record<string, any> | undefined;
+    params?: Record<string, any> | undefined;
+    method?: string | undefined;
   },
 ): Promise<T> {
   assertFeatureReady(feature);
@@ -101,8 +101,8 @@ export async function updateWordPressFeature<T = any>(
 export async function deleteWordPressFeature(
   feature: WordPressFeatureKey,
   args?: {
-    endpointArgs?: Record<string, any>;
-    params?: Record<string, any>;
+    endpointArgs?: Record<string, any> | undefined;
+    params?: Record<string, any> | undefined;
   },
 ): Promise<void> {
   assertFeatureReady(feature);

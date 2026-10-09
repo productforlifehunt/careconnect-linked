@@ -10,9 +10,9 @@ interface MediaAttachmentsProps {
   value: number[];
   onChange: (ids: number[]) => void;
   /** File input accept string. Defaults to images only. */
-  accept?: string;
-  label?: string;
-  disabled?: boolean;
+  accept?: string | undefined;
+  label?: string | undefined;
+  disabled?: boolean | undefined;
 }
 
 /**
@@ -104,7 +104,7 @@ export function MediaAttachmentList({ ids }: { ids: number[] }) {
   return (
     <div className="flex flex-wrap gap-1.5 mt-1.5">
       {items.map((m) => (
-        <a key={m.id} href={m.url} target="_blank" rel="noopener" className="rounded border overflow-hidden">
+        <a key={m.id} href={m.url} target="_blank" rel="noopener" className="rounded-sm border overflow-hidden">
           {m.isImage ? (
             <img src={m.url} alt={m.name} className="h-12 w-12 object-cover" />
           ) : (

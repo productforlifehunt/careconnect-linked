@@ -87,18 +87,18 @@ export type ShareVisibility =
 
 export interface InformationCard {
   id: string;
-  cared_ones_name?: string;
-  cared_ones_description?: string;
-  cared_ones_information_card_name?: string;
+  cared_ones_name?: string | undefined;
+  cared_ones_description?: string | undefined;
+  cared_ones_information_card_name?: string | undefined;
   /** a63 — what this specific sheet is for (e.g. "cover 7–9am, meds at 8"). */
-  cared_ones_information_card_description?: string;
-  status?: "Draft" | "Active" | "Paused" | string;
-  displays_location?: "Yes" | "No" | string;
-  share_token?: string;
-  share_expires_at?: string;
-  share_visibility?: ShareVisibility | string;
-  cct_author_id?: string | number;
-  cct_created?: string;
+  cared_ones_information_card_description?: string | undefined;
+  status?: "Draft" | "Active" | "Paused" | string | undefined;
+  displays_location?: "Yes" | "No" | string | undefined;
+  share_token?: string | undefined;
+  share_expires_at?: string | undefined;
+  share_visibility?: ShareVisibility | string | undefined;
+  cct_author_id?: string | number | undefined;
+  cct_created?: string | undefined;
 }
 
 function normalizeWpId(value: string | number | null | undefined): number {
@@ -177,13 +177,13 @@ export async function fetchInformationCardByShareTokenWordPress(token: string): 
 
 export async function createInformationCardWordPress(input: {
   caredOneUserId: string;
-  cared_ones_name?: string;
-  cared_ones_description?: string;
+  cared_ones_name?: string | undefined;
+  cared_ones_description?: string | undefined;
   cared_ones_information_card_name: string;
-  cared_ones_information_card_description?: string;
-  status?: "Draft" | "Active" | "Paused";
-  displays_location?: "Yes" | "No";
-  share_visibility?: ShareVisibility;
+  cared_ones_information_card_description?: string | undefined;
+  status?: "Draft" | "Active" | "Paused" | undefined;
+  displays_location?: "Yes" | "No" | undefined;
+  share_visibility?: ShareVisibility | undefined;
 }): Promise<InformationCard> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
@@ -231,8 +231,8 @@ export async function deleteInformationCardWordPress(id: string): Promise<void> 
  */
 export async function enableInformationCardShareWordPress(
   cardId: string,
-  opts: { visibility: ShareVisibility; expiresAt?: string | null; existingToken?: string }
-): Promise<{ token: string; url: string; expiresAt?: string | null }> {
+  opts: { visibility: ShareVisibility; expiresAt?: string | null | undefined; existingToken?: string | undefined }
+): Promise<{ token: string; url: string; expiresAt?: string | null | undefined }> {
   const token = opts.existingToken && opts.existingToken.length > 0 ? opts.existingToken : generateShareToken();
   await updateInformationCardWordPress(cardId, {
     share_token: token,

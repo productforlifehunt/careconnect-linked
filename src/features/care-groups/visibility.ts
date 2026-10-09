@@ -79,8 +79,8 @@ async function filterVisibleEntities<T extends { id: string | number }>(
   items: T[],
   relSubgroups: number,
   relUsers: number,
-  relHiddenSubgroups?: number,
-  relHiddenUsers?: number,
+  relHiddenSubgroups?: number | undefined,
+  relHiddenUsers?: number | undefined,
 ): Promise<T[]> {
   if (items.length === 0) return items;
   const uid = getCurrentUserIdNumber();

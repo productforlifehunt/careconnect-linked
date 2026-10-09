@@ -188,8 +188,8 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
 function isPointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
+    const [xi, yi] = polygon[i]!;
+    const [xj, yj] = polygon[j]!;
     if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
@@ -268,70 +268,70 @@ function requireZoneTypeCode(value: any): string {
   return code;
 }
 
-export async function createSafeZoneWordPress(zone: { user_id: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }): Promise<void> {
+export async function createSafeZoneWordPress(zone: { user_id: string; latitude: number; longitude: number; radius_meters?: number | undefined; [key: string]: any }): Promise<void> {
   const userId = normalizeWpUserId(zone.user_id);
   if (!userId) throw new Error("Invalid user");
-  const typeCode = requireZoneTypeCode(zone.zone_type);
+  const typeCode = requireZoneTypeCode(zone["zone_type"]);
   const created = await wordpressCCTFetch<any>(T.safeZone.slug, {
     method: "POST",
     body: {
       a55: typeCode,
-      a56: String(zone.shape_type || "Radius").toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS,
-      a57: zoneNameFor(typeCode, zone.zone_name),
-      a58: zone.description || "",
+      a56: String(zone["shape_type"] || "Radius").toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS,
+      a57: zoneNameFor(typeCode, zone["zone_name"]),
+      a58: zone["description"] || "",
 
-      a59: zone.color || "",
+      a59: zone["color"] || "",
       a60: String(zone.latitude),
       a61: String(zone.longitude),
       a62: String(zone.radius_meters ?? 100),
-      a63: zone.polygon_points ? JSON.stringify(zone.polygon_points) : "",
-      a64: zone.notify_on_enter !== false ? T.safeZone.opt.NOTIFY_ON_ENTER.ON : T.safeZone.opt.NOTIFY_ON_ENTER.OFF,
-      a65: zone.notify_on_exit !== false ? T.safeZone.opt.NOTIFY_ON_EXIT.ON : T.safeZone.opt.NOTIFY_ON_EXIT.OFF,
-      a66: zone.schedule_enabled ? T.safeZone.opt.SCHEDULE_ENABLED.ON : T.safeZone.opt.SCHEDULE_ENABLED.OFF,
-      a67: zone.schedule_start_time || "",
-      a68: zone.schedule_end_time || "",
-      a69: zone.is_active === false ? T.safeZone.opt.IS_ACTIVE.NO : T.safeZone.opt.IS_ACTIVE.YES,
+      a63: zone["polygon_points"] ? JSON.stringify(zone["polygon_points"]) : "",
+      a64: zone["notify_on_enter"] !== false ? T.safeZone.opt.NOTIFY_ON_ENTER.ON : T.safeZone.opt.NOTIFY_ON_ENTER.OFF,
+      a65: zone["notify_on_exit"] !== false ? T.safeZone.opt.NOTIFY_ON_EXIT.ON : T.safeZone.opt.NOTIFY_ON_EXIT.OFF,
+      a66: zone["schedule_enabled"] ? T.safeZone.opt.SCHEDULE_ENABLED.ON : T.safeZone.opt.SCHEDULE_ENABLED.OFF,
+      a67: zone["schedule_start_time"] || "",
+      a68: zone["schedule_end_time"] || "",
+      a69: zone["is_active"] === false ? T.safeZone.opt.IS_ACTIVE.NO : T.safeZone.opt.IS_ACTIVE.YES,
     },
   });
   const zoneId = String(created._ID || created.id);
   await attachChildToUserRelation(REL_USER_SAFE_ZONE, userId, zoneId);
-  if (Array.isArray(zone.receiver_ids)) {
-    await setLocationReceivers(zone.user_id, zone.receiver_ids);
+  if (Array.isArray(zone["receiver_ids"])) {
+    await setLocationReceivers(zone.user_id, zone["receiver_ids"]);
   }
 }
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.description !== undefined) body.a58 = updates.description || "";
-  if (updates.zone_type !== undefined) {
-    const typeCode = requireZoneTypeCode(updates.zone_type);
-    body.a55 = typeCode;
+  if (updates["description"] !== undefined) body["a58"] = updates["description"] || "";
+  if (updates["zone_type"] !== undefined) {
+    const typeCode = requireZoneTypeCode(updates["zone_type"]);
+    body["a55"] = typeCode;
     // a57 always follows the type: fixed label for Safe/Danger, user name for Custom.
-    body.a57 = zoneNameFor(typeCode, updates.zone_name);
-  } else if (updates.zone_name !== undefined) {
-    body.a57 = String(updates.zone_name || "").trim();
-    if (!body.a57) throw new Error("A custom zone requires a name");
+    body["a57"] = zoneNameFor(typeCode, updates["zone_name"]);
+  } else if (updates["zone_name"] !== undefined) {
+    body["a57"] = String(updates["zone_name"] || "").trim();
+    if (!body["a57"]) throw new Error("A custom zone requires a name");
   }
 
-  if (updates.shape_type !== undefined) body.a56 = String(updates.shape_type).toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS;
-  if (updates.color !== undefined) body.a59 = updates.color;
-  if (updates.latitude !== undefined) body.a60 = String(updates.latitude);
-  if (updates.longitude !== undefined) body.a61 = String(updates.longitude);
+  if (updates["shape_type"] !== undefined) body["a56"] = String(updates["shape_type"]).toLowerCase() === "polygon" ? T.safeZone.opt.SHAPE_TYPE.POLYGON : T.safeZone.opt.SHAPE_TYPE.RADIUS;
+  if (updates["color"] !== undefined) body["a59"] = updates["color"];
+  if (updates["latitude"] !== undefined) body["a60"] = String(updates["latitude"]);
+  if (updates["longitude"] !== undefined) body["a61"] = String(updates["longitude"]);
   // JetEngine's CCT REST schema types every column as string — a raw number is
   // rejected with rest_invalid_param, so always coerce.
-  if (updates.radius_meters !== undefined) body.a62 = String(updates.radius_meters);
+  if (updates["radius_meters"] !== undefined) body["a62"] = String(updates["radius_meters"]);
 
-  if (updates.polygon_points !== undefined) body.a63 = updates.polygon_points ? JSON.stringify(updates.polygon_points) : "";
-  if (updates.notify_on_enter !== undefined) body.a64 = updates.notify_on_enter ? T.safeZone.opt.NOTIFY_ON_ENTER.ON : T.safeZone.opt.NOTIFY_ON_ENTER.OFF;
-  if (updates.notify_on_exit !== undefined) body.a65 = updates.notify_on_exit ? T.safeZone.opt.NOTIFY_ON_EXIT.ON : T.safeZone.opt.NOTIFY_ON_EXIT.OFF;
-  if (updates.schedule_enabled !== undefined) body.a66 = updates.schedule_enabled ? T.safeZone.opt.SCHEDULE_ENABLED.ON : T.safeZone.opt.SCHEDULE_ENABLED.OFF;
-  if (updates.schedule_start_time !== undefined) body.a67 = updates.schedule_start_time;
-  if (updates.schedule_end_time !== undefined) body.a68 = updates.schedule_end_time;
-  if (updates.is_active !== undefined) body.a69 = updates.is_active ? T.safeZone.opt.IS_ACTIVE.YES : T.safeZone.opt.IS_ACTIVE.NO;
+  if (updates["polygon_points"] !== undefined) body["a63"] = updates["polygon_points"] ? JSON.stringify(updates["polygon_points"]) : "";
+  if (updates["notify_on_enter"] !== undefined) body["a64"] = updates["notify_on_enter"] ? T.safeZone.opt.NOTIFY_ON_ENTER.ON : T.safeZone.opt.NOTIFY_ON_ENTER.OFF;
+  if (updates["notify_on_exit"] !== undefined) body["a65"] = updates["notify_on_exit"] ? T.safeZone.opt.NOTIFY_ON_EXIT.ON : T.safeZone.opt.NOTIFY_ON_EXIT.OFF;
+  if (updates["schedule_enabled"] !== undefined) body["a66"] = updates["schedule_enabled"] ? T.safeZone.opt.SCHEDULE_ENABLED.ON : T.safeZone.opt.SCHEDULE_ENABLED.OFF;
+  if (updates["schedule_start_time"] !== undefined) body["a67"] = updates["schedule_start_time"];
+  if (updates["schedule_end_time"] !== undefined) body["a68"] = updates["schedule_end_time"];
+  if (updates["is_active"] !== undefined) body["a69"] = updates["is_active"] ? T.safeZone.opt.IS_ACTIVE.YES : T.safeZone.opt.IS_ACTIVE.NO;
   await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
-  if (updates.receiver_ids !== undefined) {
-    if (!updates.user_id) throw new Error("Cannot save location alert receivers without the cared one's user id");
-    await setLocationReceivers(String(updates.user_id), updates.receiver_ids || []);
+  if (updates["receiver_ids"] !== undefined) {
+    if (!updates["user_id"]) throw new Error("Cannot save location alert receivers without the cared one's user id");
+    await setLocationReceivers(String(updates["user_id"]), updates["receiver_ids"] || []);
   }
 }
 
@@ -463,11 +463,11 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
 // ─── Share / Disable (now just write or stop writing) ────────
 
 export async function shareMyLocationWordPress(latitude: number, longitude: number, options?: {
-  accuracy?: number | null;
-  batteryLevel?: number | null;
-  addressText?: string | null;
-  isEmergency?: boolean;
-  enabled?: boolean;
+  accuracy?: number | null | undefined;
+  batteryLevel?: number | null | undefined;
+  addressText?: string | null | undefined;
+  isEmergency?: boolean | undefined;
+  enabled?: boolean | undefined;
 }): Promise<void> {
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
@@ -496,7 +496,7 @@ export async function fetchLocationRequestsWordPress(_caredOneId: string): Promi
   return [];
 }
 
-export async function sendLocationRequestWordPress(input: { caredOneId: string; message?: string; isEmergency?: boolean }): Promise<void> {
+export async function sendLocationRequestWordPress(input: { caredOneId: string; message?: string | undefined; isEmergency?: boolean | undefined }): Promise<void> {
   const caredOneUserId = normalizeWpUserId(input.caredOneId);
   if (!caredOneUserId) throw new Error("Invalid cared one user");
   const storedUser = getStoredWPUser();

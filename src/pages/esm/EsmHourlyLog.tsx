@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "@/lib/router-compat";
 import { toast } from "sonner";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { hourlyLog } from "@/features/esm/questionnaires";

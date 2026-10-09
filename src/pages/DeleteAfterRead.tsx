@@ -16,7 +16,7 @@ const Box = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Mono = ({ children }: { children: React.ReactNode }) => (
-  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.8em]">{children}</code>
+  <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[0.8em]">{children}</code>
 );
 
 /* ------------------------- Design Thinking 五步法 ------------------------- */
@@ -72,7 +72,7 @@ const StepList = ({ steps }: { steps: string[] }) => (
           <span>
             <span
               className={
-                "mr-2 inline-block rounded border px-1.5 py-0.5 align-[1px] text-[11px] font-bold " +
+                "mr-2 inline-block rounded-sm border px-1.5 py-0.5 align-[1px] text-[11px] font-bold " +
                 (dead
                   ? "border-dashed border-border text-muted-foreground"
                   : "border-primary/40 bg-primary/10 text-primary")
@@ -102,13 +102,13 @@ type Paper = {
   claim: string;
   useful: string;
   steal: string[];
-  purpose?: string;
-  recruitment?: string;
-  procedure?: string[];
-  measures?: string;
-  analysis?: string;
-  findings?: string;
-  limitations?: string;
+  purpose?: string | undefined;
+  recruitment?: string | undefined;
+  procedure?: string[] | undefined;
+  measures?: string | undefined;
+  analysis?: string | undefined;
+  findings?: string | undefined;
+  limitations?: string | undefined;
 };
 
 const papers: Paper[] = [
@@ -604,7 +604,7 @@ type Project = {
   scope: string;              // 100% 相关性说明
   method: string;             // 作者自称的方法名
   dt: string;                 // 全项目累计覆盖
-  phases: { p: string; act: string; dt: string; paper: string; url?: string }[];
+  phases: { p: string; act: string; dt: string; paper: string; url?: string | undefined }[];
   verdict: string;
 };
 
@@ -1360,7 +1360,7 @@ export default function DeleteAfterRead() {
           <article key={p.tag} className="rounded-xl border border-border bg-card p-5 space-y-4">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">{p.tag}</span>
+                <span className="rounded-sm bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">{p.tag}</span>
                 <a href={p.url} target="_blank" rel="noreferrer" className="text-sm underline underline-offset-4 text-muted-foreground hover:text-foreground">
                   原文链接
                 </a>
@@ -1516,21 +1516,21 @@ export default function DeleteAfterRead() {
                 <div className="space-y-3 rounded-lg border border-border/60 p-4">
                   <div>
                     <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">研究目的</div>
-                    <p className="text-sm">{projectDossiers[pr.name].purpose}</p>
+                    <p className="text-sm">{projectDossiers[pr.name]!.purpose}</p>
                   </div>
                   <div>
                     <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">招募、纳入与样本</div>
-                    <p className="text-sm">{projectDossiers[pr.name].participants}</p>
+                    <p className="text-sm">{projectDossiers[pr.name]!.participants}</p>
                   </div>
                   <div>
                     <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">具体怎么做：完整时间顺序（每步已归入五步法的哪一格）</div>
-                    <StepList steps={projectDossiers[pr.name].procedure} />
+                    <StepList steps={projectDossiers[pr.name]!.procedure} />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">工具与测量</div>{projectDossiers[pr.name].measures}</div>
-                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">分析方法</div>{projectDossiers[pr.name].analysis}</div>
-                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">主要结果</div>{projectDossiers[pr.name].results}</div>
-                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">局限与不能声称的内容</div>{projectDossiers[pr.name].limits}</div>
+                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">工具与测量</div>{projectDossiers[pr.name]!.measures}</div>
+                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">分析方法</div>{projectDossiers[pr.name]!.analysis}</div>
+                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">主要结果</div>{projectDossiers[pr.name]!.results}</div>
+                    <div className="rounded-lg bg-muted/40 p-3 text-sm"><div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">局限与不能声称的内容</div>{projectDossiers[pr.name]!.limits}</div>
                   </div>
                 </div>
               )}

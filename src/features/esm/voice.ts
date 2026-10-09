@@ -66,10 +66,10 @@ export function useVoiceRecorder(): VoiceRecorder {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const state = useRef<{
-    stream?: MediaStream;
-    ctx?: AudioContext;
-    node?: ScriptProcessorNode;
-    source?: MediaStreamAudioSourceNode;
+    stream?: MediaStream | undefined;
+    ctx?: AudioContext | undefined;
+    node?: ScriptProcessorNode | undefined;
+    source?: MediaStreamAudioSourceNode | undefined;
     chunks: Float32Array[];
   }>({ chunks: [] });
 
@@ -127,7 +127,7 @@ export function useVoiceRecorder(): VoiceRecorder {
         setError(voiceText("Could not turn that recording into text. Please try again.", "无法将录音转成文字，请重试。"));
         return null;
       }
-      const text = (data as { text?: string; error?: string } | null)?.text?.trim();
+      const text = (data as { text?: string | undefined; error?: string | undefined } | null)?.text?.trim();
       if (!text) {
         setError(voiceText("Nothing was recognised — please try again.", "没有识别到内容，请重试。"));
         return null;
@@ -189,7 +189,7 @@ export function parseSpokenYesNo(transcript: string): "yes" | "no" | null {
  * Match speech to one of the offered options by counting shared words, with an
  * exact / substring match winning outright.
  */
-export function matchSpokenOption<T extends { value: string; label: string; aliases?: string[] }>(
+export function matchSpokenOption<T extends { value: string; label: string; aliases?: string[] | undefined }>(
   transcript: string,
   options: T[],
 ): T | null {
@@ -215,7 +215,7 @@ export function matchSpokenOption<T extends { value: string; label: string; alia
 }
 
 /** Match speech to every option it mentions (for multi-select questions). */
-export function matchSpokenOptions<T extends { value: string; label: string; aliases?: string[] }>(
+export function matchSpokenOptions<T extends { value: string; label: string; aliases?: string[] | undefined }>(
   transcript: string,
   options: T[],
 ): T[] {

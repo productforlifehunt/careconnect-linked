@@ -259,7 +259,7 @@ export default function CalendarPage() {
                   {selectedEvent.rrule && (
                     <div className="flex items-center gap-2">
                       <Repeat className="h-4 w-4 text-muted-foreground" />
-                      <code className="text-xs bg-muted px-2 py-0.5 rounded">{selectedEvent.rrule}</code>
+                      <code className="text-xs bg-muted px-2 py-0.5 rounded-sm">{selectedEvent.rrule}</code>
                     </div>
                   )}
                   {selectedEvent.is_availability && selectedEvent.availability_note && (

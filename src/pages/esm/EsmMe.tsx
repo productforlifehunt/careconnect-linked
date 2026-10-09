@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "@/lib/router-compat";
 import { CheckCircle2, Circle, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export default function EsmMe() {
   const draft = getDraft(questionnaire.id);
   const introduction = questionnaire.groups[0];
   const introductionDone = useMemo(
-    () => Boolean(introduction) && introduction.questions.filter((q) => !q.optional).every((q) => answered(draft[q.id])),
+    () => Boolean(introduction) && introduction!.questions.filter((q) => !q.optional).every((q) => answered(draft[q.id])),
     [draft, introduction],
   );
 

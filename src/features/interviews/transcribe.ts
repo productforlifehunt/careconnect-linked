@@ -6,7 +6,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getWPToken } from "@/services/wp-auth";
 
-const FN_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
+const FN_BASE = `https://${import.meta.env["VITE_SUPABASE_PROJECT_ID"]}.supabase.co/functions/v1`;
 // Keep each base64 WAV request below common browser/edge gateway body limits.
 const SEGMENT_SECONDS = 30;
 const RATE = 16000;
@@ -19,8 +19,8 @@ export interface TranscriptArchive { lines: Line[]; savedAt: string }
 function authHeaders() {
   return {
     "Content-Type": "application/json",
-    apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    apikey: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
+    Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
     "x-wp-token": getWPToken() || "",
   };
 }
@@ -60,7 +60,7 @@ function wavBase64(samples: Float32Array): string {
   v.setUint32(24, RATE, true); v.setUint32(28, RATE * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
   w(36, "data"); v.setUint32(40, samples.length * 2, true);
   for (let i = 0; i < samples.length; i++) {
-    const x = Math.max(-1, Math.min(1, samples[i]));
+    const x = Math.max(-1, Math.min(1, samples[i]!));
     v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
   }
   const bytes = new Uint8Array(buf);
@@ -146,7 +146,7 @@ function wavChunkToMono(buffer: ArrayBuffer, info: WavInfo): Float32Array {
     const left = Math.floor(source);
     const right = Math.min(left + 1, output.length - 1);
     const fraction = source - left;
-    resampled[i] = output[left] * (1 - fraction) + output[right] * fraction;
+    resampled[i] = output[left]! * (1 - fraction) + output[right]! * fraction;
   }
   return resampled;
 }
@@ -231,7 +231,7 @@ export async function generateTranscript(
     if (decoded.numberOfChannels > 1) {
       const r = decoded.getChannelData(1);
       const mono = new Float32Array(pcm.length);
-      for (let i = 0; i < pcm.length; i++) mono[i] = (pcm[i] + r[i]) / 2;
+      for (let i = 0; i < pcm.length; i++) mono[i] = (pcm[i]! + r[i]!) / 2;
       pcm = mono;
     }
   } catch {

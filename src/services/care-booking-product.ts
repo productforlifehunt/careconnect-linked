@@ -17,20 +17,20 @@ export interface CreateCareBookingProductInput {
   /** Caregiver (vendor / payee) WP user id — "wp-12" or 12 both accepted. */
   vendorUserId: string | number;
   /** Caregiver display name, used in the product title. */
-  vendorName?: string;
+  vendorName?: string | undefined;
   /** Care service label from the dictionary catalogue (a68 option label). */
   serviceLabel: string;
   /** Delivery mode slug from a65: "in-person" | "remote". */
-  delivery?: string;
+  delivery?: string | undefined;
   /** Published rate the client is booking at. */
   rate: number;
   /** Hours booked (1 for per-visit services like check-ins). */
   hours: number;
   /** Whether the rate is per hour or per occurrence. */
   unit: "hour" | "visit";
-  startDate?: string;
-  startTime?: string;
-  notes?: string;
+  startDate?: string | undefined;
+  startTime?: string | undefined;
+  notes?: string | undefined;
 }
 
 export async function createCareBookingProduct(

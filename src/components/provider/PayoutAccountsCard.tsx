@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
  */
 export default function PayoutAccountsCard({
   section = "all",
-}: { section?: "all" | "account" | "history" } = {}) {
+}: { section?: "all" | "account" | "history" | undefined } = {}) {
   const showAccount = section === "all" || section === "account";
   const showHistory = section === "all" || section === "history";
   const { i18n } = useTranslation();
@@ -44,9 +44,9 @@ export default function PayoutAccountsCard({
   useEffect(() => {
     if (!data) return;
     setPaypalEmail(data.payment?.paypal?.email || "");
-    setAccountName(data.payment?.bank?.ac_name || "");
-    setAccountNumber(data.payment?.bank?.ac_number || "");
-    setBankName(data.payment?.bank?.bank_name || "");
+    setAccountName(data.payment?.bank?.["ac_name"] || "");
+    setAccountNumber(data.payment?.bank?.["ac_number"] || "");
+    setBankName(data.payment?.bank?.["bank_name"] || "");
   }, [data]);
 
   const balance = Number(data?.balance?.current_balance ?? 0);

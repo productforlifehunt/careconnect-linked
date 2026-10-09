@@ -35,9 +35,9 @@ export const ConversationContent = ({
 );
 
 export type ConversationEmptyStateProps = ComponentProps<"div"> & {
-  title?: string;
-  description?: string;
-  icon?: React.ReactNode;
+  title?: string | undefined;
+  description?: string | undefined;
+  icon?: React.ReactNode | undefined;
 };
 
 export const ConversationEmptyState = ({
@@ -111,8 +111,8 @@ export type ConversationDownloadProps = Omit<
   "onClick"
 > & {
   messages: UIMessage[];
-  filename?: string;
-  formatMessage?: (message: UIMessage, index: number) => string;
+  filename?: string | undefined;
+  formatMessage?: ((message: UIMessage, index: number) => string) | undefined;
 };
 
 const defaultFormatMessage = (message: UIMessage): string => {

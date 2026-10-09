@@ -24,8 +24,8 @@ export interface SOAPNote {
   objective: string;    // O — observed/measured findings
   assessment: string;   // A — provider's diagnosis/impression
   plan: string;         // P — treatment plan, follow-up, prescriptions
-  signed_at?: string;   // ISO timestamp when provider signed
-  signed_by?: string;   // provider WP user_id
+  signed_at?: string | undefined;   // ISO timestamp when provider signed
+  signed_by?: string | undefined;   // provider WP user_id
 }
 
 /**
@@ -38,17 +38,17 @@ export interface ConsultationDelivery {
   product_id: number;
   delivery_type: DeliveryType;
   delivery_status: DeliveryStatus;
-  meeting_url?: string;          // Jitsi / Zoom / Meet URL (video only)
-  conversation_id?: string;      // chat_conversation CCT id (text only)
-  async_post_id?: string;        // care_community_post id (async only)
-  care_plan_id?: string;         // care_plan CCT id (care_plan only)
-  document_ids?: number[];       // WP Media attachment IDs (care_plan only)
-  cared_one_id?: string;         // patient identifier
-  soap?: SOAPNote;
-  created_at?: string;
-  delivered_at?: string;
-  confirmed_at?: string;
-  auto_confirm_at?: string;      // delivered_at + 7d
+  meeting_url?: string | undefined;          // Jitsi / Zoom / Meet URL (video only)
+  conversation_id?: string | undefined;      // chat_conversation CCT id (text only)
+  async_post_id?: string | undefined;        // care_community_post id (async only)
+  care_plan_id?: string | undefined;         // care_plan CCT id (care_plan only)
+  document_ids?: number[] | undefined;       // WP Media attachment IDs (care_plan only)
+  cared_one_id?: string | undefined;         // patient identifier
+  soap?: SOAPNote | undefined;
+  created_at?: string | undefined;
+  delivered_at?: string | undefined;
+  confirmed_at?: string | undefined;
+  auto_confirm_at?: string | undefined;      // delivered_at + 7d
 }
 
 /**

@@ -39,9 +39,9 @@ export interface CreateQuoteProductInput {
   /** Vendor (seller / payee) WP user ID — required for Dokan commission to apply. */
   vendorUserId: string | number;
   /** Buyer name for product title context (optional). */
-  buyerName?: string;
+  buyerName?: string | undefined;
   /** Sender (the one who issued the quote) for context. */
-  sellerName?: string;
+  sellerName?: string | undefined;
 }
 
 /**

@@ -87,7 +87,7 @@ export async function appendAiMessage(threadId: string, role: AiThreadMessage["r
   });
 }
 
-export async function touchAiThread(threadId: string, title?: string): Promise<void> {
+export async function touchAiThread(threadId: string, title?: string | undefined): Promise<void> {
   await wordpressCCTFetch(CONV, {
     id: threadId,
     method: "PUT",

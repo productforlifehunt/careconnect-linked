@@ -1,4 +1,4 @@
-export interface SharedNote { t: string; c: string; s?: string; p?: string }
+export interface SharedNote { t: string; c: string; s?: string | undefined; p?: string | undefined }
 
 const toB64Url = (s: string) =>
   btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

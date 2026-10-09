@@ -251,7 +251,7 @@ export async function fetchCaredOnesCardsWordPress(): Promise<any[]> {
 }
 
 
-export async function createCaredOnesCardWordPress(card: { name: string; description?: string; card_name?: string; status?: string }): Promise<void> {
+export async function createCaredOnesCardWordPress(card: { name: string; description?: string | undefined; card_name?: string | undefined; status?: string | undefined }): Promise<void> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const statusCode = card.status === "paused" ? "b57" : card.status === "draft" ? "b55" : "b56";
@@ -277,7 +277,7 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
     const items = await fetchEventsOfType(caredOneId, EVENT_TYPE.CHECKIN);
     return items.map((i: any) => {
       const custom = readCustom(i[FC.CUSTOM_DATA]);
-      const freqCode = toFrequencyCode(custom.frequency_code);
+      const freqCode = toFrequencyCode(custom["frequency_code"]);
       return {
         id: String(i.id || i._ID),
         user_id: caredOneId,
@@ -285,14 +285,14 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
         detail: i[FC.DESCRIPTION] || null,
         frequency: FREQ_EN[freqCode],
         frequency_code: freqCode,
-        time_slot: decodeSlots(custom.time_slot),
-        instructions: custom.instructions || null,
+        time_slot: decodeSlots(custom["time_slot"]),
+        instructions: custom["instructions"] || null,
         start_date: i[FC.START_AT] ? String(i[FC.START_AT]).slice(0, 10) : null,
-        note: custom.note || null,
+        note: custom["note"] || null,
         is_active: String(i[FC.STATUS] || STATUS_CONFIRMED) !== STATUS_CANCELLED,
         reminder_time_before: readReminderMinutes(i[FC.REMINDERS]),
         time_to_send_to_caregiver: numOrNull(i[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
-        time_to_be_considered_missing: numOrNull(custom.time_to_be_considered_missing),
+        time_to_be_considered_missing: numOrNull(custom["time_to_be_considered_missing"]),
         check_in_type: decodeCheckinLogType(i[FC.CHECKIN_LOG_TYPE]),
         checked_by_ai: String(i[FC.CHECKIN_LOG_TYPE] || "") === CAL_LOG_TYPE_AI,
         created_at: i.cct_created || i.created_at,
@@ -337,7 +337,7 @@ export function setCheckinReceiversWordPress(checkinId: string, userIds: Array<s
   return setCheckinUserRelation(R.checkinNotificationReceivers, checkinId, userIds);
 }
 
-export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string; frequency?: string; time_slot?: string[]; instructions?: string; start_date?: string; note?: string; reminder_time_before?: number; time_to_send_to_caregiver?: number; time_to_be_considered_missing?: number; check_in_type?: string[]; assignee_ids?: Array<string | number>; receiver_ids?: Array<string | number> }): Promise<void> {
+export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; time_slot?: string[] | undefined; instructions?: string | undefined; start_date?: string | undefined; note?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; time_to_be_considered_missing?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined; receiver_ids?: Array<string | number> | undefined }): Promise<void> {
   const freq = toFrequencyCode(checkin.frequency);
   const slots = decodeSlots(checkin.time_slot || ["08:00"]);
   const startDate = checkin.start_date || new Date().toISOString().slice(0, 10);
@@ -366,46 +366,46 @@ export async function createCheckinWordPress(checkin: { user_id: string; name: s
 
 export async function updateCheckinWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body[FC.TITLE] = updates.name;
-  if (updates.detail !== undefined) body[FC.DESCRIPTION] = updates.detail;
-  if (updates.is_active !== undefined) body[FC.STATUS] = updates.is_active ? STATUS_CONFIRMED : STATUS_CANCELLED;
-  if (updates.reminder_time_before !== undefined) body[FC.REMINDERS] = buildReminders(updates.reminder_time_before);
-  if (updates.time_to_send_to_caregiver !== undefined) {
+  if (updates["name"] !== undefined) body[FC.TITLE] = updates["name"];
+  if (updates["detail"] !== undefined) body[FC.DESCRIPTION] = updates["detail"];
+  if (updates["is_active"] !== undefined) body[FC.STATUS] = updates["is_active"] ? STATUS_CONFIRMED : STATUS_CANCELLED;
+  if (updates["reminder_time_before"] !== undefined) body[FC.REMINDERS] = buildReminders(updates["reminder_time_before"]);
+  if (updates["time_to_send_to_caregiver"] !== undefined) {
     body[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING] =
-      updates.time_to_send_to_caregiver != null ? String(updates.time_to_send_to_caregiver) : "";
+      updates["time_to_send_to_caregiver"] != null ? String(updates["time_to_send_to_caregiver"]) : "";
   }
-  if (updates.check_in_type !== undefined) body[FC.CHECKIN_LOG_TYPE] = encodeCheckinLogType(updates.check_in_type);
-  else if (updates.checked_by_ai !== undefined) {
-    body[FC.CHECKIN_LOG_TYPE] = updates.checked_by_ai ? CAL_LOG_TYPE_AI : CAL_LOG_TYPE_HUMAN;
+  if (updates["check_in_type"] !== undefined) body[FC.CHECKIN_LOG_TYPE] = encodeCheckinLogType(updates["check_in_type"]);
+  else if (updates["checked_by_ai"] !== undefined) {
+    body[FC.CHECKIN_LOG_TYPE] = updates["checked_by_ai"] ? CAL_LOG_TYPE_AI : CAL_LOG_TYPE_HUMAN;
   }
 
   const customTouched = ["frequency", "time_slot", "instructions", "note", "time_to_be_considered_missing"]
     .some((k) => updates[k] !== undefined);
-  if (customTouched || updates.start_date !== undefined) {
+  if (customTouched || updates["start_date"] !== undefined) {
     const row = await readEvent(id);
     const custom = readCustom(row?.[FC.CUSTOM_DATA]);
-    const freq = updates.frequency !== undefined ? toFrequencyCode(updates.frequency) : toFrequencyCode(custom.frequency_code);
-    const slots = updates.time_slot !== undefined ? decodeSlots(updates.time_slot) : decodeSlots(custom.time_slot);
-    const startDate = updates.start_date !== undefined ? (updates.start_date || "") : String(row?.[FC.START_AT] || "").slice(0, 10);
-    if (updates.start_date !== undefined || updates.time_slot !== undefined) {
+    const freq = updates["frequency"] !== undefined ? toFrequencyCode(updates["frequency"]) : toFrequencyCode(custom["frequency_code"]);
+    const slots = updates["time_slot"] !== undefined ? decodeSlots(updates["time_slot"]) : decodeSlots(custom["time_slot"]);
+    const startDate = updates["start_date"] !== undefined ? (updates["start_date"] || "") : String(row?.[FC.START_AT] || "").slice(0, 10);
+    if (updates["start_date"] !== undefined || updates["time_slot"] !== undefined) {
       body[FC.START_AT] = startDate && slots[0] ? `${startDate} ${slots[0]}:00` : startDate;
     }
-    if (updates.frequency !== undefined || updates.time_slot !== undefined) body[FC.RRULE] = buildRRule(freq, slots);
+    if (updates["frequency"] !== undefined || updates["time_slot"] !== undefined) body[FC.RRULE] = buildRRule(freq, slots);
     body[FC.CUSTOM_DATA] = writeCustom({
       ...custom,
       frequency_code: freq,
       time_slot: slots,
-      instructions: updates.instructions !== undefined ? (updates.instructions || "") : (custom.instructions || ""),
-      note: updates.note !== undefined ? (updates.note || "") : (custom.note || ""),
-      time_to_be_considered_missing: updates.time_to_be_considered_missing !== undefined
-        ? (updates.time_to_be_considered_missing ?? "")
-        : (custom.time_to_be_considered_missing ?? ""),
+      instructions: updates["instructions"] !== undefined ? (updates["instructions"] || "") : (custom["instructions"] || ""),
+      note: updates["note"] !== undefined ? (updates["note"] || "") : (custom["note"] || ""),
+      time_to_be_considered_missing: updates["time_to_be_considered_missing"] !== undefined
+        ? (updates["time_to_be_considered_missing"] ?? "")
+        : (custom["time_to_be_considered_missing"] ?? ""),
     });
   }
 
   await updateEvent(id, body);
-  if (updates.assignee_ids !== undefined) await setCheckinAssigneesWordPress(id, updates.assignee_ids || []);
-  if (updates.receiver_ids !== undefined) await setCheckinReceiversWordPress(id, updates.receiver_ids || []);
+  if (updates["assignee_ids"] !== undefined) await setCheckinAssigneesWordPress(id, updates["assignee_ids"] || []);
+  if (updates["receiver_ids"] !== undefined) await setCheckinReceiversWordPress(id, updates["receiver_ids"] || []);
 }
 
 export async function deleteCheckinWordPress(id: string): Promise<void> {
@@ -460,7 +460,7 @@ export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promis
   return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
 }
 
-export async function logCheckinWordPress(log: { medicine_id?: string; checkin_id?: string; status?: "checked" | "skipped" | "missed"; note?: string; checked_by_ai?: boolean; cared_one_id?: string; checkin_name?: string }): Promise<void> {
+export async function logCheckinWordPress(log: { medicine_id?: string | undefined; checkin_id?: string | undefined; status?: "checked" | "skipped" | "missed" | undefined; note?: string | undefined; checked_by_ai?: boolean | undefined; cared_one_id?: string | undefined; checkin_name?: string | undefined }): Promise<void> {
   const statusCode = CHK_STATUS_CODE[log.status || "checked"] || "b55";
   const now = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
@@ -535,7 +535,7 @@ export async function fetchCareTipsWordPress(caredOneId: string): Promise<any[]>
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCareTipWordPress(tip: { user_id: string; title?: string; content: string; category?: string; is_pinned?: boolean }): Promise<void> {
+export async function createCareTipWordPress(tip: { user_id: string; title?: string | undefined; content: string; category?: string | undefined; is_pinned?: boolean | undefined }): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.careTip.slug, {
     method: "POST",
     body: {
@@ -551,10 +551,10 @@ export async function createCareTipWordPress(tip: { user_id: string; title?: str
 
 export async function updateCareTipWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined) body[F_TIP.TITLE] = updates.title;
-  if (updates.content !== undefined) body[F_TIP.CONTENT] = updates.content;
-  if (updates.category !== undefined) body[F_TIP.CATEGORY] = TIP_CATEGORY_CODE[updates.category] || updates.category;
-  const pinned = updates.is_pinned ?? updates.is_important;
+  if (updates["title"] !== undefined) body[F_TIP.TITLE] = updates["title"];
+  if (updates["content"] !== undefined) body[F_TIP.CONTENT] = updates["content"];
+  if (updates["category"] !== undefined) body[F_TIP.CATEGORY] = TIP_CATEGORY_CODE[updates["category"]] || updates["category"];
+  const pinned = updates["is_pinned"] ?? updates["is_important"];
   if (pinned !== undefined) body[F_TIP.IS_PINNED] = pinned ? YES : NO;
   await wordpressCCTFetch(T.careTip.slug, { id, method: "PUT", body });
 }
@@ -581,7 +581,7 @@ export async function fetchCarePlansWordPress(caredOneId: string): Promise<any[]
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCarePlanWordPress(plan: { user_id: string; title: string; description?: string; content?: string; is_pinned?: boolean }): Promise<void> {
+export async function createCarePlanWordPress(plan: { user_id: string; title: string; description?: string | undefined; content?: string | undefined; is_pinned?: boolean | undefined }): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.carePlan.slug, {
     method: "POST",
     body: {
@@ -596,9 +596,9 @@ export async function createCarePlanWordPress(plan: { user_id: string; title: st
 
 export async function updateCarePlanWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined) body[F_PLAN.TITLE] = updates.title;
-  if (updates.content !== undefined || updates.description !== undefined) body[F_PLAN.CONTENT] = updates.content ?? updates.description;
-  if (updates.is_pinned !== undefined) body[F_PLAN.IS_PINNED] = updates.is_pinned ? YES : NO;
+  if (updates["title"] !== undefined) body[F_PLAN.TITLE] = updates["title"];
+  if (updates["content"] !== undefined || updates["description"] !== undefined) body[F_PLAN.CONTENT] = updates["content"] ?? updates["description"];
+  if (updates["is_pinned"] !== undefined) body[F_PLAN.IS_PINNED] = updates["is_pinned"] ? YES : NO;
   await wordpressCCTFetch(T.carePlan.slug, { id, method: "PUT", body });
 }
 
@@ -622,7 +622,7 @@ export async function fetchCareNotesWordPress(caredOneId: string): Promise<any[]
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCareNoteWordPress(note: { user_id: string; title?: string; content: string }): Promise<void> {
+export async function createCareNoteWordPress(note: { user_id: string; title?: string | undefined; content: string }): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.careNote.slug, {
     method: "POST",
     body: {
@@ -636,8 +636,8 @@ export async function createCareNoteWordPress(note: { user_id: string; title?: s
 
 export async function updateCareNoteWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined) body[F_NOTE.TITLE] = updates.title;
-  if (updates.content !== undefined) body[F_NOTE.CONTENT] = updates.content;
+  if (updates["title"] !== undefined) body[F_NOTE.TITLE] = updates["title"];
+  if (updates["content"] !== undefined) body[F_NOTE.CONTENT] = updates["content"];
   await wordpressCCTFetch(T.careNote.slug, { id, method: "PUT", body });
 }
 
@@ -664,7 +664,7 @@ export async function fetchEmergencyContactsWordPress(caredOneId: string): Promi
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string; address?: string; relationship?: string; note?: string; content?: string }): Promise<void> {
+export async function createEmergencyContactWordPress(contact: { user_id: string; name: string; phone?: string | undefined; address?: string | undefined; relationship?: string | undefined; note?: string | undefined; content?: string | undefined }): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.emergencyContact.slug, {
     method: "POST",
     body: {
@@ -683,12 +683,12 @@ export async function createEmergencyContactWordPress(contact: { user_id: string
 
 export async function updateEmergencyContactWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.name !== undefined) body[F_EMG.NAME] = updates.name;
-  if (updates.phone !== undefined) body[F_EMG.PHONE] = updates.phone;
-  if (updates.address !== undefined) body[F_EMG.ADDRESS] = updates.address;
-  if (updates.relationship !== undefined) body[F_EMG.RELATIONSHIP] = updates.relationship;
-  if (updates.content !== undefined) body[F_EMG.DETAIL] = updates.content;
-  if (updates.note !== undefined) body[F_EMG.NOTE] = updates.note;
+  if (updates["name"] !== undefined) body[F_EMG.NAME] = updates["name"];
+  if (updates["phone"] !== undefined) body[F_EMG.PHONE] = updates["phone"];
+  if (updates["address"] !== undefined) body[F_EMG.ADDRESS] = updates["address"];
+  if (updates["relationship"] !== undefined) body[F_EMG.RELATIONSHIP] = updates["relationship"];
+  if (updates["content"] !== undefined) body[F_EMG.DETAIL] = updates["content"];
+  if (updates["note"] !== undefined) body[F_EMG.NOTE] = updates["note"];
   await wordpressCCTFetch(T.emergencyContact.slug, { id, method: "PUT", body });
 }
 
@@ -723,7 +723,7 @@ export async function fetchCaredOneDocumentsWordPress(caredOneId: string): Promi
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string; attachment_ids?: Array<number | string> }): Promise<void> {
+export async function createCaredOneDocumentWordPress(doc: { user_id: string; title: string; description?: string | undefined; attachment_ids?: Array<number | string> | undefined }): Promise<void> {
   const { serializeMediaIds } = await import("@/lib/wp-media");
   const created = await wordpressCCTFetch<any>(T.careDocument.slug, {
     method: "POST",
@@ -740,13 +740,13 @@ export async function createCaredOneDocumentWordPress(doc: { user_id: string; ti
 
 export async function updateCaredOneDocumentWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined) body[F_DOC.NAME] = updates.title;
-  if (updates.name !== undefined) body[F_DOC.NAME] = updates.name;
-  if (updates.description !== undefined) body[F_DOC.CONTENT] = updates.description;
-  if (updates.content !== undefined) body[F_DOC.CONTENT] = updates.content;
-  if (updates.attachment_ids !== undefined) {
+  if (updates["title"] !== undefined) body[F_DOC.NAME] = updates["title"];
+  if (updates["name"] !== undefined) body[F_DOC.NAME] = updates["name"];
+  if (updates["description"] !== undefined) body[F_DOC.CONTENT] = updates["description"];
+  if (updates["content"] !== undefined) body[F_DOC.CONTENT] = updates["content"];
+  if (updates["attachment_ids"] !== undefined) {
     const { serializeMediaIds } = await import("@/lib/wp-media");
-    body[F_DOC.ATTACHMENTS] = serializeMediaIds(updates.attachment_ids || []);
+    body[F_DOC.ATTACHMENTS] = serializeMediaIds(updates["attachment_ids"] || []);
   }
   await wordpressCCTFetch(T.careDocument.slug, { id, method: "PUT", body });
 }
@@ -802,7 +802,7 @@ export async function fetchVisitLogWordPress(caredOneId: string): Promise<any[]>
 }
 
 export async function createVisitLogWordPress(visit: {
-  user_id: string; description?: string;
+  user_id: string; description?: string | undefined;
 }): Promise<void> {
   const schedule = await getOrCreateVisitSchedule(visit.user_id);
   await logCheckinWordPress({

@@ -2,10 +2,10 @@ import { getWordPressFeature, listWordPressFeature } from "@/features/shared/wor
 
 // ─── WordPress-native types ────────────────────────────────
 // ─── Fetchers ──────────────────────────────────────────────
-export async function fetchArticlesWordPress(perPage = 20, category?: number): Promise<any[]> {
+export async function fetchArticlesWordPress(perPage = 20, category?: number | undefined): Promise<any[]> {
   try {
     const params: Record<string, string | number> = { per_page: perPage, _embed: 1 };
-    if (category) params.categories = category;
+    if (category) params["categories"] = category;
     return await listWordPressFeature<any[]>("articles", { params });
   } catch {
     return [];

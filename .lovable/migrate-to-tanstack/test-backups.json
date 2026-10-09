@@ -1,0 +1,1 @@
+{ "files": ["setup.ts", "ai-prompts.test.ts", "esm-scale-range.test.ts", "esm-screening-role.test.tsx", "example.test.ts"] }

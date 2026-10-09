@@ -81,7 +81,7 @@ export function PeopleAnswer({ value, onChange }: Props) {
   };
 
   const choices = [{ id: "just_me", name: uiText(zh, "Just me", "只有我") }, ...people];
-  const localizedDetails = localizeQuestionnaire({ id: "person", title: "", groups: [{ id: "person", title: "", questions: personDetailQuestions }] }, zh).groups[0].questions;
+  const localizedDetails = localizeQuestionnaire({ id: "person", title: "", groups: [{ id: "person", title: "", questions: personDetailQuestions }] }, zh).groups[0]!.questions;
 
   return (
     <div className="space-y-3">
@@ -129,7 +129,7 @@ export function PeopleAnswer({ value, onChange }: Props) {
                      <p className="text-sm">{q.text}</p>
                     <QuestionField
                       question={q}
-                      value={details[q.id]}
+                      value={details[q.id]!}
                       onChange={(v) => setDetails((d) => ({ ...d, [q.id]: v }))}
                     />
                   </div>

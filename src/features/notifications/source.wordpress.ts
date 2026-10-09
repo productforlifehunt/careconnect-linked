@@ -128,11 +128,11 @@ export async function createNotificationWordPress(input: {
   type: string;
   title: string;
   message: string;
-  action_url?: string | null;
+  action_url?: string | null | undefined;
   /** @deprecated kept for back-compat with old callers — combined into action_url. */
-  related_id?: string | number | null;
+  related_id?: string | number | null | undefined;
   /** @deprecated kept for back-compat with old callers — combined into action_url. */
-  related_type?: string | null;
+  related_type?: string | null | undefined;
 }): Promise<void> {
   // Back-compat: synthesize an action_url if old fields supplied
   let url = input.action_url || "";

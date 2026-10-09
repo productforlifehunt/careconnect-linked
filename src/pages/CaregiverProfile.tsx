@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ const TIME_STEP_MINUTES = 30;
 
 function timeToMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
+  return hours! * 60 + minutes!;
 }
 
 function minutesToTime(totalMinutes: number) {
@@ -88,7 +88,7 @@ export default function CaregiverProfile() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
-  const { data: availability } = useProviderAvailability(id);
+  const { data: availability } = useProviderAvailability(id ?? null);
   const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
 
   /**
@@ -144,7 +144,7 @@ export default function CaregiverProfile() {
   // Auto-select first delivery option when dialog opens
   useEffect(() => {
     if (bookingDialogOpen && !deliveryResourceId && bookingOptions.length > 0) {
-      setDeliveryResourceId(bookingOptions[0].key);
+      setDeliveryResourceId(bookingOptions[0]!.key);
     }
   }, [bookingDialogOpen, deliveryResourceId, bookingOptions]);
 
@@ -239,13 +239,13 @@ export default function CaregiverProfile() {
 
   useEffect(() => {
     if (!bookingTime && startTimeOptions.length > 0) {
-      setBookingTime(startTimeOptions[0]);
+      setBookingTime(startTimeOptions[0]!);
     }
   }, [bookingTime, startTimeOptions]);
 
   useEffect(() => {
     if (!bookingEndTime && endTimeOptions.length > 0) {
-      setBookingEndTime(endTimeOptions[0]);
+      setBookingEndTime(endTimeOptions[0]!);
     }
   }, [bookingEndTime, endTimeOptions]);
 
@@ -331,7 +331,7 @@ export default function CaregiverProfile() {
       // agreed price only now, at the moment of adding it to the cart.
       const product = await createCareBookingProduct({
         vendorUserId: caregiver.id,
-        vendorName: caregiver.full_name,
+        vendorName: caregiver.full_name ?? undefined,
         serviceLabel: selectedResource.label,
         delivery: selectedResource.delivery,
         rate: selectedResource.rate,
@@ -538,7 +538,7 @@ export default function CaregiverProfile() {
                           setBookingEndTime("");
                           setAvailabilityWarning("");
                         }}
-                        min={new Date().toISOString().split("T")[0]}
+                        min={new Date().toISOString().split("T")[0]!}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -648,7 +648,7 @@ export default function CaregiverProfile() {
               {caregiver.phone && (
                 <Button variant="ghost" className="w-full" asChild>
                   <a href={`tel:${caregiver.phone}`}>
-                    <Phone className="mr-2 h-4 w-4" /> {isZh ? `致电 ${caregiver.full_name || ""}` : `Call ${caregiver.full_name?.split(" ")[0] || ""}`}
+                    <Phone className="mr-2 h-4 w-4" /> {isZh ? `致电 ${caregiver.full_name || ""}` : `Call ${caregiver.full_name?.split(" ")[0]! || ""}`}
                   </a>
                 </Button>
               )}
@@ -690,7 +690,7 @@ export default function CaregiverProfile() {
                             <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
                             <div className="flex gap-1">
                               {[1, 2, 3, 4, 5].map(s => (
-                                 <button key={s} type="button" aria-label={isZh ? `${s} 星` : `${s} stars`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                 <button key={s} type="button" aria-label={isZh ? `${s} 星` : `${s} stars`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                                   <Star className={`h-7 w-7 cursor-pointer transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
                                 </button>
                               ))}
@@ -732,7 +732,7 @@ export default function CaregiverProfile() {
                     </div>
                     {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
                     {review.response_text && (
-                      <div className="mt-2 ml-4 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+                      <div className="mt-2 ml-4 p-2 bg-muted/50 rounded-sm text-sm text-muted-foreground">
                         <span className="font-medium">{isZh ? "服务者回复：" : "Provider response:"}</span> {review.response_text}
                       </div>
                     )}

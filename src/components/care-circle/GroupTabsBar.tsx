@@ -66,7 +66,7 @@ export function GroupTabsBar({ tabs, activeTab, onSelect, allLabel, isCN }: Grou
     if (to < 0 || to >= orderedTabs.length || from === to) return;
     const next = orderedTabs.map((t) => t.value);
     const [item] = next.splice(from, 1);
-    next.splice(to, 0, item);
+    next.splice(to, 0, item!);
     persist(next);
   };
 

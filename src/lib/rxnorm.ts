@@ -5,7 +5,7 @@ const BASE = "https://rxnav.nlm.nih.gov/REST";
 
 export interface RxSuggestion {
   name: string;
-  rxcui?: string;
+  rxcui?: string | undefined;
 }
 
 /** Spelling-tolerant suggestion list for a drug name fragment. */
@@ -40,8 +40,8 @@ export async function rxnormLookup(name: string): Promise<{ rxcui: string | null
     const formMatch = fullName.match(/(Oral Tablet|Oral Capsule|Injection|Oral Solution|Oral Suspension|Patch|Cream|Ointment|Drop)/i);
     return {
       rxcui,
-      strength: strengthMatch ? strengthMatch[1] : null,
-      doseForm: formMatch ? formMatch[1] : null,
+      strength: strengthMatch ? strengthMatch[1]! : null,
+      doseForm: formMatch ? formMatch[1]! : null,
     };
   } catch {
     return { rxcui: null, strength: null, doseForm: null };

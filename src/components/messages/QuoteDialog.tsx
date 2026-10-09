@@ -13,17 +13,17 @@ interface QuoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Pre-fill service type (from job posting or caregiver profile). */
-  defaultServiceType?: string;
+  defaultServiceType?: string | undefined;
   /** Pre-fill default hourly rate. */
-  defaultRatePerHour?: number;
+  defaultRatePerHour?: number | undefined;
   /** Optional related job id. */
-  jobId?: string | number;
+  jobId?: string | number | undefined;
   /** The vendor (payee) — usually the caregiver/seller's WP user id. */
   vendorUserId: string | number;
   /** Called with the assembled quote when user clicks Send. */
   onSend: (quote: QuoteData) => void | Promise<void>;
   /** Submitting state from parent. */
-  submitting?: boolean;
+  submitting?: boolean | undefined;
 }
 
 export function QuoteDialog({

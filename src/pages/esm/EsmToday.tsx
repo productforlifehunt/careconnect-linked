@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Check, Clock3, Mic, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { dailyLogDone, getProfile, getSettings, hourlyReminderActive, todaySlots, yesterdayDailyLogDone } from "@/features/esm/store";

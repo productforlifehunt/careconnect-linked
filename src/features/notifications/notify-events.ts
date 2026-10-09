@@ -58,7 +58,7 @@ export async function recipientsExcludingSelf(
  */
 export async function notifyUsers(
   userIds: Array<string | number | null | undefined>,
-  payload: { type: string; title: string; message: string; action_url?: string },
+  payload: { type: string; title: string; message: string; action_url?: string | undefined },
 ): Promise<number> {
   try {
     const { runNotificationSkill } = await import("@/lib/ai-dynamic-knowledge");
@@ -177,7 +177,7 @@ function withActor<T>(build: (who: string) => T): Promise<T> {
 export function notifyGroupInvite(
   inviteeId: string | number | null | undefined,
   groupName: string,
-  inviteUrl?: string,
+  inviteUrl?: string | undefined,
 ) {
   let path = "/care-circle";
   if (inviteUrl) {

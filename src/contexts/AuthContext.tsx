@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         const parts = token.split(".");
         if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=")));
+          const payload = JSON.parse(atob(parts[1]!.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1]!.length / 4) * 4, "=")));
           const iss: string = payload?.iss || "";
           const site: string = payload?.site || "";
           const hasHostClaim = !!(iss || site);

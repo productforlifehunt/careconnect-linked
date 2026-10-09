@@ -1740,8 +1740,8 @@ export const STATIC_CONTENT: Record<string, ChallengedContentItem[]> = {
 };
 
 export function getStaticContent(
-  category?: string,
-  subcategory?: string
+  category?: string | undefined,
+  subcategory?: string | undefined
 ): ChallengedContentItem[] {
   let items: ChallengedContentItem[] = [];
   if (category) {

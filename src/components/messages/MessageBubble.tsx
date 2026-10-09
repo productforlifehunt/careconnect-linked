@@ -7,8 +7,8 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 interface MessageBubbleProps {
   message: any;
   isMe: boolean;
-  conversationId?: string;
-  otherUserId?: string;
+  conversationId?: string | undefined;
+  otherUserId?: string | undefined;
 }
 
 export function MessageBubble({ message, isMe, conversationId, otherUserId }: MessageBubbleProps) {

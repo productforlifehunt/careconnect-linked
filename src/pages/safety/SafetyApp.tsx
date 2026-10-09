@@ -1,12 +1,13 @@
 import { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "@/lib/router-compat";
+import { Routes, Route } from "@/lib/path-routes";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
 import Auth from "@/pages/Auth";
 import JoinGroup from "@/pages/JoinGroup";
 import NotFound from "@/pages/NotFound";
-import GPSTracking from "@/pages/GPSTracking";
+import { GPSTracking } from "@/components/routing/BrowserOnlyPages";
 import CareCircle from "@/pages/CareCircle";
 import Inbox from "@/pages/Inbox";
 import Profile from "@/pages/Profile";

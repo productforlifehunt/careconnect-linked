@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tag, Clock, DollarSign, CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -14,8 +14,8 @@ interface QuoteCardProps {
   quote: QuoteData;
   isRecipient: boolean;
   isMe: boolean;
-  conversationId?: string;
-  otherUserId?: string;
+  conversationId?: string | undefined;
+  otherUserId?: string | undefined;
 }
 
 export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserId }: QuoteCardProps) {
@@ -93,7 +93,7 @@ export function QuoteCard({ quote, isRecipient, isMe, conversationId, otherUserI
 
   return (
     <div
-      className={`max-w-[80%] rounded-2xl border-2 ${isMe ? "border-primary/40 bg-primary/5 ml-auto" : "border-coral/30 bg-card"} p-4 shadow-sm`}
+      className={`max-w-[80%] rounded-2xl border-2 ${isMe ? "border-primary/40 bg-primary/5 ml-auto" : "border-coral/30 bg-card"} p-4 shadow-xs`}
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="h-7 w-7 rounded-full bg-coral/15 flex items-center justify-center">

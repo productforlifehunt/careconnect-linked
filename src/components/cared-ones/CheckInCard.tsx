@@ -176,7 +176,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
         onSuccess: () => {
           setLogDialog({ open: false, checkin: null, status: "checked" });
           setLogNote("");
-          toast({ title: Z(`签到${STATUS_LABEL[status]} ✓`, `Check-in ${STATUS_LABEL[status].toLowerCase()} ✓`) });
+          toast({ title: Z(`签到${STATUS_LABEL[status]} ✓`, `Check-in ${STATUS_LABEL[status]!.toLowerCase()} ✓`) });
         },
         onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: String(e?.message || e), variant: "destructive" }),
       }
@@ -477,7 +477,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <Badge variant="outline" className={
                         todayStatus ? STATUS_STYLE[todayStatus] :
-                        isMissed ? STATUS_STYLE.missed :
+                        isMissed ? STATUS_STYLE["missed"] :
                         "bg-muted text-muted-foreground"
                       }>
                         {todayStatus ? Z(`今天${STATUS_LABEL[todayStatus]}`, STATUS_LABEL[todayStatus] + " today") :

@@ -238,7 +238,7 @@ const useOptionalProviderAttachments = () =>
   useContext(ProviderAttachmentsContext);
 
 export type PromptInputProviderProps = PropsWithChildren<{
-  initialInput?: string;
+  initialInput?: string | undefined;
 }>;
 
 /**
@@ -411,7 +411,7 @@ export const usePromptInputReferencedSources = () => {
 export type PromptInputActionAddAttachmentsProps = ComponentProps<
   typeof DropdownMenuItem
 > & {
-  label?: string;
+  label?: string | undefined;
 };
 
 export const PromptInputActionAddAttachments = ({
@@ -438,7 +438,7 @@ export const PromptInputActionAddAttachments = ({
 export type PromptInputActionAddScreenshotProps = ComponentProps<
   typeof DropdownMenuItem
 > & {
-  label?: string;
+  label?: string | undefined;
 };
 
 export const PromptInputActionAddScreenshot = ({
@@ -491,16 +491,16 @@ export type PromptInputProps = Omit<
   "onSubmit" | "onError"
 > & {
   // e.g., "image/*" or leave undefined for any
-  accept?: string;
-  multiple?: boolean;
+  accept?: string | undefined;
+  multiple?: boolean | undefined;
   // When true, accepts drops anywhere on document. Default false (opt-in).
-  globalDrop?: boolean;
+  globalDrop?: boolean | undefined;
   // Render a hidden input with given name and keep it in sync for native form posts. Default false.
-  syncHiddenInput?: boolean;
+  syncHiddenInput?: boolean | undefined;
   // Minimal constraints
-  maxFiles?: number;
+  maxFiles?: number | undefined;
   // bytes
-  maxFileSize?: number;
+  maxFileSize?: number | undefined;
   onError?: (err: {
     code: "max_files" | "max_file_size" | "accept";
     message: string;
@@ -1116,12 +1116,12 @@ export type PromptInputButtonTooltip =
   | string
   | {
       content: ReactNode;
-      shortcut?: string;
-      side?: ComponentProps<typeof TooltipContent>["side"];
+      shortcut?: string | undefined;
+      side?: ComponentProps<typeof TooltipContent>["side"] | undefined;
     };
 
 export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton> & {
-  tooltip?: PromptInputButtonTooltip;
+  tooltip?: PromptInputButtonTooltip | undefined;
 };
 
 export const PromptInputButton = ({
@@ -1209,8 +1209,8 @@ export const PromptInputActionMenuItem = ({
 // are provided in opt-in modules (e.g., prompt-input-attachments).
 
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
-  status?: ChatStatus;
-  onStop?: () => void;
+  status?: ChatStatus | undefined;
+  onStop?: (() => void) | undefined;
 };
 
 export const PromptInputSubmit = ({

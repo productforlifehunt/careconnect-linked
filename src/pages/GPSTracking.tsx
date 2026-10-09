@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation as useRouterLocation } from "react-router-dom";
+import { useLocation as useRouterLocation } from "@/lib/router-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,7 @@ export default function GPSTracking() {
   const caredOneOptions = (() => {
     const seen = new Set<string>();
     const out: { id: string; name: string }[] = [];
-    const push = (uid: any, name?: string) => {
+    const push = (uid: any, name?: string | undefined) => {
       const key = String(uid ?? "").replace(/^wp-/, "");
       if (!key || seen.has(key)) return;
       seen.add(key);
@@ -149,7 +149,7 @@ export default function GPSTracking() {
   // Default to the single cared one when there is exactly one, so the common
   // case needs no picking at all; otherwise stay on yourself.
   const effectiveSubjectId =
-    subjectId || (caredOneOptions.length === 1 ? caredOneOptions[0].id : selfKey);
+    subjectId || (caredOneOptions.length === 1 ? caredOneOptions[0]!.id : selfKey);
   const subjectIsSelf = effectiveSubjectId === selfKey;
   // Relation 247 stores a user-type code on every snapshot (b56 = cared one,
   // b55 = everyone else). Nothing used to set it, so every row was written as
@@ -191,7 +191,7 @@ export default function GPSTracking() {
   // Without this every marker and every breach toast said "Unknown".
   const nameByUserId = (() => {
     const map: Record<string, string> = {};
-    const put = (uid: any, name?: string | null) => {
+    const put = (uid: any, name?: string | null | undefined) => {
       const key = String(uid ?? "").replace(/^wp-/, "");
       if (!key || !name || map[key]) return;
       map[key] = String(name);
@@ -390,7 +390,7 @@ export default function GPSTracking() {
 
     // Fit bounds
     if (sharingPeople.length === 1) {
-      map.setView([sharingPeople[0].coordinates.lat, sharingPeople[0].coordinates.lng], 14);
+      map.setView([sharingPeople[0]!.coordinates.lat, sharingPeople[0]!.coordinates.lng], 14);
     } else {
       const bounds = L.latLngBounds(sharingPeople.map(p => [p.coordinates.lat, p.coordinates.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50] });
@@ -515,7 +515,7 @@ export default function GPSTracking() {
     } catch {}
   };
 
-  const zoneLabel = (code: string, zoneName?: string | null) => zoneTypeLabel(code, zoneName ?? null, isCN);
+  const zoneLabel = (code: string, zoneName?: string | null | undefined) => zoneTypeLabel(code, zoneName ?? null, isCN);
 
   const openNewZone = () => {
     const center = leafletMap.current?.getCenter();
@@ -617,7 +617,7 @@ export default function GPSTracking() {
         await updateSafeZoneWordPress(zoneForm.id, payload);
 
       } else {
-        await createSafeZoneWordPress({ user_id: effectiveSubjectId, ...payload });
+        await createSafeZoneWordPress(payload);
       }
       await reloadZones();
       setZoneDialogOpen(false);
@@ -672,7 +672,7 @@ export default function GPSTracking() {
     if (hrs < 24) return Z(`${hrs} 小时前`, `${hrs} h ago`);
     return Z(`${Math.round(hrs / 24)} 天前`, `${Math.round(hrs / 24)} d ago`);
   };
-  const movingLabel = (word?: string | null) => {
+  const movingLabel = (word?: string | null | undefined) => {
     if (!word || word === "unknown") return "";
     const cn: Record<string, string> = { stationary: "静止", walking: "步行", running: "跑步", cycling: "骑行", automotive: "乘车" };
     return Z(cn[word] || "", word);
@@ -1214,18 +1214,18 @@ export default function GPSTracking() {
             <Card className="border-transparent card-elevated">
               <CardHeader><CardTitle className="text-lg">{selectedPerson.name}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-2 rounded bg-muted/50 text-sm">
+                <div className="p-2 rounded-sm bg-muted/50 text-sm">
                   <p className="text-muted-foreground text-xs">{t("gps.coordinates")}</p>
                   <p className="font-mono text-xs text-foreground">{selectedPerson.coordinates.lat?.toFixed(6)}, {selectedPerson.coordinates.lng?.toFixed(6)}</p>
                 </div>
-                <div className="p-2 rounded bg-muted/50 text-sm">
+                <div className="p-2 rounded-sm bg-muted/50 text-sm">
                   <p className="text-muted-foreground text-xs">{t("gps.lastUpdated")}</p>
                   <p className="text-xs text-foreground">{selectedPerson.lastUpdated}</p>
                 </div>
-                {trailData[selectedPerson.userId]?.length > 0 && (
-                  <div className="p-2 rounded bg-muted/50 text-sm">
+                {trailData[selectedPerson.userId]!?.length > 0 && (
+                  <div className="p-2 rounded-sm bg-muted/50 text-sm">
                     <p className="text-muted-foreground text-xs flex items-center gap-1"><Route className="h-3 w-3" /> {t("gps.trail", "Trail")}</p>
-                    <p className="text-xs text-foreground">{trailData[selectedPerson.userId].length} {t("gps.points", "points")}</p>
+                    <p className="text-xs text-foreground">{trailData[selectedPerson.userId]!.length} {t("gps.points", "points")}</p>
                   </div>
                 )}
                 <div className="flex gap-2">

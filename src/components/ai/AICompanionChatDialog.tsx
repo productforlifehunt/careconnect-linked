@@ -23,7 +23,7 @@ export function AICompanionChatDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  request?: AssistantRequest;
+  request?: AssistantRequest | undefined;
 }) {
   const { i18n } = useTranslation();
   const site = useSite();
@@ -167,7 +167,7 @@ export function AICompanionChatDialog({
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") void saveName(t.id); if (e.key === "Escape") setEditing(null); }}
-                      className="flex-1 min-w-0 rounded border bg-background px-1.5 py-0.5 text-sm text-foreground"
+                      className="flex-1 min-w-0 rounded-sm border bg-background px-1.5 py-0.5 text-sm text-foreground"
                     />
                   ) : (
                     <button type="button" onClick={() => pick(t.id)} className="flex-1 min-w-0 truncate text-left">
@@ -175,11 +175,11 @@ export function AICompanionChatDialog({
                     </button>
                   )}
                   {editing === t.id ? (
-                    <button type="button" onClick={() => void saveName(t.id)} className="p-1 rounded hover:bg-accent" aria-label={isZh ? "保存名字" : "Save name"}>
+                    <button type="button" onClick={() => void saveName(t.id)} className="p-1 rounded-sm hover:bg-accent" aria-label={isZh ? "保存名字" : "Save name"}>
                       <Check className="h-3.5 w-3.5" />
                     </button>
                   ) : (
-                    <button type="button" onClick={() => { setEditing(t.id); setDraft(t.title); }} className="p-1 rounded hover:bg-accent text-muted-foreground" aria-label={isZh ? "改名" : "Rename"}>
+                    <button type="button" onClick={() => { setEditing(t.id); setDraft(t.title); }} className="p-1 rounded-sm hover:bg-accent text-muted-foreground" aria-label={isZh ? "改名" : "Rename"}>
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                   )}

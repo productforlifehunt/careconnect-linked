@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,7 +54,7 @@ export default function Inbox() {
   const unreadMsgs = (conversations || []).reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0);
   const unreadAll = unreadNotif + unreadMsgs;
 
-  const switchTab = (v: string, state?: any) => {
+  const switchTab = (v: string, state?: any | undefined) => {
     setTab(v);
     const next = new URLSearchParams(params);
     next.set("tab", v);
@@ -134,7 +134,7 @@ export default function Inbox() {
           <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/50 rounded-xl p-1">
             <TabsTrigger
               value="all"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1 text-xs sm:text-sm"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs gap-1.5 px-1 text-xs sm:text-sm"
             >
               <InboxIcon className="h-4 w-4 shrink-0" />
               <span>{Z("全部", "All")}</span>
@@ -148,14 +148,14 @@ export default function Inbox() {
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1 text-xs sm:text-sm"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs gap-1.5 px-1 text-xs sm:text-sm"
             >
               <Bell className="h-4 w-4 shrink-0" />
               <span>{Z("通知", "Notifications")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="messages"
-              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm gap-1.5 px-1 text-xs sm:text-sm"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs gap-1.5 px-1 text-xs sm:text-sm"
             >
               <MessageSquare className="h-4 w-4 shrink-0" />
               <span>{Z("消息", "Messages")}</span>
@@ -176,7 +176,7 @@ export default function Inbox() {
                 aria-pressed={readFilter === key}
                 className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
                   readFilter === key
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -187,7 +187,7 @@ export default function Inbox() {
         </div>
 
 
-        <TabsContent value="all" className="mt-0 focus-visible:outline-none">
+        <TabsContent value="all" className="mt-0 focus-visible:outline-hidden">
           <div className="max-w-3xl mx-auto px-4 py-4">
             {notifsLoading || convosLoading ? (
               <div className="space-y-3 py-2">
@@ -250,10 +250,10 @@ export default function Inbox() {
             )}
           </div>
         </TabsContent>
-        <TabsContent value="notifications" className="mt-0 focus-visible:outline-none">
+        <TabsContent value="notifications" className="mt-0 focus-visible:outline-hidden">
           <Notifications embedded readFilter={readFilter} />
         </TabsContent>
-        <TabsContent value="messages" className="mt-0 focus-visible:outline-none">
+        <TabsContent value="messages" className="mt-0 focus-visible:outline-hidden">
           <Messages embedded readFilter={readFilter} />
         </TabsContent>
       </Tabs>

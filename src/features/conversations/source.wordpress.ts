@@ -263,7 +263,7 @@ async function fetchLastMessageMap(): Promise<Map<string, LastMessage>> {
   return out;
 }
 
-export async function fetchConversationsWordPress(currentUserId?: string): Promise<any[]> {
+export async function fetchConversationsWordPress(currentUserId?: string | undefined): Promise<any[]> {
   try {
     const [convos, memberMap, lastMessages] = await Promise.all([
       wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),

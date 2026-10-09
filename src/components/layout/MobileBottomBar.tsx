@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "@/components/NavLink";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "@/lib/router-compat";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/use-care-data";
@@ -47,9 +47,9 @@ import { useAIAssistant } from "@/contexts/AIAssistantContext";
 type ToolItem = {
   id: string;
   title: string;
-  url?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  onClick?: () => void;
+  url?: string | undefined;
+  icon: React.ComponentType<{ className?: string | undefined }>;
+  onClick?: (() => void) | undefined;
 };
 
 type Group = { id: string; label: string; items: ToolItem[] };
@@ -359,7 +359,7 @@ export function MobileBottomBar() {
                         type="button"
                         onClick={() => setFindTab("care")}
                         className={`flex-1 text-xs font-medium py-2 rounded-lg transition-colors ${
-                          findTab === "care" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                          findTab === "care" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
                         }`}
                       >
                         {isChinese ? "寻找护理服务" : "Find Care"}
@@ -368,7 +368,7 @@ export function MobileBottomBar() {
                         type="button"
                         onClick={() => setFindTab("work")}
                         className={`flex-1 text-xs font-medium py-2 rounded-lg transition-colors ${
-                          findTab === "work" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                          findTab === "work" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
                         }`}
                       >
                         {isChinese ? "寻找护理工作" : "Find Work"}
@@ -438,7 +438,7 @@ export function MobileBottomBar() {
                           aria-pressed={isDefault}
                         >
                           <span
-                            className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${
+                            className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-xs border ${
                               isDefault ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/50"
                             }`}
                           >

@@ -38,11 +38,11 @@ function decodeJwtPayload(token: string): Record<string, any> | null {
 
 function userFromToken(token: string, fallbackIdentifier: string): WPUser {
   const payload = decodeJwtPayload(token) || {};
-  const data = payload.data ?? payload;
-  const userEmail = String(data.user_email ?? payload.email ?? fallbackIdentifier);
-  const userLogin = String(data.user_login ?? payload.username ?? userEmail);
-  const userId = Number(data.user_id ?? payload.id ?? 0);
-  const userDisplayName = String(data.user_display_name ?? payload.username ?? (userLogin || fallbackIdentifier));
+  const data = payload["data"] ?? payload;
+  const userEmail = String(data.user_email ?? payload["email"] ?? fallbackIdentifier);
+  const userLogin = String(data.user_login ?? payload["username"] ?? userEmail);
+  const userId = Number(data.user_id ?? payload["id"] ?? 0);
+  const userDisplayName = String(data.user_display_name ?? payload["username"] ?? (userLogin || fallbackIdentifier));
 
   return {
     user_id: userId,
@@ -143,7 +143,7 @@ export async function wpValidateToken(): Promise<WPUser | null> {
       return null;
     }
 
-    const exp = typeof payload.exp === 'number' ? payload.exp : null;
+    const exp = typeof payload["exp"] === 'number' ? payload["exp"] : null;
     if (exp && exp * 1000 <= Date.now()) {
       // Never silently sign out: try to renew the token first so the
       // researcher session effectively never expires while the app is used.
@@ -203,7 +203,7 @@ export async function wpRefreshToken(): Promise<boolean> {
 export async function wpEnsureFreshToken(marginMs = 15 * 60 * 1000): Promise<boolean> {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return false;
-  const exp = decodeJwtPayload(token)?.exp;
+  const exp = decodeJwtPayload(token)?.["exp"];
   if (typeof exp === 'number' && exp * 1000 - Date.now() > marginMs) return true;
   return wpRefreshToken();
 }
@@ -273,7 +273,7 @@ export async function wpRequestPasswordReset(email: string): Promise<void> {
   throw new Error('Password reset request failed. Please try again.');
 }
 
-export async function wpRegister(email: string, password: string, displayName?: string): Promise<WPAuthResult> {
+export async function wpRegister(email: string, password: string, displayName?: string | undefined): Promise<WPAuthResult> {
   const url = buildWPUrl('simple-jwt-login/v1/users');
   const res = await fetch(url, {
     method: 'POST',

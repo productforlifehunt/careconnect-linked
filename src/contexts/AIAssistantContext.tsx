@@ -5,32 +5,32 @@ import { resolveWriteSkill, type WriteSkillName, type WriteTarget } from "@/lib/
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
 
-export type AssistantResult = { status?: string; summary?: string };
+export type AssistantResult = { status?: string | undefined; summary?: string | undefined };
 /**
  * `contextScope` turns on on-demand retrieval: for every message the chat asks
  * src/lib/ai-dynamic-knowledge.ts for the matching static snippets and the
  * permitted dynamic facts, instead of shipping a whole knowledge base.
  */
 export type AssistantContextScope = {
-  caredOneId?: string;
-  groupId?: string;
-  groupName?: string;
-  topics?: Array<"app-basics" | "care-group" | "care-tips">;
-  sharedCard?: boolean;
+  caredOneId?: string | undefined;
+  groupId?: string | undefined;
+  groupName?: string | undefined;
+  topics?: Array<"app-basics" | "care-group" | "care-tips"> | undefined;
+  sharedCard?: boolean | undefined;
 };
 export type AssistantRequest = {
-  id?: string;
-  title?: string;
-  contextPrompt?: string;
-  contextScope?: AssistantContextScope;
-  starterPrompt?: string;
-  starterFallback?: string;
-  completionStatuses?: string[];
-  onComplete?: (result: AssistantResult) => void | Promise<void>;
+  id?: string | undefined;
+  title?: string | undefined;
+  contextPrompt?: string | undefined;
+  contextScope?: AssistantContextScope | undefined;
+  starterPrompt?: string | undefined;
+  starterFallback?: string | undefined;
+  completionStatuses?: string[] | undefined;
+  onComplete?: ((result: AssistantResult) => void | Promise<void>) | undefined;
   /** Show the built-in, instant app guide (common questions answered offline). */
-  appGuide?: boolean;
+  appGuide?: boolean | undefined;
   /** Called when the user chooses to hide the app guide shortcut. */
-  onHideGuide?: () => void | Promise<void>;
+  onHideGuide?: (() => void | Promise<void>) | undefined;
 };
 
 
@@ -45,14 +45,14 @@ export type WriteRequest = {
   skill: WriteSkillName;
   target: WriteTarget;
   /** Optional de-duplication id, e.g. one per day per record. */
-  id?: string;
-  contextScope?: AssistantContextScope;
+  id?: string | undefined;
+  contextScope?: AssistantContextScope | undefined;
   /** Runs after the record was written. */
-  onWritten?: (result: AssistantResult) => void;
+  onWritten?: ((result: AssistantResult) => void) | undefined;
 };
 
 const AIAssistantContext = createContext<{
-  openAssistant: (request?: AssistantRequest) => void;
+  openAssistant: (request?: AssistantRequest | undefined) => void;
   openWriteAssistant: (request: WriteRequest) => void;
   closeAssistant: () => void;
 } | null>(null);

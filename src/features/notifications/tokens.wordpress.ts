@@ -34,9 +34,9 @@ export interface NotificationToken {
   id: string;
   endpoint_or_token: string;
   notification_provider: NotificationProvider;
-  device_label?: string;
-  auth_key?: string;
-  p256dh?: string;
+  device_label?: string | undefined;
+  auth_key?: string | undefined;
+  p256dh?: string | undefined;
   is_active: boolean;
 }
 
@@ -73,9 +73,9 @@ export async function fetchMyNotificationTokens(): Promise<NotificationToken[]> 
 export async function registerNotificationToken(input: {
   endpoint_or_token: string;
   notification_provider: NotificationProvider;
-  device_label?: string;
-  auth_key?: string;
-  p256dh?: string;
+  device_label?: string | undefined;
+  auth_key?: string | undefined;
+  p256dh?: string | undefined;
 }): Promise<NotificationToken | null> {
   const userId = getCurrentUserIdNumber();
   if (!userId) return null;
@@ -131,7 +131,7 @@ export async function deleteNotificationToken(id: string): Promise<void> {
   await wordpressCCTFetch(SLUG, { id, method: "DELETE" });
 }
 
-export async function subscribeWebPushAndRegister(vapidPublicKey?: string): Promise<NotificationToken | null> {
+export async function subscribeWebPushAndRegister(vapidPublicKey?: string | undefined): Promise<NotificationToken | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
     return null;
   }

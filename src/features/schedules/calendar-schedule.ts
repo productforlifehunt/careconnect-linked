@@ -21,14 +21,14 @@ export const FC = CAL.f;
 const OC = CAL.opt as Record<string, Record<string, string>>;
 
 export const EVENT_TYPE = {
-  MEDICINE: OC.CUSTOM_EVENT_TYPE.MEDICINE_SCHEDULE,
-  CHECKIN: OC.CUSTOM_EVENT_TYPE.HEALTH_CHECKIN,
-  HABIT: OC.CUSTOM_EVENT_TYPE.HABIT,
-  TODO: OC.CUSTOM_EVENT_TYPE.TODO,
+  MEDICINE: OC["CUSTOM_EVENT_TYPE"]!["MEDICINE_SCHEDULE"]!,
+  CHECKIN: OC["CUSTOM_EVENT_TYPE"]!["HEALTH_CHECKIN"]!,
+  HABIT: OC["CUSTOM_EVENT_TYPE"]!["HABIT"]!,
+  TODO: OC["CUSTOM_EVENT_TYPE"]!["TODO"]!,
 } as const;
 
-export const STATUS_CONFIRMED = OC.STATUS.CONFIRMED;
-export const STATUS_CANCELLED = OC.STATUS.CANCELLED;
+export const STATUS_CONFIRMED = OC["STATUS"]!["CONFIRMED"]!;
+export const STATUS_CANCELLED = OC["STATUS"]!["CANCELLED"]!;
 // a91 "App" is a plain TEXT column in the live CCT 187 (verified 2026-09-18),
 // so it stores the lowercase standard app name, not a bNN option code.
 export const APP_CHALLENGED = "challenged";
@@ -68,7 +68,7 @@ export const FREQ_EN: Record<FrequencyCode, string> = {
   as_needed: "As needed",
 };
 
-export function toFrequencyCode(value?: string): FrequencyCode {
+export function toFrequencyCode(value?: string | undefined): FrequencyCode {
   const v = String(value || "once_daily");
   if ((FREQUENCY_CODES as readonly string[]).includes(v)) return v as FrequencyCode;
   const hit = (Object.keys(FREQ_EN) as FrequencyCode[]).find(
@@ -90,7 +90,7 @@ export function buildRRule(freq: FrequencyCode, slots: string[]): string {
 }
 
 /** Reminder minutes-before ⇄ VALARM TRIGGER. */
-export function buildReminders(minutesBefore?: number | null): string {
+export function buildReminders(minutesBefore?: number | null | undefined): string {
   const m = Number(minutesBefore);
   if (!Number.isFinite(m) || m <= 0) return "";
   return `BEGIN:VALARM\nTRIGGER:-PT${Math.round(m)}M\nACTION:DISPLAY\nEND:VALARM`;

@@ -21,7 +21,7 @@ export interface QuestionOption {
   value: string;
   label: string;
   /** Extra words the voice matcher accepts for this option. */
-  aliases?: string[];
+  aliases?: string[] | undefined;
 }
 
 export interface ScaleSpec {
@@ -30,39 +30,39 @@ export interface ScaleSpec {
   minLabel: string;
   maxLabel: string;
   /** Optional label per point, keyed by the numeric value. */
-  pointLabels?: Record<number, string>;
+  pointLabels?: Record<number, string> | undefined;
 }
 
 export interface Question {
   /** Stable answer key. Never change once data exists. */
   id: string;
   /** Number shown to the participant, e.g. "1.1.4". */
-  code?: string;
+  code?: string | undefined;
   text: string;
-  help?: string;
+  help?: string | undefined;
   type: QuestionType;
-  options?: QuestionOption[];
-  scale?: ScaleSpec;
-  unit?: string;
-  optional?: boolean;
+  options?: QuestionOption[] | undefined;
+  scale?: ScaleSpec | undefined;
+  unit?: string | undefined;
+  optional?: boolean | undefined;
   /** Only show when this other question has one of these values. */
-  showIf?: { id: string; equals: AnswerValue[] };
+  showIf?: { id: string; equals: AnswerValue[] } | undefined;
   /** Rendered by a purpose-built editor instead of a plain field. */
-  custom?: "people";
+  custom?: "people" | undefined;
 }
 
 export interface QuestionGroup {
   id: string;
-  code?: string;
+  code?: string | undefined;
   title: string;
-  description?: string;
+  description?: string | undefined;
   questions: Question[];
 }
 
 export interface Questionnaire {
   id: string;
   title: string;
-  intro?: string;
+  intro?: string | undefined;
   groups: QuestionGroup[];
 }
 
@@ -77,7 +77,7 @@ export const scale = (
   max: number,
   minLabel: string,
   maxLabel: string,
-  pointLabels?: Record<number, string>,
+  pointLabels?: Record<number, string> | undefined,
 ): ScaleSpec => ({ min, max, minLabel, maxLabel, pointLabels });
 
 export const likert7 = scale(1, 7, "Strongly disagree", "Strongly agree");

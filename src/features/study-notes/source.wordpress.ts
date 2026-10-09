@@ -18,8 +18,8 @@ const REL255 = WP.rel["255"] as unknown as {
   f: Record<string, string>;
   opt: Record<string, Record<string, string>>;
 };
-const FINISHED_FIELD = REL255.f.USER_HAS_FINISHED_LEARNING_THIS_LESSON;
-const FINISHED_YES = REL255.opt.USER_HAS_FINISHED_LEARNING_THIS_LESSON.YES;
+const FINISHED_FIELD = REL255.f["USER_HAS_FINISHED_LEARNING_THIS_LESSON"]!;
+const FINISHED_YES = REL255.opt["USER_HAS_FINISHED_LEARNING_THIS_LESSON"]!["YES"];
 
 
 export interface StudyNote {
@@ -27,8 +27,8 @@ export interface StudyNote {
   title: string;
   content: string;
   article_id: string;
-  created_at?: string | null;
-  updated_at?: string | null;
+  created_at?: string | null | undefined;
+  updated_at?: string | null | undefined;
 }
 
 function normalizeArticleId(id: string | number): number {
@@ -77,7 +77,7 @@ export async function createStudyNote(input: {
   return { id: String(newId), title: input.title, content: input.content, article_id: String(input.article_id) };
 }
 
-export async function updateStudyNote(id: string, patch: { title?: string; content?: string }): Promise<void> {
+export async function updateStudyNote(id: string, patch: { title?: string | undefined; content?: string | undefined }): Promise<void> {
   const body: Record<string, any> = {};
   if (patch.title !== undefined) body[F.title] = patch.title;
   if (patch.content !== undefined) body[F.content] = patch.content;

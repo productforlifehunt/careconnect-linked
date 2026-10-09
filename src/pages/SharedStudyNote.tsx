@@ -1,4 +1,4 @@
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link } from "@/lib/router-compat";
 import { Card } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { decodeSharedNote } from "@/lib/shared-note";

@@ -9,9 +9,9 @@ import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
 import { T } from "@/integrations/wp-schema";
 
 interface WPFetchOptions {
-  method?: string;
-  body?: any;
-  params?: Record<string, string | number>;
+  method?: string | undefined;
+  body?: any | undefined;
+  params?: Record<string, string | number> | undefined;
 }
 
 async function wpFetch<T = any>(endpoint: string, options: WPFetchOptions = {}): Promise<T> {
@@ -24,7 +24,7 @@ async function wpFetch<T = any>(endpoint: string, options: WPFetchOptions = {}):
   const resp = await fetch(url, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(body) : null,
   });
 
   if (!resp.ok) {
@@ -63,9 +63,9 @@ export async function wpFetchProducts(perPage = 50) {
 }
 
 // ─── WordPress Posts (articles/community) ───────────────────
-export async function wpFetchPosts(perPage = 20, category?: number) {
+export async function wpFetchPosts(perPage = 20, category?: number | undefined) {
   const params: Record<string, string | number> = { per_page: perPage, _embed: 1 };
-  if (category) params.categories = category;
+  if (category) params["categories"] = category;
   try {
     const posts = await wpFetch("wp/v2/posts", { params });
     if (!Array.isArray(posts)) return [];
@@ -137,12 +137,12 @@ export interface WPBooking {
   total_cost: number;
   special_instruction: string;
   provider_id: string;
-  provider?: { full_name: string };
-  client?: { full_name: string; email?: string };
+  provider?: { full_name: string } | undefined;
+  client?: { full_name: string; email?: string | undefined } | undefined;
   payment_status: string;
-  refund_status?: string;
-  refund_reason?: string;
-  refund_amount?: string;
+  refund_status?: string | undefined;
+  refund_reason?: string | undefined;
+  refund_amount?: string | undefined;
   created_at: string;
 }
 

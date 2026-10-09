@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +38,7 @@ export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const { pathname } = useLocation();
   // Each search entry has its own clean address; the path decides the preset filters.
-  const PRESETS: Record<string, { category?: string; location?: string; type?: string }> = {
+  const PRESETS: Record<string, { category?: string | undefined; location?: string | undefined; type?: string | undefined }> = {
     "/search-caregiver": { category: "care" },
     "/search-local-caregiver": { category: "care", location: "in-person", type: "companionship" },
     "/search-remote-caregiver": { category: "care", location: "remote", type: "companionship" },
@@ -62,7 +62,7 @@ export default function SearchResults() {
   const [locationFilter, setLocationFilter] = useState(initialLocation);
   const [debouncedLocation, setDebouncedLocation] = useState(initialLocation);
   const [sortBy, setSortBy] = useState("rating");
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     debounceRef.current = setTimeout(() => { setDebouncedQuery(query); setDebouncedLocation(locationFilter); setCurrentPage(1); }, 400);
@@ -81,7 +81,7 @@ export default function SearchResults() {
 
   const { data: providers, isLoading: providersLoading } = useProviders({
     query: debouncedQuery || undefined, location: debouncedLocation || undefined,
-    minRate: priceRange[0] > 0 ? priceRange[0] : undefined, maxRate: priceRange[1] < 100 ? priceRange[1] : undefined,
+    minRate: priceRange[0]! > 0 ? priceRange[0] : undefined, maxRate: priceRange[1]! < 100 ? priceRange[1] : undefined,
     verifiedOnly, minRating: minRating > 0 ? minRating : undefined, sortBy,
     serviceLocations: selectedLocations.length > 0 ? selectedLocations : undefined,
     serviceTypeSlugs: selectedServiceTypeSlugs.length > 0 ? selectedServiceTypeSlugs : undefined,

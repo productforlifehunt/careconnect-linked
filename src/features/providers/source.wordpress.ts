@@ -100,21 +100,21 @@ async function fetchDictionaryProviderProfiles(): Promise<Profile[]> {
 
 
 export interface ProviderFilters {
-  query?: string;
-  specialties?: string[];
-  minRate?: number;
-  maxRate?: number;
-  verifiedOnly?: boolean;
-  minRating?: number;
-  sortBy?: string;
-  location?: string;
+  query?: string | undefined;
+  specialties?: string[] | undefined;
+  minRate?: number | undefined;
+  maxRate?: number | undefined;
+  verifiedOnly?: boolean | undefined;
+  minRating?: number | undefined;
+  sortBy?: string | undefined;
+  location?: string | undefined;
   /** Delivery-mode slugs to require (any-of), from CCT 258 a65. e.g. ["in-person", "remote"]. */
-  serviceLocations?: string[];
+  serviceLocations?: string[] | undefined;
   /** Care service slugs to require (any-of), from CCT 258 a68. */
-  serviceTypeSlugs?: string[];
+  serviceTypeSlugs?: string[] | undefined;
 }
 
-export async function fetchProvidersWordPress(filters?: ProviderFilters): Promise<Profile[]> {
+export async function fetchProvidersWordPress(filters?: ProviderFilters | undefined): Promise<Profile[]> {
   try {
     // Discovery is 100% dictionary-driven: CCT 258 (a59 is care provider,
     // a60 provider is active) plus CCT 31 review aggregates. No WooCommerce

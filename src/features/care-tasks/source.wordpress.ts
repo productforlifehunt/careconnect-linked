@@ -89,7 +89,7 @@ async function fetchCaredOneId(taskId: string): Promise<string | null> {
 }
 
 
-function mapTask(t: any, groupId?: string | null) {
+function mapTask(t: any, groupId?: string | null | undefined) {
   const id = String(t._ID || t.id || "");
   const finishCode = String(t[F.TASK_FINISH_STATUS]);
   const helpCode = helpStatusCode(t[F.TASK_HELP_STATUS]);
@@ -134,7 +134,7 @@ function mapTask(t: any, groupId?: string | null) {
   };
 }
 
-export async function fetchCareTasksWordPress(groupId?: string | null): Promise<any[]> {
+export async function fetchCareTasksWordPress(groupId?: string | null | undefined): Promise<any[]> {
     // Everything the task list needs leaves in ONE parallel wave: the group's
     // task relation rows, the bulk task read, and both batched relation maps.
     const [groupRels, bulkTasks, assigneeMap, caredOneMap] = await Promise.all([
@@ -185,23 +185,23 @@ export async function fetchCareTasksWordPress(groupId?: string | null): Promise<
 }
 
 export async function createCareTaskWordPress(task: {
-  care_group_id?: string; group_id?: string;
-  title: string; description?: string;
-  assigned_to?: string | string[]; cared_one_id?: string;
+  care_group_id?: string | undefined; group_id?: string | undefined;
+  title: string; description?: string | undefined;
+  assigned_to?: string | string[] | undefined; cared_one_id?: string | undefined;
   // New fields
-  task_types?: string[];
-  people_needed?: number;
-  location?: string;
-  photo?: string;
-  photo_ids?: Array<number | string>;
-  task_date?: string;
-  start_time?: string;
-  end_time?: string;
-  help_status?: string; // b55|b56|b57
-  needs_payment?: boolean;
-  price?: string;
+  task_types?: string[] | undefined;
+  people_needed?: number | undefined;
+  location?: string | undefined;
+  photo?: string | undefined;
+  photo_ids?: Array<number | string> | undefined;
+  task_date?: string | undefined;
+  start_time?: string | undefined;
+  end_time?: string | undefined;
+  help_status?: string | undefined; // b55|b56|b57
+  needs_payment?: boolean | undefined;
+  price?: string | undefined;
   // Legacy alias
-  due_date?: string;
+  due_date?: string | undefined;
 }): Promise<string | null> {
   const body: Record<string, any> = {
     [F.TITLE]: task.title,
@@ -238,7 +238,7 @@ export async function createCareTaskWordPress(task: {
   }
   assignedUserIds.forEach((assignedUserId) => calls.push(wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
     method: "POST",
-    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { [ASSIGNEE_FIELD]: ASSIGNEE_STATUS_TO_CODE.pending } },
+    body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { [ASSIGNEE_FIELD]: ASSIGNEE_STATUS_TO_CODE["pending"] } },
   })));
   if (taskId && caredOneId) {
     calls.push(wordpressFetch(`jet-rel/${REL_TASK_CARED_ONE}`, {
@@ -331,7 +331,7 @@ export async function updateCareTaskWordPress(id: string, updates: Record<string
     for (const assignedUserId of assignedUserIds) {
       await wordpressFetch(`jet-rel/${REL_TASK_ASSIGNEE}`, {
         method: "POST",
-        body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { [ASSIGNEE_FIELD]: ASSIGNEE_STATUS_TO_CODE.pending } },
+        body: { parent_id: taskId, child_id: assignedUserId, context: "child", store_items_type: "update", meta: { [ASSIGNEE_FIELD]: ASSIGNEE_STATUS_TO_CODE["pending"] } },
       });
     }
     // Newly assigned people must be told, same as on task creation.

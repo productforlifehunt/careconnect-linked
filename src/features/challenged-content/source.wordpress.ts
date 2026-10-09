@@ -13,23 +13,23 @@ import { T } from "@/integrations/wp-schema";
 
 export interface ChallengedContentItem {
   id: string;
-  cct_status?: string;
+  cct_status?: string | undefined;
   title: string;
   content: string;
-  excerpt?: string;
-  category?: string;     // app_content_type (learn|care|find) — friendly label exposed to UI
-  subcategory?: string;  // resolved from a60/a62/a63
-  featured_image?: string;
-  sort_order?: number;
-  is_published?: string;
-  author_name?: string;
-  reading_time?: string;
-  language?: string;
-  app_area?: string;
-  learn_module_number?: string;
-  learn_lesson_number?: string;
-  created_at?: string;
-  updated_at?: string;
+  excerpt?: string | undefined;
+  category?: string | undefined;     // app_content_type (learn|care|find) — friendly label exposed to UI
+  subcategory?: string | undefined;  // resolved from a60/a62/a63
+  featured_image?: string | undefined;
+  sort_order?: number | undefined;
+  is_published?: string | undefined;
+  author_name?: string | undefined;
+  reading_time?: string | undefined;
+  language?: string | undefined;
+  app_area?: string | undefined;
+  learn_module_number?: string | undefined;
+  learn_lesson_number?: string | undefined;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 const CCT_SLUG = T.challengedContent.slug;
@@ -71,14 +71,14 @@ function mapWPItem(raw: any): ChallengedContentItem {
 }
 
 export async function fetchChallengedContent(
-  category?: string,
-  subcategory?: string,
-  locale?: { area?: string; language?: string }
+  category?: string | undefined,
+  subcategory?: string | undefined,
+  locale?: { area?: string | undefined; language?: string | undefined } | undefined
 ): Promise<ChallengedContentItem[]> {
   const params: Record<string, string> = { _limit: "200" };
-    if (category && TYPE_OUT[category]) params.a59 = TYPE_OUT[category];
-    if (locale?.area && AREA_OUT[locale.area]) params.a58 = AREA_OUT[locale.area];
-    if (locale?.language && LANG_OUT[locale.language]) params.a57 = LANG_OUT[locale.language];
+    if (category && TYPE_OUT[category]) params["a59"] = TYPE_OUT[category];
+    if (locale?.area && AREA_OUT[locale.area]) params["a58"] = AREA_OUT[locale.area]!;
+    if (locale?.language && LANG_OUT[locale.language]) params["a57"] = LANG_OUT[locale.language]!;
 
   const wpItems = await wordpressCCTFetch<any[]>(CCT_SLUG, { params });
   if (!Array.isArray(wpItems)) throw new Error("ChallengeD content returned an invalid response");

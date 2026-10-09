@@ -12,12 +12,12 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface WishesTabProps {
   wishes: any[];
-  wishesLoading?: boolean;
+  wishesLoading?: boolean | undefined;
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
-  memberCategories?: any[];
-  members?: any[];
+  memberCategories?: any[] | undefined;
+  members?: any[] | undefined;
   createPost: any;
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;

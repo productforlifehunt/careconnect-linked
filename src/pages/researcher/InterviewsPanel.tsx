@@ -54,7 +54,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
     window.history.replaceState({}, "", url.toString());
   }, [selected]);
 
-  const onFile = async (file?: File) => {
+  const onFile = async (file?: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("audio/") && !/\.(mp3|m4a|wav|aac|ogg|flac|webm)$/i.test(file.name)) { setError("Please choose an audio file. / 请选择音频文件"); return; }
     if (file.size > 500 * 1024 * 1024) { setError("Recordings up to 500 MB are supported. / 最大 500 MB"); return; }

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "@/lib/router-compat";
 import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";

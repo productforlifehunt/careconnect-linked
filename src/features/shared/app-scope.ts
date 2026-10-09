@@ -75,7 +75,7 @@ const SCOPE_KEY: Record<AppScope, string> = {
 /** Opaque option code for the current (or given) app on a scoped CCT. */
 export function appScopeCode(cct: ScopedCct, scope: AppScope = currentAppScope()): string {
   const map = APP_CODE[cct] as Readonly<Record<string, string>>;
-  return map[SCOPE_KEY[scope]];
+  return map[SCOPE_KEY[scope]]!;
 }
 
 /** `{ [appFieldCode]: appOptionCode }` — spread into a CCT create/update body. */
@@ -118,9 +118,9 @@ export function filterAppScope<TRow extends Record<string, any>>(
 /** Community-post scope code ("ChallengeD" / "Care-CNC" community type). */
 export function communityTypeCode(scope: AppScope = currentAppScope()): string {
   const map = COMMUNITY_TYPE_CODE as Readonly<Record<string, string>>;
-  if (scope === "carecnc") return map.CARE_CNC;
-  if (scope === "challenged") return map.CHALLENGED;
-  return map.AFRESH;
+  if (scope === "carecnc") return map["CARE_CNC"]!;
+  if (scope === "challenged") return map["CHALLENGED"]!;
+  return map["AFRESH"]!;
 }
 
 /**

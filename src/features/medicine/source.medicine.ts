@@ -62,7 +62,7 @@ function decodeLogType(raw: any): string[] {
 
 // ─── Dosage text ⇄ quantity + UCUM unit ──────────────────────
 /** "1 tablet" / "10 mg" → { quantity, unit } */
-export function splitDosage(dosage?: string | null): { quantity: number | null; unit: string } {
+export function splitDosage(dosage?: string | null | undefined): { quantity: number | null; unit: string } {
   const raw = String(dosage ?? "").trim();
   if (!raw) return { quantity: null, unit: "" };
   const m = raw.match(/^([\d.]+)\s*(.*)$/);
@@ -81,7 +81,7 @@ function mapSchedule(row: any, caredOneId: string): any {
   const custom = readCustom(row[FC.CUSTOM_DATA]);
   const quantity = numOrNull(row[FC.MEDICATION_DOSE_QUANTITY]);
   const unit = row[FC.MEDICATION_DOSE_UNIT] || "";
-  const freqCode = toFrequencyCode(custom.frequency_code);
+  const freqCode = toFrequencyCode(custom["frequency_code"]);
   return {
     id: String(row.id || row._ID),
     user_id: caredOneId,
@@ -91,8 +91,8 @@ function mapSchedule(row: any, caredOneId: string): any {
     dose_unit: unit,
     frequency_code: freqCode,
     frequency: FREQ_EN[freqCode],
-    time_slot: decodeSlots(custom.time_slot),
-    instructions: custom.instructions || null,
+    time_slot: decodeSlots(custom["time_slot"]),
+    instructions: custom["instructions"] || null,
     note: row[FC.DESCRIPTION] || null,
     start_date: row[FC.START_AT] ? String(row[FC.START_AT]).slice(0, 10) : null,
     end_date: row[FC.END_AT] ? String(row[FC.END_AT]).slice(0, 10) : null,
@@ -101,10 +101,10 @@ function mapSchedule(row: any, caredOneId: string): any {
     stock_count: numOrNull(row[FC.MEDICINE_STOCK]),
     refill_threshold: numOrNull(row[FC.MEDICINE_REFILL]),
     time_to_send_to_caregiver: numOrNull(row[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
-    time_to_be_considered_missing: numOrNull(custom.time_to_be_considered_missing),
+    time_to_be_considered_missing: numOrNull(custom["time_to_be_considered_missing"]),
     prescribing_doctor: row[FC.MEDICINE_PRESCRIBER] || null,
     pharmacy: row[FC.MEDICINE_BOUGHT_PHARMACY] || null,
-    side_effects: custom.side_effects || null,
+    side_effects: custom["side_effects"] || null,
     check_in_type: decodeLogType(row[FC.MEDICINE_LOG_TYPE]),
     created_at: row.cct_created || row.created_at,
   };
@@ -123,24 +123,24 @@ export async function fetchMedicinesWordPress(caredOneId: string): Promise<any[]
 export interface MedicineInput {
   user_id: string;
   name: string;
-  dosage?: string;
-  dose_quantity?: number | null;
-  dose_unit?: string;
-  frequency?: string;          // code or English label
-  time_slot?: string[];
-  instructions?: string;
-  note?: string;
-  start_date?: string;
-  end_date?: string;
-  stock_count?: number;
-  refill_threshold?: number;
-  reminder_time_before?: number;
-  time_to_send_to_caregiver?: number;
-  time_to_be_considered_missing?: number;
-  prescribing_doctor?: string;
-  pharmacy?: string;
-  side_effects?: string;
-  check_in_type?: string[];
+  dosage?: string | undefined;
+  dose_quantity?: number | null | undefined;
+  dose_unit?: string | undefined;
+  frequency?: string | undefined;          // code or English label
+  time_slot?: string[] | undefined;
+  instructions?: string | undefined;
+  note?: string | undefined;
+  start_date?: string | undefined;
+  end_date?: string | undefined;
+  stock_count?: number | undefined;
+  refill_threshold?: number | undefined;
+  reminder_time_before?: number | undefined;
+  time_to_send_to_caregiver?: number | undefined;
+  time_to_be_considered_missing?: number | undefined;
+  prescribing_doctor?: string | undefined;
+  pharmacy?: string | undefined;
+  side_effects?: string | undefined;
+  check_in_type?: string[] | undefined;
 }
 
 export async function createMedicineWordPress(med: MedicineInput): Promise<void> {
@@ -164,8 +164,8 @@ export async function createMedicineWordPress(med: MedicineInput): Promise<void>
     [FC.MEDICATION_DOSE_QUANTITY]: wpStr(dose.quantity),
     [FC.MEDICATION_DOSE_UNIT]: dose.unit || "",
     [FC.MEDICATION_SCHEDULE_TYPE]: freq === "as_needed"
-      ? OC.MEDICATION_SCHEDULE_TYPE.ASNEEDED
-      : OC.MEDICATION_SCHEDULE_TYPE.SCHEDULE,
+      ? OC["MEDICATION_SCHEDULE_TYPE"]!["ASNEEDED"]!
+      : OC["MEDICATION_SCHEDULE_TYPE"]!["SCHEDULE"]!,
     [FC.MEDICINE_LOG_TYPE]: encodeLogType(med.check_in_type),
     [FC.MEDICINE_STOCK]: wpStr(med.stock_count),
     [FC.MEDICINE_REFILL]: wpStr(med.refill_threshold),
@@ -188,55 +188,55 @@ export async function updateMedicineWordPress(id: string, updates: Record<string
   const customKeys = ["frequency", "time_slot", "instructions", "side_effects", "time_to_be_considered_missing"];
   const touchesCustom = customKeys.some((k) => updates[k] !== undefined);
 
-  if (updates.name !== undefined) body[FC.TITLE] = updates.name;
-  if (updates.note !== undefined || updates.notes !== undefined) body[FC.DESCRIPTION] = updates.note ?? updates.notes ?? "";
-  if (updates.dosage !== undefined || updates.dose_quantity !== undefined || updates.dose_unit !== undefined) {
-    const dose = updates.dose_quantity !== undefined || updates.dose_unit !== undefined
-      ? { quantity: updates.dose_quantity ?? null, unit: updates.dose_unit || "" }
-      : splitDosage(updates.dosage);
+  if (updates["name"] !== undefined) body[FC.TITLE] = updates["name"];
+  if (updates["note"] !== undefined || updates["notes"] !== undefined) body[FC.DESCRIPTION] = updates["note"] ?? updates["notes"] ?? "";
+  if (updates["dosage"] !== undefined || updates["dose_quantity"] !== undefined || updates["dose_unit"] !== undefined) {
+    const dose = updates["dose_quantity"] !== undefined || updates["dose_unit"] !== undefined
+      ? { quantity: updates["dose_quantity"] ?? null, unit: updates["dose_unit"] || "" }
+      : splitDosage(updates["dosage"]);
     body[FC.MEDICATION_DOSE_QUANTITY] = wpStr(dose.quantity);
     body[FC.MEDICATION_DOSE_UNIT] = dose.unit || "";
   }
-  if (updates.end_date !== undefined) body[FC.END_AT] = updates.end_date || "";
-  if (updates.is_active !== undefined) body[FC.STATUS] = updates.is_active ? STATUS_CONFIRMED : STATUS_CANCELLED;
-  if (updates.reminder_time_before !== undefined) body[FC.REMINDERS] = buildReminders(updates.reminder_time_before);
-  if (updates.stock_count !== undefined) body[FC.MEDICINE_STOCK] = wpStr(updates.stock_count);
-  if (updates.refill_threshold !== undefined) body[FC.MEDICINE_REFILL] = wpStr(updates.refill_threshold);
-  if (updates.prescribing_doctor !== undefined) body[FC.MEDICINE_PRESCRIBER] = updates.prescribing_doctor || "";
-  if (updates.pharmacy !== undefined) body[FC.MEDICINE_BOUGHT_PHARMACY] = updates.pharmacy || "";
-  if (updates.time_to_send_to_caregiver !== undefined) {
-    body[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING] = wpStr(updates.time_to_send_to_caregiver);
+  if (updates["end_date"] !== undefined) body[FC.END_AT] = updates["end_date"] || "";
+  if (updates["is_active"] !== undefined) body[FC.STATUS] = updates["is_active"] ? STATUS_CONFIRMED : STATUS_CANCELLED;
+  if (updates["reminder_time_before"] !== undefined) body[FC.REMINDERS] = buildReminders(updates["reminder_time_before"]);
+  if (updates["stock_count"] !== undefined) body[FC.MEDICINE_STOCK] = wpStr(updates["stock_count"]);
+  if (updates["refill_threshold"] !== undefined) body[FC.MEDICINE_REFILL] = wpStr(updates["refill_threshold"]);
+  if (updates["prescribing_doctor"] !== undefined) body[FC.MEDICINE_PRESCRIBER] = updates["prescribing_doctor"] || "";
+  if (updates["pharmacy"] !== undefined) body[FC.MEDICINE_BOUGHT_PHARMACY] = updates["pharmacy"] || "";
+  if (updates["time_to_send_to_caregiver"] !== undefined) {
+    body[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING] = wpStr(updates["time_to_send_to_caregiver"]);
   }
-  if (updates.check_in_type !== undefined) body[FC.MEDICINE_LOG_TYPE] = encodeLogType(updates.check_in_type);
+  if (updates["check_in_type"] !== undefined) body[FC.MEDICINE_LOG_TYPE] = encodeLogType(updates["check_in_type"]);
 
-  if (touchesCustom || updates.start_date !== undefined) {
+  if (touchesCustom || updates["start_date"] !== undefined) {
     const row = await readEvent(id);
     const custom = readCustom(row?.[FC.CUSTOM_DATA]);
-    const freq = updates.frequency !== undefined
-      ? toFrequencyCode(updates.frequency)
-      : toFrequencyCode(custom.frequency_code);
-    const slots = updates.time_slot !== undefined ? decodeSlots(updates.time_slot) : decodeSlots(custom.time_slot);
-    const startDate = updates.start_date !== undefined
-      ? (updates.start_date || "")
+    const freq = updates["frequency"] !== undefined
+      ? toFrequencyCode(updates["frequency"])
+      : toFrequencyCode(custom["frequency_code"]);
+    const slots = updates["time_slot"] !== undefined ? decodeSlots(updates["time_slot"]) : decodeSlots(custom["time_slot"]);
+    const startDate = updates["start_date"] !== undefined
+      ? (updates["start_date"] || "")
       : String(row?.[FC.START_AT] || "").slice(0, 10);
-    if (updates.start_date !== undefined || updates.time_slot !== undefined) {
+    if (updates["start_date"] !== undefined || updates["time_slot"] !== undefined) {
       body[FC.START_AT] = startDate && slots[0] ? `${startDate} ${slots[0]}:00` : startDate;
     }
-    if (updates.frequency !== undefined || updates.time_slot !== undefined) {
+    if (updates["frequency"] !== undefined || updates["time_slot"] !== undefined) {
       body[FC.RRULE] = buildRRule(freq, slots);
       body[FC.MEDICATION_SCHEDULE_TYPE] = freq === "as_needed"
-        ? OC.MEDICATION_SCHEDULE_TYPE.ASNEEDED
-        : OC.MEDICATION_SCHEDULE_TYPE.SCHEDULE;
+        ? OC["MEDICATION_SCHEDULE_TYPE"]!["ASNEEDED"]!
+        : OC["MEDICATION_SCHEDULE_TYPE"]!["SCHEDULE"]!;
     }
     body[FC.CUSTOM_DATA] = writeCustom({
       ...custom,
       frequency_code: freq,
       time_slot: slots,
-      instructions: updates.instructions !== undefined ? (updates.instructions || "") : (custom.instructions || ""),
-      side_effects: updates.side_effects !== undefined ? (updates.side_effects || "") : (custom.side_effects || ""),
-      time_to_be_considered_missing: updates.time_to_be_considered_missing !== undefined
-        ? (updates.time_to_be_considered_missing ?? "")
-        : (custom.time_to_be_considered_missing ?? ""),
+      instructions: updates["instructions"] !== undefined ? (updates["instructions"] || "") : (custom["instructions"] || ""),
+      side_effects: updates["side_effects"] !== undefined ? (updates["side_effects"] || "") : (custom["side_effects"] || ""),
+      time_to_be_considered_missing: updates["time_to_be_considered_missing"] !== undefined
+        ? (updates["time_to_be_considered_missing"] ?? "")
+        : (custom["time_to_be_considered_missing"] ?? ""),
     });
   }
 
@@ -250,18 +250,18 @@ export async function deleteMedicineWordPress(id: string): Promise<void> {
 // ─── Logs (CCT 161 user's other log event, Apple HKMedicationDoseEvent) ─────
 /** UI status → Apple LogStatus code. "missed" = notInteracted (Apple has no missed). */
 const LOG_STATUS_CODE: Record<string, string> = {
-  taken: OL.DOSE_EVENT_LOG_STATUS.TAKEN,
-  skipped: OL.DOSE_EVENT_LOG_STATUS.SKIPPED,
-  missed: OL.DOSE_EVENT_LOG_STATUS.NOT_INTERACTED,
-  snoozed: OL.DOSE_EVENT_LOG_STATUS.SNOOZED,
-  not_logged: OL.DOSE_EVENT_LOG_STATUS.NOT_LOGGED,
-  notification_not_sent: OL.DOSE_EVENT_LOG_STATUS.NOTIFICATION_NOT_SENT,
+  taken: OL["DOSE_EVENT_LOG_STATUS"]!["TAKEN"]!,
+  skipped: OL["DOSE_EVENT_LOG_STATUS"]!["SKIPPED"]!,
+  missed: OL["DOSE_EVENT_LOG_STATUS"]!["NOT_INTERACTED"]!,
+  snoozed: OL["DOSE_EVENT_LOG_STATUS"]!["SNOOZED"]!,
+  not_logged: OL["DOSE_EVENT_LOG_STATUS"]!["NOT_LOGGED"]!,
+  notification_not_sent: OL["DOSE_EVENT_LOG_STATUS"]!["NOTIFICATION_NOT_SENT"]!,
 };
 const LOG_STATUS_LABEL: Record<string, string> = Object.fromEntries(
   Object.entries(LOG_STATUS_CODE).map(([k, v]) => [v, k]),
 );
 
-function mapLog(row: any, medicineId: string, fallbackId?: string): any {
+function mapLog(row: any, medicineId: string, fallbackId?: string | undefined): any {
   const at = row[FL.LOG_EVENT_TIME] || row.cct_created || row.created_at;
   const note = row[FL.DOSE_EVENT_NOTE] || row[FL.LOG_MEDICINE_NOTE] || null;
   return {
@@ -289,7 +289,7 @@ function mapLog(row: any, medicineId: string, fallbackId?: string): any {
 function isMedicineLogRow(row: any): boolean {
   const type = String(row?.[FL.LOG_EVENT_TYPE] ?? "");
   if (!type) return !!row?.[FL.DOSE_EVENT_LOG_STATUS];
-  return type === OL.LOG_EVENT_TYPE.CUSTOM_MEDICINE;
+  return type === OL["LOG_EVENT_TYPE"]!["CUSTOM_MEDICINE"]!;
 }
 
 export async function fetchMedicineLogsWordPress(medicineId: string): Promise<any[]> {
@@ -325,29 +325,29 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
 
 export interface MedicineLogInput {
   medicine_id: string;
-  status?: string;
-  note?: string;
-  user_id?: string;
-  logged_by_ai?: boolean;
+  status?: string | undefined;
+  note?: string | undefined;
+  user_id?: string | undefined;
+  logged_by_ai?: boolean | undefined;
   /** Apple-aligned dose context, taken from the schedule row. */
-  dose_quantity?: number | null;
-  scheduled_dose_quantity?: number | null;
-  dose_unit?: string | null;
-  scheduled_date?: string | null;
-  schedule_type?: string | null;
-  concept_identifier?: string | null;
-  concept_display_text?: string | null;
-  concept_general_form?: string | null;
-  rxcui?: string | null;
+  dose_quantity?: number | null | undefined;
+  scheduled_dose_quantity?: number | null | undefined;
+  dose_unit?: string | null | undefined;
+  scheduled_date?: string | null | undefined;
+  schedule_type?: string | null | undefined;
+  concept_identifier?: string | null | undefined;
+  concept_display_text?: string | null | undefined;
+  concept_general_form?: string | null | undefined;
+  rxcui?: string | null | undefined;
 }
 
 export async function logMedicineWordPress(log: MedicineLogInput): Promise<void> {
-  const status = LOG_STATUS_CODE[String(log.status || "taken").toLowerCase()] || LOG_STATUS_CODE.taken;
+  const status = LOG_STATUS_CODE[String(log.status || "taken").toLowerCase()] || LOG_STATUS_CODE["taken"];
   const now = new Date();
   const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   const body: Record<string, any> = {
     [FL.LOG_EVENT_NAME]: log.concept_display_text || "Medication",
-    [FL.LOG_EVENT_TYPE]: OL.LOG_EVENT_TYPE.CUSTOM_MEDICINE,
+    [FL.LOG_EVENT_TYPE]: OL["LOG_EVENT_TYPE"]!["CUSTOM_MEDICINE"]!,
     [FL.DOSE_EVENT_LOG_STATUS]: status,
     [FL.DOSE_EVENT_NOTE]: log.note || "",
     [FL.LOG_MEDICINE_NOTE]: log.note || "",
@@ -355,13 +355,13 @@ export async function logMedicineWordPress(log: MedicineLogInput): Promise<void>
     [FL.SCHEDULED_DOSE_QUANTITY]: wpStr(log.scheduled_dose_quantity),
     [FL.DOSE_UNIT]: log.dose_unit || "",
     [FL.SCHEDULED_DATE]: log.scheduled_date || stamp,
-    [FL.SCHEDULE_TYPE]: log.schedule_type || OL.SCHEDULE_TYPE.SCHEDULE,
+    [FL.SCHEDULE_TYPE]: log.schedule_type || OL["SCHEDULE_TYPE"]!["SCHEDULE"]!,
     [FL.CONCEPT_IDENTIFIER]: log.concept_identifier || "",
     [FL.CONCEPT_DISPLAY_TEXT]: log.concept_display_text || "",
     [FL.CONCEPT_GENERAL_FORM]: log.concept_general_form || "",
     [FL.CLINICAL_CODING_SYSTEM]: log.rxcui ? RXNORM_SYSTEM : "",
     [FL.CLINICAL_CODING_CODE]: log.rxcui || "",
-    [FL.CHECKED_BY_AI]: log.logged_by_ai ? OL.CHECKED_BY_AI.YES : OL.CHECKED_BY_AI.NO,
+    [FL.CHECKED_BY_AI]: log.logged_by_ai ? OL["CHECKED_BY_AI"]!["YES"]! : OL["CHECKED_BY_AI"]!["NO"]!,
     [FL.LOG_EVENT_TIME]: stamp,
     [FL.FOR_APP]: "challenged",
   };

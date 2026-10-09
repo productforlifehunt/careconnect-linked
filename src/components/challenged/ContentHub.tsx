@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,7 +58,7 @@ export function ContentHub({
     .map((x) => ({
       id: x.key,
       title: isChinese ? x.title.zh : x.title.en,
-      excerpt: (isChinese ? x.body.zh : x.body.en)[0],
+      excerpt: (isChinese ? x.body.zh : x.body.en)[0]!,
       subcategory: subLabel(x.sub),
       reading_time: isChinese ? `${x.minutes}分钟` : `${x.minutes} min read`,
     }));

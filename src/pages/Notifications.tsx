@@ -6,11 +6,11 @@ import { Bell, Users, Loader2, Check, X, UserPlus } from "lucide-react";
 import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, useMyPendingInvitations, useAcceptInvitation, useDeclineInvitation } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Notifications({ embedded = false, readFilter = "all" }: { embedded?: boolean; readFilter?: "all" | "unread" | "read" } = {}) {
+export default function Notifications({ embedded = false, readFilter = "all" }: { embedded?: boolean | undefined; readFilter?: "all" | "unread" | "read" | undefined } = {}) {
   const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();

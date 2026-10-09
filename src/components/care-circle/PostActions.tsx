@@ -33,7 +33,7 @@ export function PostActions({
   );
 }
 
-export function VisibilitySelect({ value, onChange, memberCategories }: { value: string; onChange: (v: string) => void; memberCategories?: any[] }) {
+export function VisibilitySelect({ value, onChange, memberCategories }: { value: string; onChange: (v: string) => void; memberCategories?: any[] | undefined }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);

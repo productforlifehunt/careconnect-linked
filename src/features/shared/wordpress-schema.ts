@@ -27,69 +27,69 @@ export type WordPressFeatureKey =
 
 export interface WordPressSchemaEntry<TResponse = unknown, TApp = unknown, TInput = unknown> {
   status: WordPressSchemaStatus;
-  endpoint: string | ((args?: Record<string, any>) => string);
-  defaultParams?: Record<string, string | number | boolean>;
-  mapList?: (response: TResponse, args?: Record<string, any>) => TApp | Promise<TApp>;
-  mapDetail?: (response: TResponse, args?: Record<string, any>) => TApp | Promise<TApp>;
-  buildCreateBody?: (input: TInput, args?: Record<string, any>) => unknown;
-  buildUpdateBody?: (input: TInput, args?: Record<string, any>) => unknown;
+  endpoint: string | ((args: Record<string, any>) => string);
+  defaultParams?: Record<string, string | number | boolean> | undefined;
+  mapList?: ((response: TResponse, args?: Record<string, any>) => TApp | Promise<TApp>) | undefined;
+  mapDetail?: ((response: TResponse, args?: Record<string, any>) => TApp | Promise<TApp>) | undefined;
+  buildCreateBody?: ((input: TInput, args?: Record<string, any>) => unknown) | undefined;
+  buildUpdateBody?: ((input: TInput, args?: Record<string, any>) => unknown) | undefined;
 }
 
 interface WPDokanStore {
   id: number;
-  store_name?: string;
-  first_name?: string;
-  email?: string;
-  gravatar?: string;
-  description?: string;
-  address?: { street_1?: string; city?: string; state?: string };
-  rating?: { rating?: number; count?: number };
+  store_name?: string | undefined;
+  first_name?: string | undefined;
+  email?: string | undefined;
+  gravatar?: string | undefined;
+  description?: string | undefined;
+  address?: { street_1?: string | undefined; city?: string | undefined; state?: string | undefined } | undefined;
+  rating?: { rating?: number | undefined; count?: number | undefined } | undefined;
 }
 
 interface WPWooOrder {
   id: number;
   status: string;
   date_created: string;
-  line_items?: Array<{ name?: string; price?: string }>;
-  total?: string;
+  line_items?: Array<{ name?: string | undefined; price?: string | undefined }> | undefined;
+  total?: string | undefined;
 }
 
 interface WPUserEntity {
   id: number;
-  name?: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  slug?: string;
-  avatar_urls?: Record<string, string>;
-  description?: string;
+  name?: string | undefined;
+  first_name?: string | undefined;
+  last_name?: string | undefined;
+  email?: string | undefined;
+  slug?: string | undefined;
+  avatar_urls?: Record<string, string> | undefined;
+  description?: string | undefined;
 }
 
 interface WPPostEntity {
   id: number;
-  type?: string;
-  slug?: string;
-  status?: string;
-  date?: string;
-  modified?: string;
-  author?: number;
-  title?: { rendered?: string };
-  content?: { rendered?: string };
-  excerpt?: { rendered?: string };
+  type?: string | undefined;
+  slug?: string | undefined;
+  status?: string | undefined;
+  date?: string | undefined;
+  modified?: string | undefined;
+  author?: number | undefined;
+  title?: { rendered?: string | undefined } | undefined;
+  content?: { rendered?: string | undefined } | undefined;
+  excerpt?: { rendered?: string | undefined } | undefined;
   _embedded?: {
-    author?: Array<{ name?: string; avatar_urls?: Record<string, string> }>;
-    "wp:featuredmedia"?: Array<{ source_url?: string }>;
-    "wp:term"?: Array<Array<{ id: number; name: string; slug: string }>>;
+    author?: Array<{ name?: string | undefined; avatar_urls?: Record<string, string> }> | undefined;
+    "wp:featuredmedia"?: Array<{ source_url?: string | undefined }> | undefined;
+    "wp:term"?: Array<Array<{ id: number; name: string; slug: string }>> | undefined;
   };
 }
 
 interface WPCategoryEntity {
   id: number;
-  name?: string;
-  slug?: string;
-  description?: string;
-  count?: number;
-  parent?: number;
+  name?: string | undefined;
+  slug?: string | undefined;
+  description?: string | undefined;
+  count?: number | undefined;
+  parent?: number | undefined;
 }
 
 function mapDokanStoreToProfile(store: WPDokanStore): Profile {
@@ -99,7 +99,7 @@ function mapDokanStoreToProfile(store: WPDokanStore): Profile {
     id: String(store.id),
     user_id: `wp-${store.id}`,
     email: store.email || null,
-    first_name: store.store_name?.split(" ")[0] || store.first_name || null,
+    first_name: store.store_name?.split(" ")[0]! || store.first_name || null,
     last_name: store.store_name?.split(" ").slice(1).join(" ") || null,
     full_name: store.store_name || store.first_name || "Provider",
     user_name: null,
@@ -207,7 +207,7 @@ function mapGenericWPPost(post: WPPostEntity, args?: Record<string, any>) {
   return {
     id: String(post.id),
     post_type_id: null,
-    post_type: args?.postType || post.type || "post",
+    post_type: args?.["postType"] || post.type || "post",
     title: post.title?.rendered || null,
     slug: post.slug || null,
     content: stripHtml(post.content?.rendered) || null,
@@ -261,10 +261,10 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
     mapDetail: (user: WPUserEntity) => mapWPUserToProfile(user),
     buildUpdateBody: (updates: Partial<Profile>) => {
       const body: Record<string, any> = {};
-      if (updates.first_name !== undefined) body.first_name = updates.first_name;
-      if (updates.last_name !== undefined) body.last_name = updates.last_name;
-      if (updates.full_name !== undefined) body.name = updates.full_name;
-      if (updates.bio !== undefined) body.description = updates.bio;
+      if (updates.first_name !== undefined) body["first_name"] = updates.first_name;
+      if (updates.last_name !== undefined) body["last_name"] = updates.last_name;
+      if (updates.full_name !== undefined) body["name"] = updates.full_name;
+      if (updates.bio !== undefined) body["description"] = updates.bio;
       return body;
     },
   },
@@ -295,7 +295,7 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
     endpoint: ({ postType }) => `wp/v2/${postType && postType !== "post" ? postType : "posts"}`,
     defaultParams: { per_page: 50, _embed: 1 },
     mapList: (items: WPPostEntity[], args?: Record<string, any>) => (Array.isArray(items) ? items.map((item) => mapGenericWPPost(item, args)) : []),
-    buildCreateBody: (post: { title: string; content?: string; status?: string }) => ({
+    buildCreateBody: (post: { title: string; content?: string | undefined; status?: string | undefined }) => ({
       title: post.title,
       content: post.content || "",
       status: post.status || "publish",
@@ -306,11 +306,11 @@ export const wordpressSchema: Record<WordPressFeatureKey, WordPressSchemaEntry<a
     endpoint: ({ id, postType }) => `wp/v2/${postType && postType !== "post" ? postType : "posts"}/${id}`,
     defaultParams: { _embed: 1 },
     mapDetail: (item: WPPostEntity, args?: Record<string, any>) => mapGenericWPPost(item, args),
-    buildUpdateBody: (updates: { title?: string; content?: string; status?: string }) => {
+    buildUpdateBody: (updates: { title?: string | undefined; content?: string | undefined; status?: string | undefined }) => {
       const body: Record<string, any> = {};
-      if (updates.title !== undefined) body.title = updates.title;
-      if (updates.content !== undefined) body.content = updates.content;
-      if (updates.status !== undefined) body.status = updates.status;
+      if (updates.title !== undefined) body["title"] = updates.title;
+      if (updates.content !== undefined) body["content"] = updates.content;
+      if (updates.status !== undefined) body["status"] = updates.status;
       return body;
     },
   },

@@ -8,8 +8,8 @@ import { isChineseLanguage, uiText } from "@/features/esm/i18n";
 interface Props {
   /** Called with the transcript once the recording has been turned into text. */
   onTranscript: (text: string) => void;
-  label?: string;
-  className?: string;
+  label?: string | undefined;
+  className?: string | undefined;
 }
 
 /** One microphone button: tap to record, tap again to stop and fill the answer. */

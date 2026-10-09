@@ -38,17 +38,17 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
 // a59 room type, a60 room facility, a61 community facility, a62 people number,
 // a63 location, a64 address, a65 approved, a66 phone, a67 email.
 export async function createCareFacilityWordPress(input: {
-  title?: string; name?: string; content?: string; description?: string | null;
-  address?: string | null; location?: string | null;
-  phone?: string | null; email?: string | null;
-  type?: string[] | string | null;
-  dementia_stage?: string[] | string | null;
-  room_type?: string[] | string | null;
-  room_facility?: string[] | string | null;
-  community_facility?: string[] | string | null;
-  people_number?: string | null;
-  isOwner?: boolean; ownerRole?: string | null;
-  ownershipClaim?: string | null; ownershipAttachmentUrls?: string | string[] | null;
+  title?: string | undefined; name?: string | undefined; content?: string | undefined; description?: string | null | undefined;
+  address?: string | null | undefined; location?: string | null | undefined;
+  phone?: string | null | undefined; email?: string | null | undefined;
+  type?: string[] | string | null | undefined;
+  dementia_stage?: string[] | string | null | undefined;
+  room_type?: string[] | string | null | undefined;
+  room_facility?: string[] | string | null | undefined;
+  community_facility?: string[] | string | null | undefined;
+  people_number?: string | null | undefined;
+  isOwner?: boolean | undefined; ownerRole?: string | null | undefined;
+  ownershipClaim?: string | null | undefined; ownershipAttachmentUrls?: string | string[] | null | undefined;
 }): Promise<any> {
   const list = (v: string[] | string | null | undefined) =>
     Array.isArray(v) ? v.filter(Boolean) : v ? [String(v)] : [];
@@ -92,18 +92,18 @@ export async function createCareFacilityWordPress(input: {
 
 export async function updateCareFacilityWordPress(id: string, updates: Record<string, any>): Promise<any> {
   const body: Record<string, any> = {};
-  if (updates.title !== undefined || updates.name !== undefined) body[F.NAME] = updates.title ?? updates.name;
-  if (updates.content !== undefined || updates.description !== undefined) body[F.DETAIL] = updates.content ?? updates.description;
-  if (updates.type !== undefined) body[F.CARE_FACILITY_TYPE] = updates.type;
-  if (updates.dementia_stage !== undefined) body[F.CARE_FACILITY_CAN_CARE_FOR_DEMENTIA_STAGE] = updates.dementia_stage;
-  if (updates.room_type !== undefined) body[F.CARE_FACILITY_ROOM_TYPE] = updates.room_type;
-  if (updates.room_facility !== undefined) body[F.CARE_FACILITY_PROVIDES_ROOM_FACILITY] = updates.room_facility;
-  if (updates.community_facility !== undefined) body[F.CARE_FACILITY_PROVIDES_COMMUNITY_FACILITY] = updates.community_facility;
-  if (updates.people_number !== undefined) body[F.CARE_FACILITY_PEOPLE_NUMBER] = updates.people_number;
-  if (updates.location !== undefined) body[F.LOCATION] = updates.location;
-  if (updates.address !== undefined) body[F.ADDRESS] = updates.address;
-  if (updates.phone !== undefined) body[F.PHONE] = updates.phone;
-  if (updates.email !== undefined) body[F.EMAIL] = updates.email;
+  if (updates["title"] !== undefined || updates["name"] !== undefined) body[F.NAME] = updates["title"] ?? updates["name"];
+  if (updates["content"] !== undefined || updates["description"] !== undefined) body[F.DETAIL] = updates["content"] ?? updates["description"];
+  if (updates["type"] !== undefined) body[F.CARE_FACILITY_TYPE] = updates["type"];
+  if (updates["dementia_stage"] !== undefined) body[F.CARE_FACILITY_CAN_CARE_FOR_DEMENTIA_STAGE] = updates["dementia_stage"];
+  if (updates["room_type"] !== undefined) body[F.CARE_FACILITY_ROOM_TYPE] = updates["room_type"];
+  if (updates["room_facility"] !== undefined) body[F.CARE_FACILITY_PROVIDES_ROOM_FACILITY] = updates["room_facility"];
+  if (updates["community_facility"] !== undefined) body[F.CARE_FACILITY_PROVIDES_COMMUNITY_FACILITY] = updates["community_facility"];
+  if (updates["people_number"] !== undefined) body[F.CARE_FACILITY_PEOPLE_NUMBER] = updates["people_number"];
+  if (updates["location"] !== undefined) body[F.LOCATION] = updates["location"];
+  if (updates["address"] !== undefined) body[F.ADDRESS] = updates["address"];
+  if (updates["phone"] !== undefined) body[F.PHONE] = updates["phone"];
+  if (updates["email"] !== undefined) body[F.EMAIL] = updates["email"];
   const result = await wordpressCCTFetch(CCT_SLUG, { id, method: "PUT", body }) as any;
   return { id: result?.id || id };
 }
@@ -136,7 +136,7 @@ export async function fetchFacilityMembersWordPress(facilityId: string): Promise
 export async function addFacilityMemberWordPress(
   facilityId: string,
   userId: string,
-  opts?: { type?: "member" | "owner" | "admin"; roleLabel?: string },
+  opts?: { type?: "member" | "owner" | "admin" | undefined; roleLabel?: string | undefined } | undefined,
 ): Promise<void> {
   const fid = normalizeWpObjectId(facilityId);
   const uid = normalizeWpObjectId(userId);
@@ -263,10 +263,10 @@ export async function fetchFacilityDisputesWordPress(facilityId: string): Promis
  */
 export async function createFacilityOwnershipClaimWordPress(input: {
   facility_id: string;
-  claim?: string | null;
-  attachment_urls?: string[] | string | null;
-  is_dispute?: boolean;
-  status?: "pending" | "approved" | "rejected";
+  claim?: string | null | undefined;
+  attachment_urls?: string[] | string | null | undefined;
+  is_dispute?: boolean | undefined;
+  status?: "pending" | "approved" | "rejected" | undefined;
 }): Promise<{ id: string }> {
   const fid = normalizeWpObjectId(input.facility_id);
   if (!fid) throw new Error("Invalid facility ID");
@@ -293,7 +293,7 @@ export async function createFacilityOwnershipClaimWordPress(input: {
 /** Admin decision on a claim/dispute: status + written reply. */
 export async function updateFacilityOwnershipClaimWordPress(
   claimId: string,
-  updates: { status?: "pending" | "approved" | "rejected"; reply?: string | null; claim?: string | null; attachment_urls?: string[] | string | null },
+  updates: { status?: "pending" | "approved" | "rejected" | undefined; reply?: string | null | undefined; claim?: string | null | undefined; attachment_urls?: string[] | string | null | undefined },
 ): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.status !== undefined) {

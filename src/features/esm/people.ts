@@ -71,8 +71,8 @@ export async function fetchMyPeople(): Promise<EsmPerson[]> {
     }
     const rows = await wordpressCCTFetch<Record<string, unknown>[]>(PERSON_CCT);
     const people = (Array.isArray(rows) ? rows : [])
-      .filter((r) => ids.includes(String(r._ID ?? r.id)))
-      .map((r) => ({ id: String(r._ID ?? r.id ?? ""), name: String(r.a01 ?? "") }))
+      .filter((r) => ids.includes(String(r["_ID"] ?? r["id"])))
+      .map((r) => ({ id: String(r["_ID"] ?? r["id"] ?? ""), name: String(r["a01"] ?? "") }))
       .reverse();
     writeCache(people);
     return people;

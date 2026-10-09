@@ -14,7 +14,7 @@ export interface ZoneScheduleValue {
 }
 
 /** Datetime pickers speak local time; the CCT keeps a full timestamp. */
-export function toLocalInput(value?: string | null): string {
+export function toLocalInput(value?: string | null | undefined): string {
   if (!value) return "";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";

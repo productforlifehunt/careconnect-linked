@@ -22,15 +22,15 @@ export interface Profile {
 
   // ─── CCT 258 published rates (a66 / a67 / a69 / a70) ────────
   /** a66 — hourly rate for in-person service. */
-  care_provider_hourly_rate_in_person?: number | null;
+  care_provider_hourly_rate_in_person?: number | null | undefined;
   /** a67 — hourly rate for remote service. */
-  care_provider_hourly_rate_remote?: number | null;
+  care_provider_hourly_rate_remote?: number | null | undefined;
   /** a69 — rate for remote check-ins. */
-  care_provider_rate_remote_checkin?: number | null;
+  care_provider_rate_remote_checkin?: number | null | undefined;
   /** a70 — rate for remote medicine supervision. */
-  care_provider_rate_remote_medicine?: number | null;
+  care_provider_rate_remote_medicine?: number | null | undefined;
   /** a63 — cancellation policy. */
-  care_provider_cancellation_policy?: string | null;
+  care_provider_cancellation_policy?: string | null | undefined;
 
   // ─── CCT: Additional provider fields (added to CCT) ─────────
   phone: string | null;
@@ -43,11 +43,11 @@ export interface Profile {
   rating_average: number | null;
   rating_count: number | null;
   /** Lowest published rate (mirrors care_provider_starts_hourly_rate). */
-  min_block_cost?: number | null;
+  min_block_cost?: number | null | undefined;
   /** Care service slugs offered by this provider (CCT 258 a68). */
-  service_type_slugs?: string[];
+  service_type_slugs?: string[] | undefined;
   /** Delivery-mode slugs (CCT 258 a65): in-person | remote. */
-  service_location_slugs?: string[];
+  service_location_slugs?: string[] | undefined;
 
 
   // ─── Timestamps ─────────────────────────────────────────────
@@ -78,14 +78,14 @@ export interface Booking {
   created_at: string;
   updated_at: string;
   // Joined fields
-  provider?: Profile;
-  client?: Profile;
+  provider?: Profile | undefined;
+  client?: Profile | undefined;
 }
 
 export interface CareFacility {
   id: string;
-  post_type_id?: string | null;
-  child_post_type_id?: string | null;
+  post_type_id?: string | null | undefined;
+  child_post_type_id?: string | null | undefined;
   name: string;
   description: string | null;
   type: string | null;
@@ -113,10 +113,10 @@ export interface CareFacility {
 export interface LocationRecord {
   id: string;
   entity_id: string;
-  post_id?: string | null;
-  product_id?: string | null;
-  shop_id?: string | null;
-  user_id?: string | null;
+  post_id?: string | null | undefined;
+  product_id?: string | null | undefined;
+  shop_id?: string | null | undefined;
+  user_id?: string | null | undefined;
   address: string | null;
   country: string | null;
   province: string | null;
@@ -124,78 +124,78 @@ export interface LocationRecord {
   district: string | null;
   town: string | null;
   village: string | null;
-  locality?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  postal_code?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  locality?: string | null | undefined;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
+  postal_code?: string | null | undefined;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface EntityMember {
   id: string;
   entity_id: string;
-  post_id?: string | null;
-  product_id?: string | null;
-  shop_id?: string | null;
-  target_user_id?: string | null;
+  post_id?: string | null | undefined;
+  product_id?: string | null | undefined;
+  shop_id?: string | null | undefined;
+  target_user_id?: string | null | undefined;
   user_id: string;
   is_owner: boolean | null;
   is_admin: boolean | null;
   role: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface EntityMemberWithProfile extends EntityMember {
-  profile?: Pick<Profile, "id" | "user_id" | "full_name" | "email" | "avatar_url"> | null;
+  profile?: Pick<Profile, "id" | "user_id" | "full_name" | "email" | "avatar_url"> | null | undefined;
 }
 
 export interface EntityOwnershipClaim {
   id: string;
   entity_id: string;
-  post_id?: string | null;
-  product_id?: string | null;
-  shop_id?: string | null;
-  target_user_id?: string | null;
+  post_id?: string | null | undefined;
+  product_id?: string | null | undefined;
+  shop_id?: string | null | undefined;
+  target_user_id?: string | null | undefined;
   claim: string | null;
   attachment_urls: string[] | null;
   status: "pending" | "approved" | "rejected" | null;
   user_id: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface EntityOwnershipDispute {
   id: string;
   entity_id: string;
-  post_id?: string | null;
-  product_id?: string | null;
-  shop_id?: string | null;
-  target_user_id?: string | null;
+  post_id?: string | null | undefined;
+  product_id?: string | null | undefined;
+  shop_id?: string | null | undefined;
+  target_user_id?: string | null | undefined;
   claim: string | null;
   attachment_urls: string[] | null;
   status: "pending" | "approved" | "rejected" | null;
   reject_reason: string | null;
   user_id: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export type FacilityMember = EntityMember & {
-  facility_id?: string | null;
+  facility_id?: string | null | undefined;
 };
 
 export type FacilityMemberWithProfile = EntityMemberWithProfile & {
-  facility_id?: string | null;
+  facility_id?: string | null | undefined;
 };
 
 export type FacilityOwnershipClaim = EntityOwnershipClaim & {
-  facility_id?: string | null;
+  facility_id?: string | null | undefined;
 };
 
 export type FacilityOwnershipDispute = EntityOwnershipDispute & {
-  facility_id?: string | null;
+  facility_id?: string | null | undefined;
 };
 
 export interface Review {
@@ -205,10 +205,10 @@ export interface Review {
   rating: number;
   title: string | null;
   comment: string | null;
-  content?: string | null;
-  response_text?: string | null;
+  content?: string | null | undefined;
+  response_text?: string | null | undefined;
   created_at: string;
-  reviewer?: Profile;
+  reviewer?: Profile | undefined;
 }
 
 export interface PostType {
@@ -222,8 +222,8 @@ export interface PostType {
   status: string | null;
   author_id: string | null;
   parent_id: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface CategoryType {
@@ -236,8 +236,8 @@ export interface CategoryType {
   slug: string | null;
   status: string | null;
   author_id: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface CategoryOption {
@@ -252,20 +252,20 @@ export interface CategoryOption {
   sort_order: number | null;
   status: string | null;
   author_id: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface EntityCategoryOption {
   id: string;
   entity_id: string;
-  post_id?: string | null;
-  product_id?: string | null;
-  shop_id?: string | null;
+  post_id?: string | null | undefined;
+  product_id?: string | null | undefined;
+  shop_id?: string | null | undefined;
   category_type_id: string;
   category_option_id: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface CustomFieldType {
@@ -277,85 +277,85 @@ export interface CustomFieldType {
   slug: string | null;
   status: string | null;
   author_id: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface EntityCustomFieldValue {
   id: string;
   entity_id: string;
-  post_id?: string | null;
-  product_id?: string | null;
-  shop_id?: string | null;
+  post_id?: string | null | undefined;
+  product_id?: string | null | undefined;
+  shop_id?: string | null | undefined;
   custom_field_type_id: string;
   value: string | null;
   status: string | null;
   author_id: string | null;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export interface Post {
   id: string;
   post_type_id: string | null;
-  child_post_type_id?: string | null;
-  grandchild_post_type_id?: string | null;
-  great_grandchild_post_type_id?: string | null;
-  post_type?: string | null;
+  child_post_type_id?: string | null | undefined;
+  grandchild_post_type_id?: string | null | undefined;
+  great_grandchild_post_type_id?: string | null | undefined;
+  post_type?: string | null | undefined;
   title: string;
   content_area: string | null;
-  area?: string | null;
+  area?: string | null | undefined;
   content: string | null;
-  excerpt?: string | null;
-  slug?: string | null;
-  logo_url?: string | null;
-  thumbnail_url?: string | null;
-  status?: string | null;
+  excerpt?: string | null | undefined;
+  slug?: string | null | undefined;
+  logo_url?: string | null | undefined;
+  thumbnail_url?: string | null | undefined;
+  status?: string | null | undefined;
   author_id: string;
-  hunter_id?: string | null;
-  phone?: string | null;
-  mail?: string | null;
-  website_url?: string | null;
+  hunter_id?: string | null | undefined;
+  phone?: string | null | undefined;
+  mail?: string | null | undefined;
+  website_url?: string | null | undefined;
   created_at: string;
   updated_at: string;
-  author?: Profile;
-  vote_count?: number;
-  user_voted?: boolean;
-  vote_score?: number;
-  upvote_count?: number;
-  downvote_count?: number;
-  user_vote?: -1 | 0 | 1;
+  author?: Profile | undefined;
+  vote_count?: number | undefined;
+  user_voted?: boolean | undefined;
+  vote_score?: number | undefined;
+  upvote_count?: number | undefined;
+  downvote_count?: number | undefined;
+  user_vote?: -1 | 0 | 1 | undefined;
 }
 
 export interface Comment {
   id: string;
   comment_entity_id: string;
-  comment_post_id?: string | null;
-  comment_review_id?: string | null;
+  comment_post_id?: string | null | undefined;
+  comment_review_id?: string | null | undefined;
   comment_parent_id: string | null;
   author_id: string;
   title: string | null;
   content: string;
   created_at: string;
   updated_at: string;
-  author?: Profile;
-  replies?: Comment[];
-  vote_count?: number;
-  user_voted?: boolean;
-  vote_score?: number;
-  upvote_count?: number;
-  downvote_count?: number;
-  user_vote?: -1 | 0 | 1;
+  author?: Profile | undefined;
+  replies?: Comment[] | undefined;
+  vote_count?: number | undefined;
+  user_voted?: boolean | undefined;
+  vote_score?: number | undefined;
+  upvote_count?: number | undefined;
+  downvote_count?: number | undefined;
+  user_vote?: -1 | 0 | 1 | undefined;
 }
 
 export interface Vote {
   id: string;
   vote_entity_id: string;
-  vote_post_id?: string | null;
-  vote_comment_id?: string | null;
-  vote_review_id?: string | null;
+  vote_post_id?: string | null | undefined;
+  vote_comment_id?: string | null | undefined;
+  vote_review_id?: string | null | undefined;
   voter_id: string;
-  author_id?: string;
+  author_id?: string | undefined;
   upvote_or_downvote: "upvote" | "downvote";
   created_at: string;
 }
@@ -372,7 +372,7 @@ export interface CareGroup {
   is_active: boolean;
   member_count: number | null;
   created_at: string;
-  updated_at?: string;
+  updated_at?: string | undefined;
 }
 
 export interface CareGroupMember {
@@ -387,7 +387,7 @@ export interface CareGroupMember {
   is_cared_one: boolean;
   invitation_status: string;
   relationship: string | null;
-  profile?: Profile;
+  profile?: Profile | undefined;
 }
 
 export interface CareTask {
@@ -395,7 +395,7 @@ export interface CareTask {
   group_id: string | null;
   created_by: string;
   assigned_to: string | null;
-  assigned_to_ids?: string[];
+  assigned_to_ids?: string[] | undefined;
   care_recipient_id: string | null;
   title: string;
   description: string | null;
@@ -405,7 +405,7 @@ export interface CareTask {
   job_id: string | null;
   created_at: string;
   updated_at: string;
-  assignee_profile?: Profile;
+  assignee_profile?: Profile | undefined;
 }
 
 export interface Notification {
@@ -424,7 +424,7 @@ export interface SavedProvider {
   user_id: string;
   provider_id: string;
   created_at: string;
-  provider?: Profile;
+  provider?: Profile | undefined;
 }
 
 export interface CareGroupPost {
@@ -440,7 +440,7 @@ export interface CareGroupPost {
   wish_message_type: string | null;
   created_at: string;
   updated_at: string;
-  author?: Profile;
+  author?: Profile | undefined;
 }
 
 export interface LocationShare {
@@ -452,7 +452,7 @@ export interface LocationShare {
   is_sharing: boolean;
   created_at: string;
   updated_at: string;
-  profile?: Profile;
+  profile?: Profile | undefined;
 }
 
 export interface ServiceCategory {

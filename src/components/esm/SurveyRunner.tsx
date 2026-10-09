@@ -11,11 +11,11 @@ interface Props {
   questionnaire: Questionnaire;
   /** Draft key — answers are kept under this key until the survey is submitted. */
   draftId: string;
-  extraOptionsByQuestion?: Record<string, { value: string; label: string }[]>;
+  extraOptionsByQuestion?: Record<string, { value: string; label: string }[]> | undefined;
   onSubmit: (answers: AnswerMap) => void | Promise<void>;
-  submitLabel?: string;
-  onCancel?: () => void;
-  initialStep?: number;
+  submitLabel?: string | undefined;
+  onCancel?: (() => void) | undefined;
+  initialStep?: number | undefined;
 }
 
 function visible(question: Question, answers: AnswerMap): boolean {
@@ -51,7 +51,7 @@ export function SurveyRunner({
 
   const group = displayQuestionnaire.groups[step];
   const questions = useMemo(
-    () => group.questions.filter((q) => visible(q, answers)),
+    () => group!.questions.filter((q) => visible(q, answers)),
     [group, answers],
   );
   const isLast = step === displayQuestionnaire.groups.length - 1;
@@ -68,11 +68,11 @@ export function SurveyRunner({
       const first = missing[0];
       toast.error(
         isChinese
-          ? `还有 ${missing.length} 个问题需要回答，请先完成“${first.text}”。`
-          : `${missing.length} question${missing.length > 1 ? "s" : ""} still need an answer — start with “${first.text}”.`,
+          ? `还有 ${missing.length} 个问题需要回答，请先完成“${first!.text}”。`
+          : `${missing.length} question${missing.length > 1 ? "s" : ""} still need an answer — start with “${first!.text}”.`,
       );
       document
-        .getElementById(`esm-q-${first.id}`)
+        .getElementById(`esm-q-${first!.id}`)
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
@@ -90,9 +90,9 @@ export function SurveyRunner({
       <div className="mb-4">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">{displayQuestionnaire.title}</p>
         <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {group.title}
+          {group!.title}
         </h1>
-        {group.description && <p className="mt-1 text-sm text-muted-foreground">{group.description}</p>}
+        {group!.description && <p className="mt-1 text-sm text-muted-foreground">{group!.description}</p>}
         {step === 0 && displayQuestionnaire.intro && (
           <p className="mt-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">{displayQuestionnaire.intro}</p>
         )}

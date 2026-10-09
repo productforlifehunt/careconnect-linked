@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -162,7 +162,7 @@ export default function Dashboard() {
                   <TabsTrigger
                     key={co.user_id}
                     value={co.user_id}
-                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate"
+                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs text-xs px-3 py-1.5 max-w-[12rem] truncate"
                   >
                     {name}
                   </TabsTrigger>
@@ -171,7 +171,7 @@ export default function Dashboard() {
               })}
             </TabsList>
             {caredOnes.map((co: any) => (
-              <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-none">
+              <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-hidden">
                 <PatientSummaryCard
                   caredOneId={co.user_id}
                   name={co.cared_one?.full_name || ""}
@@ -217,7 +217,7 @@ export default function Dashboard() {
             {bookingsLoading ? (
               [1,2,3].map(i => (
                 <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
-                  <Skeleton className="w-10 h-12 rounded" />
+                  <Skeleton className="w-10 h-12 rounded-sm" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-48" />
                   </div>
@@ -304,13 +304,13 @@ export default function Dashboard() {
             <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl mb-2">
               {caredOnes!.map((co: any) => (
                 <TabsTrigger key={co.user_id} value={co.user_id}
-                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-xs px-3 py-1.5 max-w-[12rem] truncate">
+                  className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs text-xs px-3 py-1.5 max-w-[12rem] truncate">
                   {co.cared_one?.full_name || ""}
                 </TabsTrigger>
               ))}
             </TabsList>
             {caredOnes!.map((co: any) => (
-              <TabsContent key={co.user_id} value={co.user_id} className="focus-visible:outline-none">
+              <TabsContent key={co.user_id} value={co.user_id} className="focus-visible:outline-hidden">
                 <DailyTimeline
                   caredOneId={co.user_id}
                   caredOneName={co.cared_one?.full_name || ""}

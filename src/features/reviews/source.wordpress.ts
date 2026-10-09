@@ -30,7 +30,7 @@ const ENTITY_REVIEW_REL: Record<string, number> = {
   nicotine_product: R.productReviews,
 };
 
-function relForEntity(entityType?: string): number {
+function relForEntity(entityType?: string | undefined): number {
   return ENTITY_REVIEW_REL[entityType ?? "provider"] ?? R.providerReviews;
 }
 
@@ -97,8 +97,8 @@ async function resolveAuthorName(authorId: number): Promise<string> {
 
 
 export async function fetchEntityReviewsWordPress(
-  entityId?: string,
-  entityType?: string,
+  entityId?: string | undefined,
+  entityType?: string | undefined,
 ): Promise<EntityReview[]> {
   const parentId = numericId(entityId);
   if (!parentId) return [];
@@ -133,7 +133,7 @@ export async function fetchEntityReviewsWordPress(
 /** Rating aggregate for any review parent, computed from the Review CCT. */
 export async function fetchRatingSummary(
   parentId: string | number,
-  entityType?: string,
+  entityType?: string | undefined,
 ): Promise<{ average: number | null; count: number }> {
   const pid = numericId(parentId);
   if (!pid) return { average: null, count: 0 };
@@ -161,10 +161,10 @@ export async function fetchProviderRatingSummary(
 
 export async function createReviewWordPress(review: {
   entity_id: string;
-  entity_type?: string;
+  entity_type?: string | undefined;
   rating: number;
-  comment?: string;
-  title?: string;
+  comment?: string | undefined;
+  title?: string | undefined;
 }): Promise<void> {
   const parentId = numericId(review.entity_id);
   if (!parentId) throw new Error("Missing id — review cannot be posted.");

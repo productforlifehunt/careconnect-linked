@@ -10,9 +10,9 @@ import i18n from "@/i18n/config";
 import { formatDate } from "@/lib/locale";
 
 type Briefing = {
-  alerts?: Array<{ level?: string; text?: string }>;
-  summary?: string;
-  suggestions?: Array<{ title?: string; detail?: string }>;
+  alerts?: Array<{ level?: string | undefined; text?: string | undefined }> | undefined;
+  summary?: string | undefined;
+  suggestions?: Array<{ title?: string | undefined; detail?: string | undefined }> | undefined;
 };
 
 export function AISmartBriefing() {

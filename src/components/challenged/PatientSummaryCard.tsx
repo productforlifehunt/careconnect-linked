@@ -8,9 +8,9 @@ import { useTranslation } from "react-i18next";
 interface PatientSummaryCardProps {
   caredOneId: string;
   name: string;
-  avatarUrl?: string | null;
-  relationship?: string | null;
-  onClick?: () => void;
+  avatarUrl?: string | null | undefined;
+  relationship?: string | null | undefined;
+  onClick?: (() => void) | undefined;
 }
 
 export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, onClick }: PatientSummaryCardProps) {

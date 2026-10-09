@@ -52,7 +52,7 @@ type SectionId = "channels" | "categories" | "quiet" | "display" | "permissions"
 
 export function AppSettingsPanel({
   sections = ["channels", "categories", "quiet", "display", "permissions"],
-}: { sections?: SectionId[] } = {}) {
+}: { sections?: SectionId[] | undefined } = {}) {
   const show = (id: SectionId) => sections.includes(id);
   const { i18n } = useTranslation();
   const isCN = !!i18n.language?.startsWith("zh");
@@ -91,7 +91,7 @@ export function AppSettingsPanel({
       setPerm((p) => ({ ...p, [spec.name]: state }));
       qc.setQueryData(["appSettings"], next);
       if (spec.permission === "push" && state === "granted") {
-        await subscribeWebPushAndRegister(import.meta.env.VITE_VAPID_PUBLIC_KEY);
+        await subscribeWebPushAndRegister(import.meta.env["VITE_VAPID_PUBLIC_KEY"]);
         set("set-alerts-on-phone", true);
       }
       if (state === "denied") {

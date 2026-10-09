@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
@@ -278,7 +278,7 @@ export function AppHeader() {
             <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden h-10 px-3 sm:inline-flex">
               {t("common.signIn")}
             </Button>
-            <Button variant="coral" className="hidden h-10 shrink-0 px-4 shadow-sm sm:inline-flex sm:px-5" onClick={() => navigate("/auth?mode=signup")}>
+            <Button variant="coral" className="hidden h-10 shrink-0 px-4 shadow-xs sm:inline-flex sm:px-5" onClick={() => navigate("/auth?mode=signup")}>
               {t("common.getStarted")}
             </Button>
           </div>

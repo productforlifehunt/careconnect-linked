@@ -8,7 +8,7 @@
 
 import { getActiveServer } from "@/lib/wp-servers";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || '';
 
 /** Backend proxy URL — used only for credentialed guest reads. */
 const PROD_WP_PROXY = `${SUPABASE_URL}/functions/v1/wp-proxy`;
@@ -23,8 +23,8 @@ export const IS_DEV = import.meta.env.DEV;
  */
 export function buildWPUrl(
   wpJsonPath: string,
-  params?: Record<string, string | number | boolean | undefined | null>,
-  options?: { forceEdge?: boolean },
+  params?: Record<string, string | number | boolean | undefined | null> | undefined,
+  options?: { forceEdge?: boolean | undefined } | undefined,
 ): string {
   const server = getActiveServer();
   const qs = new URLSearchParams();
@@ -57,9 +57,9 @@ export function buildWPUrl(
  * Build headers for WP requests. In production, includes the Supabase anon key.
  */
 export function buildWPHeaders(
-  token?: string | null,
-  contentType?: string,
-  options?: { forceEdge?: boolean },
+  token?: string | null | undefined,
+  contentType?: string | undefined,
+  options?: { forceEdge?: boolean | undefined } | undefined,
 ): Record<string, string> {
   const headers: Record<string, string> = {};
 
@@ -70,7 +70,7 @@ export function buildWPHeaders(
   // Supabase edge function (guest / credentialed catalog reads).
   const useEdgeFunction = options?.forceEdge === true;
   if (useEdgeFunction) {
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const anonKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
     if (anonKey) headers['apikey'] = anonKey;
   }
 

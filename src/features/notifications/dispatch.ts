@@ -22,17 +22,17 @@ export interface NotifyInput {
   type: string;
   title: string;
   message: string;
-  action_url?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  channels?: Partial<Record<NotifyChannel, boolean>>;
-  idempotency_key?: string;
+  action_url?: string | null | undefined;
+  email?: string | null | undefined;
+  phone?: string | null | undefined;
+  channels?: Partial<Record<NotifyChannel, boolean>> | undefined;
+  idempotency_key?: string | undefined;
   /** Visual/email identity; data scope remains unchanged for shared backends. */
-  brand?: "challenged" | "carecnc" | "notchsafety";
+  brand?: "challenged" | "carecnc" | "notchsafety" | undefined;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || "";
+const ANON_KEY = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || "";
 
 /** Resolve the notification function for the running app. */
 export function notifyFunctionName(): "challenged-notify" | "carecnc-notify" {

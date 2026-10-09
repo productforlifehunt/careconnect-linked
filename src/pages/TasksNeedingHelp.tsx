@@ -19,7 +19,7 @@ import {
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
 

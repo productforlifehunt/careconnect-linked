@@ -200,11 +200,11 @@ export function AICompanionChat({
   onThreadUpdated,
 }: {
   active: boolean;
-  request?: AssistantRequest;
-  className?: string;
+  request?: AssistantRequest | undefined;
+  className?: string | undefined;
   /** Saved assistant thread (CCT121). Omit for one-off, unsaved chats. */
-  threadId?: string;
-  onThreadUpdated?: () => void;
+  threadId?: string | undefined;
+  onThreadUpdated?: (() => void) | undefined;
 }) {
   const { i18n } = useTranslation();
   const site = useSite();
@@ -213,7 +213,7 @@ export function AICompanionChat({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<{ abort: () => void } | null>(null);
-  const activeRequestId = useRef<string | undefined>();
+  const activeRequestId = useRef<string | undefined>(undefined);
 
   // ─── App guide (fixed answers, no AI call) ───
   const guide = guideEntries(site.family);
@@ -465,7 +465,7 @@ export function AICompanionChat({
     }
   }, [active]);
 
-  const send = async (submittedText?: string) => {
+  const send = async (submittedText?: string | undefined) => {
     const text = (submittedText ?? input).trim();
     if (!text || loading) return;
     setInput("");
@@ -514,7 +514,7 @@ export function AICompanionChat({
         if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
       }
       await persistTurn(text, reply, !messages.some((m) => m.role === "user"));
-      const parsed = parseAIJson<{ done?: boolean; summary?: string; status?: string }>(reply);
+      const parsed = parseAIJson<{ done?: boolean | undefined; summary?: string | undefined; status?: string | undefined }>(reply);
       if (parsed?.done && parsed.summary && request.onComplete) {
         const allowed = request.completionStatuses || [];
         if (!parsed.status || allowed.length === 0 || allowed.includes(parsed.status)) {
@@ -552,7 +552,7 @@ export function AICompanionChat({
                 key={entry.q.en}
                 type="button"
                 onClick={() => answerFromGuide(entry)}
-                className="w-full rounded-xl bg-background px-3 py-2.5 text-left text-sm text-foreground shadow-sm transition-colors hover:bg-accent"
+                className="w-full rounded-xl bg-background px-3 py-2.5 text-left text-sm text-foreground shadow-xs transition-colors hover:bg-accent"
               >
                 {isZh ? entry.q.zh : entry.q.en}
               </button>
@@ -642,7 +642,7 @@ export function AICompanionChat({
                 type="button"
                 aria-pressed={on}
                 onClick={() => changeMode(opt.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${on ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${on ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <Icon className="h-3.5 w-3.5" />
                 {isZh ? opt.zh : opt.en}

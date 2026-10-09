@@ -38,7 +38,7 @@ export function getReadMark(conversationId: string | number): string {
 }
 
 /** Remember that everything up to `at` (default: now) has been seen. */
-export function setReadMark(conversationId: string | number, at?: string | null) {
+export function setReadMark(conversationId: string | number, at?: string | null | undefined) {
   const marks = load();
   marks[String(conversationId)] = at || new Date().toISOString();
   save(marks);
@@ -51,7 +51,7 @@ export function setReadMark(conversationId: string | number, at?: string | null)
  */
 export function unreadFlag(
   conversationId: string | number,
-  lastMessage: { sender_id?: string | null; created_at?: string | null } | null,
+  lastMessage: { sender_id?: string | null | undefined; created_at?: string | null | undefined } | null,
   myId: string | null | undefined,
 ): number {
   if (!lastMessage?.created_at) return 0;
