@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "@/lib/router-compat";
+import { Navigate, useNavigate, useSearchParams } from "@/lib/router-compat";
 import { toast } from "sonner";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { otherScreening, primaryScreening } from "@/features/esm/questionnaires";
@@ -16,8 +16,7 @@ export default function EsmScreening() {
   const zh = isChineseLanguage(i18n.language);
 
   if (!profile) {
-    navigate("/", { replace: true });
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   const isPrimary = profile.role === "primary";
