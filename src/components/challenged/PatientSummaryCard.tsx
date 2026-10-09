@@ -29,7 +29,10 @@ export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, 
   const locationAge = location?.updated_at
     ? Math.round((Date.now() - new Date(location.updated_at).getTime()) / 60000)
     : null;
-  const caredOneTasks = (tasks || []).filter((t: any) => t.care_recipient_id === caredOneId && t.status !== "completed");
+  const bareId = (value: unknown) => String(value ?? "").replace(/^wp-/, "");
+  const caredOneTasks = (tasks || []).filter(
+    (task: any) => bareId(task.cared_one_id) === bareId(caredOneId) && task.status !== "completed",
+  );
 
   return (
     <Card className="border-transparent card-elevated cursor-pointer hover:border-primary/30 transition-all" onClick={onClick}>
