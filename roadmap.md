@@ -126,7 +126,7 @@
 
 # Dashboard care-task correction
 
-- [ ] Limit homepage care tasks to tasks linked to the signed-in user's cared-one relationships.
-- [ ] Open each homepage task in that person's Care Tasks card, and remove misleading arrow decoration.
-- [ ] Make every dashboard cared-one summary open that specific person's card page.
+- [x] Limit homepage care tasks to tasks linked to the signed-in user's cared-one relationships.
+- [x] Open each homepage task in that person's Care Tasks card, and remove misleading arrow decoration.
+- [x] Make every dashboard cared-one summary open that specific person's card page and show that person's correct pending-task count.
 - [ ] Verify the corrected dashboard flow in the running app.
