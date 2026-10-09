@@ -119,3 +119,7 @@
 - [x] Apply every confirmed correction through the researcher editing interface, without deleting or renumbering any CCT or relation.
 - [x] Reopen every changed record and verify the saved values person by person.
 
+
+# Framework upgrade (TanStack Start)
+
+- [x] Migrate from Classic Vite + React Router to TanStack Start; type check clean, build green, every page opens, tests pass.
