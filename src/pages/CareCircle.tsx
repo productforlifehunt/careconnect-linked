@@ -128,7 +128,9 @@ export default function CareCircle() {
   const leaveGroup = useLeaveGroup();
   const shareTask = useShareTask();
 
-  const currentUserId = String(profile?.id || profile?.user_id || "").replace(/^wp-/, "");
+  // The logged-in WordPress account id is the identity on Rel 223 — profile
+  // ids can be a CCT row id, so they are only a fallback.
+  const currentUserId = String(getStoredWPUser()?.user_id || profile?.user_id || profile?.id || "").replace(/^wp-/, "");
   const currentMember = (members || []).find((m: any) => {
     const memberUserId = String(m.user_id || m.id || "").replace(/^wp-/, "");
     return currentUserId && memberUserId === currentUserId;
