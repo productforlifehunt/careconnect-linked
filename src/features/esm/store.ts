@@ -19,7 +19,7 @@ export type ParticipantRole = "primary" | "other";
 export interface EsmProfile {
   role: ParticipantRole;
   /** Display name, used only inside the app. */
-  name?: string;
+  name?: string | undefined;
   /** People the participant can pick on the People tab. */
   network: string[];
   screeningDone: boolean;
@@ -56,14 +56,14 @@ export interface EsmRecord {
   /** ISO timestamp the entry was submitted. */
   submittedAt: string;
   /** The hourly slot this entry answers, e.g. "2026-09-21T14" — logs only. */
-  slot?: string;
+  slot?: string | undefined;
   answers: AnswerMap;
   /** Spoken answers as transcribed, keyed by question id. */
-  voice?: Record<string, string>;
+  voice?: Record<string, string> | undefined;
   /** False until the study backend has accepted it. */
   synced: boolean;
   /** Row id in the study table once uploaded. */
-  remoteId?: string;
+  remoteId?: string | undefined;
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -142,8 +142,8 @@ export const getRecords = (): EsmRecord[] => read<EsmRecord[]>(KEY.records, []).
 export function addRecord(
   kind: RecordKind,
   answers: AnswerMap,
-  slot?: string,
-  voice?: Record<string, string>,
+  slot?: string | undefined,
+  voice?: Record<string, string> | undefined,
 ): EsmRecord {
   const record: EsmRecord = {
     id: `${kind}_${Date.now()}`,

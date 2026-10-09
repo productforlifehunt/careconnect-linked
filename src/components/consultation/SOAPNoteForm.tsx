@@ -12,8 +12,8 @@ interface Props {
   orderId: number;
   itemId: number;
   providerId: string;
-  initial?: SOAPNote;
-  onSaved?: () => void;
+  initial?: SOAPNote | undefined;
+  onSaved?: (() => void) | undefined;
 }
 
 export function SOAPNoteForm({ orderId, itemId, providerId, initial, onSaved }: Props) {

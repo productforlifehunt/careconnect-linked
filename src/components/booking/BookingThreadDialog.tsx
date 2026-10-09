@@ -12,14 +12,14 @@ import { formatDateTime } from "@/lib/locale";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orderId?: number | string;
+  orderId?: number | string | undefined;
   /** "client" hides the approve/decline controls; "provider" shows them. */
   role: "client" | "provider";
-  counterpartName?: string;
+  counterpartName?: string | undefined;
   /** "requested" | "approved" | "declined" | "" — read from order meta. */
-  refundStatus?: string;
-  refundReason?: string;
-  refundAmount?: string | number;
+  refundStatus?: string | undefined;
+  refundReason?: string | undefined;
+  refundAmount?: string | number | undefined;
 };
 
 /**

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams } from "@/lib/router-compat";
 import { useInformationCardByToken } from "@/hooks/use-care-data";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInformationCardContactIdsWordPress, fetchInformationCardCaredOneIdWordPress } from "@/features/cared-ones/source.information-cards";

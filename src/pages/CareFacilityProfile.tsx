@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Building2, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -294,7 +294,7 @@ export default function CareFacilityProfile() {
                               aria-label={isZh ? `${s} 星` : `${s} stars`}
                               aria-pressed={s === reviewRating}
                               onClick={() => setReviewRating(s)}
-                              className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <Star className={`h-7 w-7 transition-colors ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}`} />
                             </button>

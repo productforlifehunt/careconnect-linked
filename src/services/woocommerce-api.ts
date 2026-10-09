@@ -56,7 +56,7 @@ async function wcFetch(endpoint: string, options: RequestInit = {}) {
 // The browser never holds WordPress admin credentials. The `wp-admin-ops`
 // edge function validates the caller's own WP JWT and performs the operation
 // scoped to that user only.
-const ADMIN_OPS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wp-admin-ops`;
+const ADMIN_OPS_URL = `${import.meta.env["VITE_SUPABASE_URL"]}/functions/v1/wp-admin-ops`;
 
 async function adminOp<T = any>(action: string, body: Record<string, unknown> = {}): Promise<T | null> {
   const token = getWPToken();
@@ -66,7 +66,7 @@ async function adminOp<T = any>(action: string, body: Record<string, unknown> = 
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+      apikey: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || '',
     },
     body: JSON.stringify({ action, wp_base: getActiveServer().baseUrl, ...body }),
   });
@@ -86,9 +86,9 @@ export const wpAdminOps = adminOp;
 export async function ensureDokanVendor(userData: {
   fullName: string;
   email: string;
-  phone?: string;
-  location?: string;
-  bio?: string;
+  phone?: string | undefined;
+  location?: string | undefined;
+  bio?: string | undefined;
 }): Promise<any> {
   const storedUser = (await import('@/services/wp-auth')).getStoredWPUser();
   const wpUserId = storedUser?.user_id;
@@ -161,10 +161,10 @@ export async function updateOrderStatus(orderId: number, status: string) {
 export async function updateOrderBookingDetails(
   orderId: number,
   details: {
-    appointmentDate?: string;
-    appointmentTime?: string;
-    durationHours?: number;
-    specialInstructions?: string;
+    appointmentDate?: string | undefined;
+    appointmentTime?: string | undefined;
+    durationHours?: number | undefined;
+    specialInstructions?: string | undefined;
   }
 ) {
   // Schedule lives in our JetEngine calendar CCT; the Woo order only
@@ -195,7 +195,7 @@ export async function updateOrderBookingDetails(
 const CART_TOKEN_KEY = 'wc_store_cart_token';
 const NONCE_KEY = 'wc_store_nonce';
 
-function getStoreToken(): { cartToken?: string; nonce?: string } {
+function getStoreToken(): { cartToken?: string | undefined; nonce?: string | undefined } {
   if (typeof window === 'undefined') return {};
   return {
     cartToken: localStorage.getItem(CART_TOKEN_KEY) || undefined,
@@ -257,20 +257,20 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  image?: string;
+  image?: string | undefined;
   /** Store API line description — carries the rate math and the schedule. */
-  description?: string;
+  description?: string | undefined;
   /** Store API line meta (e.g. Dokan vendor name). */
-  item_data?: Array<{ name?: string; value?: string; type?: string }>;
-  provider_id?: string;
+  item_data?: Array<{ name?: string | undefined; value?: string | undefined; type?: string | undefined }> | undefined;
+  provider_id?: string | undefined;
   booking?: {
-    resourceId?: number;
-    persons?: Record<string | number, number>;
-    startDate?: string;
-    startTime?: string;
-    durationHours?: number;
-    serviceType?: string;
-    notes?: string;
+    resourceId?: number | undefined;
+    persons?: Record<string | number, number> | undefined;
+    startDate?: string | undefined;
+    startTime?: string | undefined;
+    durationHours?: number | undefined;
+    serviceType?: string | undefined;
+    notes?: string | undefined;
   };
 }
 
@@ -329,7 +329,7 @@ function addCartIntent(productId: number) {
   writeCartIntent(ids);
 }
 
-function dropCartIntent(productId?: number) {
+function dropCartIntent(productId?: number | undefined) {
   if (!productId) return;
   const ids = readCartIntent();
   const at = ids.indexOf(Number(productId));
@@ -381,10 +381,10 @@ export async function addToCart({
   quantity = 1,
 }: {
   productId: number;
-  quantity?: number;
-  booking?: CartItem['booking'];
+  quantity?: number | undefined;
+  booking?: CartItem['booking'] | undefined;
   /** @deprecated price overrides are not supported by the native Store API */
-  priceOverride?: number;
+  priceOverride?: number | undefined;
 }) {
   // A just-in-time service product can still be warming up in the store's
   // caches, in which case the Store API answers "not available for purchase".
@@ -474,15 +474,15 @@ export async function clearCart() {
  * Alipay, etc.) — the platform never holds funds in escrow.
  */
 export async function checkout(billingData?: {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  phone?: string;
-  address_1?: string;
-  city?: string;
-  state?: string;
-  postcode?: string;
-  country?: string;
+  first_name?: string | undefined;
+  last_name?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  address_1?: string | undefined;
+  city?: string | undefined;
+  state?: string | undefined;
+  postcode?: string | undefined;
+  country?: string | undefined;
 }) {
   const billing = {
     first_name: billingData?.first_name || '',
@@ -512,7 +512,7 @@ export async function checkout(billingData?: {
   try {
     const available: string[] = Array.isArray(verified.raw?.payment_methods) ? verified.raw.payment_methods : [];
     if (available.length) {
-      method = available.find((m) => m === 'bacs') || available.find((m) => m === 'cheque') || available[0];
+      method = available.find((m) => m === 'bacs') || available.find((m) => m === 'cheque') || available[0]!;
     }
   } catch {
     // fall back to the default below
@@ -575,7 +575,7 @@ export type OrderNote = { id: number; note: string; date_created: string };
 /** Client asks for a refund. Records the request + posts it to the thread. */
 export async function requestOrderRefund(
   orderId: number,
-  options: { amount?: string | number; reason: string },
+  options: { amount?: string | number | undefined; reason: string },
 ) {
   return adminOp('request_refund', {
     order_id: orderId,
@@ -588,7 +588,7 @@ export async function requestOrderRefund(
 export async function resolveOrderRefund(
   orderId: number,
   decision: 'approve' | 'decline',
-  note?: string,
+  note?: string | undefined,
 ) {
   return adminOp('resolve_refund', { order_id: orderId, decision, note: note ?? '' });
 }
@@ -607,7 +607,7 @@ export async function addOrderCustomerNote(orderId: number, note: string) {
 
 function toTimeMinutes(value: string) {
   const [hours, minutes] = value.split(':').map(Number);
-  return hours * 60 + minutes;
+  return hours! * 60 + minutes!;
 }
 
 function addHoursToTime(value: string, durationHours: number) {
@@ -684,8 +684,8 @@ export interface MyPayoutData {
   } | null;
   withdrawals: Array<{ id: number; amount: string; status: string; method: string; created: string }>;
   payment: {
-    paypal?: { email?: string };
-    bank?: Record<string, string>;
+    paypal?: { email?: string | undefined } | undefined;
+    bank?: Record<string, string> | undefined;
   };
 }
 
@@ -694,8 +694,8 @@ export async function getMyPayout(): Promise<MyPayoutData | null> {
 }
 
 export async function saveMyPayout(payment: {
-  paypal?: { email: string };
-  bank?: Record<string, string>;
+  paypal?: { email: string } | undefined;
+  bank?: Record<string, string> | undefined;
 }) {
   return adminOp('save_my_payout', { payment });
 }
@@ -720,10 +720,10 @@ export async function cancelWithdrawal(withdrawId: number) {
  */
 export async function createServiceProduct(input: {
   name: string;
-  description?: string;
+  description?: string | undefined;
   amount: number;
   vendorUserId: string | number;
-  meta?: Array<{ key: string; value: string }>;
+  meta?: Array<{ key: string; value: string }> | undefined;
 }): Promise<{ id: number; price: number }> {
   const vendorId = Number(String(input.vendorUserId).replace(/^wp-/, ''));
   const result = await adminOp<{ id: number; price: number }>('create_service_product', {

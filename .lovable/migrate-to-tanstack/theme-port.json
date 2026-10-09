@@ -1,0 +1,32 @@
+{
+  "customizations": [
+    { "token": "base HSL token set (:root background/foreground/card/popover/primary/secondary/muted/accent/destructive/border/input/ring/radius)", "source": "src/index.css", "reappliedIn": "src/styles.css :root" },
+    { "token": ".dark token set", "source": "src/index.css", "reappliedIn": "src/styles.css .dark" },
+    { "token": "--sidebar-* tokens", "source": "src/index.css", "reappliedIn": "src/styles.css :root/.dark + @theme inline --color-sidebar-*" },
+    { "token": "--coral / bg-coral", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --color-coral" },
+    { "token": "--success / bg-success", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --color-success" },
+    { "token": "--warning / bg-warning", "source": "src/index.css + tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --color-warning" },
+    { "token": "--hero-gradient", "source": "src/index.css", "reappliedIn": "src/styles.css :root + site themes" },
+    { "token": "--coral-gradient", "source": "src/index.css", "reappliedIn": "src/styles.css :root + site themes" },
+    { "token": "--card-shadow / --card-shadow-hover", "source": "src/index.css", "reappliedIn": "src/styles.css :root + site themes" },
+    { "token": "hero-gradient utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility hero-gradient" },
+    { "token": "coral-gradient utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility coral-gradient" },
+    { "token": "card-elevated utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility card-elevated" },
+    { "token": "text-gradient utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility text-gradient" },
+    { "token": ".site-challenged + .site-challenged.dark theme", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": ".site-notchsafety + .site-notchsafety.dark theme", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": ".site-carecnc + .site-carecnc.dark theme", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "scrollbar-none utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility scrollbar-none" },
+    { "token": "scrollbar-thin utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility scrollbar-thin" },
+    { "token": "no-scrollbar utility", "source": "src/index.css", "reappliedIn": "src/styles.css @utility no-scrollbar" },
+    { "token": "html.text-size-large / text-size-xlarge", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "html.reduce-motion", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": ".leaflet-container stacking fix", "source": "src/index.css", "reappliedIn": "src/styles.css" },
+    { "token": "Inter body/heading font", "source": "src/index.css", "reappliedIn": "src/styles.css @layer base" },
+    { "token": "animate-fade-in keyframes", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --animate-fade-in" },
+    { "token": "animate-slide-in-left keyframes", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --animate-slide-in-left" },
+    { "token": "animate-pulse-dot keyframes", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --animate-pulse-dot" },
+    { "token": "container (center, 2rem padding, 1400px max)", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css @utility container" },
+    { "token": "radius scale lg/md/sm", "source": "tailwind.config.ts", "reappliedIn": "src/styles.css @theme inline --radius-*" }
+  ]
+}

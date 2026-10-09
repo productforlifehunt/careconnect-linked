@@ -78,8 +78,8 @@ export const MessageActions = ({
 );
 
 export type MessageActionProps = ComponentProps<typeof Button> & {
-  tooltip?: string;
-  label?: string;
+  tooltip?: string | undefined;
+  label?: string | undefined;
 };
 
 export const MessageAction = ({
@@ -139,8 +139,8 @@ const useMessageBranch = () => {
 };
 
 export type MessageBranchProps = HTMLAttributes<HTMLDivElement> & {
-  defaultBranch?: number;
-  onBranchChange?: (branchIndex: number) => void;
+  defaultBranch?: number | undefined;
+  onBranchChange?: ((branchIndex: number) => void) | undefined;
 };
 
 export const MessageBranch = ({

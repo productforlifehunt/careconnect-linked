@@ -9,11 +9,11 @@
  */
 
 /** Returns a locale tag Intl accepts, falling back to "en". */
-export function safeLocale(input?: string | null): string {
+export function safeLocale(input?: string | null | undefined): string {
   const raw = (input || "").trim();
   if (!raw) return "en";
 
-  const candidates = [raw, raw.split("@")[0], raw.split("@")[0].split("_")[0], raw.split("-")[0]];
+  const candidates = [raw, raw.split("@")[0]!, raw.split("@")[0]!.split("_")[0]!, raw.split("-")[0]!];
   for (const candidate of candidates) {
     if (!candidate) continue;
     try {
@@ -30,8 +30,8 @@ export function safeLocale(input?: string | null): string {
 /** Safe wrapper around Date#toLocaleDateString. */
 export function formatDate(
   value: string | number | Date | null | undefined,
-  locale?: string,
-  options?: Intl.DateTimeFormatOptions,
+  locale?: string | undefined,
+  options?: Intl.DateTimeFormatOptions | undefined,
 ): string {
   if (value === null || value === undefined || value === "") return "";
   const date = value instanceof Date ? value : new Date(value);
@@ -42,8 +42,8 @@ export function formatDate(
 /** Safe wrapper around Date#toLocaleTimeString. */
 export function formatTime(
   value: string | number | Date | null | undefined,
-  locale?: string,
-  options?: Intl.DateTimeFormatOptions,
+  locale?: string | undefined,
+  options?: Intl.DateTimeFormatOptions | undefined,
 ): string {
   if (value === null || value === undefined || value === "") return "";
   const date = value instanceof Date ? value : new Date(value);
@@ -54,8 +54,8 @@ export function formatTime(
 /** Safe wrapper around Date#toLocaleString (date + time). */
 export function formatDateTime(
   value: string | number | Date | null | undefined,
-  locale?: string,
-  options?: Intl.DateTimeFormatOptions,
+  locale?: string | undefined,
+  options?: Intl.DateTimeFormatOptions | undefined,
 ): string {
   if (value === null || value === undefined || value === "") return "";
   const date = value instanceof Date ? value : new Date(value);

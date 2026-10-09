@@ -13,7 +13,7 @@ export interface WPServer {
   /** Site path for dev proxy rewrite (empty string if root) */
   sitePath: string;
   /** Whether this is the primary/default server */
-  isPrimary?: boolean;
+  isPrimary?: boolean | undefined;
 }
 
 export const WP_SERVERS: WPServer[] = [
@@ -34,7 +34,7 @@ export function getActiveServer(): WPServer {
     const found = WP_SERVERS.find((s) => s.id === stored);
     if (found) return found;
   }
-  return WP_SERVERS.find((s) => s.isPrimary) || WP_SERVERS[0];
+  return WP_SERVERS.find((s) => s.isPrimary) || WP_SERVERS[0]!;
 }
 
 export function setActiveServer(serverId: string): void {

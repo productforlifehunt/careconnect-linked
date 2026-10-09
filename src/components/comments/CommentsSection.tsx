@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,9 +15,9 @@ interface CommentsSectionProps {
   entityType: "post" | "community_post" | "review" | "gallery" | "task" | "comment";
   entityId: string;
   /** Compact mode hides the header and shows fewer items initially */
-  compact?: boolean;
-  hideComposer?: boolean;
-  openPostHref?: string;
+  compact?: boolean | undefined;
+  hideComposer?: boolean | undefined;
+  openPostHref?: string | undefined;
 }
 
 function CommentItem({

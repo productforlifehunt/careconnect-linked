@@ -13,7 +13,7 @@ const F = T.afreshCommunityPost.f;
 const REL_POST_COMMENT = R.communityPostComments; // 1:M community post → comment
 const REL_COMMENT_REPLY = R.commentReplies;       // M:M comment → comment
 
-export async function fetchCommunityPostsWordPress(locale?: { area?: string; language?: string; category?: string }): Promise<any[]> {
+export async function fetchCommunityPostsWordPress(locale?: { area?: string | undefined; language?: string | undefined; category?: string | undefined }): Promise<any[]> {
   try {
     // Only scalar radio fields are filtered server-side. "App area" is a
     // checkbox (stored serialized), so it is matched leniently in JS instead.
@@ -73,9 +73,9 @@ export async function fetchCommunityPostByIdWordPress(id: string): Promise<any |
 export async function createCommunityPostWordPress(post: {
   title: string;
   content: string;
-  app_area?: string;
-  language?: string;
-  category?: string;
+  app_area?: string | undefined;
+  language?: string | undefined;
+  category?: string | undefined;
 }): Promise<{ id: string }> {
   const result = (await wordpressCCTFetch(SLUG, {
     method: "POST",
@@ -93,7 +93,7 @@ export async function createCommunityPostWordPress(post: {
 
 export async function updateCommunityPostWordPress(
   id: string,
-  updates: { title?: string; content?: string; app_area?: string; language?: string; category?: string },
+  updates: { title?: string | undefined; content?: string | undefined; app_area?: string | undefined; language?: string | undefined; category?: string | undefined },
 ): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.title !== undefined) body[F.TITLE] = updates.title;
@@ -152,7 +152,7 @@ export async function fetchCommentRepliesWordPress(commentId: string): Promise<a
 
 export async function createPostCommentWordPress(
   postId: string,
-  comment: { content: string; title?: string },
+  comment: { content: string; title?: string | undefined },
 ): Promise<{ id: string }> {
   const result = (await wordpressCCTFetch(COMMENT_SLUG, {
     method: "POST",
@@ -168,7 +168,7 @@ export async function createPostCommentWordPress(
 
 export async function createCommentReplyWordPress(
   parentCommentId: string,
-  reply: { content: string; title?: string },
+  reply: { content: string; title?: string | undefined },
 ): Promise<{ id: string }> {
   const result = (await wordpressCCTFetch(COMMENT_SLUG, {
     method: "POST",
@@ -184,7 +184,7 @@ export async function createCommentReplyWordPress(
 
 export async function updateCommentCCTWordPress(
   id: string,
-  updates: { content?: string; title?: string },
+  updates: { content?: string | undefined; title?: string | undefined },
 ): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.title !== undefined) body[CF.TITLE] = updates.title;

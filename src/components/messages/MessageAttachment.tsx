@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { uploadWPMedia } from "@/lib/wp-media";
 
 interface MessageAttachmentProps {
-  onAttach: (url: string, type: "image" | "file", name?: string) => void;
-  disabled?: boolean;
+  onAttach: (url: string, type: "image" | "file", name?: string | undefined) => void;
+  disabled?: boolean | undefined;
 }
 
 /**

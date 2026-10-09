@@ -20,23 +20,23 @@ export interface AIChatMessage {
 }
 
 export interface InvokeAIOptions {
-  conversationId?: string;
-  title?: string;
-  caredOneId?: string | number | null;
-  messages?: AIChatMessage[];
+  conversationId?: string | undefined;
+  title?: string | undefined;
+  caredOneId?: string | number | null | undefined;
+  messages?: AIChatMessage[] | undefined;
   /**
    * Everything this screen needs the AI to know or do, in plain language:
    * live facts, guardrails, and the wanted output shape. There are no modes.
    */
-  contextPrompt?: string;
-  language?: string;
+  contextPrompt?: string | undefined;
+  language?: string | undefined;
   /**
    * Write the exchange into the unified chat CCTs. Default FALSE.
    * Only opt-in if you explicitly need a persisted transcript.
    */
-  persist?: boolean;
+  persist?: boolean | undefined;
   /** Only used to keep separate persisted transcripts apart. Free-form. */
-  threadKey?: string;
+  threadKey?: string | undefined;
 }
 
 const CONVERSATION_SLUG = T.chatConversation.slug;
@@ -51,7 +51,7 @@ function nowWPDateTime() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
-function conversationStorageKey(threadKey: string, caredOneId?: string | number | null) {
+function conversationStorageKey(threadKey: string, caredOneId?: string | number | null | undefined) {
   return `ai_conversation:${threadKey || "chat"}:${caredOneId ?? "none"}`;
 }
 
@@ -65,7 +65,7 @@ async function ensureConversation(threadKey: string, options: InvokeAIOptions = 
   if (cachedId) {
     try {
       const existing = await wordpressCCTFetch<Record<string, any>>(CONVERSATION_SLUG, { id: cachedId });
-      const id = existing?.id || existing?._ID;
+      const id = existing?.["id"] || existing?.["_ID"];
       if (id) {
         localStorage.setItem(conversationStorageKey(threadKey, options.caredOneId), String(id));
         return String(id);
@@ -118,7 +118,7 @@ async function touchConversation(conversationId: string) {
 }
 
 /** Call the single `ai` edge function (Lovable AI Gateway) */
-async function callAI(messages: AIChatMessage[], contextPrompt?: string, language?: string): Promise<string> {
+async function callAI(messages: AIChatMessage[], contextPrompt?: string | undefined, language?: string | undefined): Promise<string> {
   const { data, error } = await supabase.functions.invoke("ai?task=chat-chat", {
     body: { messages, stream: false, site: detectSite(), ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
   });
@@ -180,28 +180,28 @@ export function parseAIJson<T = any>(reply: string): T | null {
 
 
 // ═════════ STREAMING VOICE PIPELINE ═════════
-const STREAM_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai?task=chat-chat`;
+const STREAM_URL = `${import.meta.env["VITE_SUPABASE_URL"]}/functions/v1/ai?task=chat-chat`;
 
 export interface StreamHandlers {
   onTextDelta: (delta: string, fullText: string) => void;
-  onSentence?: (sentence: string) => void;
-  onAudioStart?: () => void;
-  onAllAudioEnd?: () => void;
-  onPlayStateChange?: (state: "playing" | "paused" | "stopped" | "idle") => void;
-  onError?: (err: Error) => void;
-  signal?: AbortSignal;
-  language?: string;
-  engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash";
-  contextPrompt?: string;
+  onSentence?: ((sentence: string) => void) | undefined;
+  onAudioStart?: (() => void) | undefined;
+  onAllAudioEnd?: (() => void) | undefined;
+  onPlayStateChange?: ((state: "playing" | "paused" | "stopped" | "idle") => void) | undefined;
+  onError?: ((err: Error) => void) | undefined;
+  signal?: AbortSignal | undefined;
+  language?: string | undefined;
+  engine?: "siliconflow" | "openai" | "openai-full" | "qwen-tts" | "cosyvoice-v35-plus" | "cosyvoice-v35-flash" | undefined;
+  contextPrompt?: string | undefined;
 }
 
 export interface TextStreamHandlers {
   onTextDelta: (delta: string, fullText: string) => void;
-  onDone?: (fullText: string) => void;
-  onError?: (err: Error) => void;
-  signal?: AbortSignal;
-  language?: string;
-  contextPrompt?: string;
+  onDone?: ((fullText: string) => void) | undefined;
+  onError?: ((err: Error) => void) | undefined;
+  signal?: AbortSignal | undefined;
+  language?: string | undefined;
+  contextPrompt?: string | undefined;
 }
 
 export interface StreamControls {
@@ -239,17 +239,17 @@ class AudioQueue {
    */
   private audio: HTMLAudioElement | null = null;
   private aborted = false;
-  private onStart?: () => void;
-  private onEnd?: () => void;
-  private onPlayStateChange?: (s: "playing" | "paused" | "stopped" | "idle") => void;
+  private onStart?: (() => void) | undefined;
+  private onEnd?: (() => void) | undefined;
+  private onPlayStateChange?: ((s: "playing" | "paused" | "stopped" | "idle") => void) | undefined;
   private startedOnce = false;
   private finished = false;
   private streamDone = false;
 
   constructor(opts: {
-    onStart?: () => void;
-    onEnd?: () => void;
-    onPlayStateChange?: (s: "playing" | "paused" | "stopped" | "idle") => void;
+    onStart?: (() => void) | undefined;
+    onEnd?: (() => void) | undefined;
+    onPlayStateChange?: ((s: "playing" | "paused" | "stopped" | "idle") => void) | undefined;
   }) {
     this.onStart = opts.onStart;
     this.onEnd = opts.onEnd;
@@ -449,10 +449,10 @@ export function streamChatWithVoice(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
       },
       body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
-      signal: handlers.signal,
+      signal: handlers.signal ?? null,
     });
 
     if (!resp.ok || !resp.body) {
@@ -577,7 +577,7 @@ export function speakTextStreaming(
   text: string,
   voice: string,
   handlers: Omit<StreamHandlers, "onTextDelta" | "onSentence"> & {
-    onSentence?: (s: string) => void;
+    onSentence?: ((s: string) => void) | undefined;
   },
 ): StreamControls {
   const audioQueue = new AudioQueue({
@@ -649,7 +649,7 @@ export function streamChatTextOnly(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
       },
       body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal,
@@ -736,7 +736,7 @@ export const AI_MEMORY_CHAR_LIMIT = 10_000;
  * The count includes BOTH user messages and assistant replies — the model
  * sees the full conversation, not just what the user typed.
  */
-export function trimMessagesToCharLimit<T extends { role: string; content?: string | null }>(
+export function trimMessagesToCharLimit<T extends { role: string; content?: string | null | undefined }>(
   messages: T[],
   limit = AI_MEMORY_CHAR_LIMIT
 ): T[] {
@@ -829,7 +829,7 @@ export class VoiceRecorder {
 }
 
 /** Send a recorded clip to the shared `ai` function and get the text back. */
-export async function transcribeAudio(blob: Blob, language?: string): Promise<string> {
+export async function transcribeAudio(blob: Blob, language?: string | undefined): Promise<string> {
   const buf = new Uint8Array(await blob.arrayBuffer());
   let binary = "";
   for (let i = 0; i < buf.length; i += 0x8000) {

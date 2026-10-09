@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -391,7 +391,7 @@ function ModuleView({
             <button
               key={lesson.key}
               onClick={() => onSelectLesson(lesson.key)}
-              className="w-full text-left p-4 rounded-xl border bg-card hover:border-primary/40 hover:shadow-sm transition-all flex items-center gap-4 group"
+              className="w-full text-left p-4 rounded-xl border bg-card hover:border-primary/40 hover:shadow-xs transition-all flex items-center gap-4 group"
             >
               <div className="shrink-0">
                 {done ? (
@@ -507,7 +507,7 @@ function LessonView({
               return (
                 <section
                   key={`${lesson.key}-${idx}`}
-                  className="rounded-xl border bg-card px-5 py-5 shadow-sm"
+                  className="rounded-xl border bg-card px-5 py-5 shadow-xs"
                 >
                   <div className="flex gap-4">
                     <div className="shrink-0 h-8 w-8 rounded-full bg-secondary text-secondary-foreground text-sm font-semibold flex items-center justify-center">
@@ -584,7 +584,7 @@ function LessonView({
         {/* Tool CTA */}
         {lesson.toolPath && lesson.toolLabel && (
           <Link to={lesson.toolPath}>
-            <Card className="hover:border-primary/40 hover:shadow-sm transition-all">
+            <Card className="hover:border-primary/40 hover:shadow-xs transition-all">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="bg-primary/10 rounded-lg p-2.5">
                   <ExternalLink className="h-5 w-5 text-primary" />
@@ -627,7 +627,7 @@ function LessonView({
         {/* Study notes — anchored to this lesson's CCT 217 title row */}
         {LESSON_CONTENT_IDS[lesson.key] && (
           <StudyNotesPanel
-            articleId={LESSON_CONTENT_IDS[lesson.key]}
+            articleId={LESSON_CONTENT_IDS[lesson.key]!}
             showFinishedToggle
             sourceTitle={isZh ? lesson.titleZh : lesson.title}
           />
@@ -714,7 +714,7 @@ function QuizCard({ quiz, isZh }: { quiz: ISupportQuiz; isZh: boolean }) {
                   } ${submitted ? "cursor-default" : "cursor-pointer"}`}
                 >
                   <span
-                    className={`shrink-0 h-5 w-5 ${isMulti ? "rounded-sm" : "rounded-full"} border-2 flex items-center justify-center mt-0.5 ${
+                    className={`shrink-0 h-5 w-5 ${isMulti ? "rounded-xs" : "rounded-full"} border-2 flex items-center justify-center mt-0.5 ${
                       showCorrect
                         ? "border-success bg-success text-success-foreground"
                         : showWrongPick

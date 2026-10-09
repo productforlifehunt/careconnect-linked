@@ -40,7 +40,7 @@ export function isCustomZone(code: string): boolean {
  * Canonical value for a57 "Zone name".
  * Safe/Danger are fixed labels; Custom keeps whatever the user typed.
  */
-export function zoneNameFor(code: string, customName?: string | null): string {
+export function zoneNameFor(code: string, customName?: string | null | undefined): string {
   if (code === ZONE_TYPE.SAFE) return "Safe";
   if (code === ZONE_TYPE.DANGER) return "Danger";
   const name = (customName || "").trim();

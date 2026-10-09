@@ -28,7 +28,7 @@ export function GroupSettingsDialog({
   activeGroup: any; activeGroupId: string | null;
   isOwner: boolean; updateGroup: any; deleteGroup: any;
   onDeleteSuccess: () => void; onLeaveGroup: () => void;
-  myDisplayName?: string;
+  myDisplayName?: string | undefined;
 }) {
   const { toast } = useToast();
   const Z = useZ();

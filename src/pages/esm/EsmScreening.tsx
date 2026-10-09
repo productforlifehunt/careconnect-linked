@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "@/lib/router-compat";
 import { toast } from "sonner";
 import { SurveyRunner } from "@/components/esm/SurveyRunner";
 import { otherScreening, primaryScreening } from "@/features/esm/questionnaires";
@@ -39,7 +39,7 @@ export default function EsmScreening() {
         saveProfile({
           ...profile,
           screeningDone: true,
-          name: typeof answers.c318_a01 === "string" ? answers.c318_a01 : profile.name,
+          name: typeof answers["c318_a01"] === "string" ? answers["c318_a01"] : profile.name,
         });
          if (result.uploaded) toast.success(uiText(zh, "Entry survey saved. The weekly logging starts now.", "初始问卷已保存，现在可以开始本周记录。"));
          else toast.warning(uiText(zh, `Saved on this device only — ${result.error}`, "已保存在本设备，暂未上传。"));

@@ -17,18 +17,18 @@ interface HomeTabProps {
   pendingTasksCount: number;
   membersCount: number;
   caredOnesCount: number;
-  statsLoading?: boolean;
+  statsLoading?: boolean | undefined;
   allPosts: any[];
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
   memberCategories: any[];
-  members?: any[];
+  members?: any[] | undefined;
   createPost: any;
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;
   onDeletePost: (id: string) => void;
-  onNavigateTab?: (tab: string) => void;
+  onNavigateTab?: ((tab: string) => void) | undefined;
 }
 
 export function HomeTab({
@@ -85,7 +85,7 @@ export function HomeTab({
             <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
             <div className="min-w-0">
               {statsLoading
-                ? <div className="h-5 sm:h-7 w-8 rounded bg-muted animate-pulse" aria-label="loading" />
+                ? <div className="h-5 sm:h-7 w-8 rounded-sm bg-muted animate-pulse" aria-label="loading" />
                 : <p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p>}
               <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight break-words">{s.label}</p>
             </div>

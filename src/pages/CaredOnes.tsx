@@ -1,7 +1,7 @@
 import { maskEmail } from "@/lib/utils";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { useState, useMemo } from "react";
-import { useSearchParams, useParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -193,7 +193,7 @@ export default function CaredOnes() {
               const name = co.cared_one?.full_name || site.caredOneSingular;
               const isActive = selectedId === co.user_id;
               return (
-                <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-sm" : "bg-transparent border-border hover:bg-accent/50"}`}>
+                <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-xs" : "bg-transparent border-border hover:bg-accent/50"}`}>
                   <button type="button" onClick={() => setActiveTab(co.user_id)} className="min-h-11 px-4 py-2 text-sm font-medium flex items-center gap-2">
                     {name}
                     {co.invitation_status === "pending" && (

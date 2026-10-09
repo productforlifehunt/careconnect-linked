@@ -23,11 +23,11 @@ function toNum(id: string | number | undefined | null): number {
 }
 
 interface SubgroupCardProps {
-  subgroup: { id: string; name: string; color?: string | null; description?: string | null };
-  members: Array<{ user_id?: string; id?: string; profile?: { full_name?: string | null; avatar_url?: string | null } }>;
+  subgroup: { id: string; name: string; color?: string | null | undefined; description?: string | null | undefined };
+  members: Array<{ user_id?: string | undefined; id?: string | undefined; profile?: { full_name?: string | null | undefined; avatar_url?: string | null | undefined } }>;
   isAdmin: boolean;
   onDelete: () => void;
-  currentUserId?: string | number | null;
+  currentUserId?: string | number | null | undefined;
 }
 
 export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUserId }: SubgroupCardProps) {
@@ -136,7 +136,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                 {canManage && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="ml-0.5 hover:bg-muted rounded p-0.5" aria-label={Z("成员选项", "Member options")}>
+                      <button className="ml-0.5 hover:bg-muted rounded-sm p-0.5" aria-label={Z("成员选项", "Member options")}>
                         <MoreVertical className="h-2.5 w-2.5" />
                       </button>
                     </DropdownMenuTrigger>
@@ -181,7 +181,7 @@ export function SubgroupCard({ subgroup, members, isAdmin, onDelete, currentUser
                 const uid = toNum(m.user_id || m.id);
                 if (!uid) return null;
                 return (
-                  <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1">
+                  <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded-sm px-1.5 py-1">
                     <Checkbox checked={memberSet.has(uid)} onCheckedChange={(c) => togglePicker(uid, !!c)} />
                     <span className="text-sm text-foreground flex-1 truncate">{m.profile?.full_name || ""}</span>
                   </label>

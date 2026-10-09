@@ -18,7 +18,7 @@ export interface ServiceTypeTerm {
   name: string;
   slug: string;
   /** Delivery mode implied by the option, when the dictionary label states it. */
-  delivery?: 'in-person' | 'remote';
+  delivery?: 'in-person' | 'remote' | undefined;
 }
 
 /**

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 export interface DetailRow {
   label: string;
-  value?: ReactNode;
+  value?: ReactNode | undefined;
 }
 
 /**
@@ -32,13 +32,13 @@ export function RecordDetailDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   title: ReactNode;
-  subtitle?: ReactNode;
+  subtitle?: ReactNode | undefined;
   rows: DetailRow[];
   /** Extra record-specific buttons (call, mark done, share...). */
-  actions?: ReactNode;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  isDeleting?: boolean;
+  actions?: ReactNode | undefined;
+  onEdit?: (() => void) | undefined;
+  onDelete?: (() => void) | undefined;
+  isDeleting?: boolean | undefined;
 }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");

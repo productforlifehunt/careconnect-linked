@@ -11,15 +11,15 @@ import { EVENT_TYPE_COLORS, type CalendarEvent } from "./types";
 export type AvailabilitySlot = {
   kind: "weekly" | "date";
   type: string;
-  day_of_week?: number;
-  specific_date?: string;
-  start_time?: string | null;
-  end_time?: string | null;
+  day_of_week?: number | undefined;
+  specific_date?: string | undefined;
+  start_time?: string | null | undefined;
+  end_time?: string | null | undefined;
   is_available: boolean;
   priority: number;
   bookable: string;
-  from?: string;
-  to?: string;
+  from?: string | undefined;
+  to?: string | undefined;
 };
 
 function normalizeWPUserId(id: string | number | null | undefined): string {
@@ -194,9 +194,9 @@ export async function createBookingCalendarEvent(params: {
   appointmentDate: string;
   appointmentTime: string;
   durationHours: number;
-  serviceType?: string;
-  orderId?: string | number;
-  note?: string | null;
+  serviceType?: string | undefined;
+  orderId?: string | number | undefined;
+  note?: string | null | undefined;
 }) {
   const providerId = normalizeWPUserId(params.providerId);
   const clientId = normalizeWPUserId(params.clientId);

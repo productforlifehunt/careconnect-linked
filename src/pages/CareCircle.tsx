@@ -1,7 +1,7 @@
 import { getStoredWPUser } from "@/services/wp-auth";
 import { useState, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,7 @@ export default function CareCircle() {
 
   const joinGroupByCode = useJoinGroupByAnyCode();
 
-  const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0].id : null);
+  const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0]!.id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
   const { data: members, isLoading: membersLoadingRaw } = useCareGroupMembers(activeGroupId);

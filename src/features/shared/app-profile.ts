@@ -206,7 +206,7 @@ export async function fetchOnboardingDone(app: AppId = currentAppId()): Promise<
  * apps only. Returns the credits granted by this call.
  */
 export async function completeOnboarding(
-  values: { name?: string; communityName?: string } = {},
+  values: { name?: string | undefined; communityName?: string | undefined } = {},
   app: AppId = currentAppId(),
 ): Promise<number> {
   const ensured = await ensureAppProfile(app);

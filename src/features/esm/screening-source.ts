@@ -7,8 +7,8 @@ export type ScreeningRole = "primary" | "secondary";
 export function screeningRole(name: string, row: Record<string, unknown>): ScreeningRole | null {
   if (/\bSecondary caregiver\b/i.test(name)) return "secondary";
   if (/\bPrimary caregiver\b/i.test(name)) return "primary";
-  const primaryAge = Number(row.a02) > 0;
-  const secondaryAge = Number(row.a134) > 0;
+  const primaryAge = Number(row["a02"]) > 0;
+  const secondaryAge = Number(row["a134"]) > 0;
   return primaryAge === secondaryAge ? null : primaryAge ? "primary" : "secondary";
 }
 
@@ -26,7 +26,7 @@ export function scaleRangeLabel(item: SpecItem): string | null {
 }
 
 /** Original document references, not storage IDs or generated answer-key order. */
-export function screeningSource(item: SpecItem, role?: ScreeningRole | null) {
+export function screeningSource(item: SpecItem, role?: ScreeningRole | null | undefined) {
   const sharedSecondary = role === "secondary" && item.code.startsWith("1.7.");
   const heading = sharedSecondary ? (item.block || item.group).replace(/^1\.7\./, "2.2.") : item.block || item.group;
   const headingCode = heading.match(/^\d+(?:\.\d+)*/)?.[0] ?? "";

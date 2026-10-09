@@ -12,11 +12,12 @@ export function useStandaloneMode(): boolean {
   const compute = () => {
     if (typeof window === "undefined") return false;
     // Capacitor native shell
-    // @ts-expect-error - Capacitor injects this global
-    if (window.Capacitor?.isNativePlatform?.()) return true;
+    // Capacitor native shell injects this global
+    const w = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
+    if (w.Capacitor?.isNativePlatform?.()) return true;
     // iOS Safari home-screen
-    // @ts-expect-error - non-standard
-    if (window.navigator.standalone === true) return true;
+    // non-standard iOS flag
+    if ((window.navigator as Navigator & { standalone?: boolean }).standalone === true) return true;
     // PWA display-mode
     try {
       if (window.matchMedia?.("(display-mode: standalone)").matches) return true;

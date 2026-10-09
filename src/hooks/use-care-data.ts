@@ -103,7 +103,7 @@ import type {
 
 // ─── Helpers ────────────────────────────────────────────────
 
-export function usePostTypes(_level?: 1 | 2 | 3 | 4, _parentId?: string | null) {
+export function usePostTypes(_level?: 1 | 2 | 3 | 4 | undefined, _parentId?: string | null | undefined) {
   return useQuery({ queryKey: ["postTypes"], queryFn: async () => [] as any[] });
 }
 
@@ -134,16 +134,16 @@ function dedupeFacilities(list: CareFacility[]) {
 }
 
 export function useProviders(filters?: {
-  query?: string;
-  specialties?: string[];
-  minRate?: number;
-  maxRate?: number;
-  verifiedOnly?: boolean;
-  minRating?: number;
-  sortBy?: string;
-  location?: string;
-  serviceLocations?: string[];
-  serviceTypeSlugs?: string[];
+  query?: string | undefined;
+  specialties?: string[] | undefined;
+  minRate?: number | undefined;
+  maxRate?: number | undefined;
+  verifiedOnly?: boolean | undefined;
+  minRating?: number | undefined;
+  sortBy?: string | undefined;
+  location?: string | undefined;
+  serviceLocations?: string[] | undefined;
+  serviceTypeSlugs?: string[] | undefined;
 }) {
   return useQuery({
     queryKey: ["providers", filters],
@@ -160,15 +160,15 @@ export function useProvider(id: string | undefined) {
 }
 
 export function useCareFacilities(filters?: {
-  query?: string;
-  location?: string;
-  minRating?: number;
-  sortBy?: string;
+  query?: string | undefined;
+  location?: string | undefined;
+  minRating?: number | undefined;
+  sortBy?: string | undefined;
   /** CCT 215 a57 option codes */
-  facilityTypes?: string[];
+  facilityTypes?: string[] | undefined;
   /** CCT 215 a58 option codes */
-  dementiaStages?: string[];
-  area?: "china" | "global";
+  dementiaStages?: string[] | undefined;
+  area?: "china" | "global" | undefined;
 }) {
   return useQuery({
     queryKey: ["facilities", filters],
@@ -255,7 +255,7 @@ export function useFacilityOwnershipDisputes(facilityId: string | undefined) {
 export function useCreateFacilityOwnershipClaim() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { facility_id: string; claim?: string | null; attachment_urls?: string[] | string | null; is_dispute?: boolean }) =>
+    mutationFn: (input: { facility_id: string; claim?: string | null | undefined; attachment_urls?: string[] | string | null | undefined; is_dispute?: boolean | undefined }) =>
       createFacilityOwnershipClaimWordPress(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] });
@@ -267,7 +267,7 @@ export function useCreateFacilityOwnershipClaim() {
 export function useUpdateFacilityOwnershipClaim() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; status?: "pending" | "approved" | "rejected"; reply?: string | null }) =>
+    mutationFn: ({ id, ...updates }: { id: string; status?: "pending" | "approved" | "rejected" | undefined; reply?: string | null | undefined }) =>
       updateFacilityOwnershipClaimWordPress(id, updates),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["facilityOwnershipClaims"] });
@@ -314,7 +314,7 @@ export function useFacilityReviews(facilityId: string | undefined) {
 export function useCreateReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (review: { entity_id: string; entity_type: string; rating: number; comment?: string }) => createReviewWordPress(review),
+    mutationFn: (review: { entity_id: string; entity_type: string; rating: number; comment?: string | undefined }) => createReviewWordPress(review),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entityReviews"] });
       qc.invalidateQueries({ queryKey: ["facilityReviewSummaries"] });
@@ -404,7 +404,7 @@ export function useSendMessage() {
   return useMutation({
     mutationFn: async (
       input:
-        | { conversationId: string; content: string; receiverUserId?: string }
+        | { conversationId: string; content: string; receiverUserId?: string | undefined }
         | { groupId: string; content: string }
     ) => {
       const me = getStoredWPUser();
@@ -470,7 +470,7 @@ export function useCareGroupMembers(groupId: string | null) {
 export function useCreateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (group: { name: string; description?: string; is_private?: boolean; displayName?: string }) => createCareGroupWordPress(group),
+    mutationFn: (group: { name: string; description?: string | undefined; is_private?: boolean | undefined; displayName?: string | undefined }) => createCareGroupWordPress(group),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroups"] }); },
   });
 }
@@ -490,9 +490,9 @@ export function useInviteToGroup() {
   return useMutation({
     mutationFn: ({ groupId, userId, email, invitedAs }: {
       groupId: string;
-      userId?: string;
-      email?: string;
-      invitedAs?: InvitedAs;
+      userId?: string | undefined;
+      email?: string | undefined;
+      invitedAs?: InvitedAs | undefined;
     }) => inviteToGroupWordPress(groupId, userId || email || "", invitedAs || "normal group member"),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
@@ -504,7 +504,7 @@ export function useInviteToGroup() {
 export function useUpdateMemberRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ memberId, groupId, role, updates }: { memberId: string; groupId?: string; role?: string; updates?: Record<string, any> }) => updateMemberRoleWordPress(memberId, updates ?? role ?? {}, groupId),
+    mutationFn: ({ memberId, groupId, role, updates }: { memberId: string; groupId?: string | undefined; role?: string | undefined; updates?: Record<string, any> }) => updateMemberRoleWordPress(memberId, updates ?? role ?? {}, groupId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
@@ -512,7 +512,7 @@ export function useUpdateMemberRole() {
 export function useRemoveGroupMember() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ memberId, groupId }: { memberId: string; groupId?: string }) => removeGroupMemberWordPress(memberId, groupId),
+    mutationFn: ({ memberId, groupId }: { memberId: string; groupId?: string | undefined }) => removeGroupMemberWordPress(memberId, groupId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careGroupMembers"] }); },
   });
 }
@@ -527,7 +527,7 @@ export function useCareGroupGallery(groupId: string | null) {
 }
 
 // ─── Care Tasks ─────────────────────────────────────────────
-export function useCareTasks(groupId?: string | null) {
+export function useCareTasks(groupId?: string | null | undefined) {
   return useQuery({
     queryKey: ["careTasks", groupId],
     queryFn: async () => {
@@ -540,7 +540,7 @@ export function useCareTasks(groupId?: string | null) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (task: { group_id?: string; care_group_id?: string; title: string; description?: string; assigned_to?: string | string[]; due_date?: string; task_date?: string; start_time?: string; end_time?: string; location?: string; task_types?: string[]; people_needed?: number; help_status?: string; subgroupIds?: number[]; visibilityUserIds?: number[] }) => {
+    mutationFn: async (task: { group_id?: string | undefined; care_group_id?: string | undefined; title: string; description?: string | undefined; assigned_to?: string | string[] | undefined; due_date?: string | undefined; task_date?: string | undefined; start_time?: string | undefined; end_time?: string | undefined; location?: string | undefined; task_types?: string[] | undefined; people_needed?: number | undefined; help_status?: string | undefined; subgroupIds?: number[] | undefined; visibilityUserIds?: number[] | undefined }) => {
       const { subgroupIds, visibilityUserIds, ...payload } = task;
       const newId = await createCareTaskWordPress(payload);
       if (newId && ((subgroupIds?.length ?? 0) > 0 || (visibilityUserIds?.length ?? 0) > 0)) {
@@ -592,7 +592,7 @@ export function useUpdateAssigneeStatus() {
 export function useUpdateTaskStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status, updates }: { id: string; status?: string; updates?: Record<string, any> }) => updateCareTaskWordPress(id, updates ?? { status }),
+    mutationFn: ({ id, status, updates }: { id: string; status?: string | undefined; updates?: Record<string, any> }) => updateCareTaskWordPress(id, updates ?? { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }
@@ -685,7 +685,7 @@ export function useSubmitProviderApplication() {
 }
 
 // ─── Care Group Posts ───────────────────────────────────────
-export function useCareGroupPosts(groupId: string | null, type?: string) {
+export function useCareGroupPosts(groupId: string | null, type?: string | undefined) {
   // One shared query per group (all types), filtered locally per caller.
   // Prevents the same relation + CCT round-trip firing once per post type.
   return withIdleAwareLoading(useQuery({
@@ -703,7 +703,7 @@ export function useCareGroupPosts(groupId: string | null, type?: string) {
 export function useCreateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[]; hiddenSubgroupIds?: number[]; hiddenUserIds?: number[] }) => {
+    mutationFn: async (post: { group_id: string; content: string; type?: string | undefined; title?: string | undefined; scheduled_at?: string | null | undefined; subgroupIds?: number[] | undefined; visibilityUserIds?: number[] | undefined; hiddenSubgroupIds?: number[] | undefined; hiddenUserIds?: number[] | undefined }) => {
       const { subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...payload } = post;
       const newId = await createGroupPostWordPress(payload);
       const hasVisibility =
@@ -721,7 +721,7 @@ export function useCreateGroupPost() {
 export function useUpdateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...updates }: { id: string; content?: string; title?: string; is_pinned?: boolean; scheduled_at?: string | null; subgroupIds?: number[]; visibilityUserIds?: number[]; hiddenSubgroupIds?: number[]; hiddenUserIds?: number[] }) => {
+    mutationFn: async ({ id, subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...updates }: { id: string; content?: string | undefined; title?: string | undefined; is_pinned?: boolean | undefined; scheduled_at?: string | null | undefined; subgroupIds?: number[] | undefined; visibilityUserIds?: number[] | undefined; hiddenSubgroupIds?: number[] | undefined; hiddenUserIds?: number[] | undefined }) => {
       await updateGroupPostWordPress(id, updates);
       if (subgroupIds || visibilityUserIds || hiddenSubgroupIds || hiddenUserIds) {
         await setPostVisibility(id, subgroupIds || [], visibilityUserIds || [], hiddenSubgroupIds || [], hiddenUserIds || []);
@@ -743,7 +743,7 @@ export function useDeleteGroupPost() {
 export function useUpdateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; name?: string; description?: string; is_private?: boolean }) => updateCareGroupWordPress(id, updates),
+    mutationFn: ({ id, ...updates }: { id: string; name?: string | undefined; description?: string | undefined; is_private?: boolean | undefined }) => updateCareGroupWordPress(id, updates),
     // Patch the cached list first so a rename shows instantly, then refetch.
     onSuccess: (_d, vars: any) => {
       qc.setQueryData(["careGroups"], (prev: any) =>
@@ -774,7 +774,7 @@ export function useDeleteCareGroup() {
 export function useJoinGroupByCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: string | { token: string; displayName?: string }) =>
+    mutationFn: (input: string | { token: string; displayName?: string | undefined }) =>
       typeof input === "string"
         ? joinGroupByCodeWordPress(input)
         : joinGroupByCodeWordPress(input.token, input.displayName),
@@ -794,7 +794,7 @@ export function useGroupInvites(groupId: string | null) {
 export function useCreateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; name: string; note?: string; expiresAt?: string | null; maxUses?: number; token?: string; invitedAs?: InvitedAs; source?: "custom" | "app native generated" }) =>
+    mutationFn: (input: { groupId: string; name: string; note?: string | undefined; expiresAt?: string | null | undefined; maxUses?: number | undefined; token?: string | undefined; invitedAs?: InvitedAs | undefined; source?: "custom" | "app native generated" | undefined }) =>
       createGroupInviteWordPress(input),
     onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["groupInvites", vars.groupId] }); },
   });
@@ -803,7 +803,7 @@ export function useCreateGroupInvite() {
 export function useUpdateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; groupId?: string; name?: string; note?: string; token?: string; expiresAt?: string | null; maxUses?: number; isRevoked?: boolean; invitedAs?: InvitedAs }) =>
+    mutationFn: ({ id, ...updates }: { id: string; groupId?: string | undefined; name?: string | undefined; note?: string | undefined; token?: string | undefined; expiresAt?: string | null | undefined; maxUses?: number | undefined; isRevoked?: boolean | undefined; invitedAs?: InvitedAs | undefined }) =>
       updateGroupInviteWordPress(id, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
   });
@@ -812,7 +812,7 @@ export function useUpdateGroupInvite() {
 export function useDeleteGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string; groupId?: string }) => deleteGroupInviteWordPress(id),
+    mutationFn: ({ id }: { id: string; groupId?: string | undefined }) => deleteGroupInviteWordPress(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
   });
 }
@@ -900,7 +900,7 @@ export function useMemberCategories(groupId: string | null) {
 export function useCreateMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, name, color, description }: { groupId: string; name: string; color?: string; description?: string }) => createMemberCategoryWordPress(groupId, name, color, description),
+    mutationFn: ({ groupId, name, color, description }: { groupId: string; name: string; color?: string | undefined; description?: string | undefined }) => createMemberCategoryWordPress(groupId, name, color, description),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
 }
@@ -908,7 +908,7 @@ export function useCreateMemberCategory() {
 export function useUpdateMemberCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ categoryId, ...updates }: { categoryId: string; name?: string; description?: string; color?: string }) =>
+    mutationFn: ({ categoryId, ...updates }: { categoryId: string; name?: string | undefined; description?: string | undefined; color?: string | undefined }) =>
       updateMemberCategoryWordPress(categoryId, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["memberCategories"] }); },
   });
@@ -934,7 +934,7 @@ export function useSubgroupMembers(subgroupId: string | null) {
 export function useAddMemberToSubgroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ subgroupId, userId, types }: { subgroupId: string; userId: string | number; types?: string[] }) =>
+    mutationFn: ({ subgroupId, userId, types }: { subgroupId: string; userId: string | number; types?: string[] | undefined }) =>
       addMemberToSubgroupWordPress(subgroupId, userId, { types }),
     onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: ["subgroupMembers"] });
@@ -987,7 +987,7 @@ export function useGroupInvitePreview(token: string | null) {
 export function useJoinGroupByAnyCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ code, displayName }: { code: string; displayName?: string }) =>
+    mutationFn: ({ code, displayName }: { code: string; displayName?: string | undefined }) =>
       joinGroupByAnyCodeWordPress(code, displayName),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["careGroups"] });
@@ -1000,7 +1000,7 @@ export function useJoinGroupByAnyCode() {
 export function useJoinGroupByJoinCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ groupId, code, displayName }: { groupId: string; code: string; displayName?: string }) =>
+    mutationFn: ({ groupId, code, displayName }: { groupId: string; code: string; displayName?: string | undefined }) =>
       joinGroupByJoinCodeWordPress(groupId, code, displayName),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["careGroups"] });
@@ -1022,14 +1022,14 @@ export function useUpdateSubgroupMemberRole() {
 }
 
 // ─── Shared Posts (SupaPress community usage) ──────────────
-export function usePosts(postType: string, area?: string, childPostType?: string | null) {
+export function usePosts(postType: string, area?: string | undefined, childPostType?: string | null | undefined) {
   return useQuery({
     queryKey: ["posts", postType, area, childPostType],
     queryFn: () => fetchPostsWordPress(postType, area, childPostType),
   });
 }
 
-export function usePost(id: string | null, postType?: string) {
+export function usePost(id: string | null, postType?: string | undefined) {
   return useQuery({
     queryKey: ["post", id, postType],
     queryFn: () => fetchPostByIdWordPress(id!, postType),
@@ -1040,7 +1040,7 @@ export function usePost(id: string | null, postType?: string) {
 export function useCreatePost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (post: { title: string; content?: string; post_type?: string; postType?: string; status?: string; area?: string; language?: string }) => createPostWordPress(post),
+    mutationFn: (post: { title: string; content?: string | undefined; post_type?: string | undefined; postType?: string | undefined; status?: string | undefined; area?: string | undefined; language?: string | undefined }) => createPostWordPress(post),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); },
   });
 }
@@ -1048,7 +1048,7 @@ export function useCreatePost() {
 export function useUpdatePost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; title?: string; content?: string; status?: string }) => updatePostWordPress(id, updates),
+    mutationFn: ({ id, ...updates }: { id: string; title?: string | undefined; content?: string | undefined; status?: string | undefined }) => updatePostWordPress(id, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["posts"] }); qc.invalidateQueries({ queryKey: ["post"] }); },
   });
 }
@@ -1238,7 +1238,7 @@ export function useCareTips(caredOneId: string | null) {
 export function useCreateCareTip() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (tip: { user_id: string; title?: string; content: string; category?: string }) => createCareTipWordPress(tip),
+    mutationFn: (tip: { user_id: string; title?: string | undefined; content: string; category?: string | undefined }) => createCareTipWordPress(tip),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careTips"] }); },
   });
 }
@@ -1270,7 +1270,7 @@ export function useCarePlans(caredOneId: string | null) {
 export function useCreateCarePlan() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (plan: { user_id: string; title: string; description?: string }) => createCarePlanWordPress(plan),
+    mutationFn: (plan: { user_id: string; title: string; description?: string | undefined }) => createCarePlanWordPress(plan),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["carePlans"] }); },
   });
 }
@@ -1302,7 +1302,7 @@ export function useCareNotes(caredOneId: string | null) {
 export function useCreateCareNote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (note: { user_id: string; title?: string; content: string }) => createCareNoteWordPress(note),
+    mutationFn: (note: { user_id: string; title?: string | undefined; content: string }) => createCareNoteWordPress(note),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["careNotes"] }); },
   });
 }
@@ -1334,7 +1334,7 @@ export function useEmergencyContacts(caredOneId: string | null) {
 export function useCreateEmergencyContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (contact: { user_id: string; name: string; phone?: string; email?: string; relationship?: string; content?: string; address?: string; note?: string }) => createEmergencyContactWordPress(contact),
+    mutationFn: (contact: { user_id: string; name: string; phone?: string | undefined; email?: string | undefined; relationship?: string | undefined; content?: string | undefined; address?: string | undefined; note?: string | undefined }) => createEmergencyContactWordPress(contact),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["emergencyContacts"] }); },
   });
 }
@@ -1366,7 +1366,7 @@ export function useSafeZones(caredOneId: string | null) {
 export function useCreateSafeZone() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (zone: { user_id: string; zone_type: string; latitude: number; longitude: number; radius_meters?: number; [key: string]: any }) => createSafeZoneWordPress(zone),
+    mutationFn: (zone: { user_id: string; zone_type: string; latitude: number; longitude: number; radius_meters?: number | undefined; [key: string]: any }) => createSafeZoneWordPress(zone),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["safeZones"] }); },
   });
 }
@@ -1398,7 +1398,7 @@ export function useCaredOneDocuments(caredOneId: string | null) {
 export function useCreateCaredOneDocument() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (doc: { user_id: string; title: string; description?: string; attachment_ids?: Array<number | string> }) => createCaredOneDocumentWordPress(doc),
+    mutationFn: (doc: { user_id: string; title: string; description?: string | undefined; attachment_ids?: Array<number | string> | undefined }) => createCaredOneDocumentWordPress(doc),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneDocuments"] }); },
   });
 }
@@ -1431,7 +1431,7 @@ export function useComments(entityType: string, entityId: string | null) {
 export function useCreateComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ entityType, entityId, content, parentId }: { entityType: string; entityId: string; content: string; parentId?: string }) => createCommentWordPress({ entity_type: entityType, entity_id: entityId, content, parent_id: parentId }),
+    mutationFn: ({ entityType, entityId, content, parentId }: { entityType: string; entityId: string; content: string; parentId?: string | undefined }) => createCommentWordPress({ entity_type: entityType, entity_id: entityId, content, parent_id: parentId }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["comments"] }); },
   });
 }
@@ -1560,7 +1560,7 @@ export function useUpsertProviderAvailability() {
 
 
 // ─── Shared care tasks (the task IS the job) ─────────────────
-export function useHelpTasks(filters?: { paid?: boolean; status?: "open" | "filled" }) {
+export function useHelpTasks(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined }) {
   return useQuery({
     queryKey: ["tasksNeedingHelp", filters],
     queryFn: () => fetchHelpTasksWordPress(filters),
@@ -1592,7 +1592,7 @@ export function useTaskApplicants(taskId: string | null) {
 export function useApplyToSharedTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, message }: { taskId: string; message?: string }) => applyToSharedTaskWordPress(taskId, message),
+    mutationFn: ({ taskId, message }: { taskId: string; message?: string | undefined }) => applyToSharedTaskWordPress(taskId, message),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
       qc.invalidateQueries({ queryKey: ["myTaskApplications"] });
@@ -1616,7 +1616,7 @@ export function useDecideTaskApplicant() {
 export function useShareTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, needs_payment, price }: { taskId: string; needs_payment?: boolean; price?: string }) =>
+    mutationFn: ({ taskId, needs_payment, price }: { taskId: string; needs_payment?: boolean | undefined; price?: string | undefined }) =>
       shareTaskWordPress(taskId, { needs_payment, price }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasksNeedingHelp"] });
@@ -1666,7 +1666,7 @@ export function useCaredOneLocationSettings(caredOneId: string | null) {
 export function useShareMyLocation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number | null; batteryLevel?: number | null; addressText?: string | null; isEmergency?: boolean; enabled?: boolean }) =>
+    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number | null | undefined; batteryLevel?: number | null | undefined; addressText?: string | null | undefined; isEmergency?: boolean | undefined; enabled?: boolean | undefined }) =>
       shareMyLocationWordPress(data.latitude, data.longitude, { accuracy: data.accuracy, batteryLevel: data.batteryLevel, addressText: data.addressText, isEmergency: data.isEmergency, enabled: data.enabled }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); qc.invalidateQueries({ queryKey: ["locationHistory"] }); },
   });
@@ -1715,7 +1715,7 @@ export function useLocationRequests(caredOneId: string | null) {
 export function useSendLocationRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: string | { caredOneId: string; message?: string; isEmergency?: boolean }) => {
+    mutationFn: (input: string | { caredOneId: string; message?: string | undefined; isEmergency?: boolean | undefined }) => {
       const normalized = typeof input === "string" ? { caredOneId: input } : input;
       return sendLocationRequestWordPress(normalized);
     },
@@ -1795,7 +1795,7 @@ export function useSetInformationCardContacts() {
 export function useEnableInformationCardShare() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ cardId, ...opts }: { cardId: string; visibility: any; expiresAt?: string | null; existingToken?: string }) =>
+    mutationFn: ({ cardId, ...opts }: { cardId: string; visibility: any; expiresAt?: string | null | undefined; existingToken?: string | undefined }) =>
       enableInformationCardShareWordPress(cardId, opts),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["informationCards"] });
@@ -1835,7 +1835,7 @@ export function useVisitLog(caredOneId: string | null) {
 export function useCreateVisitLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (visit: { user_id: string; description?: string }) => createVisitLogWordPress(visit),
+    mutationFn: (visit: { user_id: string; description?: string | undefined }) => createVisitLogWordPress(visit),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["visitLog"] }); qc.invalidateQueries({ queryKey: ["careTasks"] }); },
   });
 }

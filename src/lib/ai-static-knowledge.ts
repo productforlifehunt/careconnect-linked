@@ -320,14 +320,14 @@ function scoreEntry(entry: KnowledgeEntry, q: string): number {
 }
 
 export interface RetrieveOptions {
-  topics?: KnowledgeTopic[];
-  isChinese?: boolean;
+  topics?: KnowledgeTopic[] | undefined;
+  isChinese?: boolean | undefined;
   /** How many snippets to attach. */
-  limit?: number;
+  limit?: number | undefined;
   /** Hard cap on attached characters. */
-  maxChars?: number;
+  maxChars?: number | undefined;
   /** When nothing matches, attach a titles-only index so the AI can offer choices. */
-  fallbackToIndex?: boolean;
+  fallbackToIndex?: boolean | undefined;
 }
 
 /**
@@ -365,7 +365,7 @@ export function retrieveStaticKnowledge(question: string, options: RetrieveOptio
 }
 
 /** Titles-only index of a topic, for a page that wants to show what AI can answer. */
-export function staticKnowledgeIndex(topics?: KnowledgeTopic[], isChinese = false): string[] {
+export function staticKnowledgeIndex(topics?: KnowledgeTopic[] | undefined, isChinese = false): string[] {
   const pool = topics?.length ? KNOWLEDGE.filter((k) => topics.includes(k.topic)) : KNOWLEDGE;
   return pool.map((e) => (isChinese ? e.title.zh : e.title.en));
 }

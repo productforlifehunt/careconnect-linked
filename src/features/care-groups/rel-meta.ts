@@ -26,22 +26,22 @@ const R225 = WP.rel["225"] as unknown as RelDef;
 
 // ─── REL 223 field codes ──────────────────────────────────────
 const F223 = {
-  displayName: R223.f.CARE_GROUP_S_MEMBER_DISPLAY_NAME,
-  types: R223.f.CARE_GROUP_S_MEMBER_TYPES,
-  roles: R223.f.CARE_GROUP_S_MEMBER_ROLES,
-  status: R223.f.CARE_GROUP_S_MEMBER_INVITATION_STATUS,
+  displayName: R223.f["CARE_GROUP_S_MEMBER_DISPLAY_NAME"]!,
+  types: R223.f["CARE_GROUP_S_MEMBER_TYPES"]!,
+  roles: R223.f["CARE_GROUP_S_MEMBER_ROLES"]!,
+  status: R223.f["CARE_GROUP_S_MEMBER_INVITATION_STATUS"]!,
 } as const;
 
 // ─── REL 225 field codes ──────────────────────────────────────
 const F225 = {
-  types: R225.f.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES,
+  types: R225.f["CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES"]!,
 } as const;
 
 // ─── Option codes (dictionary-driven) ─────────────────────────
-const TYPE_OPT = R223.opt.CARE_GROUP_S_MEMBER_TYPES;
-const ROLE_OPT = R223.opt.CARE_GROUP_S_MEMBER_ROLES;
-const STATUS_OPT = R223.opt.CARE_GROUP_S_MEMBER_INVITATION_STATUS;
-const SUB_TYPE_OPT = R225.opt.CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES;
+const TYPE_OPT = R223.opt["CARE_GROUP_S_MEMBER_TYPES"]!;
+const ROLE_OPT = R223.opt["CARE_GROUP_S_MEMBER_ROLES"]!;
+const STATUS_OPT = R223.opt["CARE_GROUP_S_MEMBER_INVITATION_STATUS"]!;
+const SUB_TYPE_OPT = R225.opt["CARE_GROUP_S_PRIVATE_MEMBER_GROUP_MEMBER_TYPES"]!;
 
 export type MemberType = "nothing special" | "owner" | "admin";
 export type MemberRole = "nothing special" | "cared one";
@@ -49,53 +49,53 @@ export type InvitationStatus = "accepted" | "pending" | "declined";
 
 /** label → code, accepting a few friendly synonyms used across the UI. */
 export const MEMBER_TYPE_CODE: Record<string, string> = {
-  "nothing special": TYPE_OPT.NOTHING_SPECIAL,
-  nothing: TYPE_OPT.NOTHING_SPECIAL,
-  member: TYPE_OPT.NOTHING_SPECIAL,
-  owner: TYPE_OPT.OWNER,
-  admin: TYPE_OPT.ADMIN,
+  "nothing special": TYPE_OPT["NOTHING_SPECIAL"]!,
+  nothing: TYPE_OPT["NOTHING_SPECIAL"]!,
+  member: TYPE_OPT["NOTHING_SPECIAL"]!,
+  owner: TYPE_OPT["OWNER"]!,
+  admin: TYPE_OPT["ADMIN"]!,
 };
 export const MEMBER_TYPE_LABEL: Record<string, string> = {
-  [TYPE_OPT.NOTHING_SPECIAL]: "nothing special",
-  [TYPE_OPT.OWNER]: "owner",
-  [TYPE_OPT.ADMIN]: "admin",
+  [TYPE_OPT["NOTHING_SPECIAL"]!]: "nothing special",
+  [TYPE_OPT["OWNER"]!]: "owner",
+  [TYPE_OPT["ADMIN"]!]: "admin",
 };
 export const MEMBER_ROLE_CODE: Record<string, string> = {
-  "nothing special": ROLE_OPT.NOTHING_SPECIAL,
-  nothing: ROLE_OPT.NOTHING_SPECIAL,
-  "cared one": ROLE_OPT.CARED_ONE,
-  cared_one: ROLE_OPT.CARED_ONE,
-  "cared-one": ROLE_OPT.CARED_ONE,
+  "nothing special": ROLE_OPT["NOTHING_SPECIAL"]!,
+  nothing: ROLE_OPT["NOTHING_SPECIAL"]!,
+  "cared one": ROLE_OPT["CARED_ONE"]!,
+  cared_one: ROLE_OPT["CARED_ONE"]!,
+  "cared-one": ROLE_OPT["CARED_ONE"]!,
 };
 export const MEMBER_ROLE_LABEL: Record<string, string> = {
-  [ROLE_OPT.NOTHING_SPECIAL]: "nothing special",
-  [ROLE_OPT.CARED_ONE]: "cared one",
+  [ROLE_OPT["NOTHING_SPECIAL"]!]: "nothing special",
+  [ROLE_OPT["CARED_ONE"]!]: "cared one",
 };
 export const INVITATION_STATUS_CODE: Record<string, string> = {
-  accepted: STATUS_OPT.ACCEPTED,
-  active: STATUS_OPT.ACCEPTED,
-  pending: STATUS_OPT.PENDING,
-  invited: STATUS_OPT.PENDING,
-  declined: STATUS_OPT.DECLINED,
-  rejected: STATUS_OPT.DECLINED,
+  accepted: STATUS_OPT["ACCEPTED"]!,
+  active: STATUS_OPT["ACCEPTED"]!,
+  pending: STATUS_OPT["PENDING"]!,
+  invited: STATUS_OPT["PENDING"]!,
+  declined: STATUS_OPT["DECLINED"]!,
+  rejected: STATUS_OPT["DECLINED"]!,
 };
 export const INVITATION_STATUS_LABEL: Record<string, string> = {
-  [STATUS_OPT.ACCEPTED]: "accepted",
-  [STATUS_OPT.PENDING]: "pending",
-  [STATUS_OPT.DECLINED]: "declined",
+  [STATUS_OPT["ACCEPTED"]!]: "accepted",
+  [STATUS_OPT["PENDING"]!]: "pending",
+  [STATUS_OPT["DECLINED"]!]: "declined",
 };
 
 const SUB_TYPE_CODE: Record<string, string> = {
-  "nothing special": SUB_TYPE_OPT.NOTHING_SPECIAL,
-  nothing: SUB_TYPE_OPT.NOTHING_SPECIAL,
-  member: SUB_TYPE_OPT.NOTHING_SPECIAL,
-  owner: SUB_TYPE_OPT.OWNER,
-  admin: SUB_TYPE_OPT.ADMIN,
+  "nothing special": SUB_TYPE_OPT["NOTHING_SPECIAL"]!,
+  nothing: SUB_TYPE_OPT["NOTHING_SPECIAL"]!,
+  member: SUB_TYPE_OPT["NOTHING_SPECIAL"]!,
+  owner: SUB_TYPE_OPT["OWNER"]!,
+  admin: SUB_TYPE_OPT["ADMIN"]!,
 };
 const SUB_TYPE_LABEL: Record<string, string> = {
-  [SUB_TYPE_OPT.NOTHING_SPECIAL]: "nothing special",
-  [SUB_TYPE_OPT.OWNER]: "owner",
-  [SUB_TYPE_OPT.ADMIN]: "admin",
+  [SUB_TYPE_OPT["NOTHING_SPECIAL"]!]: "nothing special",
+  [SUB_TYPE_OPT["OWNER"]!]: "owner",
+  [SUB_TYPE_OPT["ADMIN"]!]: "admin",
 };
 
 // ─── Back-compat aliases (older imports) ──────────────────────
@@ -119,7 +119,7 @@ function parseCodes(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String).map((s) => s.trim()).filter(Boolean);
   const s = String(value).trim();
   if (!s) return [];
-  if (/^a:\d+:\{/.test(s)) return Array.from(s.matchAll(/"(b\d+)"/g)).map((m) => m[1]);
+  if (/^a:\d+:\{/.test(s)) return Array.from(s.matchAll(/"(b\d+)"/g)).map((m) => m[1]!);
   return s.split(",").map((x) => x.trim()).filter(Boolean);
 }
 
@@ -132,7 +132,7 @@ function pickCode(value: unknown, map: Record<string, string>, priority: string[
     const wanted = map[label];
     if (wanted && codes.includes(wanted)) return wanted;
   }
-  return codes[0];
+  return codes[0]!;
 }
 
 /**
@@ -147,26 +147,26 @@ function decodeSingle(value: unknown, labelMap: Record<string, string>, priority
     const code = Object.keys(labelMap).find((c) => labelMap[c] === label);
     if (code && codes.includes(code)) return [label];
   }
-  return [labelMap[codes[0]] || codes[0]];
+  return [labelMap[codes[0]!] || codes[0]!];
 }
 
 function pickLabel(value: unknown, labelMap: Record<string, string>, fallback: string): string {
   const codes = parseCodes(value);
   if (codes.length === 0) return fallback;
-  return labelMap[codes[0]] || codes[0];
+  return labelMap[codes[0]!] || codes[0]!;
 }
 
 // ─── REL 223 encode / decode ──────────────────────────────────
 export interface Rel72MetaInput {
-  displayName?: string;
-  memberTypes?: string[];
-  memberRoles?: string[];
-  invitationStatus?: InvitationStatus;
+  displayName?: string | undefined;
+  memberTypes?: string[] | undefined;
+  memberRoles?: string[] | undefined;
+  invitationStatus?: InvitationStatus | undefined;
 }
 
 export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any> {
-  const type = pickCode(input.memberTypes, MEMBER_TYPE_CODE, TYPE_PRIORITY, TYPE_OPT.NOTHING_SPECIAL);
-  const role = pickCode(input.memberRoles, MEMBER_ROLE_CODE, ROLE_PRIORITY, ROLE_OPT.NOTHING_SPECIAL);
+  const type = pickCode(input.memberTypes, MEMBER_TYPE_CODE, TYPE_PRIORITY, TYPE_OPT["NOTHING_SPECIAL"]!);
+  const role = pickCode(input.memberRoles, MEMBER_ROLE_CODE, ROLE_PRIORITY, ROLE_OPT["NOTHING_SPECIAL"]!);
   return {
     // Never invent a name: the display name is the member's own app name
     // (CCT 151 a556 / a557). Empty means "not set yet", not "Member".
@@ -176,7 +176,7 @@ export function encodeRel72Meta(input: Rel72MetaInput = {}): Record<string, any>
     // relation endpoint fail with a 500. One code each is still written.
     [F223.types]: [type],
     [F223.roles]: [role],
-    [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT.ACCEPTED,
+    [F223.status]: INVITATION_STATUS_CODE[input.invitationStatus || "accepted"] || STATUS_OPT["ACCEPTED"]!,
   };
 
 }
@@ -200,11 +200,11 @@ export function decodeRel72Meta(meta: any): Rel72MetaDecoded {
 
 // ─── REL 225 encode / decode ──────────────────────────────────
 export interface Rel75MetaInput {
-  types?: string[];
+  types?: string[] | undefined;
 }
 
 export function encodeRel75Meta(input: Rel75MetaInput = {}): Record<string, any> {
-  const type = pickCode(input.types, SUB_TYPE_CODE, TYPE_PRIORITY, SUB_TYPE_OPT.NOTHING_SPECIAL);
+  const type = pickCode(input.types, SUB_TYPE_CODE, TYPE_PRIORITY, SUB_TYPE_OPT["NOTHING_SPECIAL"]!);
   // Same as REL 223: the multi-choice column only accepts an array of codes.
   return { [F225.types]: [type] };
 }

@@ -44,7 +44,7 @@ const SCHEDULE_TIMES = [
   "06:00","07:00","08:00","09:00","10:00","11:00",
   "12:00","13:00","14:00","15:00","16:00","17:00",
   "18:00","19:00","20:00","21:00","22:00","23:00",
-].map(value => ({ value, label: hourLabel(parseInt(value.split(":")[0])) }));
+].map(value => ({ value, label: hourLabel(parseInt(value.split(":")[0]!)) }));
 
 const FREQUENCIES = [
   { value: "once_daily", label: Z("每日一次","Once daily") },{ value: "twice_daily", label: Z("每日两次","Twice daily") },
@@ -60,7 +60,7 @@ function freqLabel(med: any): string {
 }
 
 function formatHour(h: string): string {
-  return hourLabel(parseInt(h.split(":")[0]));
+  return hourLabel(parseInt(h.split(":")[0]!));
 }
 
 function formatTime(dateStr: string): string {
@@ -318,8 +318,8 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
   onLog: (med: any, status: "taken" | "skipped" | "missed") => void;
   onEdit: (med: any) => void;
   onHistory: (med: any) => void;
-  compact?: boolean;
-  slot?: string;
+  compact?: boolean | undefined;
+  slot?: string | undefined;
 }) {
   const isPRN = med.frequency_code === "as_needed" || med.frequency === "As needed" || med.frequency === "as_needed";
   const logForThisDose = todayLogs.find((l: any) => l.medicine_id === med.id);
@@ -419,7 +419,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
 function RxNormNameInput({ value, onChange, onPick }: {
   value: string;
   onChange: (v: string) => void;
-  onPick: (s: { name: string; strength?: string | null; doseForm?: string | null; rxcui?: string | null }) => void;
+  onPick: (s: { name: string; strength?: string | null | undefined; doseForm?: string | null | undefined; rxcui?: string | null | undefined }) => void;
 }) {
   const [suggestions, setSuggestions] = useState<RxSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -768,7 +768,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             </div>
           ) : TIMELINE_HOURS.map((hour) => {
             const medsAtTime = timelineMeds[hour];
-            const hourNum = parseInt(hour.split(":")[0]);
+            const hourNum = parseInt(hour.split(":")[0]!);
             const isCurrentHour = currentHour === hourNum;
             const isPast = hourNum < currentHour;
             if (!medsAtTime && !isCurrentHour) return null; // Hide empty non-current hours for cleaner view

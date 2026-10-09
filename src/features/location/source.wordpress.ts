@@ -44,7 +44,7 @@ export interface LocationSnapshot {
   address_text: string | null;
   captured_at: string | null;
   is_emergency: string; // "No" | "Yes"
-  cct_author_id?: number;
+  cct_author_id?: number | undefined;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -108,21 +108,21 @@ export async function writeLocationSnapshot(
   lat: number,
   lng: number,
   opts?: {
-    accuracy?: number | null;
-    altitude?: number | null;
-    heading?: number | null;
-    speed?: number | null;
+    accuracy?: number | null | undefined;
+    altitude?: number | null | undefined;
+    heading?: number | null | undefined;
+    speed?: number | null | undefined;
     /** Plain word (stationary/walking/running/cycling/automotive/unknown); derived from speed when omitted. */
-    moving_type?: string;
-    battery_level?: number | null;
+    moving_type?: string | undefined;
+    battery_level?: number | null | undefined;
     /** true = charging. Read from the Battery API when omitted. */
-    phone_is_charging?: boolean | null;
-    address_text?: string | null;
-    is_emergency?: boolean;
+    phone_is_charging?: boolean | null | undefined;
+    address_text?: string | null | undefined;
+    is_emergency?: boolean | undefined;
     /** Whose location this is: the relation's a55 user type. */
-    is_cared_one?: boolean;
+    is_cared_one?: boolean | undefined;
     /** Person the snapshot belongs to; defaults to the signed-in user. */
-    subject_user_id?: string | number;
+    subject_user_id?: string | number | undefined;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
@@ -191,7 +191,7 @@ export async function fetchCurrentLocation(userId: string | number): Promise<Loc
 
 export async function fetchLocationHistory(
   userId: string | number,
-  opts?: { limit?: number; since?: string }
+  opts?: { limit?: number | undefined; since?: string | undefined } | undefined
 ): Promise<LocationSnapshot[]> {
     const wpUserId = Number(String(userId).replace(/^wp-/, ""));
     if (!wpUserId) throw new Error("Invalid user ID");
@@ -273,16 +273,16 @@ export async function writeLocationAndCheckZones(
   lat: number,
   lng: number,
   opts?: {
-    accuracy?: number | null;
-    altitude?: number | null;
-    heading?: number | null;
-    speed?: number | null;
-    battery_level?: number | null;
-    phone_is_charging?: boolean | null;
-    moving_type?: string;
-    address_text?: string | null;
-    isEmergency?: boolean;
-    is_cared_one?: boolean;
+    accuracy?: number | null | undefined;
+    altitude?: number | null | undefined;
+    heading?: number | null | undefined;
+    speed?: number | null | undefined;
+    battery_level?: number | null | undefined;
+    phone_is_charging?: boolean | null | undefined;
+    moving_type?: string | undefined;
+    address_text?: string | null | undefined;
+    isEmergency?: boolean | undefined;
+    is_cared_one?: boolean | undefined;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
@@ -357,7 +357,7 @@ function detectPlatformCode(): string {
  * a62 Moving type — dictionary codes only. Accepts the plain word a caller
  * already knows (native CMMotionActivity), otherwise infers from speed in m/s.
  */
-function movingTypeCode(word?: string, speed?: number | null): string {
+function movingTypeCode(word?: string | undefined, speed?: number | null | undefined): string {
   const byWord: Record<string, string> = {
     stationary: O.MOVING_TYPE.STATIONARY,
     walking: O.MOVING_TYPE.WALKING,

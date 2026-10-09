@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
  * "[Recurring: weekly]") because the order only has one free-text field.
  * Strip them before showing the note to a human.
  */
-export function cleanBookingNote(note?: string | null): string {
+export function cleanBookingNote(note?: string | null | undefined): string {
   return String(note || "").replace(/\[(Service|Recurring):[^\]]*\]/gi, "").trim();
 }
 
@@ -19,7 +19,7 @@ export function cleanBookingNote(note?: string | null): string {
  * for a stranger to copy it out of a search result or a screenshot.
  * "guowei.jiang@gmail.com" → "g••••••g@gmail.com"
  */
-export function maskEmail(email?: string | null): string {
+export function maskEmail(email?: string | null | undefined): string {
   const value = String(email ?? "").trim();
   const at = value.indexOf("@");
   if (at < 1) return value ? "•••" : "";

@@ -16,21 +16,21 @@ type RelDef = {
 
 const R219 = WP.rel["219"] as unknown as RelDef;
 
-export const REL219_STATUS_FIELD = R219.f.CARED_ONE_INVITATION_STATUS;
-const OPT = R219.opt.CARED_ONE_INVITATION_STATUS;
+export const REL219_STATUS_FIELD = R219.f["CARED_ONE_INVITATION_STATUS"]!;
+const OPT = R219.opt["CARED_ONE_INVITATION_STATUS"]!;
 
 export type CaredOneInvitationStatus = "accepted" | "pending" | "declined";
 
 export const REL219_STATUS_CODE: Record<CaredOneInvitationStatus, string> = {
-  accepted: OPT.ACCEPTED,
-  pending: OPT.PENDING,
-  declined: OPT.DECLINED,
+  accepted: OPT["ACCEPTED"]!,
+  pending: OPT["PENDING"]!,
+  declined: OPT["DECLINED"]!,
 };
 
 const LABEL: Record<string, CaredOneInvitationStatus> = {
-  [OPT.ACCEPTED]: "accepted",
-  [OPT.PENDING]: "pending",
-  [OPT.DECLINED]: "declined",
+  [OPT["ACCEPTED"]!]: "accepted",
+  [OPT["PENDING"]!]: "pending",
+  [OPT["DECLINED"]!]: "declined",
 };
 
 /** Meta payload for a link/update on Relation 219. */
@@ -49,7 +49,7 @@ export function decodeRel219Status(meta: any): CaredOneInvitationStatus {
   if (raw == null) return "accepted";
   const s = Array.isArray(raw) ? raw.map(String).join(",") : String(raw);
   const codes = /^a:\d+:\{/.test(s.trim())
-    ? Array.from(s.matchAll(/"(b\d+)"/g)).map((m) => m[1])
+    ? Array.from(s.matchAll(/"(b\d+)"/g)).map((m) => m[1]!)
     : s.split(",").map((x) => x.trim()).filter(Boolean);
   for (const c of codes) if (LABEL[c]) return LABEL[c];
   return "accepted";

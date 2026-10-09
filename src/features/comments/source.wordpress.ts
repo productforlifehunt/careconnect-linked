@@ -63,7 +63,7 @@ export async function fetchCommentsWordPress(entityType: string, entityId: strin
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createCommentWordPress(comment: { entity_type: string; entity_id: string; content: string; title?: string; parent_id?: string }): Promise<void> {
+export async function createCommentWordPress(comment: { entity_type: string; entity_id: string; content: string; title?: string | undefined; parent_id?: string | undefined }): Promise<void> {
   const relId = comment.parent_id ? R.commentReplies : relForEntity(comment.entity_type);
   if (!relId) throw new Error(`Unsupported entity_type for comments: ${comment.entity_type}`);
   const result = await wordpressCCTFetch<any>(T.comment.slug, {

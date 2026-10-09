@@ -31,10 +31,10 @@ export function CalendarTab({ tasks }: CalendarTabProps) {
   const getDateKey = (t: any): string | null => {
     const raw = t.task_date || t.start_time || t.due_date;
     if (!raw) return null;
-    return String(raw).split("T")[0].split(" ")[0];
+    return String(raw).split("T")[0]!.split(" ")[0]!;
   };
 
-  const fmtTime = (raw?: string | null) => {
+  const fmtTime = (raw?: string | null | undefined) => {
     if (!raw) return "";
     const m = String(raw).match(/(\d{2}):(\d{2})/);
     return m ? `${m[1]}:${m[2]}` : "";

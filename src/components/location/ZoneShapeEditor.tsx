@@ -21,8 +21,8 @@ interface ZoneShapeEditorProps {
   onRadiusChange: (radius: string) => void;
   points: [number, number][];
   onPointsChange: (points: [number, number][]) => void;
-  onUseMyLocation?: () => void;
-  danger?: boolean;
+  onUseMyLocation?: (() => void) | undefined;
+  danger?: boolean | undefined;
 }
 
 /**
@@ -93,7 +93,7 @@ export function ZoneShapeEditor({
         map.fitBounds(poly.getBounds(), { padding: [30, 30] });
       } else if (points.length > 0) {
         if (points.length === 2) L.polyline(points, { color, weight: 2, dashArray: "5 5" }).addTo(group);
-        map.panTo(points[points.length - 1]);
+        map.panTo(points[points.length - 1]!);
       }
       return;
     }

@@ -313,15 +313,15 @@ export default function ProviderDashboard() {
                 <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
                   <div className="w-28 shrink-0">
                     <div className="flex items-center gap-2">
-                      <Switch checked={schedule[i]?.enabled || false} onCheckedChange={c => setSchedule(p => ({ ...p, [i]: { ...p[i], enabled: c } }))} />
+                      <Switch checked={schedule[i]?.enabled || false} onCheckedChange={c => setSchedule(p => ({ ...p, [i]: { ...p[i]!, enabled: c } }))} />
                       <span className="text-sm font-medium text-foreground">{day}</span>
                     </div>
                   </div>
                   {schedule[i]?.enabled ? (
                     <div className="flex items-center gap-2">
-                      <Input type="time" value={schedule[i]?.start || "09:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i], start: e.target.value } }))} className="w-32" />
+                      <Input type="time" value={schedule[i]?.start || "09:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i]!, start: e.target.value } }))} className="w-32" />
                       <span className="text-muted-foreground">{isZh ? "至" : "to"}</span>
-                      <Input type="time" value={schedule[i]?.end || "17:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i], end: e.target.value } }))} className="w-32" />
+                      <Input type="time" value={schedule[i]?.end || "17:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i]!, end: e.target.value } }))} className="w-32" />
                     </div>
                   ) : <span className="text-sm text-muted-foreground">{isZh ? "不可约" : "Unavailable"}</span>}
                 </div>
@@ -341,7 +341,7 @@ export default function ProviderDashboard() {
                 <DialogContent>
                   <DialogHeader><DialogTitle>{isZh ? "添加特殊日期" : "Add Date Override"}</DialogTitle></DialogHeader>
                   <div className="space-y-4 mt-2">
-                    <div><Label>{isZh ? "日期" : "Date"}</Label><Input type="date" value={newOverride.date} onChange={e => setNewOverride(p => ({ ...p, date: e.target.value }))} min={new Date().toISOString().split("T")[0]} className="mt-1" /></div>
+                    <div><Label>{isZh ? "日期" : "Date"}</Label><Input type="date" value={newOverride.date} onChange={e => setNewOverride(p => ({ ...p, date: e.target.value }))} min={new Date().toISOString().split("T")[0]!} className="mt-1" /></div>
                     <div className="flex items-center gap-2"><Switch checked={newOverride.available} onCheckedChange={c => setNewOverride(p => ({ ...p, available: c }))} /><Label>{newOverride.available ? (isZh ? "可约" : "Available") : (isZh ? "不可约（休息日）" : "Unavailable (day off)")}</Label></div>
                     {newOverride.available && (
                       <div className="flex items-center gap-2">

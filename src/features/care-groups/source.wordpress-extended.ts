@@ -85,7 +85,7 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
 }
 
 // ─── Care Group Posts (CCT 76) ──────────────────────────────
-export async function fetchCareGroupPostsWordPress(groupId: string, type?: string): Promise<any[]> {
+export async function fetchCareGroupPostsWordPress(groupId: string, type?: string | undefined): Promise<any[]> {
   try {
     const posts = await fetchRelatedCctItems(REL_GROUP_POST, groupId, "care_group_post");
     if (!Array.isArray(posts)) return [];
@@ -129,7 +129,7 @@ export async function fetchCareGroupPostsWordPress(groupId: string, type?: strin
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string; title?: string; scheduled_at?: string | null }): Promise<string | null> {
+export async function createGroupPostWordPress(post: { group_id: string; content: string; type?: string | undefined; title?: string | undefined; scheduled_at?: string | null | undefined }): Promise<string | null> {
   const created = await wordpressCCTFetch<any>(T.careGroupPost.slug, {
     method: "POST",
     body: {
@@ -167,7 +167,7 @@ export async function createGroupPostWordPress(post: { group_id: string; content
   return postId ? String(postId) : null;
 }
 
-export async function updateGroupPostWordPress(id: string, updates: { content?: string; title?: string; is_pinned?: boolean; type?: string; scheduled_at?: string | null }): Promise<void> {
+export async function updateGroupPostWordPress(id: string, updates: { content?: string | undefined; title?: string | undefined; is_pinned?: boolean | undefined; type?: string | undefined; scheduled_at?: string | null | undefined }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.content !== undefined) body[F_POST.CONTENT] = updates.content;
   if (updates.title !== undefined) body[F_POST.TITLE] = updates.title;
@@ -183,11 +183,11 @@ export async function deleteGroupPostWordPress(id: string): Promise<void> {
 
 // ─── Group Settings (CCT 199 — care_group) ──────────────────
 export async function updateCareGroupWordPress(id: string, updates: {
-  name?: string;
-  description?: string;
-  is_private?: boolean;
-  join_code?: string;
-  is_active?: boolean;
+  name?: string | undefined;
+  description?: string | undefined;
+  is_private?: boolean | undefined;
+  join_code?: string | undefined;
+  is_active?: boolean | undefined;
 }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body[F_GROUP.NAME] = updates.name;
@@ -389,7 +389,7 @@ async function notifyInviteOutcome(groupId: number, accepted: boolean): Promise<
 
 // ─── Member Roles & Removal ─────────────────────────────────
 // JetEngine relation 72 (care_group → users) dictionary meta fields.
-export async function updateMemberRoleWordPress(memberId: string, updates: any, groupId?: string): Promise<void> {
+export async function updateMemberRoleWordPress(memberId: string, updates: any, groupId?: string | undefined): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (!normalizedGroupId || !normalizedMemberId) return;
@@ -432,7 +432,7 @@ export async function updateMemberRoleWordPress(memberId: string, updates: any, 
   } catch { /* best-effort */ }
 }
 
-export async function removeGroupMemberWordPress(memberId: string, groupId?: string): Promise<void> {
+export async function removeGroupMemberWordPress(memberId: string, groupId?: string | undefined): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const normalizedMemberId = normalizeWpObjectId(memberId);
   if (normalizedGroupId && normalizedMemberId) {
@@ -481,7 +481,7 @@ const SOURCE_LABEL: Record<string, InviteSource> = {
   [O_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED.APP_NATIVE_GENERATED]: "app native generated",
 };
 
-function normalizeInvite(raw: any, groupId?: string) {
+function normalizeInvite(raw: any, groupId?: string | undefined) {
   const id = String(raw.id || raw._ID || "");
   const expiresRaw = raw[F_INVITE.EXPIRES_AT];
   const expires = expiresRaw ? String(expiresRaw) : null;
@@ -522,13 +522,13 @@ export async function fetchGroupInvitesWordPress(groupId: string): Promise<any[]
 
 export async function createGroupInviteWordPress(input: {
   groupId: string;
-  name?: string;
-  note?: string;
-  expiresAt?: string | null;
-  maxUses?: number;
-  token?: string;
-  invitedAs?: InvitedAs;
-  source?: InviteSource;
+  name?: string | undefined;
+  note?: string | undefined;
+  expiresAt?: string | null | undefined;
+  maxUses?: number | undefined;
+  token?: string | undefined;
+  invitedAs?: InvitedAs | undefined;
+  source?: InviteSource | undefined;
 }): Promise<any> {
   const token = (input.token || generateInviteToken()).trim();
   const source: InviteSource = input.source || "custom";
@@ -576,13 +576,13 @@ export async function createGroupInviteWordPress(input: {
 }
 
 export async function updateGroupInviteWordPress(id: string, updates: {
-  name?: string;
-  note?: string;
-  token?: string;
-  expiresAt?: string | null;
-  maxUses?: number;
-  isRevoked?: boolean;
-  invitedAs?: InvitedAs;
+  name?: string | undefined;
+  note?: string | undefined;
+  token?: string | undefined;
+  expiresAt?: string | null | undefined;
+  maxUses?: number | undefined;
+  isRevoked?: boolean | undefined;
+  invitedAs?: InvitedAs | undefined;
 }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body[F_INVITE.NAME] = updates.name;
@@ -652,7 +652,7 @@ async function resolveInviteByToken(token: string): Promise<{
  * in-group display name and the role the link invited the person as, then bumps
  * a59 use count.
  */
-export async function joinGroupByCodeWordPress(token: string, displayName?: string): Promise<any> {
+export async function joinGroupByCodeWordPress(token: string, displayName?: string | undefined): Promise<any> {
   try {
     const { invite, inviteId, groupId, groupName } = await resolveInviteByToken(token);
 
@@ -711,7 +711,7 @@ export async function joinGroupByCodeWordPress(token: string, displayName?: stri
  * Join code path (CCT 199 a58): a non-member who types the group's join code
  * gets the group onboarding popup and becomes a normal member.
  */
-export async function joinGroupByJoinCodeWordPress(groupId: string, code: string, displayName?: string): Promise<any> {
+export async function joinGroupByJoinCodeWordPress(groupId: string, code: string, displayName?: string | undefined): Promise<any> {
   const gid = normalizeWpObjectId(groupId);
   if (!gid) throw new Error("Invalid care group");
   const group = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) });
@@ -745,7 +745,7 @@ export async function joinGroupByJoinCodeWordPress(groupId: string, code: string
  * One code box for the user: they paste whatever an admin gave them. It can be
  * an invite link code (CCT 200 a55) or the group's own join code (CCT 199 a58).
  */
-export async function joinGroupByAnyCodeWordPress(code: string, displayName?: string): Promise<any> {
+export async function joinGroupByAnyCodeWordPress(code: string, displayName?: string | undefined): Promise<any> {
   const trimmed = String(code || "").trim();
   if (!trimmed) throw new Error("Please enter the code you were given.");
   try {
@@ -819,8 +819,8 @@ export async function uploadToWPMedia(file: File): Promise<number> {
 export async function createCareGroupGalleryItemWordPress(
   groupId: string,
   mediaId: number,
-  caption?: string,
-  takenAt?: string,
+  caption?: string | undefined,
+  takenAt?: string | undefined,
 ): Promise<void> {
   const normalizedGroupId = normalizeWpObjectId(groupId);
   const created = await wordpressCCTFetch<any>(T.careGroupGallery.slug, {
@@ -861,7 +861,7 @@ export async function fetchMemberCategoriesWordPress(groupId: string): Promise<a
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string, description?: string): Promise<void> {
+export async function createMemberCategoryWordPress(groupId: string, name: string, color?: string | undefined, description?: string | undefined): Promise<void> {
   const created = await wordpressCCTFetch<any>(T.careGroupPrivateMemberGroup.slug, {
     method: "POST",
     body: {
@@ -887,7 +887,7 @@ export async function createMemberCategoryWordPress(groupId: string, name: strin
 
 export async function updateMemberCategoryWordPress(
   categoryId: string,
-  updates: { name?: string; description?: string; color?: string }
+  updates: { name?: string | undefined; description?: string | undefined; color?: string | undefined }
 ): Promise<void> {
   const body: Record<string, string> = {};
   if (updates.name !== undefined) body[F_SUBGROUP.NAME] = updates.name;
@@ -951,7 +951,7 @@ export async function fetchSubgroupMemberRecordsWordPress(subgroupId: string): P
 export async function addMemberToSubgroupWordPress(
   subgroupId: string,
   userId: string | number,
-  opts: { types?: string[] } = {},
+  opts: { types?: string[] | undefined } = {},
 ): Promise<void> {
   const sid = normalizeWpObjectId(subgroupId);
   const uid = normalizeWpObjectId(userId);
@@ -1057,7 +1057,7 @@ export async function addCaredOneToGroupWordPress(groupId: string, caredOneId: s
 }
 
 // ─── Leave Group ────────────────────────────────────────────
-export async function leaveGroupWordPress(groupId: string, userId?: string): Promise<void> {
+export async function leaveGroupWordPress(groupId: string, userId?: string | undefined): Promise<void> {
   if (!userId) return;
   try {
     const normalizedGroupId = normalizeWpObjectId(groupId);

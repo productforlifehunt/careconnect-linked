@@ -20,7 +20,7 @@ export interface CareServiceType {
   en: string;
   zh: string;
   /** Delivery mode implied by the option itself, when the label states it. */
-  delivery?: "in-person" | "remote";
+  delivery?: "in-person" | "remote" | undefined;
 }
 
 /** a68 — "Care provider offers care service type" (14 options, b55…b68). */

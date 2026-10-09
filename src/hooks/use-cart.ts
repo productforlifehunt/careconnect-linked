@@ -41,15 +41,15 @@ export function useAddToCart() {
   return useMutation({
     mutationFn: ({ productId, quantity, booking }: {
       productId: number;
-      quantity?: number;
+      quantity?: number | undefined;
       booking?: {
-        resourceId?: number;
-        persons?: Record<string | number, number>;
-        startDate?: string;
-        startTime?: string;
-        durationHours?: number;
-        serviceType?: string;
-        notes?: string;
+        resourceId?: number | undefined;
+        persons?: Record<string | number, number> | undefined;
+        startDate?: string | undefined;
+        startTime?: string | undefined;
+        durationHours?: number | undefined;
+        serviceType?: string | undefined;
+        notes?: string | undefined;
       };
     }) => addToCart({ productId, quantity, booking }),
     onSuccess: () => {
@@ -146,15 +146,15 @@ export function useCheckout() {
 
   return useMutation({
     mutationFn: (billingData?: {
-      first_name?: string;
-      last_name?: string;
-      email?: string;
-      phone?: string;
-      address_1?: string;
-      city?: string;
-      state?: string;
-      postcode?: string;
-      country?: string;
+      first_name?: string | undefined;
+      last_name?: string | undefined;
+      email?: string | undefined;
+      phone?: string | undefined;
+      address_1?: string | undefined;
+      city?: string | undefined;
+      state?: string | undefined;
+      postcode?: string | undefined;
+      country?: string | undefined;
     }) => checkout(billingData),
 
     onSuccess: async () => {
@@ -187,7 +187,7 @@ export function useRequestRefund() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ orderId, amount, reason }: { orderId: number; amount?: string; reason: string }) =>
+    mutationFn: ({ orderId, amount, reason }: { orderId: number; amount?: string | undefined; reason: string }) =>
       requestOrderRefund(orderId, { amount, reason }),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
@@ -210,7 +210,7 @@ export function useResolveRefund() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ orderId, decision, note }: { orderId: number; decision: 'approve' | 'decline'; note?: string }) =>
+    mutationFn: ({ orderId, decision, note }: { orderId: number; decision: 'approve' | 'decline'; note?: string | undefined }) =>
       resolveOrderRefund(orderId, decision, note),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
@@ -229,7 +229,7 @@ export function useResolveRefund() {
 }
 
 /** Shared message thread on a booking (issues and disputes). */
-export function useOrderNotes(orderId?: number) {
+export function useOrderNotes(orderId?: number | undefined) {
   return useQuery({
     queryKey: ['order-notes', orderId],
     queryFn: () => getOrderNotes(Number(orderId)),

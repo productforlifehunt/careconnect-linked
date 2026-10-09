@@ -1,6 +1,6 @@
 import type { Question, Questionnaire } from "./types";
 
-export const isChineseLanguage = (language?: string) => Boolean(language?.startsWith("zh"));
+export const isChineseLanguage = (language?: string | undefined) => Boolean(language?.startsWith("zh"));
 
 export const uiText = (isChinese: boolean, english: string, chinese: string) =>
   isChinese ? chinese : english;
@@ -190,8 +190,8 @@ const ATTITUDE_EN = [
   "Difficult behaviours may be a form of communication for people with dementia.", "I am comfortable touching people with dementia.", "I would avoid an agitated person with dementia.", "I would like to get to know people with dementia better.",
 ];
 
-KNOWLEDGE_EN.forEach((text, index) => { ZH[text] = KNOWLEDGE_ZH[index]; });
-ATTITUDE_EN.forEach((text, index) => { ZH[text] = ATTITUDE_ZH[index]; });
+KNOWLEDGE_EN.forEach((text, index) => { ZH[text] = KNOWLEDGE_ZH[index]!; });
+ATTITUDE_EN.forEach((text, index) => { ZH[text] = ATTITUDE_ZH[index]!; });
 
 export function translateSurveyText(text: string | undefined, isChinese: boolean): string | undefined {
   if (!text || !isChinese) return text;

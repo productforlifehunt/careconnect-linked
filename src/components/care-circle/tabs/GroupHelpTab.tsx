@@ -7,8 +7,8 @@ import { buildCareGroupHelpRequest } from "@/lib/ai-dynamic-knowledge";
 import { KNOWLEDGE } from "@/lib/ai-static-knowledge";
 
 interface GroupHelpTabProps {
-  groupName?: string;
-  groupId?: string;
+  groupName?: string | undefined;
+  groupId?: string | undefined;
 }
 
 export function GroupHelpTab({ groupName, groupId }: GroupHelpTabProps) {

@@ -7,10 +7,10 @@ import huchangIcon from "@/assets/huchang-icon-128.webp";
 
 interface BrandMarkProps {
   /** Icon size in px. Wordmark scales with it. */
-  size?: number;
+  size?: number | undefined;
   /** Show the wordmark next to the icon */
-  showWordmark?: boolean;
-  className?: string;
+  showWordmark?: boolean | undefined;
+  className?: string | undefined;
 }
 
 /**
@@ -82,7 +82,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     icon = (
       <div
         style={box}
-        className="rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-sm"
+        className="rounded-[22%] hero-gradient flex flex-col items-center justify-center leading-none shadow-xs"
       >
         <span className="text-primary-foreground font-bold" style={{ fontSize: Math.round(size * 0.27) }}>Care</span>
         <span className="text-primary-foreground font-bold" style={{ fontSize: Math.round(size * 0.27) }}>CNC</span>
@@ -90,7 +90,7 @@ export function BrandMark({ size = 48, showWordmark = false, className = "" }: B
     );
   } else {
     icon = (
-      <div style={box} className="rounded-xl hero-gradient flex items-center justify-center shadow-sm">
+      <div style={box} className="rounded-xl hero-gradient flex items-center justify-center shadow-xs">
         <span
           className="text-primary-foreground font-bold"
           style={{ fontSize: Math.round(size * 0.36) }}

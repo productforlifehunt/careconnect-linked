@@ -10,7 +10,7 @@ interface GeoPosition {
  * Get current position using Capacitor on native, browser API on web.
  * Returns null if permission denied or unavailable (never throws).
  */
-export async function getCurrentPosition(options?: { timeout?: number }): Promise<GeoPosition | null> {
+export async function getCurrentPosition(options?: { timeout?: number | undefined }): Promise<GeoPosition | null> {
   const timeout = options?.timeout ?? 10000;
 
   // Native (Capacitor)
@@ -63,7 +63,7 @@ export async function getCurrentPosition(options?: { timeout?: number }): Promis
  */
 export function watchPosition(
   callback: (pos: GeoPosition) => void,
-  errorCallback?: () => void,
+  errorCallback?: (() => void) | undefined,
 ): () => void {
   if (Capacitor.isNativePlatform()) {
     let watchId: string | null = null;

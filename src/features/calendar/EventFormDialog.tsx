@@ -28,7 +28,7 @@ const TYPES: CalendarEventType[] = [
 const PRIORITIES: CalendarEvent["priority"][] = ["low", "normal", "high", "urgent"];
 
 /** ISO → value for <input type="datetime-local"> in local time */
-function toLocalInput(iso?: string): string {
+function toLocalInput(iso?: string | undefined): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -47,8 +47,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** When present the dialog edits that event instead of creating one. */
-  event?: CalendarEvent | null;
-  onSaved?: () => void;
+  event?: CalendarEvent | null | undefined;
+  onSaved?: (() => void) | undefined;
 }
 
 export default function EventFormDialog({ open, onOpenChange, event, onSaved }: Props) {

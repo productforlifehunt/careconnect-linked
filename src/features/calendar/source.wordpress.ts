@@ -56,10 +56,10 @@ const EVTYPE_OUT: Record<string, string> = {
 const EVTYPE_IN: Record<string, CalendarEventType> = {
   b55: "medicine", b56: "check_in", b57: "personal", b58: "task",
 };
-function encodeEventType(t?: string): string {
+function encodeEventType(t?: string | undefined): string {
   return EVTYPE_OUT[String(t || "")] || "b58";
 }
-function typeTag(t?: string): string {
+function typeTag(t?: string | undefined): string {
   return t ? `type:${t}` : "";
 }
 function decodeEventType(raw: any, tags: any): CalendarEventType {
@@ -103,7 +103,7 @@ function mapEventFromWP(raw: any): CalendarEvent {
 }
 
 /** JetEngine Datetime columns store `YYYY-MM-DD HH:mm:ss` local time. */
-function wpDateTime(v?: string): string {
+function wpDateTime(v?: string | undefined): string {
   if (!v) return "";
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return String(v).replace("T", " ").replace(/\..*$/, "");
@@ -113,25 +113,25 @@ function wpDateTime(v?: string): string {
 
 function mapEventToWP(e: Partial<CalendarEvent>): Record<string, any> {
   const b: Record<string, any> = {};
-  if (e.title !== undefined) b.a55 = e.title;
-  if (e.description !== undefined) b.a56 = e.description;
-  if (e.start_at !== undefined) b.a57 = wpDateTime(e.start_at);
-  if (e.end_at !== undefined) b.a58 = wpDateTime(e.end_at);
-  if (e.all_day !== undefined) b.a59 = YESNO_OUT(e.all_day);
-  if (e.event_type !== undefined) { b.a60 = encodeEventType(e.event_type); b.a89 = typeTag(e.event_type); }
-  if (e.location !== undefined) b.a61 = e.location;
-  if (e.timezone !== undefined) b.a62 = e.timezone;
-  if (e.status !== undefined) b.a63 = STATUS_OUT[e.status as string] ?? e.status;
-  if (e.priority !== undefined) b.a64 = String(PRIO_OUT[e.priority as string] ?? e.priority);
-  if (e.color !== undefined) b.a65 = e.color;
-  if (e.rrule !== undefined) b.a66 = e.rrule;
-  if (e.exdates !== undefined) b.a68 = e.exdates;
-  if (e.show_as !== undefined) b.a71 = SHOWAS_OUT[e.show_as as string] ?? e.show_as;
-  if (e.visibility !== undefined) b.a72 = VIS_OUT[e.visibility as string] ?? e.visibility;
-  if (e.reminders !== undefined) b.a73 = JSON.stringify(e.reminders);
-  if (e.is_availability !== undefined) b.a74 = YESNO_OUT(e.is_availability);
-  if (e.availability_note !== undefined) b.a75 = e.availability_note;
-  if (e.meeting_url !== undefined) b.a83 = e.meeting_url;
+  if (e.title !== undefined) b["a55"] = e.title;
+  if (e.description !== undefined) b["a56"] = e.description;
+  if (e.start_at !== undefined) b["a57"] = wpDateTime(e.start_at);
+  if (e.end_at !== undefined) b["a58"] = wpDateTime(e.end_at);
+  if (e.all_day !== undefined) b["a59"] = YESNO_OUT(e.all_day);
+  if (e.event_type !== undefined) { b["a60"] = encodeEventType(e.event_type); b["a89"] = typeTag(e.event_type); }
+  if (e.location !== undefined) b["a61"] = e.location;
+  if (e.timezone !== undefined) b["a62"] = e.timezone;
+  if (e.status !== undefined) b["a63"] = STATUS_OUT[e.status as string] ?? e.status;
+  if (e.priority !== undefined) b["a64"] = String(PRIO_OUT[e.priority as string] ?? e.priority);
+  if (e.color !== undefined) b["a65"] = e.color;
+  if (e.rrule !== undefined) b["a66"] = e.rrule;
+  if (e.exdates !== undefined) b["a68"] = e.exdates;
+  if (e.show_as !== undefined) b["a71"] = SHOWAS_OUT[e.show_as as string] ?? e.show_as;
+  if (e.visibility !== undefined) b["a72"] = VIS_OUT[e.visibility as string] ?? e.visibility;
+  if (e.reminders !== undefined) b["a73"] = JSON.stringify(e.reminders);
+  if (e.is_availability !== undefined) b["a74"] = YESNO_OUT(e.is_availability);
+  if (e.availability_note !== undefined) b["a75"] = e.availability_note;
+  if (e.meeting_url !== undefined) b["a83"] = e.meeting_url;
   return b;
 }
 

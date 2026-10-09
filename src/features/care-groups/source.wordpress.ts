@@ -126,7 +126,7 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
   }
 }
 
-export async function createCareGroupWordPress(group: { name: string; description?: string; is_private?: boolean; displayName?: string }): Promise<CareGroup> {
+export async function createCareGroupWordPress(group: { name: string; description?: string | undefined; is_private?: boolean | undefined; displayName?: string | undefined }): Promise<CareGroup> {
   const result = await wordpressCCTFetch<any>(T.careGroup.slug, {
     method: "POST",
     body: {

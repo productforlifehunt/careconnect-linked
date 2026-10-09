@@ -97,7 +97,7 @@ function groupsOf(items: SpecItem[]): QuestionGroup[] {
     if (!last || last.id !== heading) {
       groups.push({ id: heading, code, title: TITLE_CASE(heading), questions: [] });
     }
-    groups[groups.length - 1].questions.push(toQuestion(item));
+    groups[groups.length - 1]!.questions.push(toQuestion(item));
   }
   return groups;
 }

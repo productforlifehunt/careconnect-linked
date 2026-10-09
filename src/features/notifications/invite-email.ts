@@ -10,8 +10,8 @@
 import { currentAppScope } from "@/features/shared/app-scope";
 import { getWPToken } from "@/services/wp-auth";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || "";
+const ANON_KEY = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || "";
 
 export async function sendGroupInviteEmail(
   email: string,

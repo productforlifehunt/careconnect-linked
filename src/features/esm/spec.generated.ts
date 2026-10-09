@@ -21,11 +21,11 @@ export interface SpecItem {
   block: string;
   label: string;
   type: SpecType;
-  help?: string;
-  options?: { value: string; label: string }[];
-  scale?: { min: number; max: number; labels: string };
+  help?: string | undefined;
+  options?: { value: string; label: string }[] | undefined;
+  scale?: { min: number; max: number; labels: string } | undefined;
   /** This item holds the free-text detail for another item's "Other" choice. */
-  otherFor?: string;
+  otherFor?: string | undefined;
 }
 
 export const ESM_SPEC: SpecItem[] = [

@@ -12,7 +12,7 @@ const Row = ({ images, label }: { images: string[]; label: string }) => (
       {images.map((src, i) => (
         <div
           key={i}
-          className="rounded-2xl overflow-hidden border border-border bg-card shadow-sm"
+          className="rounded-2xl overflow-hidden border border-border bg-card shadow-xs"
         >
           <img
             src={src}

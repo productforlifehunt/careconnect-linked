@@ -50,13 +50,13 @@ function join(parts: Array<string | undefined | null>): string {
 // that came out of the database above into the one-off context prompt.
 
 export type InfoSheetPromptContext = {
-  sheetName?: string;
-  caredOneName?: string;
-  description?: string;
-  situationDetails?: string;
-  contacts?: Array<{ name?: string; phone?: string; relationship?: string; note?: string }>;
-  locationText?: string | null;
-  knowledge?: string;
+  sheetName?: string | undefined;
+  caredOneName?: string | undefined;
+  description?: string | undefined;
+  situationDetails?: string | undefined;
+  contacts?: Array<{ name?: string | undefined; phone?: string | undefined; relationship?: string | undefined; note?: string | undefined }> | undefined;
+  locationText?: string | null | undefined;
+  knowledge?: string | undefined;
 };
 
 export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: boolean): string {
@@ -132,7 +132,7 @@ export type AccessLevel = "full" | "shared-card" | "none";
  */
 export async function resolveCaredOneAccess(
   caredOneId: string | undefined,
-  opts: { sharedCard?: boolean } = {}
+  opts: { sharedCard?: boolean | undefined } = {}
 ): Promise<AccessLevel> {
   if (!caredOneId) return "none";
   if (opts.sharedCard) return "shared-card";
@@ -272,7 +272,7 @@ export async function resolveCheckInFacts(caredOneId: string, { isChinese }: Lan
 export async function resolveLocationFacts(
   caredOneId: string,
   { isChinese }: Lang,
-  opts: { pattern?: boolean; sinceDays?: number } = {}
+  opts: { pattern?: boolean | undefined; sinceDays?: number | undefined } = {}
 ): Promise<string> {
   try {
     const { fetchCurrentLocation, fetchLocationHistory } = await import("@/features/location/source.wordpress");
@@ -294,7 +294,7 @@ export async function resolveLocationFacts(
       line(
         Z(isChinese, "最新位置", "Latest location"),
         current
-          ? `${current.address || `${current.latitude}, ${current.longitude}`}${current.captured_at ? ` (${current.captured_at})` : ""}`
+          ? `${(current as { address?: string }).address || `${current.latitude}, ${current.longitude}`}${current.captured_at ? ` (${current.captured_at})` : ""}`
           : Z(isChinese, "暂无位置数据", "no location data")
       ),
       line(
@@ -482,13 +482,13 @@ export interface AssistantContextInput {
   question: string;
   isChinese: boolean;
   /** The cared one currently in view, when any. */
-  caredOneId?: string;
-  groupId?: string;
-  groupName?: string;
+  caredOneId?: string | undefined;
+  groupId?: string | undefined;
+  groupName?: string | undefined;
   /** Which static knowledge topics this surface is allowed to quote. */
-  topics?: KnowledgeTopic[];
+  topics?: KnowledgeTopic[] | undefined;
   /** True when the reader came in through a public shared information card. */
-  sharedCard?: boolean;
+  sharedCard?: boolean | undefined;
 }
 
 /**
@@ -603,7 +603,7 @@ export interface AppSettings {
     sms: boolean;
     /** categories switched off: chat | booking | system | location | check_in | medicine */
     muted_types: string[];
-    quiet_hours?: { enabled: boolean; from: string; to: string };
+    quiet_hours?: { enabled: boolean; from: string; to: string } | undefined;
   };
   display: {
     theme: "system" | "light" | "dark";
@@ -612,7 +612,7 @@ export interface AppSettings {
     /** Show the floating "?" app-help bubble. */
     help_bubble: boolean;
   };
-  permissions_asked: { push?: boolean; location?: boolean; calendar?: boolean };
+  permissions_asked: { push?: boolean | undefined; location?: boolean | undefined; calendar?: boolean | undefined };
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -686,21 +686,21 @@ export interface SettingSkill<V = any> {
   /** "all" = every sub-app. */
   apps: AppScope[] | "all";
   label: (isChinese: boolean) => string;
-  hint?: (isChinese: boolean) => string;
-  options?: (isChinese: boolean) => SettingOption[];
+  hint?: ((isChinese: boolean) => string) | undefined;
+  options?: ((isChinese: boolean) => SettingOption[]) | undefined;
   /** Reads the value out of the settings JSON (blob-backed skills). */
-  readFrom?: (s: AppSettings) => V;
+  readFrom?: ((s: AppSettings) => V) | undefined;
   /** Reads on its own (skills that do not live in the settings JSON). */
-  read?: () => Promise<V>;
+  read?: (() => Promise<V>) | undefined;
   /** The write. Blob-backed skills use patch; everything else uses run. */
-  patch?: (s: AppSettings, value: V) => Partial<AppSettings>;
-  run?: (value: V, scope: AppScope) => Promise<any>;
+  patch?: ((s: AppSettings, value: V) => Partial<AppSettings>) | undefined;
+  run?: ((value: V, scope: AppScope) => Promise<any>) | undefined;
   /** Device permission this skill asks for. */
-  permission?: PermissionKind;
+  permission?: PermissionKind | undefined;
   /** Cannot be switched off (safety alerts). */
-  locked?: boolean;
+  locked?: boolean | undefined;
   /** Plain note on how the sub-apps differ, kept next to the write itself. */
-  perApp?: Partial<Record<AppScope, string>>;
+  perApp?: Partial<Record<AppScope, string>> | undefined;
 }
 
 /* ── languages (header menu and settings tab share this one list) ─────────── */
@@ -736,7 +736,7 @@ const categorySkill = (
   key: string,
   name: string,
   zh: string, en: string, zhHint: string, enHint: string,
-  opts: { locked?: boolean } = {},
+  opts: { locked?: boolean | undefined } = {},
 ): SettingSkill<boolean> => ({
   name,
   group: "categories",
@@ -985,7 +985,7 @@ export const SETTING_SKILLS: SettingSkill[] = [
       if (!me) return null;
       return await getProviderCalendarAvailability(String(me));
     },
-    run: async (value: { providerId?: string; slots: any[] }) => {
+    run: async (value: { providerId?: string | undefined; slots: any[] }) => {
       const { upsertProviderCalendarAvailability } = await import("@/features/calendar/booking-availability");
       const providerId = value?.providerId || String(getCurrentUserIdNumber() ?? "");
       if (!providerId) throw new Error("set-provider-availability needs the signed-in provider");
@@ -1002,7 +1002,7 @@ export const SETTING_SKILLS: SettingSkill[] = [
     apps: "all",
     label: (cn) => Z(cn, "把我的位置分享给护理团队", "Share my location with my care team"),
     hint: (cn) => Z(cn, "开启后会写入当前位置并检查安全区（CCT 213 / 214）。", "Turning it on writes the current position and checks the safe areas (CCT 213 / 214)."),
-    run: async (value: { enabled: boolean; isCaredOne?: boolean }) => {
+    run: async (value: { enabled: boolean; isCaredOne?: boolean | undefined }) => {
       const enabled = typeof value === "boolean" ? value : !!value?.enabled;
       if (!enabled) {
         const { disableMyLocationSharingWordPress } = await import("@/features/location/source.wordpress-extended");
@@ -1027,7 +1027,7 @@ export const SETTING_SKILLS: SettingSkill[] = [
     apps: "all",
     label: (cn) => Z(cn, "安全区的进入 / 离开提醒", "Arrive and leave alerts for a safe area"),
     hint: (cn) => Z(cn, "每个安全区各有两个开关。", "Each safe area has its own two switches."),
-    run: async (value: { zoneId: string; notify_on_enter?: boolean; notify_on_exit?: boolean }) => {
+    run: async (value: { zoneId: string; notify_on_enter?: boolean | undefined; notify_on_exit?: boolean | undefined }) => {
       const { updateSafeZoneWordPress } = await import("@/features/location/source.wordpress-extended");
       const { zoneId, ...updates } = value;
       if (!zoneId) throw new Error("set-safe-zone-alerts needs a zoneId");
@@ -1119,8 +1119,8 @@ export async function loadSettingSkill<V = any>(name: string): Promise<V | undef
  */
 export async function runSettingSkill(
   name: string,
-  value?: any,
-  opts: { settings?: AppSettings; app?: string } = {},
+  value?: any | undefined,
+  opts: { settings?: AppSettings | undefined; app?: string | undefined } = {},
 ): Promise<AppSettings> {
   const scope = opts.app ? appScopeFromEdge(opts.app) : currentAppScope();
   const checked = validateSettingWrite(name, value);
@@ -1144,7 +1144,7 @@ export async function runSettingSkill(
 }
 
 /** Ask the OS for a permission, then record that we asked. */
-export async function askPermissionSkill(name: string, settings?: AppSettings) {
+export async function askPermissionSkill(name: string, settings?: AppSettings | undefined) {
   const skill = settingSkill(name);
   if (!skill?.permission) throw new Error(`Not a permission skill: ${name}`);
   const state = await requestPermission(skill.permission);
@@ -1183,13 +1183,13 @@ export const WRITE_SKILL_NAMES: WriteSkillName[] = [
 ];
 
 export interface WriteTarget {
-  caredOneId?: string;
+  caredOneId?: string | undefined;
   /** Medicine record id (record-medicine-dose) or check-in record id (record-check-in). */
-  recordId?: string;
+  recordId?: string | undefined;
   /** Human label used in the rule text, e.g. the medicine or check-in name. */
-  label?: string;
+  label?: string | undefined;
   /** Extra plain-language detail, e.g. "Aricept · 5mg · 08:00". */
-  detail?: string;
+  detail?: string | undefined;
 }
 
 export interface WriteSkill {
@@ -1198,14 +1198,14 @@ export interface WriteSkill {
   contextPrompt: string;
   starterPrompt: string;
   starterFallback: string;
-  toastFor: (status?: string) => string;
+  toastFor: (status?: string | undefined) => string;
   statuses: string[];
   rule: string;
-  write: (result: { status?: string; summary?: string }) => Promise<void>;
+  write: (result: { status?: string | undefined; summary?: string | undefined }) => Promise<void>;
   invalidateKeys: string[][];
 }
 
-const asStatus = (allowed: string[], status?: string) =>
+const asStatus = (allowed: string[], status?: string | undefined) =>
   status && allowed.includes(status) ? status : allowed[0];
 
 export function resolveWriteSkill(
@@ -1428,9 +1428,9 @@ export interface SendNotificationParams {
   type: string;
   title: string;
   message: string;
-  actionUrl?: string | null;
+  actionUrl?: string | null | undefined;
   /** Keep the actor as a recipient (own-device alerts such as a zone breach). */
-  includeSelf?: boolean;
+  includeSelf?: boolean | undefined;
 }
 
 export interface NotificationRow {
@@ -1471,7 +1471,7 @@ export async function runNotificationSkill(
 ): Promise<number>;
 export async function runNotificationSkill(
   name: "list-notifications",
-  params?: { type?: string; unreadOnly?: boolean }
+  params?: { type?: string | undefined; unreadOnly?: boolean | undefined } | undefined
 ): Promise<NotificationRow[]>;
 export async function runNotificationSkill(
   name: "mark-notification-read",
@@ -1483,7 +1483,7 @@ export async function runNotificationSkill(
 ): Promise<void>;
 export async function runNotificationSkill(
   name: NotificationSkillName,
-  params?: any
+  params?: any | undefined
 ): Promise<any> {
   if (!NOTIFICATION_SKILL_NAMES.includes(name)) {
     throw new Error(`Unknown notification skill: ${name}`);

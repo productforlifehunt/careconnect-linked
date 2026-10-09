@@ -20,10 +20,10 @@ export interface VisibilityValue {
 interface VisibilityPickerProps {
   value: VisibilityValue;
   onChange: (next: VisibilityValue) => void;
-  memberCategories?: Array<{ id: string; name: string; color?: string | null }>;
-  members?: Array<{ user_id?: string; id?: string; display_name?: string | null; profile?: { full_name?: string | null; avatar_url?: string | null } }>;
+  memberCategories?: Array<{ id: string; name: string; color?: string | null | undefined }> | undefined;
+  members?: Array<{ user_id?: string | undefined; id?: string | undefined; display_name?: string | null | undefined; profile?: { full_name?: string | null | undefined; avatar_url?: string | null | undefined } }> | undefined;
   /** Show the "hide from" mode (only supported where exclusion links exist). */
-  allowExclude?: boolean;
+  allowExclude?: boolean | undefined;
 }
 
 function toNum(id: string | number | undefined | null): number {
@@ -94,7 +94,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
             <button
               type="button"
               onClick={() => setMode("include")}
-              className={`text-[11px] rounded px-2 py-1 ${mode === "include" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+              className={`text-[11px] rounded-sm px-2 py-1 ${mode === "include" ? "bg-background font-medium text-foreground shadow-xs" : "text-muted-foreground"}`}
             >
               {Z("仅这些人可见", "Only these")}
               {includeCount > 0 ? ` (${includeCount})` : ""}
@@ -102,7 +102,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
             <button
               type="button"
               onClick={() => setMode("exclude")}
-              className={`text-[11px] rounded px-2 py-1 ${mode === "exclude" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+              className={`text-[11px] rounded-sm px-2 py-1 ${mode === "exclude" ? "bg-background font-medium text-foreground shadow-xs" : "text-muted-foreground"}`}
             >
               {Z("对这些人隐藏", "Hide from")}
               {excludeCount > 0 ? ` (${excludeCount})` : ""}
@@ -121,7 +121,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
                   const num = toNum(cat.id);
                   const checked = selectedSub.includes(num);
                   return (
-                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
+                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded-sm px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleSubgroup(num)} />
                       <span className="text-sm text-foreground flex-1 truncate">{cat.name}</span>
                     </label>
@@ -143,7 +143,7 @@ export function VisibilityPicker({ value, onChange, memberCategories = [], membe
                   const checked = selectedUsers.includes(uid);
                   const name = m.display_name || m.profile?.full_name || Z("未填姓名", "No name");
                   return (
-                    <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-1.5 py-1 -mx-1.5">
+                    <label key={uid} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded-sm px-1.5 py-1 -mx-1.5">
                       <Checkbox checked={checked} onCheckedChange={() => toggleUser(uid)} />
                       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         {m.profile?.avatar_url ? (

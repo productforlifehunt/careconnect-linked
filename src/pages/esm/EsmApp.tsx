@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "@/lib/router-compat";
+import { Routes, Route } from "@/lib/path-routes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EsmShell } from "./EsmShell";
 import EsmToday from "./EsmToday";

@@ -72,8 +72,8 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
 function pointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
+    const [xi, yi] = polygon[i]!;
+    const [xj, yj] = polygon[j]!;
     if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
@@ -82,10 +82,10 @@ function pointInPolygon(lat: number, lng: number, polygon: [number, number][]): 
 function douglasPeucker(points: [number, number][], tolerance: number): [number, number][] {
   if (points.length <= 2) return points;
   let maxDist = 0; let maxIdx = 0;
-  const [x1, y1] = points[0]; const [x2, y2] = points[points.length - 1];
+  const [x1, y1] = points[0]!; const [x2, y2] = points[points.length - 1]!;
   const len = Math.hypot(x2 - x1, y2 - y1);
   for (let i = 1; i < points.length - 1; i++) {
-    const [px, py] = points[i];
+    const [px, py] = points[i]!;
     const dist = len === 0 ? Math.hypot(px - x1, py - y1)
       : Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) / len;
     if (dist > maxDist) { maxDist = dist; maxIdx = i; }
@@ -95,7 +95,7 @@ function douglasPeucker(points: [number, number][], tolerance: number): [number,
     const r = douglasPeucker(points.slice(maxIdx), tolerance);
     return [...l.slice(0, -1), ...r];
   }
-  return [points[0], points[points.length - 1]];
+  return [points[0]!, points[points.length - 1]!];
 }
 
 function chaikinPerVertex(points: [number, number][], radii: number[]): [number, number][] {
@@ -111,22 +111,22 @@ function chaikinPerVertex(points: [number, number][], radii: number[]): [number,
     const nextR: number[] = [];
     for (let i = 0; i < pts.length; i++) {
       const j = (i + 1) % pts.length;
-      const si = strength(rads[i]);
-      const sj = strength(rads[j]);
-      const [xi, yi] = pts[i]; const [xj, yj] = pts[j];
+      const si = strength(rads[i]!);
+      const sj = strength(rads[j]!);
+      const [xi, yi] = pts[i]!; const [xj, yj] = pts[j]!;
       if (si >= 1) {
         next.push([xi * 0.75 + xj * 0.25, yi * 0.75 + yj * 0.25]);
         next.push([xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75]);
-        nextR.push(rads[i], rads[j]);
+        nextR.push(rads[i]!, rads[j]!);
       } else if (si > 0) {
         const q1: [number, number] = [xi * 0.75 + xj * 0.25, yi * 0.75 + yj * 0.25];
         const q2: [number, number] = [xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75];
         next.push([xi * (1 - si) + q1[0] * si, yi * (1 - si) + q1[1] * si]);
-        if (sj > 0) { next.push([xj * (1 - sj) + q2[0] * sj, yj * (1 - sj) + q2[1] * sj]); nextR.push(rads[i], rads[j]); }
-        else { nextR.push(rads[i]); }
+        if (sj > 0) { next.push([xj * (1 - sj) + q2[0] * sj, yj * (1 - sj) + q2[1] * sj]); nextR.push(rads[i]!, rads[j]!); }
+        else { nextR.push(rads[i]!); }
       } else {
-        next.push([xi, yi]); nextR.push(rads[i]);
-        if (sj > 0) { next.push([xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75]); nextR.push(rads[j]); }
+        next.push([xi, yi]); nextR.push(rads[i]!);
+        if (sj > 0) { next.push([xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75]); nextR.push(rads[j]!); }
       }
     }
     pts = next; rads = nextR;
@@ -151,7 +151,7 @@ function zoneColor(code: string): string {
 }
 
 /** Colour actually painted for a zone: a custom zone may carry its own colour (a59). */
-function zoneFill(code: string, storedColor?: string | null): string {
+function zoneFill(code: string, storedColor?: string | null | undefined): string {
   if (isCustomZone(code) && typeof storedColor === "string" && /^#[0-9a-fA-F]{6}$/.test(storedColor)) return storedColor;
   return zoneColor(code);
 }
@@ -257,7 +257,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   // ─── Custom zone name lives on the zone row itself (CCT 214 a57)
   const [customNameDraft, setCustomNameDraft] = useState("");
   const zoneLabel = useCallback(
-    (code: string, zoneName?: string | null) => zoneTypeLabel(code, zoneName ?? null, !!isZh),
+    (code: string, zoneName?: string | null | undefined) => zoneTypeLabel(code, zoneName ?? null, !!isZh),
     [isZh],
   );
 
@@ -376,8 +376,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       drawnPoints.forEach((pt, i) => {
         const j = (i + 1) % drawnPoints.length;
         const next = drawnPoints[j];
-        const midLat = (pt[0] + next[0]) / 2;
-        const midLng = (pt[1] + next[1]) / 2;
+        const midLat = (pt[0] + next![0]) / 2;
+        const midLng = (pt[1] + next![1]) / 2;
         const edgeIcon = Lx.divIcon({
           className: "",
           html: `<div style="width:12px;height:12px;border-radius:50%;background:white;border:2px solid ${color};opacity:0.7;cursor:copy;"></div>`,
@@ -522,7 +522,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   // ─── Map click handlers for drawing
   useEffect(() => {
     const map = leafletMapRef.current;
-    if (!map || !showZoneForm) return;
+    if (!map || !showZoneForm) return undefined;
 
     if (pickingOnMap && zoneForm.shape_type === "radius") {
       map.getContainer().style.cursor = "crosshair";
@@ -538,13 +538,13 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       map.getContainer().style.cursor = "crosshair";
       const onMouseDown = (e: any) => { dragStartRef.current = { x: e.originalEvent.clientX, y: e.originalEvent.clientY }; freehandRef.current = [[e.latlng.lat, e.latlng.lng]]; };
       const onMouseMove = (e: any) => {
-        if (!dragStartRef.current) return;
+        if (!dragStartRef.current) return undefined;
         const dx = e.originalEvent.clientX - dragStartRef.current.x;
         const dy = e.originalEvent.clientY - dragStartRef.current.y;
         if (Math.hypot(dx, dy) > 8) freehandRef.current.push([e.latlng.lat, e.latlng.lng]);
       };
       const onMouseUp = (e: any) => {
-        if (!dragStartRef.current) return;
+        if (!dragStartRef.current) return undefined;
         const dx = e.originalEvent.clientX - dragStartRef.current.x;
         const dy = e.originalEvent.clientY - dragStartRef.current.y;
         dragStartRef.current = null;
@@ -555,7 +555,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         }
       };
       const onClick = (e: any) => {
-        if (freehandRef.current.length > 2) return;
+        if (freehandRef.current.length > 2) return undefined;
         clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(() => {
           setDrawnPoints(prev => { const n = [...prev, [e.latlng.lat, e.latlng.lng] as [number, number]]; setCornerRadii(Array(n.length).fill(0)); return n; });
@@ -578,6 +578,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     }
 
     map.getContainer().style.cursor = "";
+    return undefined;
   }, [pickingOnMap, drawMode, showZoneForm, drawnPoints.length, zoneForm.shape_type]);
 
   function finishDrawing() {
@@ -588,7 +589,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     setSelectedVertex(null);
   }
 
-  const openZoneForm = (zone?: any) => {
+  const openZoneForm = (zone?: any | undefined) => {
     if (zone) {
       setEditingZone(zone);
       setZoneForm({
@@ -726,7 +727,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
     }
   };
 
-  const tabs: { key: Tab; label: string; icon: any; badge?: number }[] = [
+  const tabs: { key: Tab; label: string; icon: any; badge?: number | undefined }[] = [
     { key: "location", label: isZh ? "实时位置" : "Live Location", icon: MapPin },
     { key: "requests", label: isZh ? "共享请求" : "Requests", icon: Send, badge: pendingRequests || undefined },
     { key: "alerts", label: isZh ? "提醒" : "Alerts", icon: Bell, badge: unreadAlerts || undefined },
@@ -814,7 +815,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           </Button>
         )}
         {drawStatusText && (
-          <div className="absolute bottom-2 left-2 right-2 z-[1000] bg-black/70 text-white text-[11px] rounded px-2 py-1 text-center">
+          <div className="absolute bottom-2 left-2 right-2 z-[1000] bg-black/70 text-white text-[11px] rounded-sm px-2 py-1 text-center">
             {drawStatusText}
           </div>
         )}
@@ -936,7 +937,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               <div className={`flex flex-col gap-2 p-3 rounded-lg border ${isEmergency ? "bg-destructive/10 border-destructive/30" : "bg-muted/30 border-border"}`}>
                 <div className="flex items-center gap-3">
                   <input type="checkbox" id="emerg-chk" checked={isEmergency}
-                    onChange={e => { setIsEmergency(e.target.checked); setEmergencyConfirm(false); }} className="rounded" />
+                    onChange={e => { setIsEmergency(e.target.checked); setEmergencyConfirm(false); }} className="rounded-sm" />
                   <label htmlFor="emerg-chk" className="text-sm font-medium cursor-pointer">🚨 Emergency request</label>
                 </div>
                 {isEmergency && (
@@ -1127,7 +1128,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   </div>
                 </div>
                 {isDangerZone(zoneForm.zone_type) && (
-                  <p className="text-xs text-destructive bg-destructive/10 rounded p-2">
+                  <p className="text-xs text-destructive bg-destructive/10 rounded-sm p-2">
                     {isZh
                       ? `当 ${caredOneName} 进入该区域时提醒`
                       : `Alert when ${caredOneName} enters this area`}
@@ -1153,7 +1154,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                       <input type="color" aria-label={isZh ? "自选颜色" : "Pick a colour"}
                         value={zoneForm.color}
                         onChange={e => setZoneForm(p => ({ ...p, color: e.target.value }))}
-                        className="h-7 w-9 rounded border bg-transparent p-0.5" />
+                        className="h-7 w-9 rounded-sm border bg-transparent p-0.5" />
                     </div>
                   </div>
                 )}
@@ -1207,7 +1208,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <span className="text-xs text-muted-foreground font-mono">{zoneForm.radius}m</span>
                       </div>
                       <Slider min={50} max={5000} step={50} value={[zoneForm.radius]}
-                        onValueChange={([v]) => setZoneForm(p => ({ ...p, radius: v }))} />
+                        onValueChange={([v]) => setZoneForm(p => ({ ...p, radius: v! }))} />
                       <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>50m</span><span>5km</span></div>
                     </div>
                   </>
@@ -1222,7 +1223,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     )}
                     {drawMode === "drawing" && (
                       <div className="space-y-2">
-                        <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2 font-mono">
+                        <div className="text-xs text-muted-foreground bg-muted/50 rounded-sm p-2 font-mono">
                           {drawnPoints.length} point{drawnPoints.length !== 1 ? "s" : ""} placed
                           {drawnPoints.length >= 3 && " · Press Enter to finish"}
                         </div>
@@ -1252,7 +1253,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                             </div>
                             <Slider min={0} max={3} step={0.1}
                               value={[cornerRadii[selectedVertex] || 0]}
-                              onValueChange={([v]) => setCornerRadii(prev => { const n = [...prev]; n[selectedVertex] = v; return n; })} />
+                              onValueChange={([v]) => setCornerRadii(prev => { const n = [...prev]; n[selectedVertex] = v!; return n; })} />
                             <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>Sharp</span><span>Round</span></div>
                           </div>
                         )}
@@ -1317,7 +1318,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                               ...p,
                               schedule_days: p.schedule_days.includes(d) ? p.schedule_days.filter(x => x !== d) : [...p.schedule_days, d],
                             }))}
-                            className={`px-2 py-1 rounded text-xs border font-medium transition-colors
+                            className={`px-2 py-1 rounded-sm text-xs border font-medium transition-colors
                               ${zoneForm.schedule_days.includes(d) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
                             {d}
                           </button>

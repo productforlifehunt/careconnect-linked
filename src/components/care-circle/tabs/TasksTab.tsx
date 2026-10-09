@@ -55,15 +55,15 @@ const EMPTY_FORM = {
   photo_ids: [] as number[],
 };
 
-const fmtTime = (raw?: string | null): string => {
+const fmtTime = (raw?: string | null | undefined): string => {
   if (!raw) return "";
   const m = String(raw).match(/(\d{2}):(\d{2})/);
   return m ? `${m[1]}:${m[2]}` : "";
 };
 
-const dateOnly = (raw?: string | null): string => {
+const dateOnly = (raw?: string | null | undefined): string => {
   if (!raw) return "";
-  return String(raw).split("T")[0].split(" ")[0];
+  return String(raw).split("T")[0]!.split(" ")[0]!;
 };
 
 export function TasksTab({
@@ -390,7 +390,7 @@ export function TasksTab({
               : "";
             const canEdit = isAdmin || t.created_by === userId;
             return (
-              <div key={t.id} className="p-3 rounded-lg bg-card border group hover:shadow-sm transition-shadow">
+              <div key={t.id} className="p-3 rounded-lg bg-card border group hover:shadow-xs transition-shadow">
                 <div className="flex items-start gap-3">
                   <button onClick={() => toggleTask(t.id, t.finish_status)} className="shrink-0 mt-0.5">
                     <Circle className="h-5 w-5 text-muted-foreground hover:text-primary" />

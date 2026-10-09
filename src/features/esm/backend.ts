@@ -50,7 +50,7 @@ function targetFor(kind: RecordKind) {
 
 /** Which people the participant picked on an hourly log. */
 const pickedPeople = (record: EsmRecord): string[] => {
-  const value = record.answers?.c319_a26;
+  const value = record.answers?.["c319_a26"];
   return Array.isArray(value) ? value.map(String) : [];
 };
 
@@ -72,7 +72,7 @@ function buildBody(record: EsmRecord): Record<string, string> {
 
   if (record.kind === "hourly_log") {
     // "NOW" stamps the moment the entry was written; "other time" uses what was typed.
-    body.a02 = record.answers?.c319_a01 === "b01" ? record.submittedAt : "";
+    body["a02"] = record.answers?.["c319_a01"] === "b01" ? record.submittedAt : "";
   }
 
   return body;
@@ -113,8 +113,8 @@ export async function pushRecord(record: EsmRecord): Promise<string> {
 export async function submitRecord(
   kind: RecordKind,
   answers: Record<string, unknown>,
-  options: { slot?: string; voice?: Record<string, string> } = {},
-): Promise<{ record: EsmRecord; uploaded: boolean; error?: string }> {
+  options: { slot?: string | undefined; voice?: Record<string, string> } = {},
+): Promise<{ record: EsmRecord; uploaded: boolean; error?: string | undefined }> {
   const record = addRecord(kind, answers as EsmRecord["answers"], options.slot, options.voice);
   try {
     await pushRecord(record);
@@ -148,5 +148,5 @@ export async function fetchMyRecords(kind: RecordKind): Promise<Record<string, a
   const ids = Array.isArray(links) ? links.map((l) => String(l.child_object_id)) : [];
   if (ids.length === 0) return [];
   const rows = await wordpressCCTFetch<Record<string, any>[]>(slug);
-  return (Array.isArray(rows) ? rows : []).filter((r) => ids.includes(String(r._ID ?? r.id)));
+  return (Array.isArray(rows) ? rows : []).filter((r) => ids.includes(String(r["_ID"] ?? r["id"])));
 }

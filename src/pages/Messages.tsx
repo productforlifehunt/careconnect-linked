@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@/lib/router-compat";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
-export default function Messages({ embedded = false, readFilter = "all" }: { embedded?: boolean; readFilter?: "all" | "unread" | "read" } = {}) {
+export default function Messages({ embedded = false, readFilter = "all" }: { embedded?: boolean | undefined; readFilter?: "all" | "unread" | "read" | undefined } = {}) {
   const Heading = (embedded ? "h2" : "h1") as "h1" | "h2";
   const { t, i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
@@ -33,7 +33,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
   const [selectedConvoId, setSelectedConvoId] = useState<string | null>(null);
   const [selectedOtherUser, setSelectedOtherUser] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file"; name?: string } | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<{ url: string; type: "image" | "file"; name?: string | undefined } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [newConvoOpen, setNewConvoOpen] = useState(false);
@@ -88,7 +88,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
     return () => clearInterval(interval);
   }, [qc]);
 
-  const [quotePrefill, setQuotePrefill] = useState<{ serviceType?: string; jobId?: string | number } | null>(null);
+  const [quotePrefill, setQuotePrefill] = useState<{ serviceType?: string | undefined; jobId?: string | number | undefined } | null>(null);
 
   useEffect(() => {
     const navState = location.state as any;
@@ -375,7 +375,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
             {pendingAttachment && (
               <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-muted/50 text-sm">
                 {pendingAttachment.type === "image" ? (
-                  <img src={pendingAttachment.url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                  <img src={pendingAttachment.url} alt="" className="h-10 w-10 rounded-sm object-cover shrink-0" />
                 ) : null}
                 <span className="text-muted-foreground truncate flex-1">
                   {pendingAttachment.name || Z("已选择文件", "File selected")}

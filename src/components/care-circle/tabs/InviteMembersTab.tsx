@@ -67,7 +67,7 @@ export function InviteMembersTab({
    * in their notifications; inviting an email address emails the link. Nobody is
    * added to the group until they open the link and fill in their in-group name.
    */
-  const invite = (target: { userId?: string; email?: string }) => {
+  const invite = (target: { userId?: string | undefined; email?: string | undefined }) => {
     if (!activeGroupId) return;
     inviteToGroup.mutate({ groupId: activeGroupId, ...target, invitedAs: inviteAs }, {
       onSuccess: (res: any) => {

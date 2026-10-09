@@ -46,7 +46,7 @@ async function getLeaflet() {
   return LEAFLET;
 }
 
-function zoneColour(code: string, stored?: string | null): string {
+function zoneColour(code: string, stored?: string | null | undefined): string {
   if (isCustomZone(code) && typeof stored === "string" && /^#[0-9a-fA-F]{6}$/.test(stored)) return stored;
   if (isDangerZone(code)) return "#EF4444";
   if (isSafeZone(code)) return "#10B981";
@@ -94,7 +94,7 @@ function SheetMiniMap({ lat, lng, zones, isCN }: { lat: number; lng: number; zon
 
 /* ─────────────── Location tag ─────────────── */
 
-export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null }) {
+export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null | undefined }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
@@ -165,7 +165,7 @@ export function SheetLocationTag({ caredOneId }: { caredOneId?: string | null })
 
 /* ─────────────── Knowledge about the person ─────────────── */
 
-export function useInfoSheetKnowledge(caredOneId?: string | null, enabled = true) {
+export function useInfoSheetKnowledge(caredOneId?: string | null | undefined, enabled = true) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
 

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pencil, Trash2, Plus, BookOpenCheck, Share2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "@/lib/router-compat";
 import { encodeSharedNote } from "@/lib/shared-note";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 import { useTranslation } from "react-i18next";
@@ -24,9 +24,9 @@ import { useToast } from "@/hooks/use-toast";
 interface Props {
   articleId: string | number;
   /** Show the "Mark as finished" toggle (only meaningful for Learn lessons). */
-  showFinishedToggle?: boolean;
+  showFinishedToggle?: boolean | undefined;
   /** Title of the lesson/article, shown on the shared-note page. */
-  sourceTitle?: string;
+  sourceTitle?: string | undefined;
 }
 
 export function StudyNotesPanel(props: Props) {

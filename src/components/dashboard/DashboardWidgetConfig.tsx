@@ -18,8 +18,8 @@ export interface WidgetDef {
   id: string;
   label: string;
   roles: ("caregiver" | "provider" | "caredOne" | "all")[];
-  challengedOnly?: boolean;
-  defaultOnly?: boolean;
+  challengedOnly?: boolean | undefined;
+  defaultOnly?: boolean | undefined;
 }
 
 const VIS_KEY = "dashboard-widget-prefs";

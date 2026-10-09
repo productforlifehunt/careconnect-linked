@@ -41,26 +41,26 @@ import { aiBrand } from "../../supabase/functions/_shared/ai-prompts";
 export type NavItem = {
   title: string;
   url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
+  icon: React.ComponentType<{ className?: string | undefined }>;
+  badge?: string | undefined;
 };
 
 type SiteLike = {
   id: string;
-  family?: string;
+  family?: string | undefined;
   /** Release feature switches; missing means the full internal build. */
-  features?: { paidCaregivers: boolean; facilities: boolean; community: boolean };
+  features?: { paidCaregivers: boolean; facilities: boolean; community: boolean } | undefined;
   navLabels: {
     careGroups: string;
     caredOnes: string;
-    findCare?: string;
-    dashboard?: string;
-    gpsTracking?: string;
-    awareD?: string;
-    careD?: string;
-    copeD?: string;
-    safeD?: string;
-    accompanieD?: string;
+    findCare?: string | undefined;
+    dashboard?: string | undefined;
+    gpsTracking?: string | undefined;
+    awareD?: string | undefined;
+    careD?: string | undefined;
+    copeD?: string | undefined;
+    safeD?: string | undefined;
+    accompanieD?: string | undefined;
   };
 };
 
@@ -68,9 +68,9 @@ type SiteLike = {
 type Opts = {
   site: SiteLike;
   t: TFunction;
-  isChinese?: boolean;
+  isChinese?: boolean | undefined;
   /** Include a Home/Dashboard entry first (sidebar does, header does not). */
-  withHome?: boolean;
+  withHome?: boolean | undefined;
 };
 
 

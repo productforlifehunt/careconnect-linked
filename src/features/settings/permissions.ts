@@ -45,7 +45,7 @@ export async function checkPushPermission(): Promise<PermissionState> {
  * `onToken` because APNs/FCM deliver it asynchronously.
  */
 export async function requestPushPermission(
-  onToken?: (token: string, provider: "apn" | "fcm" | "web_push") => void,
+  onToken?: ((token: string, provider: "apn" | "fcm" | "web_push") => void) | undefined,
 ): Promise<PermissionState> {
   if (isNative()) {
     try {
@@ -149,9 +149,9 @@ export async function requestCalendarPermission(): Promise<PermissionState> {
 export async function addEventToDeviceCalendar(event: {
   title: string;
   start: Date;
-  end?: Date;
-  location?: string;
-  notes?: string;
+  end?: Date | undefined;
+  location?: string | undefined;
+  notes?: string | undefined;
 }): Promise<"added" | "downloaded" | "failed"> {
   if (isNative()) {
     try {

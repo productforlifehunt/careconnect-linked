@@ -44,7 +44,7 @@ export function dedupeRead<T>(key: string, fn: () => Promise<T>, ttlMs = READ_TT
 }
 
 /** Drops cached reads whose key contains `fragment` (call after a write). */
-export function invalidateRead(fragment?: string) {
+export function invalidateRead(fragment?: string | undefined) {
   if (!fragment) { cache.clear(); return; }
   for (const key of Array.from(cache.keys())) {
     if (key.includes(fragment)) cache.delete(key);

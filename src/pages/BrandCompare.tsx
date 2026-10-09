@@ -136,11 +136,11 @@ const MiniHomepage = ({ v, index }: { v: BrandVariant; index: number }) => (
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                <div className="pl-7 py-2 text-sm text-muted-foreground bg-muted/50 rounded">{v.searchPlaceholder}</div>
+                <div className="pl-7 py-2 text-sm text-muted-foreground bg-muted/50 rounded-sm">{v.searchPlaceholder}</div>
               </div>
               <div className="flex-1 relative">
                 <MapPin className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                <div className="pl-7 py-2 text-sm text-muted-foreground bg-muted/50 rounded">城市或邮编</div>
+                <div className="pl-7 py-2 text-sm text-muted-foreground bg-muted/50 rounded-sm">城市或邮编</div>
               </div>
               <Button variant="coral" size="sm">搜索</Button>
             </div>

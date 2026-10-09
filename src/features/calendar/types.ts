@@ -18,31 +18,31 @@ export type CalendarEventType =
 export interface CalendarEvent {
   id: string;
   title: string;
-  description?: string;
-  location?: string;
+  description?: string | undefined;
+  location?: string | undefined;
   start_at: string; // ISO
   end_at: string;   // ISO
   all_day: boolean;
-  timezone?: string;
+  timezone?: string | undefined;
   status: "tentative" | "confirmed" | "cancelled";
   priority: "low" | "normal" | "high" | "urgent";
   color: string;
-  rrule?: string;
-  rrule_until?: string;
-  exdates?: string;
+  rrule?: string | undefined;
+  rrule_until?: string | undefined;
+  exdates?: string | undefined;
   event_type: CalendarEventType;
   show_as: "busy" | "free" | "tentative" | "oof";
   visibility: "default" | "public" | "private" | "confidential";
-  reminders?: { minutes: number; method: "push" | "email" | "sms" }[];
+  reminders?: { minutes: number; method: "push" | "email" | "sms" }[] | undefined;
   is_availability: boolean;
-  availability_note?: string;
-  source_cct_slug?: string;
-  source_item_id?: string;
-  meeting_url?: string;
+  availability_note?: string | undefined;
+  source_cct_slug?: string | undefined;
+  source_item_id?: string | undefined;
+  meeting_url?: string | undefined;
   // Relations (resolved client-side via JetEngine)
-  user_ids?: string[];
-  care_group_id?: string;
-  cared_one_id?: string;
+  user_ids?: string[] | undefined;
+  care_group_id?: string | undefined;
+  cared_one_id?: string | undefined;
 }
 
 /** Color palette per event_type — semantic, no hard-coded UI colors */
@@ -85,6 +85,6 @@ export const EVENT_TYPE_LABELS_ZH: Record<CalendarEventType, string> = {
   check_in: "签到",
 };
 
-export function getEventTypeLabel(type: CalendarEventType, lang?: string): string {
+export function getEventTypeLabel(type: CalendarEventType, lang?: string | undefined): string {
   return (lang?.startsWith("zh") ? EVENT_TYPE_LABELS_ZH : EVENT_TYPE_LABELS)[type] || type;
 }

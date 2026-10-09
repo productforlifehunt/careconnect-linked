@@ -13,7 +13,7 @@ describe("central AI prompt registry", () => {
     expect(aiBrand("zh", "challenged")).toBe("AI助手小忆");
     expect(aiBrand("en", "carecnc")).toBe("CareCNC AI Assistant");
     expect(aiBrand("zh", "carecnc")).toBe("护畅AI助手");
-    expect(aiBrand("en", "notchsafety")).toBe("NotchSafety AI Assistant");
+    expect(aiBrand("en", "notchsafety")).toBe("Notch Safety AI Assistant");
     expect(aiBrand("zh", "notchsafety")).toBe("诺驰安全AI助手");
   });
 

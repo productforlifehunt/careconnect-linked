@@ -9,7 +9,7 @@
 export interface GPSCoords {
   latitude: number;
   longitude: number;
-  accuracy?: number;
+  accuracy?: number | undefined;
 }
 
 export interface ZoneBreachResult {
@@ -50,9 +50,9 @@ export async function checkLocationPermission(): Promise<"granted" | "denied" | 
 // ─── Get position ─────────────────────────────────────────────
 
 export interface GetPositionOptions {
-  enableHighAccuracy?: boolean;
-  timeout?: number;
-  maximumAge?: number;
+  enableHighAccuracy?: boolean | undefined;
+  timeout?: number | undefined;
+  maximumAge?: number | undefined;
 }
 
 export async function getCurrentPosition(opts: GetPositionOptions = {}): Promise<GPSCoords> {
@@ -76,7 +76,7 @@ export async function getCurrentPosition(opts: GetPositionOptions = {}): Promise
 
 export function watchPosition(
   callback: (coords: GPSCoords) => void,
-  errorCallback?: (error: any) => void,
+  errorCallback?: ((error: any) => void) | undefined,
   opts: GetPositionOptions = {}
 ): () => void {
   const { enableHighAccuracy = true, timeout = 15000, maximumAge = 0 } = opts;
@@ -136,8 +136,8 @@ export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2
 export function isPointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
+    const [xi, yi] = polygon[i]!;
+    const [xj, yj] = polygon[j]!;
     if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
@@ -156,22 +156,22 @@ export function chaikinSmoothPerVertex(points: [number, number][], radii: number
     const nextR: number[] = [];
     for (let i = 0; i < pts.length; i++) {
       const j = (i + 1) % pts.length;
-      const si = strength(rads[i]);
-      const sj = strength(rads[j]);
-      const [xi, yi] = pts[i]; const [xj, yj] = pts[j];
+      const si = strength(rads[i]!);
+      const sj = strength(rads[j]!);
+      const [xi, yi] = pts[i]!; const [xj, yj] = pts[j]!;
       if (si >= 1) {
         next.push([xi * 0.75 + xj * 0.25, yi * 0.75 + yj * 0.25]);
         next.push([xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75]);
-        nextR.push(rads[i], rads[j]);
+        nextR.push(rads[i]!, rads[j]!);
       } else if (si > 0) {
         const q1: [number, number] = [xi * 0.75 + xj * 0.25, yi * 0.75 + yj * 0.25];
         const q2: [number, number] = [xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75];
         next.push([xi * (1 - si) + q1[0] * si, yi * (1 - si) + q1[1] * si]);
-        if (sj > 0) { next.push([xj * (1 - sj) + q2[0] * sj, yj * (1 - sj) + q2[1] * sj]); nextR.push(rads[i], rads[j]); }
-        else { nextR.push(rads[i]); }
+        if (sj > 0) { next.push([xj * (1 - sj) + q2[0] * sj, yj * (1 - sj) + q2[1] * sj]); nextR.push(rads[i]!, rads[j]!); }
+        else { nextR.push(rads[i]!); }
       } else {
-        next.push([xi, yi]); nextR.push(rads[i]);
-        if (sj > 0) { next.push([xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75]); nextR.push(rads[j]); }
+        next.push([xi, yi]); nextR.push(rads[i]!);
+        if (sj > 0) { next.push([xi * 0.25 + xj * 0.75, yi * 0.25 + yj * 0.75]); nextR.push(rads[j]!); }
       }
     }
     pts = next; rads = nextR;

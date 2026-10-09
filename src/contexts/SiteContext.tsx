@@ -24,7 +24,7 @@ export interface BrandConfig {
   id: SiteId;
   /** Brand family — every release of a brand shares the same family so
    *  id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "notchsafety" | "esm_survey" | "researcher";
+  family?: "challenged" | "carecnc" | "notchsafety" | "esm_survey" | "researcher" | undefined;
   name: string;
   tagline: string;
   logoText: string;
@@ -56,12 +56,12 @@ export interface BrandConfig {
     dashboard: string;
     gpsTracking: string;
     // ChallengeD-specific content sections
-    awareD?: string;
-    careD?: string;
-    copeD?: string;
-    safeD?: string;
-    accompanieD?: string;
-    manageD?: string;
+    awareD?: string | undefined;
+    careD?: string | undefined;
+    copeD?: string | undefined;
+    safeD?: string | undefined;
+    accompanieD?: string | undefined;
+    manageD?: string | undefined;
   };
   howItWorksSteps: { step: string; titleKey: string; descKey: string }[];
   trustBadges: string[];
@@ -196,7 +196,7 @@ export interface SiteRelease {
   /** The channel number, e.g. 1 for b1 / p1 / t1. */
   channelNumber: number;
   version: number;
-  region?: string;
+  region?: string | undefined;
 }
 
 function parseSlug(raw: string): { brand: SiteId; release: SiteRelease } | null {

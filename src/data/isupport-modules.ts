@@ -29,8 +29,8 @@ export interface ISupportQuiz {
   explanation: string;
   explanationZh: string;
   /** Optional per-option feedback (✓/✗ rationale, WHO "Check your understanding" style) */
-  optionFeedback?: string[];
-  optionFeedbackZh?: string[];
+  optionFeedback?: string[] | undefined;
+  optionFeedbackZh?: string[] | undefined;
 }
 
 export interface ISupportLesson {
@@ -44,17 +44,17 @@ export interface ISupportLesson {
   keyActionsZh: string[];
   reflectQuestion: string;
   reflectQuestionZh: string;
-  quiz?: ISupportQuiz;
+  quiz?: ISupportQuiz | undefined;
   /** All WHO \"Check your understanding\" items, in order */
-  quizzes?: ISupportQuiz[];
-  readMinutes?: number;
+  quizzes?: ISupportQuiz[] | undefined;
+  readMinutes?: number | undefined;
   /** Optional: link to challenged_content category for related deep-dive articles */
-  contentCategory?: string;
-  contentSubcategory?: string;
+  contentCategory?: string | undefined;
+  contentSubcategory?: string | undefined;
   /** Optional: CTA into an in-app tool */
-  toolPath?: string;
-  toolLabel?: string;
-  toolLabelZh?: string;
+  toolPath?: string | undefined;
+  toolLabel?: string | undefined;
+  toolLabelZh?: string | undefined;
 }
 
 export interface ISupportModule {
@@ -840,7 +840,7 @@ for (const mod of ISUPPORT_MODULES) {
     lesson.keyActions = w.keyActions ?? []; lesson.keyActionsZh = w.keyActionsZh ?? [];
     lesson.reflectQuestion = w.reflectQuestion ?? ""; lesson.reflectQuestionZh = w.reflectQuestionZh ?? "";
     lesson.quizzes = w.quizzes ?? [];
-    lesson.quiz = lesson.quizzes[0];
+    lesson.quiz = lesson.quizzes![0];
     lesson.toolPath = undefined; // not part of WHO iSupport
   }
 }

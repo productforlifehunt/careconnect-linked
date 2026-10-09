@@ -1,22 +1,35 @@
-import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
-import { forwardRef } from "react";
+import { forwardRef, type ComponentProps } from "react";
+import { Link, useLocation } from "@/lib/router-compat";
 import { cn } from "@/lib/utils";
 
-interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
-  className?: string;
-  activeClassName?: string;
-  pendingClassName?: string;
+type LinkProps = ComponentProps<typeof Link>;
+
+interface NavLinkCompatProps extends Omit<LinkProps, "className"> {
+  to: string;
+  /** Match the path exactly instead of as a prefix (react-router `end`). */
+  end?: boolean | undefined;
+  className?: string | undefined;
+  activeClassName?: string | undefined;
+  pendingClassName?: string | undefined;
+}
+
+/** Path-only part of a link target ("/inbox?tab=x" → "/inbox"). */
+function targetPath(to: string): string {
+  return (to.split("#")[0] ?? "").split("?")[0] || "/";
 }
 
 const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
-  ({ className, activeClassName, pendingClassName, to, ...props }, ref) => {
+  ({ className, activeClassName, pendingClassName: _pending, to, end, ...props }, ref) => {
+    const { pathname } = useLocation();
+    const path = targetPath(to);
+    const isActive = end || path === "/"
+      ? pathname === path
+      : pathname === path || pathname.startsWith(path.endsWith("/") ? path : `${path}/`);
     return (
-      <RouterNavLink
+      <Link
         ref={ref}
         to={to}
-        className={({ isActive, isPending }) =>
-          cn(className, isActive && activeClassName, isPending && pendingClassName)
-        }
+        className={cn(className, isActive && activeClassName)}
         {...props}
       />
     );

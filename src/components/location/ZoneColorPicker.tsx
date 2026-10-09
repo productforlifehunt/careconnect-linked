@@ -52,7 +52,7 @@ export function ZoneColorPicker({ value, onChange }: { value: string; onChange: 
           aria-label={isCN ? "自选颜色" : "Pick a colour"}
           value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#3B82F6"}
           onChange={(e) => onChange(e.target.value)}
-          className="h-7 w-10 cursor-pointer rounded border border-border bg-transparent p-0"
+          className="h-7 w-10 cursor-pointer rounded-sm border border-border bg-transparent p-0"
         />
       </div>
     </div>

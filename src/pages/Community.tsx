@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchForumNames } from "@/features/shared/wp-users";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePosts, useCreatePost, useDeletePost, useMyProfile, useToggleVote, useUpdatePost, useVoteSummary } from "@/hooks/use-care-data";

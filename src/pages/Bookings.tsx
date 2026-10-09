@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +177,7 @@ export default function Bookings() {
           <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4 text-primary" /><span>{booking.appointment_time || ""} · {booking.duration_hour || ""}{t("common.hours")}</span></div>
           <div className="text-right"><span className="font-bold text-foreground text-lg">{i18n.language?.startsWith("zh") ? "¥" : "$"}{booking.total_cost || 0}</span></div>
         </div>
-        {cleanBookingNote(booking.special_instruction) && <p className="text-sm text-muted-foreground mt-3 p-2 rounded bg-muted/50">{cleanBookingNote(booking.special_instruction)}</p>}
+        {cleanBookingNote(booking.special_instruction) && <p className="text-sm text-muted-foreground mt-3 p-2 rounded-sm bg-muted/50">{cleanBookingNote(booking.special_instruction)}</p>}
         {!!booking.refund_status && (
           <button
             type="button"
@@ -300,7 +300,7 @@ export default function Bookings() {
               <Label>{t("bookings.rating")}</Label>
               <div className="flex gap-1 mt-1">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <button key={s} type="button" aria-label={`${s} ${t("bookings.rating")}`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button key={s} type="button" aria-label={`${s} ${t("bookings.rating")}`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                     <Star className={`h-6 w-6 ${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground"}`} />
                   </button>
                 ))}

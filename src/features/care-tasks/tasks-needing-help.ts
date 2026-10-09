@@ -58,7 +58,7 @@ function mapShared(t: any) {
 }
 
 /** Every task its owner shared out for help (a65 = b56 or b57). */
-export async function fetchHelpTasksWordPress(filters?: { paid?: boolean; status?: "open" | "filled" }): Promise<any[]> {
+export async function fetchHelpTasksWordPress(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined }): Promise<any[]> {
   const rows = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 100 } });
   if (!Array.isArray(rows)) throw new Error("Care tasks returned an invalid response");
   const shared = rows
@@ -117,7 +117,7 @@ export async function fetchTaskApplicantsWordPress(taskId: string): Promise<any[
 }
 
 /** Offer to help: Relation 232 link (pending) + the message as a task comment. */
-export async function applyToSharedTaskWordPress(taskId: string, message?: string): Promise<void> {
+export async function applyToSharedTaskWordPress(taskId: string, message?: string | undefined): Promise<void> {
   const stored = getStoredWPUser();
   const me = stored?.user_id ? Number(stored.user_id) : null;
   if (!me) throw new Error("Not authenticated");
@@ -128,7 +128,7 @@ export async function applyToSharedTaskWordPress(taskId: string, message?: strin
     method: "POST",
     body: {
       parent_id: tid, child_id: me, context: "child", store_items_type: "update",
-      meta: { [ASSIGNEE_FIELD]: RESPONSE_CODE.pending },
+      meta: { [ASSIGNEE_FIELD]: RESPONSE_CODE["pending"] },
     },
   });
 
@@ -193,7 +193,7 @@ export async function decideTaskApplicantWordPress(applicationId: string, status
     method: "POST",
     body: {
       parent_id: taskId, child_id: userId, context: "child", store_items_type: "update",
-      meta: { [ASSIGNEE_FIELD]: RESPONSE_CODE.accepted },
+      meta: { [ASSIGNEE_FIELD]: RESPONSE_CODE["accepted"] },
     },
   });
   await wordpressCCTFetch(SLUG, {
@@ -203,7 +203,7 @@ export async function decideTaskApplicantWordPress(applicationId: string, status
 }
 
 /** Share an existing task out for help (optionally paid). */
-export async function shareTaskWordPress(taskId: string, opts?: { needs_payment?: boolean; price?: string }): Promise<void> {
+export async function shareTaskWordPress(taskId: string, opts?: { needs_payment?: boolean | undefined; price?: string | undefined }): Promise<void> {
   const tid = numId(taskId);
   if (!tid) throw new Error("Invalid task id");
   await wordpressCCTFetch(SLUG, {

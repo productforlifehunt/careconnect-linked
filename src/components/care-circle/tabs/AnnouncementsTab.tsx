@@ -13,12 +13,12 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface AnnouncementsTabProps {
   announcements: any[];
-  announcementsLoading?: boolean;
+  announcementsLoading?: boolean | undefined;
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
   memberCategories: any[];
-  members?: any[];
+  members?: any[] | undefined;
   createPost: any;
   onEditPost: (post: any) => void;
   onTogglePin: (post: any) => void;

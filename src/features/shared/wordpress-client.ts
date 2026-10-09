@@ -2,9 +2,9 @@ import { getWPToken } from "@/services/wp-auth";
 import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
 
 export interface WordPressFetchOptions {
-  method?: string;
-  body?: unknown;
-  params?: Record<string, string | number | boolean | undefined | null>;
+  method?: string | undefined;
+  body?: unknown | undefined;
+  params?: Record<string, string | number | boolean | undefined | null> | undefined;
 }
 
 /**
@@ -84,7 +84,7 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
       response = await fetch(url, {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body: body ? JSON.stringify(body) : null,
       });
     }
   } catch (err) {
@@ -92,7 +92,7 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
     // fetch"). That is not a backend failure, so tag it and let callers keep
     // it out of the console.
     const detail = err instanceof Error ? err.message : String(err);
-    const e = new Error(`WP API ${endpoint}: request aborted (${detail})`) as Error & { isNetworkAbort?: boolean };
+    const e = new Error(`WP API ${endpoint}: request aborted (${detail})`) as Error & { isNetworkAbort?: boolean | undefined };
 
     e.isNetworkAbort = true;
     throw e;
@@ -171,10 +171,10 @@ export function stripHtml(value: string | null | undefined): string {
 
 export interface CCTItem extends Record<string, any> {
   _ID: number;
-  cct_status?: string;
-  cct_created?: number;
-  cct_modified?: number;
-  cct_author_id?: number;
+  cct_status?: string | undefined;
+  cct_created?: number | undefined;
+  cct_modified?: number | undefined;
+  cct_author_id?: number | undefined;
 }
 
 /** Convert a CCT timestamp (Unix number OR date string) to ISO string. */
@@ -203,7 +203,7 @@ export function normalizeCCT(item: CCTItem): Record<string, any> {
  */
 export async function wordpressCCTFetch<T = Record<string, any>[]>(
   slug: string,
-  options: WordPressFetchOptions & { id?: string | number } = {},
+  options: WordPressFetchOptions & { id?: string | number | undefined } = {},
 ): Promise<T> {
   const { id, ...fetchOptions } = options;
   const endpoint = id !== undefined ? `jet-cct/${slug}/${id}` : `jet-cct/${slug}`;

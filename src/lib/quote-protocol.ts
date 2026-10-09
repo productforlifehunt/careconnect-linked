@@ -14,23 +14,23 @@ export type QuoteStatus = "pending" | "accepted" | "declined" | "paid" | "cancel
 export interface QuoteData {
   mode: QuoteMode;
   amount: number;             // total price (USD)
-  ratePerHour?: number;       // hourly mode only
-  hours?: number;             // hourly mode only
-  serviceType?: string;       // optional label
-  delivery?: "local" | "virtual";
-  note?: string;
-  jobId?: string | number;    // optional related job
+  ratePerHour?: number | undefined;       // hourly mode only
+  hours?: number | undefined;             // hourly mode only
+  serviceType?: string | undefined;       // optional label
+  delivery?: "local" | "virtual" | undefined;
+  note?: string | undefined;
+  jobId?: string | number | undefined;    // optional related job
   status: QuoteStatus;
-  vendorUserId?: string | number; // who will receive the money (the seller)
-  wcProductId?: number;       // populated after accept
-  wcOrderId?: number;         // populated after payment
-  createdAt?: string;
+  vendorUserId?: string | number | undefined; // who will receive the money (the seller)
+  wcProductId?: number | undefined;       // populated after accept
+  wcOrderId?: number | undefined;         // populated after payment
+  createdAt?: string | undefined;
 }
 
 const OPEN = "[QUOTE]";
 const CLOSE = "[/QUOTE]";
 
-export function encodeQuote(q: QuoteData, locale?: string): string {
+export function encodeQuote(q: QuoteData, locale?: string | undefined): string {
   const json = JSON.stringify(q);
   const zh = (locale || (typeof navigator !== "undefined" ? navigator.language : "")).startsWith("zh");
   const c = zh ? "¥" : "$";

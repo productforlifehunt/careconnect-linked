@@ -40,19 +40,19 @@ const EMPTY_FORM: FormState = {
   displays_location: "No",
 };
 
-function statusVariant(status?: string): "default" | "secondary" | "outline" {
+function statusVariant(status?: string | undefined): "default" | "secondary" | "outline" {
   if (status === "Active") return "default";
   if (status === "Paused") return "secondary";
   return "outline";
 }
 
-export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: string; caredOneName?: string }) {
+export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: string; caredOneName?: string | undefined }) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
 
-  const statusLabel = (s?: string) =>
+  const statusLabel = (s?: string | undefined) =>
     s === "Active" ? Z("启用", "Active")
       : s === "Paused" ? Z("已暂停", "Paused")
       : Z("草稿", "Draft");
