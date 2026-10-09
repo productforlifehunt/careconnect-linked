@@ -129,4 +129,4 @@
 - [x] Limit homepage care tasks to tasks linked to the signed-in user's cared-one relationships.
 - [x] Open each homepage task in that person's Care Tasks card, and remove misleading arrow decoration.
 - [x] Make every dashboard cared-one summary open that specific person's card page and show that person's correct pending-task count.
-- [ ] Verify the corrected dashboard flow in the running app.
+- [x] Verify the corrected dashboard in the running app with both approved test accounts: unrelated AUDIT/E2E tasks are absent, empty state is correct, and the misleading arrows are gone. A live row-click could not be exercised because neither account currently has a related pending task.
