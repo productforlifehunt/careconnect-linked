@@ -1,10 +1,10 @@
 {"functions": [
-  {"name": "ai", "classification": "Deno-only dependency", "signal": "uses Deno.connectTls raw TLS socket and deno.land/std serve; called from src/lib/ai.ts", "outcome": "left"},
-  {"name": "carecnc-notify", "classification": "internal-only (project-pinned)", "signal": "invoked from src/features/notifications/dispatch.ts + invite-email.ts; project architecture rule keeps notification keys inside backend functions", "outcome": "left"},
-  {"name": "challenged-notify", "classification": "internal-only (project-pinned)", "signal": "invoked from src/features/notifications/dispatch.ts + invite-email.ts; project architecture rule keeps notification keys inside backend functions", "outcome": "left"},
-  {"name": "esm-transcribe", "classification": "internal-only (project-pinned)", "signal": "called from src/features/esm/voice.ts; project architecture rule keeps AI keys inside backend functions", "outcome": "left"},
-  {"name": "interview-audio", "classification": "platform-bound", "signal": "needs the backend service-role key for the private interview-audio bucket (not available outside backend functions); public visitor links depend on it", "outcome": "left"},
-  {"name": "interview-transcribe", "classification": "platform-bound", "signal": "needs the backend service-role key and runs 20-30 minute audio jobs", "outcome": "left"},
-  {"name": "wp-admin-ops", "classification": "internal-only (project-pinned)", "signal": "called from src/services/woocommerce-api.ts; holds WordPress admin + WooCommerce secrets, which the project rule keeps inside backend functions", "outcome": "left"},
-  {"name": "wp-proxy", "classification": "internal-only (project-pinned)", "signal": "called from src/lib/wp-url.ts; HTTPS-to-HTTP WordPress bridge, deno.land/std serve; project rule names it the API proxy", "outcome": "left"}
+  {"name": "ai", "classification": "Deno-only dependency", "signal": "Deno.connectTls raw TLS socket + deno.land/std serve; streams SSE; called from src/lib/ai.ts", "outcome": "left"},
+  {"name": "carecnc-notify", "classification": "Deno-only dependency", "signal": "_shared/notify-core.ts imports deno.land/x/denomailer for SMTP; called from src/features/notifications", "outcome": "left"},
+  {"name": "challenged-notify", "classification": "Deno-only dependency", "signal": "_shared/notify-core.ts imports deno.land/x/denomailer for SMTP; called from src/features/notifications", "outcome": "left"},
+  {"name": "esm-transcribe", "classification": "internal-only", "signal": "called from src/features/esm/voice.ts; left because the project rule keeps AI/API keys inside the existing backend functions", "outcome": "left"},
+  {"name": "interview-audio", "classification": "internal-only", "signal": "called from src/features/interviews; left because it needs the backend service-role key for the private interview-audio bucket, which is only available inside backend functions", "outcome": "left"},
+  {"name": "interview-transcribe", "classification": "internal-only", "signal": "called from src/features/interviews/transcribe.ts; left because it needs the backend service-role key and runs 20-30 minute audio jobs", "outcome": "left"},
+  {"name": "wp-admin-ops", "classification": "internal-only", "signal": "called from src/services/woocommerce-api.ts; left because it holds WordPress admin + WooCommerce secrets that the project rule keeps inside backend functions", "outcome": "left"},
+  {"name": "wp-proxy", "classification": "internal-only", "signal": "called from src/lib/wp-url.ts; HTTPS-to-HTTP WordPress bridge holding WooCommerce keys; left because the project rule names it the API proxy", "outcome": "left"}
 ]}
