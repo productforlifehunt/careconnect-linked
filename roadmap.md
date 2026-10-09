@@ -123,3 +123,10 @@
 # Framework upgrade (TanStack Start)
 
 - [x] Migrate from Classic Vite + React Router to TanStack Start; type check clean, build green, every page opens, tests pass.
+
+# Dashboard care-task correction
+
+- [ ] Limit homepage care tasks to tasks linked to the signed-in user's cared-one relationships.
+- [ ] Open each homepage task in that person's Care Tasks card, and remove misleading arrow decoration.
+- [ ] Make every dashboard cared-one summary open that specific person's card page.
+- [ ] Verify the corrected dashboard flow in the running app.

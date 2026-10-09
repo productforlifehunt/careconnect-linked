@@ -97,15 +97,11 @@ export default function Dashboard() {
     })
     .sort((a: any, b: any) => bookingStart(a) - bookingStart(b));
   const upcomingBookings = myUpcomingBookings.slice(0, 4);
-  // Only the signed-in user's own work: tasks they created, tasks assigned to
-  // them, or tasks attached to one of their cared ones. Never every task in the app.
-  const myUserId = String(user?.user_id ?? user?.id ?? "").replace(/^wp-/, "");
+  // The dashboard is person-centred: only tasks connected through the task →
+  // cared-one relation to someone in this user's cared-one list belong here.
+  // Unlinked/test tasks and tasks for other people's cared ones must never leak in.
   const myCaredOneIds = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
   const myTasks = (tasks || []).filter((tk: any) => {
-    const creator = String(tk.created_by ?? "").replace(/^wp-/, "");
-    if (myUserId && creator === myUserId) return true;
-    const assignees: string[] = (tk.assigned_to_ids || []).map((a: any) => String(a).replace(/^wp-/, ""));
-    if (myUserId && assignees.includes(myUserId)) return true;
     const co = String(tk.cared_one_id ?? "").replace(/^wp-/, "");
     return !!co && myCaredOneIds.has(co);
   });
@@ -151,7 +147,7 @@ export default function Dashboard() {
             name={caredOnes[0].cared_one?.full_name || ""}
             avatarUrl={caredOnes[0].cared_one?.avatar_url}
             relationship={caredOnes[0].relationship}
-            onClick={() => navigate("/cared-ones")}
+            onClick={() => navigate(`/cared-ones/${String(caredOnes[0].user_id).replace(/^wp-/, "")}`)}
           />
         ) : (
           <Tabs defaultValue={caredOnes[0].user_id}>
@@ -177,7 +173,7 @@ export default function Dashboard() {
                   name={co.cared_one?.full_name || ""}
                   avatarUrl={co.cared_one?.avatar_url}
                   relationship={co.relationship}
-                  onClick={() => navigate("/cared-ones")}
+                  onClick={() => navigate(`/cared-ones/${String(co.user_id).replace(/^wp-/, "")}`)}
                 />
               </TabsContent>
             ))}
@@ -191,7 +187,7 @@ export default function Dashboard() {
         {[
           ...(paidCare ? [{ label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
           { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
-          { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/care-circle" },
+          { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/cared-ones" },
           { label: t("dashboard.unreadMessages"), value: myUnreadMessages, icon: MessageSquare, color: "text-coral", to: "/inbox?tab=messages" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
@@ -266,28 +262,33 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))
-            ) : pendingTasks.length > 0 ? pendingTasks.map((tk: any) => (
-              <button
-                key={tk.id}
-                type="button"
-                onClick={() => navigate("/care-circle")}
-                className="w-full text-left flex items-center gap-3 p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors"
-              >
-                <CheckCircle className={`h-4 w-4 shrink-0 ${tk.status === "completed" ? "text-success" : "text-muted-foreground"}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-foreground truncate">{tk.title}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {tk.assignee_profile?.full_name || t("common.unassigned")}
-                    {tk.due_date && ` · ${formatDate(tk.due_date, i18n.language, { month: "short", day: "numeric" })}`}
-                  </p>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </button>
-            )) : (
+            ) : pendingTasks.length > 0 ? pendingTasks.map((tk: any) => {
+              const caredOneId = String(tk.cared_one_id).replace(/^wp-/, "");
+              const caredOne = (caredOnes || []).find((co: any) => String(co.user_id).replace(/^wp-/, "") === caredOneId);
+              const caredOneName = caredOne?.cared_one?.full_name || site.caredOneSingular;
+              return (
+                <button
+                  key={tk.id}
+                  type="button"
+                  onClick={() => navigate(`/cared-ones/${caredOneId}/tasks`)}
+                  className="w-full text-left flex items-center gap-3 p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors"
+                  aria-label={`${tk.title} — ${caredOneName}`}
+                >
+                  <CheckCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground truncate">{tk.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {caredOneName}
+                      {tk.due_date && ` · ${formatDate(tk.due_date, i18n.language, { month: "short", day: "numeric" })}`}
+                    </p>
+                  </div>
+                </button>
+              );
+            }) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noPendingTasks")}</p>
             )}
-            <Button variant="ghost" size="sm" className="w-full h-8 text-xs" onClick={() => navigate("/care-circle")}>
-              {t("common.viewAll")} <ArrowRight className="ml-1 h-3 w-3" />
+            <Button variant="ghost" size="sm" className="w-full h-8 text-xs" onClick={() => navigate("/cared-ones")}>
+              {t("common.viewAll")}
             </Button>
           </CardContent>
         </Card>
