@@ -292,11 +292,48 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                 </Select>
               </div>
             </div>
+
+            <div>
+              <Label>{Z("谁可以看", "Who can view")}</Label>
+              <Select value={formVisibility} onValueChange={setFormVisibility}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
+                  <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
+                  <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
+                  <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>{Z("显示哪些紧急联系人", "Emergency contacts to show")}</Label>
+              <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
+                {!formContactsReady ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mx-auto my-3" />
+                ) : (emergencyContacts || []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2">{Z("尚无紧急联系人，请先在「紧急联系人」卡片中添加。", "No emergency contacts yet. Add some from the Emergency Contacts card first.")}</p>
+                ) : (
+                  (emergencyContacts || []).map((c: any) => {
+                    const id = String(c.id);
+                    return (
+                      <label key={id} className="flex items-center gap-3 rounded-md border p-2 cursor-pointer hover:bg-accent">
+                        <Checkbox checked={formContacts.has(id)} onCheckedChange={() => toggleFormContact(id)} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{c.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">{c.phone}{c.relationship ? ` • ${c.relationship}` : ""}</div>
+                        </div>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setFormOpen(false)}>{Z("取消", "Cancel")}</Button>
-            <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
-              {(create.isPending || update.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            <Button onClick={handleSubmit} disabled={saving || !formContactsReady}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {editId ? Z("保存修改", "Save changes") : Z("创建", "Create sheet")}
             </Button>
           </DialogFooter>
