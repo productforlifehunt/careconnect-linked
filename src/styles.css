@@ -477,7 +477,8 @@ html.reduce-motion *::after {
 [role="dialog"],
 [role="alertdialog"],
 [data-radix-popper-content-wrapper] > *,
-[data-radix-portal] > [data-state],
+body > div:not(#root) > [data-state="open"],
+body > div:not(#root) > [data-state="closed"],
 [data-vaul-drawer],
 [data-vaul-overlay],
 [data-sonner-toast] {
