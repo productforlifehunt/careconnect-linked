@@ -470,6 +470,24 @@ html.reduce-motion *::after {
   scroll-behavior: auto !important;
 }
 
+/* Popups appear and disappear instantly: no slide/zoom/fade entrance or exit
+   effects on dialogs, alert dialogs, sheets, drawers, popovers, dropdown
+   menus, tooltips or toasts. Targets only the popup elements themselves so
+   spinners and progress animations inside them keep working. */
+[role="dialog"],
+[role="alertdialog"],
+[data-radix-popper-content-wrapper] > *,
+body > div[data-state="open"],
+body > div[data-state="closed"],
+body > div:not(#root) > [data-state="open"],
+body > div:not(#root) > [data-state="closed"],
+[data-vaul-drawer],
+[data-vaul-overlay],
+[data-sonner-toast] {
+  animation: none !important;
+  transition: none !important;
+}
+
 /* Leaflet paints its panes at z-index 400–1000, which used to cover dialogs,
    drawers and the AI chat. Contain it in its own stacking context. */
 .leaflet-container {
