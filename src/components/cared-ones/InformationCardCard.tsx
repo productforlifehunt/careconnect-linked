@@ -61,6 +61,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const create = useCreateInformationCard();
   const update = useUpdateInformationCard();
   const del = useDeleteInformationCard();
+  const setCardContacts = useSetInformationCardContacts();
   const { data: emergencyContacts } = useEmergencyContacts(caredOneId);
   const knowledge = useInfoSheetKnowledge(caredOneId);
 
@@ -68,15 +69,38 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [formVisibility, setFormVisibility] = useState<string>("Visible to author");
+  const [formContacts, setFormContacts] = useState<Set<string>>(new Set());
+  const [formContactsReady, setFormContactsReady] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { data: editLinkedIds, isLoading: editLinkedLoading } = useInformationCardContactIds(editId);
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
   const [deleteCard, setDeleteCard] = useState<any | null>(null);
 
+  // When editing, pre-tick the contacts already linked to this sheet (REL 221).
+  useEffect(() => {
+    if (!formOpen || !editId || formContactsReady || editLinkedLoading || editLinkedIds === undefined) return;
+    setFormContacts(new Set((editLinkedIds || []).map(String)));
+    setFormContactsReady(true);
+  }, [formOpen, editId, formContactsReady, editLinkedLoading, editLinkedIds]);
+
+  const toggleFormContact = (id: string) => {
+    setFormContacts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const openCreate = () => {
     setEditId(null);
     setForm({ ...EMPTY_FORM, cared_ones_name: caredOneName || "" });
+    setFormVisibility("Visible to author");
+    // New sheet: all emergency contacts ticked by default.
+    setFormContacts(new Set((emergencyContacts || []).map((c: any) => String(c.id))));
+    setFormContactsReady(true);
     setFormOpen(true);
   };
 
@@ -91,30 +115,33 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       status: (card.status as Status) || "Draft",
       displays_location: (card.displays_location as DisplaysLocation) || "No",
     });
+    setFormVisibility(card.share_visibility || "Visible to author");
+    setFormContacts(new Set());
+    setFormContactsReady(false);
     setFormOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.cared_ones_information_card_name.trim()) {
       toast({ title: Z("请先写这份须知的用途", "Please say what this sheet is for"), variant: "destructive" });
       return;
     }
-    if (editId) {
-      update.mutate(
-        { id: editId, ...form },
-        {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已更新", "Information card updated") }); },
-          onError: (e: any) => toast({ title: Z("更新失败", "Update failed"), description: e.message, variant: "destructive" }),
-        },
-      );
-    } else {
-      create.mutate(
-        { caredOneUserId: caredOneId, ...form },
-        {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已创建", "Information card created") }); },
-          onError: (e: any) => toast({ title: Z("创建失败", "Create failed"), description: e.message, variant: "destructive" }),
-        },
-      );
+    setSaving(true);
+    try {
+      let cardId = editId;
+      if (editId) {
+        await update.mutateAsync({ id: editId, ...form, share_visibility: formVisibility });
+      } else {
+        const created = await create.mutateAsync({ caredOneUserId: caredOneId, ...form, share_visibility: formVisibility as any });
+        cardId = String(created.id);
+      }
+      if (cardId) await setCardContacts.mutateAsync({ cardId, contactIds: [...formContacts] });
+      setFormOpen(false);
+      toast({ title: editId ? Z("信息卡已更新", "Information card updated") : Z("信息卡已创建", "Information card created") });
+    } catch (e: any) {
+      toast({ title: editId ? Z("更新失败", "Update failed") : Z("创建失败", "Create failed"), description: e?.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -209,7 +236,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
       {/* Create / Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editId ? Z("编辑信息卡", "Edit information card") : Z("新建信息卡", "New information card")}</DialogTitle>
             <DialogDescription>{Z("写一张可以直接发给别人的信息卡：要注意什么、这次需要帮什么。", "Write something you can hand to another person: what to watch out for and what help is needed this time.")}</DialogDescription>
@@ -265,11 +292,48 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                 </Select>
               </div>
             </div>
+
+            <div>
+              <Label>{Z("谁可以看", "Who can view")}</Label>
+              <Select value={formVisibility} onValueChange={setFormVisibility}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
+                  <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
+                  <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
+                  <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>{Z("显示哪些紧急联系人", "Emergency contacts to show")}</Label>
+              <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
+                {!formContactsReady ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mx-auto my-3" />
+                ) : (emergencyContacts || []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2">{Z("尚无紧急联系人，请先在「紧急联系人」卡片中添加。", "No emergency contacts yet. Add some from the Emergency Contacts card first.")}</p>
+                ) : (
+                  (emergencyContacts || []).map((c: any) => {
+                    const id = String(c.id);
+                    return (
+                      <label key={id} className="flex items-center gap-3 rounded-md border p-2 cursor-pointer hover:bg-accent">
+                        <Checkbox checked={formContacts.has(id)} onCheckedChange={() => toggleFormContact(id)} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{c.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">{c.phone}{c.relationship ? ` • ${c.relationship}` : ""}</div>
+                        </div>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setFormOpen(false)}>{Z("取消", "Cancel")}</Button>
-            <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
-              {(create.isPending || update.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            <Button onClick={handleSubmit} disabled={saving || !formContactsReady}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {editId ? Z("保存修改", "Save changes") : Z("创建", "Create sheet")}
             </Button>
           </DialogFooter>
