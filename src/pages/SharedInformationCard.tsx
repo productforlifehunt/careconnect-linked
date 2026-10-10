@@ -1,4 +1,4 @@
-import { useParams } from "@/lib/router-compat";
+import { useParams, useNavigate } from "@/lib/router-compat";
 import { useInformationCardByToken } from "@/hooks/use-care-data";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInformationCardContactIdsWordPress, fetchInformationCardCaredOneIdWordPress } from "@/features/cared-ones/source.information-cards";
@@ -16,6 +16,7 @@ export default function SharedInformationCard() {
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const { data: card, isLoading, isError, error } = useInformationCardByToken(token || null);
   const denied = (error as any)?.reason as "login" | "forbidden" | undefined;
 
@@ -67,7 +68,7 @@ export default function SharedInformationCard() {
               ? Z("你的账号不在这张信息卡允许查看的范围内。", "Your account is not allowed to view this card.")
               : Z("此分享链接无效或已过期。", "This share link is invalid or has expired.")}</p>
           {denied === "login" && (
-            <a href={`/auth?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="inline-block mt-4 text-sm font-medium text-primary underline">{Z("登录", "Sign in")}</a>
+            <button type="button" onClick={() => navigate("/auth", { state: { from: `/share/card/${token}` } })} className="inline-block mt-4 text-sm font-medium text-primary underline">{Z("登录", "Sign in")}</button>
           )}
         </div>
       </div>
