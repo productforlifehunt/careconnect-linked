@@ -90,9 +90,9 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
     const userIds = rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const members = await Promise.all(
       userIds.map(async (uid) => {
+        const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
         try {
           const u = await fetchWPUserProfile(uid);
-          const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
           const decoded = decodeRel72Meta(rel?.meta);
           const memberTypes = decoded.memberTypes;
           const memberRoles = decoded.memberRoles;
@@ -116,7 +116,33 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
             invitation_status: invitationStatus,
             profile: { id: `wp-${uid}`, full_name: displayName, email: u.email || null, avatar_url: u.avatar_url || null },
           };
-        } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
+        } catch {
+          // Subscriber accounts are invisible to wp/v2/users for other
+          // subscribers, so the profile read can fail even though the
+          // membership relation row is real. One such member must not wipe
+          // the whole roster — fall back to the relation meta (a55 holds the
+          // in-group display name) with an empty profile.
+          const decoded = decodeRel72Meta(rel?.meta);
+          const memberTypes = decoded.memberTypes;
+          const memberRoles = decoded.memberRoles;
+          const displayName = decoded.displayName || "";
+          const isOwner = memberTypes.includes("owner");
+          const isAdmin = memberTypes.includes("admin") || isOwner;
+          return {
+            id: String(uid),
+            user_id: `wp-${uid}`,
+            group_id: groupId,
+            display_name: displayName,
+            member_types: memberTypes.length ? memberTypes : ["nothing special"],
+            member_roles: memberRoles.length ? memberRoles : ["nothing special"],
+            role: isOwner ? "owner" : isAdmin ? "admin" : "nothing special",
+            is_admin: isAdmin,
+            is_owner: isOwner,
+            is_cared_one: memberRoles.includes("cared one"),
+            invitation_status: decoded.invitationStatus,
+            profile: { id: `wp-${uid}`, full_name: displayName, email: null, avatar_url: null },
+          };
+        }
       })
     );
     // Declined invitations are not members — hide them from the roster.
