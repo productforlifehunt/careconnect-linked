@@ -134,7 +134,6 @@ function CommentItem({
                   <ThumbsDown className="h-3.5 w-3.5 mr-1" />
                   {voteState.downvotes}
                 </Button>
-                <span className="text-[11px] font-medium text-muted-foreground px-1">{isZh ? `总分 ${voteState.score}` : `Score ${voteState.score}`}</span>
                 {depth === 0 && (
                   <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-muted-foreground" onClick={() => setReplyOpen(!replyOpen)}>
                     <Reply className="h-3.5 w-3.5 mr-1" />

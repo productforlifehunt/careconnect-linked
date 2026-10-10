@@ -154,6 +154,13 @@ export function EditPostDialog({
   const [content, setContent] = useState(post?.content || "");
   const [title, setTitle] = useState(post?.title || "");
 
+  // Re-fill the fields whenever a different post is opened for editing,
+  // because this dialog stays mounted while `post` changes.
+  useEffect(() => {
+    setContent(post?.content || "");
+    setTitle(post?.title || "");
+  }, [post?.id, post?.content, post?.title]);
+
   return (
     <Dialog open={!!post} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
