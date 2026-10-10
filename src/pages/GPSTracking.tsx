@@ -127,7 +127,9 @@ export default function GPSTracking() {
   // not to the phone in your hand. A caregiver opening this page must be able
   // to manage the linked cared one's areas — the previous code silently scoped
   // every one of these reads and writes to the signed-in user.
-  const [subjectId, setSubjectId] = useState<string>("");
+  // ?person=<id> opens the page on that one person (e.g. from their card).
+  const [subjectId, setSubjectId] = useState<string>(() =>
+    typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("person") || "").replace(/^wp-/, "") : "");
   const caredOneOptions = (() => {
     const seen = new Set<string>();
     const out: { id: string; name: string }[] = [];
@@ -206,7 +208,12 @@ export default function GPSTracking() {
     return map;
   })();
 
-  const people = (locationShares || []).map((ls: any) => {
+  const isFamilyLocator = site.family === "notchsafety" || site.id === "notchsafety";
+  // Care apps: the map is about ONE person — the cared one being looked at —
+  // never everyone you look after at once.
+  const people = (locationShares || [])
+    .filter((ls: any) => isFamilyLocator || String(ls.user_id ?? "").replace(/^wp-/, "") === effectiveSubjectId)
+    .map((ls: any) => {
     const lat = parseFloat(ls.latitude) || 0;
     const lng = parseFloat(ls.longitude) || 0;
     const key = String(ls.user_id ?? "").replace(/^wp-/, "");
@@ -1101,6 +1108,18 @@ export default function GPSTracking() {
 
         {/* Map + Tabs */}
         <div className="lg:col-span-2">
+          {!isFamilyLocator && caredOneOptions.length > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <Label className="text-sm text-muted-foreground shrink-0">{Z("查看谁的位置", "Whose location")}</Label>
+              <Select value={effectiveSubjectId} onValueChange={(v) => { setSubjectId(v); setSelectedPerson(null); }}>
+                <SelectTrigger className="h-9 max-w-[260px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
+                  {caredOneOptions.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-2">
               <TabsTrigger value="map" className="gap-1"><MapPin className="h-3.5 w-3.5" /> {t("gps.map", "Map")}</TabsTrigger>
