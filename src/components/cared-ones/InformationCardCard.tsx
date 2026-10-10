@@ -61,6 +61,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const create = useCreateInformationCard();
   const update = useUpdateInformationCard();
   const del = useDeleteInformationCard();
+  const setCardContacts = useSetInformationCardContacts();
   const { data: emergencyContacts } = useEmergencyContacts(caredOneId);
   const knowledge = useInfoSheetKnowledge(caredOneId);
 
@@ -68,15 +69,38 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [formVisibility, setFormVisibility] = useState<string>("Visible to author");
+  const [formContacts, setFormContacts] = useState<Set<string>>(new Set());
+  const [formContactsReady, setFormContactsReady] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { data: editLinkedIds, isLoading: editLinkedLoading } = useInformationCardContactIds(editId);
   const [contactsCardId, setContactsCardId] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
   const [deleteCard, setDeleteCard] = useState<any | null>(null);
 
+  // When editing, pre-tick the contacts already linked to this sheet (REL 221).
+  useEffect(() => {
+    if (!formOpen || !editId || formContactsReady || editLinkedLoading) return;
+    setFormContacts(new Set((editLinkedIds || []).map(String)));
+    setFormContactsReady(true);
+  }, [formOpen, editId, formContactsReady, editLinkedLoading, editLinkedIds]);
+
+  const toggleFormContact = (id: string) => {
+    setFormContacts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const openCreate = () => {
     setEditId(null);
     setForm({ ...EMPTY_FORM, cared_ones_name: caredOneName || "" });
+    setFormVisibility("Visible to author");
+    // New sheet: all emergency contacts ticked by default.
+    setFormContacts(new Set((emergencyContacts || []).map((c: any) => String(c.id))));
+    setFormContactsReady(true);
     setFormOpen(true);
   };
 
@@ -91,30 +115,33 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       status: (card.status as Status) || "Draft",
       displays_location: (card.displays_location as DisplaysLocation) || "No",
     });
+    setFormVisibility(card.share_visibility || "Visible to author");
+    setFormContacts(new Set());
+    setFormContactsReady(false);
     setFormOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.cared_ones_information_card_name.trim()) {
       toast({ title: Z("请先写这份须知的用途", "Please say what this sheet is for"), variant: "destructive" });
       return;
     }
-    if (editId) {
-      update.mutate(
-        { id: editId, ...form },
-        {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已更新", "Information card updated") }); },
-          onError: (e: any) => toast({ title: Z("更新失败", "Update failed"), description: e.message, variant: "destructive" }),
-        },
-      );
-    } else {
-      create.mutate(
-        { caredOneUserId: caredOneId, ...form },
-        {
-          onSuccess: () => { setFormOpen(false); toast({ title: Z("信息卡已创建", "Information card created") }); },
-          onError: (e: any) => toast({ title: Z("创建失败", "Create failed"), description: e.message, variant: "destructive" }),
-        },
-      );
+    setSaving(true);
+    try {
+      let cardId = editId;
+      if (editId) {
+        await update.mutateAsync({ id: editId, ...form, share_visibility: formVisibility });
+      } else {
+        const created = await create.mutateAsync({ caredOneUserId: caredOneId, ...form, share_visibility: formVisibility as any });
+        cardId = String(created.id);
+      }
+      if (cardId) await setCardContacts.mutateAsync({ cardId, contactIds: [...formContacts] });
+      setFormOpen(false);
+      toast({ title: editId ? Z("信息卡已更新", "Information card updated") : Z("信息卡已创建", "Information card created") });
+    } catch (e: any) {
+      toast({ title: editId ? Z("更新失败", "Update failed") : Z("创建失败", "Create failed"), description: e?.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
