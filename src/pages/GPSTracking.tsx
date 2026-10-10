@@ -138,7 +138,7 @@ export default function GPSTracking() {
       out.push({ id: key, name: name || t("common.unknown") });
     };
     (myCaredOnes || []).forEach((c: any) =>
-      push(c.cared_one_user_id ?? c.user_id ?? c.id, c.full_name || c.display_name || c.name),
+      push(c.cared_one_user_id ?? c.user_id ?? c.id, c.cared_one?.full_name || c.full_name || c.display_name || c.name),
     );
     if (site.family === "notchsafety" || site.id === "notchsafety") {
       (groupMembers || [])

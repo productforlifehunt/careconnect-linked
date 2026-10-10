@@ -224,7 +224,7 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
       const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
       const caredOnes = await fetchUserCaredOnesWordPress();
       for (const c of caredOnes) {
-        if (c.status && c.status !== "accepted") continue;
+        if (c.invitation_status && c.invitation_status !== "accepted") continue;
         const id = String(c.user_id ?? c.id ?? "").replace(/^wp-/, "");
         if (id) memberUserIds.add(id);
       }
