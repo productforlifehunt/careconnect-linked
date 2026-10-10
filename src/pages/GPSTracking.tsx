@@ -55,7 +55,7 @@ export default function GPSTracking() {
   const { toast } = useToast();
   const routerLocation = useRouterLocation();
   const site = useSite();
-  const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL);
+  const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL, site.family === "notchsafety" || site.id === "notchsafety" ? "group" : "cared-ones");
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
   const [shareMyLocation, setShareMyLocation] = useState(false);
   const [geofenceAlerts, setGeofenceAlerts] = useState(true);
@@ -138,11 +138,13 @@ export default function GPSTracking() {
       out.push({ id: key, name: name || t("common.unknown") });
     };
     (myCaredOnes || []).forEach((c: any) =>
-      push(c.cared_one_user_id ?? c.user_id ?? c.id, c.full_name || c.display_name || c.name),
+      push(c.cared_one_user_id ?? c.user_id ?? c.id, c.cared_one?.full_name || c.full_name || c.display_name || c.name),
     );
-    (groupMembers || [])
-      .filter((m: any) => m.is_cared_one)
-      .forEach((m: any) => push(m.user_id ?? m.id, m.display_name || m.profile?.full_name));
+    if (site.family === "notchsafety" || site.id === "notchsafety") {
+      (groupMembers || [])
+        .filter((m: any) => m.is_cared_one)
+        .forEach((m: any) => push(m.user_id ?? m.id, m.display_name || m.profile?.full_name));
+    }
     return out;
   })();
   const selfKey = String(userId ?? "").replace(/^wp-/, "");

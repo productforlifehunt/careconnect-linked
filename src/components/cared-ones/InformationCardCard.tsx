@@ -69,7 +69,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [formVisibility, setFormVisibility] = useState<string>("Visible to author");
+  const [formVisibility, setFormVisibility] = useState<string>("Visible to caregivers of the cared one");
   const [formContacts, setFormContacts] = useState<Set<string>>(new Set());
   const [formContactsReady, setFormContactsReady] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -97,7 +97,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const openCreate = () => {
     setEditId(null);
     setForm({ ...EMPTY_FORM, cared_ones_name: caredOneName || "" });
-    setFormVisibility("Visible to author");
+    setFormVisibility("Visible to caregivers of the cared one");
     // New sheet: all emergency contacts ticked by default.
     setFormContacts(new Set((emergencyContacts || []).map((c: any) => String(c.id))));
     setFormContactsReady(true);
@@ -115,7 +115,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       status: (card.status as Status) || "Draft",
       displays_location: (card.displays_location as DisplaysLocation) || "No",
     });
-    setFormVisibility(card.share_visibility || "Visible to author");
+    setFormVisibility(card.share_visibility || "Visible to caregivers of the cared one");
     setFormContacts(new Set());
     setFormContactsReady(false);
     setFormOpen(true);
@@ -299,9 +299,9 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
-                  <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
-                  <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
-                  <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
+                  <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内，需登录）", "Only members of this cared one's care group (in this app, sign-in needed)")}</SelectItem>
+                  <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内，需登录）", "Only this cared one's caregivers (in this app, sign-in needed)")}</SelectItem>
+                  <SelectItem value="Visible to the care group of the cared one and the caregivers of the cared one">{Z("此被照护者的护理群组成员和护理者（app 内，需登录）", "This cared one's care group members and caregivers (in this app, sign-in needed)")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -435,7 +435,7 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const enable = useEnableInformationCardShare();
   const revoke = useRevokeInformationCardShare();
-  const [visibility, setVisibility] = useState<string>(card.share_visibility || "Visible to public");
+  const [visibility, setVisibility] = useState<string>(card.share_visibility || "Visible to caregivers of the cared one");
   const [expiresAt, setExpiresAt] = useState<string>(
     card.share_expires_at ? String(card.share_expires_at).replace(" ", "T").slice(0, 16) : ""
   );
@@ -510,9 +510,9 @@ function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) 
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内）", "Only members of this cared one's care group in this app")}</SelectItem>
-                <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内）", "Only this cared one's caregivers in this app")}</SelectItem>
-                <SelectItem value="Visible to author">{Z("仅创建此卡片的我自己", "Only me, the person who created this card")}</SelectItem>
+                <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内，需登录）", "Only members of this cared one's care group (in this app, sign-in needed)")}</SelectItem>
+                <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内，需登录）", "Only this cared one's caregivers (in this app, sign-in needed)")}</SelectItem>
+                <SelectItem value="Visible to the care group of the cared one and the caregivers of the cared one">{Z("此被照护者的护理群组成员和护理者（app 内，需登录）", "This cared one's care group members and caregivers (in this app, sign-in needed)")}</SelectItem>
 
               </SelectContent>
             </Select>

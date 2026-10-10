@@ -22,13 +22,13 @@ const VIS_TO_CODE: Record<string, string> = {
   "Visible to public": "b55",
   "Visible to the care group of the cared one": "b56",
   "Visible to caregivers of the cared one": "b57",
-  "Visible to author": "b58",
+  "Visible to the care group of the cared one and the caregivers of the cared one": "b58",
 };
 const VIS_FROM_CODE: Record<string, string> = {
   b55: "Visible to public",
   b56: "Visible to the care group of the cared one",
   b57: "Visible to caregivers of the cared one",
-  b58: "Visible to author",
+  b58: "Visible to the care group of the cared one and the caregivers of the cared one",
 };
 
 function decodeCard(raw: any): InformationCard {
@@ -83,7 +83,7 @@ export type ShareVisibility =
   | "Visible to public"
   | "Visible to the care group of the cared one"
   | "Visible to caregivers of the cared one"
-  | "Visible to author";
+  | "Visible to the care group of the cared one and the caregivers of the cared one";
 
 export interface InformationCard {
   id: string;
@@ -153,26 +153,62 @@ export async function fetchInformationCardCaredOneIdWordPress(cardId: string): P
 }
 
 
-/** Public lookup by share token. Used by /share/card/:token public viewer. */
+/** Thrown by the share viewer when the reader may not see a non-public card. */
+export class ShareAccessError extends Error {
+  constructor(public reason: "login" | "forbidden") { super(reason); }
+}
+
+const REL_CAREGIVER_CARED_ONE = R.userCaredOnes;   // REL 219 caregiver → cared one
+const REL_GROUP_MEMBER = R.careGroupMembers;        // REL 223 care group → users
+
+async function viewerIsCaregiverOf(viewerId: number, caredOneId: number): Promise<boolean> {
+  const { decodeRel219Status } = await import("@/features/cared-ones/rel219-meta");
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CAREGIVER_CARED_ONE}/children/${viewerId}`);
+  return Array.isArray(rels) && rels.some((r: any) =>
+    Number(r.child_object_id) === caredOneId && decodeRel219Status(r?.meta) === "accepted");
+}
+
+async function viewerSharesGroupWith(viewerId: number, caredOneId: number): Promise<boolean> {
+  const groups = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${viewerId}`);
+  if (!Array.isArray(groups)) return false;
+  for (const g of groups) {
+    const members = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${Number(g.parent_object_id)}`);
+    if (Array.isArray(members) && members.some((m: any) => Number(m.child_object_id) === caredOneId)) return true;
+  }
+  return false;
+}
+
+/**
+ * Share-link lookup for /share/card/:token.
+ * b55 public → anyone. b56 → signed-in members of a care group (REL 223) that
+ * contains the cared one. b57 → the cared one's accepted caregivers (REL 219).
+ * b58 → either of those. The card's author can always open it.
+ */
 export async function fetchInformationCardByShareTokenWordPress(token: string): Promise<InformationCard | null> {
   if (!token) return null;
-  try {
-    // JetEngine CCT REST: filter by opaque field code for share token (a60).
-    const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, [F.SHARE_TOKEN]: token } });
-    const items = Array.isArray(list) ? list : [];
-    const raw = items.find((c) => String(c[F.SHARE_TOKEN] || "") === token) || null;
-    if (!raw) return null;
-    const card = decodeCard(raw);
-    if (card.share_expires_at) {
-      const expires = new Date(String(card.share_expires_at).replace(" ", "T"));
-      if (!Number.isNaN(expires.getTime()) && expires.getTime() < Date.now()) return null;
-    }
-    // Public visibility only at this anonymous endpoint.
-    if (card.share_visibility !== "Visible to public") return null;
-    return card;
-  } catch {
-    return null;
+  const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, [F.SHARE_TOKEN]: token } });
+  const items = Array.isArray(list) ? list : [];
+  const raw = items.find((c) => String(c[F.SHARE_TOKEN] || "") === token) || null;
+  if (!raw) return null;
+  const card = decodeCard(raw);
+  if (card.share_expires_at) {
+    const expires = new Date(String(card.share_expires_at).replace(" ", "T"));
+    if (!Number.isNaN(expires.getTime()) && expires.getTime() < Date.now()) return null;
   }
+  if (card.share_visibility === "Visible to public") return card;
+
+  const viewer = Number(getStoredWPUser()?.user_id || 0);
+  if (!viewer) throw new ShareAccessError("login");
+  if (Number(card.cct_author_id) === viewer) return card;
+  const caredOne = Number(await fetchInformationCardCaredOneIdWordPress(card.id) || 0);
+  if (!caredOne) throw new ShareAccessError("forbidden");
+
+  const v = card.share_visibility;
+  const groupOk = v === "Visible to the care group of the cared one" || v === "Visible to the care group of the cared one and the caregivers of the cared one";
+  const caregiverOk = v === "Visible to caregivers of the cared one" || v === "Visible to the care group of the cared one and the caregivers of the cared one";
+  if (caregiverOk && await viewerIsCaregiverOf(viewer, caredOne)) return card;
+  if (groupOk && await viewerSharesGroupWith(viewer, caredOne)) return card;
+  throw new ShareAccessError("forbidden");
 }
 
 export async function createInformationCardWordPress(input: {
@@ -197,7 +233,7 @@ export async function createInformationCardWordPress(input: {
     cared_ones_information_card_description: input.cared_ones_information_card_description || "",
     status: input.status || "Draft",
     displays_location: input.displays_location || "No",
-    share_visibility: input.share_visibility || "Visible to author",
+    share_visibility: input.share_visibility || "Visible to caregivers of the cared one",
   });
   const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
 
@@ -248,7 +284,6 @@ export async function revokeInformationCardShareWordPress(cardId: string): Promi
   await updateInformationCardWordPress(cardId, {
     share_token: "",
     share_expires_at: "",
-    share_visibility: "Visible to author",
   });
 }
 

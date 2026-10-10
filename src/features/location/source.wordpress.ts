@@ -209,16 +209,28 @@ export async function fetchLocationHistory(
 
 // ─── READ: Location shares (for care circle map view) ────────
 
-export async function fetchLocationSharesWordPress(): Promise<any[]> {
+/**
+ * scope "cared-ones" (care apps): only the people I look after — Relation 219
+ * children with an accepted link — plus me. scope "group" (Notch Safety family
+ * locator): everyone in my groups.
+ */
+export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group" = "cared-ones"): Promise<any[]> {
   try {
     const storedUser = getStoredWPUser();
     if (!storedUser?.user_id) return [];
 
-    // For now, get care group members and fetch their latest locations
-    const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
-    const groups = await fetchCareGroupsWordPress();
-
     const memberUserIds = new Set<string>();
+    if (scope === "cared-ones") {
+      const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
+      const caredOnes = await fetchUserCaredOnesWordPress();
+      for (const c of caredOnes) {
+        if (c.invitation_status && c.invitation_status !== "accepted") continue;
+        const id = String(c.user_id ?? c.id ?? "").replace(/^wp-/, "");
+        if (id) memberUserIds.add(id);
+      }
+    }
+    const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
+    const groups = scope === "group" ? await fetchCareGroupsWordPress() : [];
     for (const group of groups) {
       const members = (group as any).members || [];
       for (const member of members) {

@@ -1062,10 +1062,10 @@ export function useDeletePost() {
 }
 
 // ─── Location Shares (scoped to care circle members) ────────
-export function useLocationShares(refetchIntervalMs = 15000) {
+export function useLocationShares(refetchIntervalMs = 15000, scope: "cared-ones" | "group" = "cared-ones") {
   return useQuery({
-    queryKey: ["locationShares"],
-    queryFn: () => fetchLocationSharesWordPress(),
+    queryKey: ["locationShares", scope],
+    queryFn: () => fetchLocationSharesWordPress(scope),
     enabled: hasWPSession(),
     refetchInterval: refetchIntervalMs,
     refetchIntervalInBackground: false,
@@ -1820,6 +1820,7 @@ export function useInformationCardByToken(token: string | null) {
     queryKey: ["informationCardByToken", token],
     queryFn: () => fetchInformationCardByShareTokenWordPress(token!),
     enabled: !!token,
+    retry: false,
   });
 }
 
