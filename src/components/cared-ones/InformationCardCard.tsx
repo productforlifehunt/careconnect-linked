@@ -236,7 +236,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
       {/* Create / Edit dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editId ? Z("编辑信息卡", "Edit information card") : Z("新建信息卡", "New information card")}</DialogTitle>
             <DialogDescription>{Z("写一张可以直接发给别人的信息卡：要注意什么、这次需要帮什么。", "Write something you can hand to another person: what to watch out for and what help is needed this time.")}</DialogDescription>
