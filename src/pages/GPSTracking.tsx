@@ -1108,6 +1108,18 @@ export default function GPSTracking() {
 
         {/* Map + Tabs */}
         <div className="lg:col-span-2">
+          {!isFamilyLocator && caredOneOptions.length > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <Label className="text-sm text-muted-foreground shrink-0">{Z("查看谁的位置", "Whose location")}</Label>
+              <Select value={effectiveSubjectId} onValueChange={(v) => { setSubjectId(v); setSelectedPerson(null); }}>
+                <SelectTrigger className="h-9 max-w-[260px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={selfKey}>{Z("我自己", "Myself")}</SelectItem>
+                  {caredOneOptions.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-2">
               <TabsTrigger value="map" className="gap-1"><MapPin className="h-3.5 w-3.5" /> {t("gps.map", "Map")}</TabsTrigger>
