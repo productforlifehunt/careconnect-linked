@@ -127,7 +127,9 @@ export default function GPSTracking() {
   // not to the phone in your hand. A caregiver opening this page must be able
   // to manage the linked cared one's areas — the previous code silently scoped
   // every one of these reads and writes to the signed-in user.
-  const [subjectId, setSubjectId] = useState<string>("");
+  // ?person=<id> opens the page on that one person (e.g. from their card).
+  const [subjectId, setSubjectId] = useState<string>(() =>
+    typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("person") || "").replace(/^wp-/, "") : "");
   const caredOneOptions = (() => {
     const seen = new Set<string>();
     const out: { id: string; name: string }[] = [];
@@ -206,7 +208,12 @@ export default function GPSTracking() {
     return map;
   })();
 
-  const people = (locationShares || []).map((ls: any) => {
+  const isFamilyLocator = site.family === "notchsafety" || site.id === "notchsafety";
+  // Care apps: the map is about ONE person — the cared one being looked at —
+  // never everyone you look after at once.
+  const people = (locationShares || [])
+    .filter((ls: any) => isFamilyLocator || String(ls.user_id ?? "").replace(/^wp-/, "") === effectiveSubjectId)
+    .map((ls: any) => {
     const lat = parseFloat(ls.latitude) || 0;
     const lng = parseFloat(ls.longitude) || 0;
     const key = String(ls.user_id ?? "").replace(/^wp-/, "");
