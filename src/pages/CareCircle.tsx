@@ -77,7 +77,7 @@ export default function CareCircle() {
   const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0]!.id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
-  const { data: members, isLoading: membersLoadingRaw } = useCareGroupMembers(activeGroupId);
+  const { data: members, isLoading: membersLoadingRaw, isError: membersError } = useCareGroupMembers(activeGroupId);
   const membersLoading = !!activeGroupId && membersLoadingRaw;
   const { data: tasks, isLoading: tasksLoadingRaw } = useCareTasks(activeGroupId);
   // Disabled react-query queries stay `isLoading` forever — only treat them as
@@ -138,7 +138,7 @@ export default function CareCircle() {
   });
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
   const isOwner = currentMember?.is_owner;
-  const canShowJoin = !profileLoading && !membersLoading && !!currentUserId && !!activeGroupId && !currentMember;
+  const canShowJoin = !profileLoading && !membersLoading && !membersError && !!currentUserId && !!activeGroupId && !currentMember;
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
 
   const handleCreateGroup = () => {
