@@ -147,8 +147,10 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
     );
     // Declined invitations are not members — hide them from the roster.
     return members.filter((m: any) => m && m.invitation_status !== "declined");
-  } catch {
-    return [];
+  } catch (e) {
+    // Never turn a failed read into "this group has no members" — that hides
+    // owner/admin controls and wrongly offers "Join" to the owner.
+    throw e instanceof Error ? e : new Error("Could not load group members");
   }
 }
 
