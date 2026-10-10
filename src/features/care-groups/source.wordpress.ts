@@ -90,9 +90,9 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
     const userIds = rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
     const members = await Promise.all(
       userIds.map(async (uid) => {
+        const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
         try {
           const u = await fetchWPUserProfile(uid);
-          const rel = rels.find((r: any) => Number(r.child_object_id) === uid);
           const decoded = decodeRel72Meta(rel?.meta);
           const memberTypes = decoded.memberTypes;
           const memberRoles = decoded.memberRoles;
