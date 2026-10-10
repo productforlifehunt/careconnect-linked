@@ -16,7 +16,8 @@ export default function SharedInformationCard() {
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { token } = useParams<{ token: string }>();
-  const { data: card, isLoading, isError } = useInformationCardByToken(token || null);
+  const { data: card, isLoading, isError, error } = useInformationCardByToken(token || null);
+  const denied = (error as any)?.reason as "login" | "forbidden" | undefined;
 
   // REL 220: the cared one this sheet belongs to.
   const { data: caredOneId } = useQuery({
@@ -60,7 +61,14 @@ export default function SharedInformationCard() {
         <div className="text-center max-w-sm">
           <ShieldOff className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <h1 className="text-lg font-semibold mb-1">{Z("信息卡不可用", "Information card unavailable")}</h1>
-          <p className="text-sm text-muted-foreground">{Z("此分享链接无效、已过期或不再公开。", "This share link is invalid, expired, or no longer public.")}</p>
+          <p className="text-sm text-muted-foreground">{denied === "login"
+            ? Z("这张信息卡只给护理群组成员或护理者看，请先登录。", "This card is only for the care group or caregivers. Please sign in first.")
+            : denied === "forbidden"
+              ? Z("你的账号不在这张信息卡允许查看的范围内。", "Your account is not allowed to view this card.")
+              : Z("此分享链接无效或已过期。", "This share link is invalid or has expired.")}</p>
+          {denied === "login" && (
+            <a href={`/auth?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "")}`} className="inline-block mt-4 text-sm font-medium text-primary underline">{Z("登录", "Sign in")}</a>
+          )}
         </div>
       </div>
     );

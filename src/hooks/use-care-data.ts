@@ -1820,6 +1820,7 @@ export function useInformationCardByToken(token: string | null) {
     queryKey: ["informationCardByToken", token],
     queryFn: () => fetchInformationCardByShareTokenWordPress(token!),
     enabled: !!token,
+    retry: false,
   });
 }
 
