@@ -81,7 +81,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 
   // When editing, pre-tick the contacts already linked to this sheet (REL 221).
   useEffect(() => {
-    if (!formOpen || !editId || formContactsReady || editLinkedLoading) return;
+    if (!formOpen || !editId || formContactsReady || editLinkedLoading || editLinkedIds === undefined) return;
     setFormContacts(new Set((editLinkedIds || []).map(String)));
     setFormContactsReady(true);
   }, [formOpen, editId, formContactsReady, editLinkedLoading, editLinkedIds]);
