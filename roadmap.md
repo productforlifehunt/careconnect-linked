@@ -140,3 +140,10 @@
 - [x] Use the card item ID for sharing; remove token generation, expiry and revoke controls.
 - [x] Read current card visibility and show bilingual family-contact guidance on denied access.
 - [x] Verify anonymous public-card access and zero writes while opening/copying sharing; 4/4 automated tests cover current visibility and denial. Live visibility-change verification remains unperformed to avoid changing real records; existing WordPress direct-API authorization risk remains unresolved.
+
+# Permission audit and information-card reuse
+- [ ] Audit all application permissions, tracking live checks separately from source-only and mocked checks.
+- [x] Test four information-card visibility scopes in 36 mocked identity combinations; 42/42 tests passed. Live: both approved accounts and anonymous reads checked across all 6 existing information cards and 11 care/location read operations for cared one 46. Anonymous direct reads exposed all 4 private cards, 1 check-in, 1 plan, 1 medicine and 1 safe zone. Empty results do not prove authorization.
+- [x] Confirm information-card map is independent SheetMiniMap, not LocationCard; AI shares AICompanionChat but uses independent inline SheetAIPanel, not AICompanionChatDialog. Public AI knowledge loads additional plans/notes/medicines. Polygon renderer expects lowercase but source returns capitalized Polygon.
+- [ ] Live create/edit/delete/relationship permissions: not exercised to avoid modifying or deleting existing records; mocked update/delete tests demonstrate missing local authorization but do not establish backend write permissions.
+- [ ] Remaining all-app live permission coverage: care-group role changes/subgroup visibility, chat isolation, commerce ownership, file operations, researcher access, location request/emergency writes. Read-only source inventory is not a live audit.
