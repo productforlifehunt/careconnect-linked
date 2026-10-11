@@ -1411,7 +1411,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               const active = isZoneActive(zone);
               const breachInfo = currentLocation
                 ? checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude))
-                : { breached: false, distance: 0 };
+                : { breached: false, distance: 0, inside: false };
               return (
                 <Card key={zone.id} className="border-transparent card-elevated">
                   <CardContent className="p-3">
