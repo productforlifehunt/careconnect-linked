@@ -1,3 +1,4 @@
+import { RowActions } from "./RowActions";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -312,11 +313,12 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
 }
 
 // ─── Inline Med Card (used in timeline & list) ──────────────
-function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }: {
+function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot }: {
   med: any;
   todayLogs: any[];
   onLog: (med: any, status: "taken" | "skipped" | "missed") => void;
   onEdit: (med: any) => void;
+  onDelete?: ((med: any) => Promise<unknown>) | undefined;
   onHistory: (med: any) => void;
   compact?: boolean | undefined;
   slot?: string | undefined;
@@ -409,6 +411,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onHistory, compact, slot }
         <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
           <Edit2 className="h-3.5 w-3.5" />
         </Button>
+        {onDelete && <RowActions onDelete={() => onDelete(med)} />}
 
       </div>
     </motion.div>
@@ -788,6 +791,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                           todayLogs={todayLogs || []}
                           onLog={handleLog}
                           onEdit={setEditMed}
+                          onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
                           onHistory={setHistoryMed}
                           compact
                           slot={hour}
@@ -811,6 +815,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               todayLogs={todayLogs || []}
               onLog={handleLog}
               onEdit={setEditMed}
+                          onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
               onHistory={setHistoryMed}
               slot={(med.time_slot && med.time_slot[0]) || undefined}
             />
