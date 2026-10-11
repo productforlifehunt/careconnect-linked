@@ -230,7 +230,7 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
 
 type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
 
-interface Props { caredOneId: string; caredOneName: string; }
+interface Props { caredOneId: string; caredOneName: string; readOnly?: boolean; }
 
 const defaultForm = () => ({
   zone_type: ZONE_TYPE.SAFE as string, shape_type: "radius", color: "#3B82F6",
@@ -243,7 +243,7 @@ const defaultForm = () => ({
 });
 
 
-export default function LocationCard({ caredOneId, caredOneName }: Props) {
+export default function LocationCard({ caredOneId, caredOneName, readOnly = false }: Props) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
@@ -251,21 +251,23 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
   // ─── Data
   const { data: currentLocation, refetch: refetchLocation, isLoading: loadingLocation } = useCaredOneLocation(caredOneId);
-  const { data: locationHistory, refetch: refetchHistory } = useCaredOneLocationHistory(caredOneId);
+  const managementSubject = readOnly ? null : caredOneId;
+  const { data: locationHistory, refetch: refetchHistory } = useCaredOneLocationHistory(managementSubject);
   const { data: zones, refetch: refetchZones } = useSafeZones(caredOneId);
-  const { data: alerts, refetch: refetchAlerts } = useSafeZoneAlerts(caredOneId);
-  const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(caredOneId);
-  const { data: locationSettings, refetch: refetchSettings } = useCaredOneLocationSettings(caredOneId);
+  const { data: alerts, refetch: refetchAlerts } = useSafeZoneAlerts(managementSubject);
+  const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(managementSubject);
+  const { data: locationSettings, refetch: refetchSettings } = useCaredOneLocationSettings(managementSubject);
   // CCT 258: a56 sharing on, a55 emergency requests allowed — decided per person.
-  const { data: flags, refetch: refetchFlags } = useLocationSharingFlags(caredOneId);
+  const { data: flags, refetch: refetchFlags } = useLocationSharingFlags(managementSubject);
   const enableEmergency = useEnableEmergencyLocationPermission();
   // Fallback map centre: where the person looking at this page is.
   const [viewerPos, setViewerPos] = useState<{ lat: number; lng: number } | null>(null);
   useEffect(() => {
+    if (readOnly) return;
     let off = false;
     getCurrentPosition({ timeout: 10000 }).then((p) => { if (!off && p) setViewerPos({ lat: p.latitude, lng: p.longitude }); });
     return () => { off = true; };
-  }, []);
+  }, [readOnly]);
 
   // ─── Mutations
   const createZone = useCreateSafeZone();
@@ -743,7 +745,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchLocation(), refetchHistory(), refetchZones(), refetchAlerts(), refetchRequests(), refetchSettings()]);
+    await Promise.all(readOnly
+      ? [refetchLocation(), refetchZones()]
+      : [refetchLocation(), refetchHistory(), refetchZones(), refetchAlerts(), refetchRequests(), refetchSettings()]);
     setRefreshing(false);
     toast({ title: isZh ? "已刷新" : "Refreshed" });
   };
@@ -803,12 +807,12 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             {isZh ? `${caredOneName}的位置` : `${caredOneName}'s Location`}
           </h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant={flags?.shareOn ? "default" : "secondary"} className="text-xs">
+            {!readOnly && <Badge variant={flags?.shareOn ? "default" : "secondary"} className="text-xs">
               {flags?.shareOn ? (isZh ? "📍 已开启实时位置分享" : "📍 Live sharing on") : (isZh ? "未开启实时位置分享" : "Live sharing off")}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
+            </Badge>}
+            {!readOnly && <Badge variant="outline" className="text-xs">
               {flags?.emergencyAllowed ? (isZh ? "🚨 允许紧急请求" : "🚨 Emergency requests allowed") : (isZh ? "未允许紧急请求" : "Emergency requests not allowed")}
-            </Badge>
+            </Badge>}
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
@@ -818,7 +822,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           </div>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing} aria-label={isZh ? "刷新位置" : "Refresh location"}>
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
         </div>
@@ -845,7 +849,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
       {/* ─── Map (always visible on map tabs) ─── */}
       <div style={{ display: isMapTab ? "block" : "none" }} className="relative">
-        <div ref={mapRef} style={{ height: 350, borderRadius: 12, overflow: "hidden", background: "hsl(var(--muted))" }} />
+        <div ref={mapRef} className={`${readOnly ? "h-56" : "h-[350px]"} w-full rounded-md overflow-hidden bg-muted`} />
         {activeTab === "location" && currentLocation?.latitude && (
           <Button variant="outline" size="sm" className="absolute top-2 right-2 z-[1000] shadow-md bg-background/90 backdrop-blur-sm" asChild>
             <a href={`https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`} target="_blank" rel="noopener noreferrer">
@@ -868,7 +872,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       </div>
 
       {/* ─── Tabs ─── */}
-      <div className="flex gap-1 border-b border-border overflow-x-auto -mx-1 px-1">
+      {!readOnly && <div className="flex gap-1 border-b border-border overflow-x-auto -mx-1 px-1">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`px-3 py-2.5 text-sm font-medium whitespace-nowrap flex items-center gap-1.5 border-b-2 transition-colors
@@ -883,14 +887,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             ) : null}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* ─── TAB CONTENT ─── */}
 
       {/* LIVE LOCATION */}
       {activeTab === "location" && (
         <div className="space-y-4">
-          {!flags?.shareOn && (
+          {!readOnly && !flags?.shareOn && (
             <Card className="border-transparent card-elevated">
               <CardContent className="p-4 space-y-2">
                 <p className="text-sm font-medium">{isZh ? `${caredOneName}还没有开启实时位置分享` : `${caredOneName} has not turned on live sharing`}</p>
@@ -959,10 +963,12 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               <CardContent className="p-8 text-center">
                 <MapPin className="h-10 w-10 mx-auto mb-2 text-muted-foreground/30" />
                 <p className="text-sm font-medium text-foreground mb-1">{isZh ? "还没有位置记录" : "No location yet"}</p>
-                <p className="text-xs text-muted-foreground mb-3">{isZh ? `${caredOneName}还没分享过位置。发送请求后，对方手机会收到通知，点开同意即可在这里看到位置。` : `${caredOneName} has not shared a location yet. Send a request; once they tap it and agree, it shows here.`}</p>
-                <Button variant="coral" size="sm" onClick={() => setActiveTab("requests")}>
+                <p className="text-xs text-muted-foreground mb-3">{readOnly
+                  ? (isZh ? "这张信息卡关联的人暂无位置记录。如需帮助，请联系其家人。" : "No location has been recorded for the person on this card. Please contact their family for help.")
+                  : (isZh ? `${caredOneName}还没分享过位置。发送请求后，对方手机会收到通知，点开同意即可在这里看到位置。` : `${caredOneName} has not shared a location yet. Send a request; once they tap it and agree, it shows here.`)}</p>
+                {!readOnly && <Button variant="coral" size="sm" onClick={() => setActiveTab("requests")}>
                   <Send className="h-3 w-3 mr-1" /> {isZh ? "去发送位置请求" : "Send a location request"}
-                </Button>
+                </Button>}
               </CardContent>
             </Card>
           )}

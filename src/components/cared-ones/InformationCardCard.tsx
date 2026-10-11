@@ -377,7 +377,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={statusVariant(viewCard.status)}>{statusLabel(viewCard.status)}</Badge>
                 {viewCard.displays_location === "Yes" ? (
-                  <SheetLocationTag caredOneId={caredOneId} />
+                  <SheetLocationTag caredOneId={caredOneId} caredOneName={viewCard.cared_ones_name || caredOneName || Z("被护理者", "Cared one")} />
                 ) : (
                   <Badge variant="outline" className="text-xs">
                     <MapPin className="h-3 w-3 mr-1" />{Z("不显示位置", "Location hidden")}

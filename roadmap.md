@@ -1,5 +1,10 @@
 ## Screening question provenance labels
 
+## Current request: auth boundary and shared information-card internals
+- [x] Distinguish page login protection from data authorization: fresh anonymous browser redirected /cared-ones/46/location to /auth and denied private shared card 5; previous direct-read evidence still establishes a data-layer vulnerability, not a bypass of that page redirect. No backend fix was made.
+- [x] Replace information-card standalone maps with shared LocationCard read-only mode, bound only to the card's associated person; disable management queries and viewer geolocation in this mode.
+- [x] Verify public card 10 renders the shared Leaflet map with no request or add-zone buttons, no runtime errors, and build OK. It currently has zones but no person-position record, so no live person marker was verified. Both SheetAIPanel and floating AICompanionChatDialog import AICompanionChat; preserve card knowledge. InfoSheetAIDialog is only imported for its context type, not mounted.
+
 ## Current request: re-recording guide and flat app logos
 - [x] Deliver all 22 interview questions with natural follow-ups about changes, new experiences, and corrections since the first interview.
 - [x] Standardize app logos in both languages to one Apple-style square silhouette without gradients, retaining each brand's identity.
