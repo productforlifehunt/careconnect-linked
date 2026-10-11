@@ -139,4 +139,4 @@
 # Fixed information-card links
 - [x] Use the card item ID for sharing; remove token generation, expiry and revoke controls.
 - [x] Read current card visibility and show bilingual family-contact guidance on denied access.
-- [ ] Verify public/restricted access and no writes when sharing.
+- [x] Verify anonymous public-card access and zero writes while opening/copying sharing; 4/4 automated tests cover current visibility and denial. Live visibility-change verification remains unperformed to avoid changing real records; existing WordPress direct-API authorization risk remains unresolved.
