@@ -12,9 +12,9 @@ import { Loader2, Plus, Pencil, Trash2, Share2, IdCard, MapPin, Eye, Link2, QrCo
 import {
   useInformationCards, useCreateInformationCard, useUpdateInformationCard, useDeleteInformationCard,
   useInformationCardContactIds, useSetInformationCardContacts, useEmergencyContacts,
-  useEnableInformationCardShare, useRevokeInformationCardShare,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { useSite } from "@/contexts/SiteContext";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
@@ -298,7 +298,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
               <Select value={formVisibility} onValueChange={setFormVisibility}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
+                  <SelectItem value="Visible to public">{Z("所有人可见", "Visible to everyone")}</SelectItem>
                   <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内，需登录）", "Only members of this cared one's care group (in this app, sign-in needed)")}</SelectItem>
                   <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内，需登录）", "Only this cared one's caregivers (in this app, sign-in needed)")}</SelectItem>
                   <SelectItem value="Visible to the care group of the cared one and the caregivers of the cared one">{Z("此被照护者的护理群组成员和护理者（app 内，需登录）", "This cared one's care group members and caregivers (in this app, sign-in needed)")}</SelectItem>
@@ -383,9 +383,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                     <MapPin className="h-3 w-3 mr-1" />{Z("不显示位置", "Location hidden")}
                   </Badge>
                 )}
-                {viewCard.share_token
-                  ? <Badge variant="outline" className="text-xs">{Z("分享中", "Sharing on")}</Badge>
-                  : <Badge variant="outline" className="text-xs">{Z("未分享", "Not shared")}</Badge>}
+
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{Z("卡片上显示的姓名", "Name shown on the card")}</p>
@@ -399,12 +397,6 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                 <div>
                   <p className="text-xs text-muted-foreground">{Z("这次的具体安排", "What's needed this time")}</p>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{viewCard.cared_ones_information_card_description}</p>
-                </div>
-              )}
-              {viewCard.share_expires_at && (
-                <div>
-                  <p className="text-xs text-muted-foreground">{Z("分享链接过期时间", "Share link expires at")}</p>
-                  <p className="text-sm text-foreground">{String(viewCard.share_expires_at)}</p>
                 </div>
               )}
 
@@ -431,132 +423,48 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
 function ShareCardDialog({ card, onClose }: { card: any; onClose: () => void }) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
+  const site = useSite();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const enable = useEnableInformationCardShare();
-  const revoke = useRevokeInformationCardShare();
-  const [visibility, setVisibility] = useState<string>(card.share_visibility || "Visible to caregivers of the cared one");
-  const [expiresAt, setExpiresAt] = useState<string>(
-    card.share_expires_at ? String(card.share_expires_at).replace(" ", "T").slice(0, 16) : ""
-  );
-  const [generatedUrl, setGeneratedUrl] = useState<string>(() => {
-    if (card.share_token && typeof window !== "undefined") {
-      return `${window.location.origin}/share/card/${card.share_token}`;
-    }
-    return "";
-  });
-
-  const buildShareText = () => [
-    `📇 ${card.cared_ones_information_card_name || Z("被照护者信息卡", "Cared One Information Card")}`,
-    card.cared_ones_name ? `${Z("姓名", "Name")}: ${card.cared_ones_name}` : "",
-    generatedUrl ? `\n${generatedUrl}` : "",
-  ].filter(Boolean).join("\n");
-
-  const handleEnable = () => {
-    enable.mutate(
-      {
-        cardId: String(card.id),
-        visibility: visibility as any,
-        expiresAt: expiresAt ? expiresAt.replace("T", " ") + ":00" : null,
-        existingToken: card.share_token,
-      },
-      {
-        onSuccess: (res) => {
-          setGeneratedUrl(res.url);
-          toast({ title: Z("分享链接已就绪", "Share link ready") });
-        },
-        onError: (e: any) => toast({ title: Z("操作失败", "Failed"), description: e.message, variant: "destructive" }),
-      }
-    );
-  };
-
+  const url = new URL(`/share/card/${card.id}`, window.location.origin);
+  url.searchParams.set("__site", site.release.slug);
+  url.searchParams.set("lng", isCN ? "zh" : "en");
+  const cardUrl = url.toString();
+  const title = card.cared_ones_information_card_name || Z("被护理者信息卡", "Cared one information card");
   const copyLink = async () => {
-    if (!generatedUrl) return;
-    try { await navigator.clipboard.writeText(generatedUrl); toast({ title: Z("链接已复制", "Link copied") }); }
-    catch { toast({ title: Z("复制失败", "Copy failed"), variant: "destructive" }); }
-  };
-
-  const nativeShare = async () => {
-    if (!generatedUrl) return;
-    const text = buildShareText();
     try {
-      if ((navigator as any).share) {
-        await (navigator as any).share({ title: card.cared_ones_information_card_name || Z("被照护者信息卡", "Cared One Information Card"), text, url: generatedUrl });
-        return;
-      }
-      await navigator.clipboard.writeText(text);
-      toast({ title: Z("已复制", "Copied"), description: Z("可粘贴到任意位置进行分享。", "Paste it anywhere to share.") });
-    } catch {/* canceled */}
+      await navigator.clipboard.writeText(cardUrl);
+      toast({ title: Z("链接已复制", "Link copied") });
+    } catch { toast({ title: Z("复制失败", "Copy failed"), variant: "destructive" }); }
   };
-
-  const handleRevoke = () => {
-    revoke.mutate(String(card.id), {
-      onSuccess: () => { setGeneratedUrl(""); toast({ title: Z("已停止分享", "Sharing revoked") }); onClose(); },
-    });
+  const nativeShare = async () => {
+    if (!navigator.share) { await copyLink(); return; }
+    try { await navigator.share({ title, url: cardUrl }); }
+    catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      toast({ title: Z("分享失败，请复制链接重试", "Sharing failed. Please copy the link."), variant: "destructive" });
+    }
   };
-
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Share2 className="h-4 w-4" /> {Z("分享信息卡", "Share information card")}</DialogTitle>
-          <DialogDescription>{Z("生成公开链接或二维码，可随时撤销。", "Generate a public link or QR code. You can revoke it any time.")}</DialogDescription>
+          <DialogDescription>{title}</DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-3">
-          <div>
-            <Label>{Z("可见对象", "Who can view")}</Label>
-            <Select value={visibility} onValueChange={setVisibility}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Visible to public">{Z("任何拿到链接的人（包括 app 外的人）", "Anyone with the link, including people outside the app")}</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one">{Z("仅此被照护者所在护理群组的成员（app 内，需登录）", "Only members of this cared one's care group (in this app, sign-in needed)")}</SelectItem>
-                <SelectItem value="Visible to caregivers of the cared one">{Z("仅此被照护者的护理者（app 内，需登录）", "Only this cared one's caregivers (in this app, sign-in needed)")}</SelectItem>
-                <SelectItem value="Visible to the care group of the cared one and the caregivers of the cared one">{Z("此被照护者的护理群组成员和护理者（app 内，需登录）", "This cared one's care group members and caregivers (in this app, sign-in needed)")}</SelectItem>
-
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Input aria-label={Z("卡片链接", "Card link")} readOnly value={cardUrl} className="text-xs min-w-0" />
+            <Button size="icon" variant="outline" onClick={copyLink} aria-label={Z("复制链接", "Copy link")}><Copy className="h-4 w-4" /></Button>
           </div>
-          <div>
-            <Label>{Z("过期时间（可选）", "Expires at (optional)")}</Label>
-            <Input type="datetime-local" className="mt-1" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-            <p className="text-[11px] text-muted-foreground mt-1">{Z("留空则永不过期。过期后链接将失效。", "Leave empty for no expiry. After expiry the link stops working.")}</p>
+          <div className="flex flex-col items-center gap-2 py-2">
+            <QRCodeSVG value={cardUrl} size={140} />
+            <p className="text-xs text-muted-foreground flex items-center gap-1"><QrCode className="h-3 w-3" /> {Z("扫码查看", "Scan to view")}</p>
           </div>
-
-          {generatedUrl ? (
-            <div className="rounded-md border p-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                <Input readOnly value={generatedUrl} className="text-xs h-8" />
-                <Button size="icon" variant="outline" className="h-8 w-8" onClick={copyLink}><Copy className="h-3 w-3" /></Button>
-              </div>
-              <div className="flex flex-col items-center gap-2 py-2">
-                <QRCodeSVG value={generatedUrl} size={140} />
-                <p className="text-[11px] text-muted-foreground flex items-center gap-1"><QrCode className="h-3 w-3" /> {Z("扫码查看", "Scan to view")}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1" onClick={nativeShare}><Share2 className="h-3 w-3 mr-1" /> {Z("分享…", "Share…")}</Button>
-                <Button size="sm" variant="outline" onClick={handleEnable} disabled={enable.isPending}>
-                  {enable.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />} {Z("更新", "Update")}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button className="w-full" onClick={handleEnable} disabled={enable.isPending}>
-              {enable.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {Z("生成分享链接", "Generate share link")}
-            </Button>
-          )}
+          <Button className="w-full" onClick={nativeShare}><Share2 className="h-4 w-4 mr-2" />{Z("分享", "Share")}</Button>
         </div>
-
-        <DialogFooter className="sm:justify-between">
-          {card.share_token && (
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={handleRevoke} disabled={revoke.isPending}>
-              <ShieldOff className="h-3 w-3 mr-1" /> {Z("停止分享", "Revoke sharing")}
-            </Button>
-          )}
-          <Button variant="ghost" onClick={onClose}>{Z("关闭", "Close")}</Button>
-        </DialogFooter>
+        <DialogFooter><Button variant="ghost" onClick={onClose}>{Z("关闭", "Close")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

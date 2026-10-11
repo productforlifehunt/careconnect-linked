@@ -88,10 +88,9 @@ import {
 } from "@/features/cared-ones/source.wordpress-extended";
 import {
   fetchInformationCardsWordPress, fetchInformationCardWordPress,
-  fetchInformationCardByShareTokenWordPress,
+  fetchSharedInformationCardWordPress,
   createInformationCardWordPress, updateInformationCardWordPress, deleteInformationCardWordPress,
   fetchInformationCardContactIdsWordPress, setInformationCardContactsWordPress,
-  enableInformationCardShareWordPress, revokeInformationCardShareWordPress,
 } from "@/features/cared-ones/source.information-cards";
 import type {
   Profile, Booking, Review, CareGroup, CareGroupMember,
@@ -1801,6 +1800,7 @@ export function useUpdateInformationCard() {
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["informationCards"] });
       qc.invalidateQueries({ queryKey: ["informationCard", vars.id] });
+      qc.invalidateQueries({ queryKey: ["sharedInformationCard", vars.id] });
     },
   });
 }
@@ -1830,34 +1830,15 @@ export function useSetInformationCardContacts() {
   });
 }
 
-export function useEnableInformationCardShare() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ cardId, ...opts }: { cardId: string; visibility: any; expiresAt?: string | null | undefined; existingToken?: string | undefined }) =>
-      enableInformationCardShareWordPress(cardId, opts),
-    onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["informationCards"] });
-      qc.invalidateQueries({ queryKey: ["informationCard", vars.cardId] });
-    },
-  });
-}
-
-export function useRevokeInformationCardShare() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (cardId: string) => revokeInformationCardShareWordPress(cardId),
-    onSuccess: (_d, cardId) => {
-      qc.invalidateQueries({ queryKey: ["informationCards"] });
-      qc.invalidateQueries({ queryKey: ["informationCard", cardId] });
-    },
-  });
-}
-
-export function useInformationCardByToken(token: string | null) {
+export function useSharedInformationCard(cardId: string | null) {
   return useQuery({
-    queryKey: ["informationCardByToken", token],
-    queryFn: () => fetchInformationCardByShareTokenWordPress(token!),
-    enabled: !!token,
+    queryKey: ["sharedInformationCard", cardId],
+    queryFn: () => cardId ? fetchSharedInformationCardWordPress(cardId) : Promise.resolve(null),
+    enabled: !!cardId,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchInterval: 30000,
     retry: false,
   });
 }

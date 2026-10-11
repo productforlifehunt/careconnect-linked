@@ -10,3 +10,5 @@
 - Care-app location views (/find, /cared-ones/:personId/location, care-group location tab) all render `src/components/care/LocationCard.tsx`, and live/emergency sharing permission is read from CCT 258 via `src/features/location/sharing-flags.ts`, so the three pages can never drift apart.
 - Live sharing and emergency answers are written by `LocationSharingAgent` on the shared person's own device while the app is open, because a web app cannot read someone's position remotely.
 - All runtime brand icons render through BrandIcon using one shared square silhouette; favicon artwork derives from that renderer, preventing shape and language drift across surfaces.
+
+- Information-card links use the existing card item ID and the shared viewer checks current visibility; sharing only copies/sends the URL, avoiding duplicate token/expiry/revocation state.

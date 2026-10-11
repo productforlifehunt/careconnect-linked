@@ -105,15 +105,6 @@ function normalizeWpId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
 }
 
-function generateShareToken(): string {
-  // 32-char URL-safe random token
-  const bytes = new Uint8Array(24);
-  (globalThis.crypto || (globalThis as any).msCrypto).getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 export async function fetchInformationCardsWordPress(caredOneId: string): Promise<InformationCard[]> {
   const id = normalizeWpId(caredOneId);
   if (!id) return [];
@@ -178,23 +169,11 @@ async function viewerSharesGroupWith(viewerId: number, caredOneId: number): Prom
   return false;
 }
 
-/**
- * Share-link lookup for /share/card/:token.
- * b55 public → anyone. b56 → signed-in members of a care group (REL 223) that
- * contains the cared one. b57 → the cared one's accepted caregivers (REL 219).
- * b58 → either of those. The card's author can always open it.
- */
-export async function fetchInformationCardByShareTokenWordPress(token: string): Promise<InformationCard | null> {
-  if (!token) return null;
-  const list = await wordpressCCTFetch<any[]>(CCT_SLUG, { params: { per_page: 100, [F.SHARE_TOKEN]: token } });
-  const items = Array.isArray(list) ? list : [];
-  const raw = items.find((c) => String(c[F.SHARE_TOKEN] || "") === token) || null;
-  if (!raw) return null;
-  const card = decodeCard(raw);
-  if (card.share_expires_at) {
-    const expires = new Date(String(card.share_expires_at).replace(" ", "T"));
-    if (!Number.isNaN(expires.getTime()) && expires.getTime() < Date.now()) return null;
-  }
+/** Fixed card-ID link. Always check the card's current visibility. */
+export async function fetchSharedInformationCardWordPress(cardId: string): Promise<InformationCard | null> {
+  if (!/^\d+$/.test(cardId) || !normalizeWpId(cardId)) return null;
+  const card = await fetchInformationCardWordPress(cardId);
+  if (!card) return null;
   if (card.share_visibility === "Visible to public") return card;
 
   const viewer = Number(getStoredWPUser()?.user_id || 0);
@@ -259,32 +238,6 @@ export async function updateInformationCardWordPress(id: string, updates: Partia
 
 export async function deleteInformationCardWordPress(id: string): Promise<void> {
   await wordpressCCTFetch(CCT_SLUG, { id: normalizeWpId(id), method: "DELETE" });
-}
-
-/**
- * Enable sharing on a care info sheet: ensures a share_token exists, sets visibility + optional expiry.
- * Returns the public URL.
- */
-export async function enableInformationCardShareWordPress(
-  cardId: string,
-  opts: { visibility: ShareVisibility; expiresAt?: string | null | undefined; existingToken?: string | undefined }
-): Promise<{ token: string; url: string; expiresAt?: string | null | undefined }> {
-  const token = opts.existingToken && opts.existingToken.length > 0 ? opts.existingToken : generateShareToken();
-  await updateInformationCardWordPress(cardId, {
-    share_token: token,
-    share_visibility: opts.visibility,
-    share_expires_at: opts.expiresAt || "",
-  });
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return { token, url: `${origin}/share/card/${token}`, expiresAt: opts.expiresAt || null };
-}
-
-/** Revoke sharing by clearing the token. */
-export async function revokeInformationCardShareWordPress(cardId: string): Promise<void> {
-  await updateInformationCardWordPress(cardId, {
-    share_token: "",
-    share_expires_at: "",
-  });
 }
 
 // ── Linked emergency contacts (REL 221) ─────────────────
