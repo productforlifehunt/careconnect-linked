@@ -100,7 +100,7 @@ export default function FindCaredOnes() {
           <MapPin className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-muted-foreground">{Z("你还没有被护理者，先在「被护理者」页面添加。", "You have no cared ones yet — add one on the Cared Ones page first.")}</p>
         </div>
-      )) : (
+      ) : (
         <>
           {people.length > 1 && (
             <div className="flex gap-2 flex-wrap">
