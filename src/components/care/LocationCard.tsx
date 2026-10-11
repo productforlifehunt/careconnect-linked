@@ -15,11 +15,13 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getCurrentPosition } from "@/lib/geolocation";
 import {
   useSafeZones, useCreateSafeZone, useUpdateSafeZone, useDeleteSafeZone,
   useCaredOneLocation, useCaredOneLocationHistory,
   useSafeZoneAlerts, useAcknowledgeAlert, useAcknowledgeAllAlerts,
   useLocationRequests, useSendLocationRequest, useCancelLocationRequest,
+  useLocationSharingFlags, useEnableEmergencyLocationPermission,
   useCaredOneLocationSettings, useShareMyLocation,
 } from "@/hooks/use-care-data";
 import {
@@ -165,23 +167,47 @@ function zoneIcon(code: string) {
   return Target;
 }
 
+// CCT 214 has no column for corner rounding, so the control stays hidden.
+const SHOW_CORNER_ROUNDING: boolean = Boolean(0);
+
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** "08:00", an ISO datetime, or an RFC 5545 "…T080000" value → minutes after local midnight. */
+function toMinutes(v: any): number | null {
+  const str = String(v ?? "").trim();
+  if (!str) return null;
+  let m = /^(\d{1,2}):(\d{2})/.exec(str);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  m = /T(\d{2})(\d{2})(\d{2})?(Z)?$/.exec(str);
+  if (m && !str.includes("-")) {
+    if (m[4]) { const d = new Date(Date.UTC(2000, 0, 1, Number(m[1]), Number(m[2]))); return d.getHours() * 60 + d.getMinutes(); }
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+  const d = new Date(str);
+  if (!Number.isNaN(d.getTime())) return d.getHours() * 60 + d.getMinutes();
+  return null;
+}
+
+function hhmm(v: any, fallback: string): string {
+  const n = toMinutes(v);
+  if (n == null) return fallback;
+  return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+}
 
 function isZoneActive(zone: any): boolean {
   if (!zone.schedule_enabled) return true;
   const now = new Date();
   const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][now.getDay()];
-  if (!zone.schedule_days?.includes(dayName)) return false;
+  // CCT 214 has no weekday column, so days only limit the zone when present.
+  if (Array.isArray(zone.schedule_days) && zone.schedule_days.length && !zone.schedule_days.includes(dayName)) return false;
   const cur = now.getHours() * 60 + now.getMinutes();
-  if (!zone.schedule_start_time || !zone.schedule_end_time) return true;
-  const [sh, sm] = zone.schedule_start_time.split(":").map(Number);
-  const [eh, em] = zone.schedule_end_time.split(":").map(Number);
-  const s = sh * 60 + sm, e = eh * 60 + em;
+  const s = toMinutes(zone.schedule_start_time), e = toMinutes(zone.schedule_end_time);
+  if (s == null || e == null) return true;
   return s <= e ? cur >= s && cur <= e : cur >= s || cur <= e;
 }
 
-function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boolean; distance: number } {
-  if (!isZoneActive(zone)) return { breached: false, distance: 0 };
+function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boolean; distance: number; inside: boolean } {
+  if (!isZoneActive(zone)) return { breached: false, distance: 0, inside: false };
   let inside = false, distance = 0;
   if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
     const pts: [number, number][] = zone.polygon_points;
@@ -199,7 +225,7 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
     : isSafeZone(zone.zone_type)
       ? !inside
       : (inside ? !!zone.notify_on_enter : !!zone.notify_on_exit);
-  return { breached, distance: Math.round(distance) };
+  return { breached, distance: Math.round(distance), inside };
 }
 
 type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
@@ -230,6 +256,16 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   const { data: alerts, refetch: refetchAlerts } = useSafeZoneAlerts(caredOneId);
   const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(caredOneId);
   const { data: locationSettings, refetch: refetchSettings } = useCaredOneLocationSettings(caredOneId);
+  // CCT 258: a56 sharing on, a55 emergency requests allowed — decided per person.
+  const { data: flags, refetch: refetchFlags } = useLocationSharingFlags(caredOneId);
+  const enableEmergency = useEnableEmergencyLocationPermission();
+  // Fallback map centre: where the person looking at this page is.
+  const [viewerPos, setViewerPos] = useState<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    let off = false;
+    getCurrentPosition({ timeout: 10000 }).then((p) => { if (!off && p) setViewerPos({ lat: p.latitude, lng: p.longitude }); });
+    return () => { off = true; };
+  }, []);
 
   // ─── Mutations
   const createZone = useCreateSafeZone();
@@ -346,10 +382,15 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
     if (bounds.length > 0) {
       try { map.fitBounds(bounds, { paddingTopLeft: [30, 30], paddingBottomRight: [30, 30], maxZoom: 16 }); } catch (_) {}
+    } else if (viewerPos) {
+      map.setView([viewerPos.lat, viewerPos.lng], 15);
+      const me = Lx.circleMarker([viewerPos.lat, viewerPos.lng], { radius: 8, color: "#fff", weight: 3, fillColor: "#3B82F6", fillOpacity: 1 }).addTo(map)
+        .bindTooltip(isZh ? "你的位置" : "You are here");
+      mapLayersRef.current.push(me);
     } else {
       map.setView([37.0902, -95.7129], 4);
     }
-  }, [currentLocation, zones, caredOneName, zoneLabel]);
+  }, [currentLocation, zones, caredOneName, zoneLabel, viewerPos, isZh]);
 
   // ─── Draw layers refresh
   const renderDrawLayers = useCallback(async () => {
@@ -443,7 +484,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   }, [zoneForm.latitude, zoneForm.longitude, zoneForm.radius, zoneForm.zone_type, zoneForm.color]);
 
 
-  const isMapTab = activeTab === "location" || activeTab === "safezones";
+  // The map always sits on top; the five tabs live below it.
+  const isMapTab = true;
 
   // Init map immediately
   useEffect(() => {
@@ -594,15 +636,16 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       setEditingZone(zone);
       setZoneForm({
         zone_type: zone.zone_type || ZONE_TYPE.SAFE,
-        shape_type: zone.shape_type || "radius",
+        // Stored rows say "Polygon"/"Radius"; the form works in lowercase.
+        shape_type: String(zone.shape_type || "radius").toLowerCase() === "polygon" ? "polygon" : "radius",
         color: (typeof zone.color === "string" && /^#[0-9a-fA-F]{6}$/.test(zone.color)) ? zone.color : "#3B82F6",
         latitude: zone.latitude?.toString() || "", longitude: zone.longitude?.toString() || "",
         radius: zone.radius_meters || 200, description: zone.description || "",
         polygon_points: zone.polygon_points || [], corner_radius: zone.corner_radius || [],
         notify_on_enter: zone.notify_on_enter ?? true, notify_on_exit: zone.notify_on_exit ?? true,
         schedule_enabled: zone.schedule_enabled ?? false,
-        schedule_start_time: zone.schedule_start_time || "08:00",
-        schedule_end_time: zone.schedule_end_time || "20:00",
+        schedule_start_time: hhmm(zone.schedule_start_time, "08:00"),
+        schedule_end_time: hhmm(zone.schedule_end_time, "20:00"),
         schedule_days: zone.schedule_days || [],
       });
       if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
@@ -683,13 +726,15 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   };
 
 
-  const handleSendRequest = async () => {
-    if (isEmergency && !emergencyConfirm) { setEmergencyConfirm(true); return; }
+  const handleSendRequest = async (emergency: boolean) => {
+    if (emergency && !emergencyConfirm) { setEmergencyConfirm(true); return; }
+    const isEmergency = emergency;
     setSendingRequest(true);
     sendRequest.mutate({ caredOneId, message: requestMessage, isEmergency }, {
       onSuccess: () => {
         setSendingRequest(false); setRequestMessage(""); setIsEmergency(false); setEmergencyConfirm(false);
-        toast({ title: isZh ? (isEmergency ? "紧急请求已发送 🚨" : "位置请求已发送 ✓") : (isEmergency ? "Urgent request sent 🚨" : "Location request sent ✓"), description: isZh ? "对方同意后，位置会出现在「实时位置」。" : "Once they agree, the location appears under Live location." });
+        toast({ title: isZh ? (isEmergency ? "紧急请求已发送 🚨" : "位置请求已发送 ✓") : (isEmergency ? "Emergency request sent 🚨" : "Location request sent ✓"), description: isEmergency ? (isZh ? "对方应用开着时位置会立即到达。" : "The location arrives as soon as their app is open.") : (isZh ? "对方允许后，位置会出现在「实时位置」。" : "Once they allow it, the location appears under Live location.") });
+        refetchFlags();
         refetchRequests();
       },
       onError: (e: any) => { setSendingRequest(false); toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); },
@@ -758,8 +803,11 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             {isZh ? `${caredOneName}的位置` : `${caredOneName}'s Location`}
           </h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant={locationSettings?.is_sharing_enabled ? "default" : "secondary"} className="text-xs">
-              {locationSettings?.is_sharing_enabled ? (isZh ? "📍 已开启共享" : "📍 Sharing On") : (isZh ? "未开启共享" : "Sharing Off")}
+            <Badge variant={flags?.shareOn ? "default" : "secondary"} className="text-xs">
+              {flags?.shareOn ? (isZh ? "📍 已开启实时位置分享" : "📍 Live sharing on") : (isZh ? "未开启实时位置分享" : "Live sharing off")}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {flags?.emergencyAllowed ? (isZh ? "🚨 允许紧急请求" : "🚨 Emergency requests allowed") : (isZh ? "未允许紧急请求" : "Emergency requests not allowed")}
             </Badge>
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -786,7 +834,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <p key={z.id} className="text-xs text-destructive/80">
               {isDangerZone(z.zone_type)
                 ? (isZh ? `⚠ ${caredOneName} 位于危险区域「${zoneLabel(z.zone_type, z.zone_name)}」内` : `⚠ ${caredOneName} is inside danger zone "${zoneLabel(z.zone_type, z.zone_name)}"`)
-                : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type, z.zone_name)}"`)}
+                : checkZoneBreach(z, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)).inside
+                  ? (isZh ? `⚠ ${caredOneName} 已进入区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} entered zone "${zoneLabel(z.zone_type, z.zone_name)}"`)
+                  : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type, z.zone_name)}"`)}
 
             </p>
           ))}
@@ -840,19 +890,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       {/* LIVE LOCATION */}
       {activeTab === "location" && (
         <div className="space-y-4">
-          {/* Sharing settings */}
-          {locationSettings && (
+          {!flags?.shareOn && (
             <Card className="border-transparent card-elevated">
-              <CardContent className="p-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  {isZh ? `共享状态（由${caredOneName}决定）` : `Sharing (decided by ${caredOneName})`}
-                </p>
-                <div className="flex gap-4 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-success" : "bg-muted-foreground"}`} />
-                    <span className="text-sm">{locationSettings.is_sharing_enabled ? (isZh ? "5 分钟内有更新" : "Updated in the last 5 minutes") : (isZh ? "超过 5 分钟没有更新" : "No update in the last 5 minutes")}</span>
-                  </div>
-                </div>
+              <CardContent className="p-4 space-y-2">
+                <p className="text-sm font-medium">{isZh ? `${caredOneName}还没有开启实时位置分享` : `${caredOneName} has not turned on live sharing`}</p>
+                <p className="text-xs text-muted-foreground">{isZh ? "发送位置请求后，对方允许即开启分享，位置会自动更新。" : "Send a location request. Once they allow it, sharing turns on and the location keeps updating."}</p>
+                <Button variant="coral" size="sm" onClick={() => setActiveTab("requests")}>
+                  <Send className="h-3 w-3 mr-1" /> {isZh ? "请求位置" : "Request location"}
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -863,17 +908,23 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           ) : currentLocation ? (
             <Card className="border-transparent card-elevated">
               <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <span className="text-sm font-semibold text-foreground">{isZh ? "当前位置" : "Current location"}</span>
-                  <span className="text-xs text-muted-foreground">· {formatDateTime(currentLocation.created_at)}</span>
+                  <span className="text-sm font-semibold text-foreground">{isZh ? "最新位置" : "Latest location"}</span>
+                  {currentLocation.is_emergency && <Badge variant="destructive" className="text-[10px]">{isZh ? "紧急模式" : "Emergency mode"}</Badge>}
                 </div>
-                {currentLocation.address_text && <p className="text-sm text-foreground">{currentLocation.address_text}</p>}
-                <p className="text-xs text-muted-foreground font-mono">
-                  {parseFloat(currentLocation.latitude).toFixed(6)}, {parseFloat(currentLocation.longitude).toFixed(6)}
-                  {currentLocation.accuracy_meters && ` ± ${Math.round(currentLocation.accuracy_meters)}m`}
-                </p>
-                {currentLocation.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {currentLocation.battery_level}%</p>}
+                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                  <dt className="text-muted-foreground">{isZh ? "位置" : "Location"}</dt>
+                  <dd>{currentLocation.address_text || `${parseFloat(currentLocation.latitude).toFixed(6)}, ${parseFloat(currentLocation.longitude).toFixed(6)}`}</dd>
+                  <dt className="text-muted-foreground">{isZh ? "使用设备" : "Device"}</dt>
+                  <dd>{currentLocation.platform || (isZh ? "未知" : "Unknown")}</dd>
+                  <dt className="text-muted-foreground">{isZh ? "最后更新" : "Last updated"}</dt>
+                  <dd>{formatDateTime(currentLocation.captured_at || currentLocation.created_at)}</dd>
+                  <dt className="text-muted-foreground">{isZh ? "电量" : "Battery"}</dt>
+                  <dd>{currentLocation.battery_level != null ? `${currentLocation.battery_level}%` : (isZh ? "未知" : "Unknown")}</dd>
+                  <dt className="text-muted-foreground">{isZh ? "是否在充电" : "Charging"}</dt>
+                  <dd>{currentLocation.phone_is_charging === "Yes" ? (isZh ? "是" : "Yes") : currentLocation.phone_is_charging === "No" ? (isZh ? "否" : "No") : (isZh ? "未知" : "Unknown")}</dd>
+                </dl>
 
                 {/* Quick zone status */}
                 {(zones || []).length > 0 && (
@@ -890,9 +941,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                               ? (breach.breached
                                   ? (isZh ? "⚠ 已进入危险区域！" : "⚠ INSIDE danger zone!")
                                   : (isZh ? `✓ 已远离（${breach.distance} 米）` : `✓ Away (${breach.distance}m)`))
-                              : (breach.breached
-                                  ? (isZh ? `⚠ 已离开（${breach.distance} 米）` : `⚠ Outside (${breach.distance}m)`)
-                                  : (isZh ? `✓ 在区域内（${breach.distance} 米）` : `✓ Inside (${breach.distance}m)`))}
+                              : (!breach.inside
+                                  ? (isZh ? `${breach.breached ? "⚠ " : ""}在区域外（${breach.distance} 米）` : `${breach.breached ? "⚠ " : ""}Outside (${breach.distance}m)`)
+                                  : (isZh ? `${breach.breached ? "⚠ " : "✓ "}在区域内（${breach.distance} 米）` : `${breach.breached ? "⚠ " : "✓ "}Inside (${breach.distance}m)`))}
                           </span>
 
                         </div>
@@ -924,31 +975,37 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           <Card className="border-transparent card-elevated">
             <CardContent className="p-4 space-y-3">
               <h3 className="font-semibold text-sm">{isZh ? `请求${caredOneName}的位置` : `Ask ${caredOneName} for their location`}</h3>
-              <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}会收到通知，点开后可选择分享或拒绝。分享后位置会出现在「实时位置」。` : `${caredOneName} gets a notification and can share or decline. A shared location appears under Live location.`}</p>
+              <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}会收到消息，选择是否允许。允许后会开启实时位置分享，位置显示在「实时位置」。` : `${caredOneName} gets a message and chooses whether to allow it. Allowing turns on live sharing; the location shows under Live location.`}</p>
               <Textarea value={requestMessage} onChange={e => setRequestMessage(e.target.value)}
                 placeholder={isZh ? "可选：说明为什么需要位置" : "Optional: why you need their location"} rows={2} />
-              <div className={`flex flex-col gap-2 p-3 rounded-lg border ${isEmergency ? "bg-destructive/10 border-destructive/30" : "bg-muted/30 border-border"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="emerg-chk" checked={isEmergency}
-                    onChange={e => { setIsEmergency(e.target.checked); setEmergencyConfirm(false); }} className="rounded-sm" />
-                  <label htmlFor="emerg-chk" className="text-sm font-medium cursor-pointer">{isZh ? "🚨 标为紧急" : "🚨 Mark as urgent"}</label>
-                </div>
-                {isEmergency && (
-                  <p className="text-xs text-destructive pl-5">
-                    {isZh ? `通知会标为紧急。仍需${caredOneName}点开同意才能看到位置。` : `The notification is marked urgent. ${caredOneName} still has to agree before you see the location.`}
-                  </p>
+              <Button className="w-full" onClick={() => handleSendRequest(false)} disabled={sendingRequest || sendRequest.isPending}>
+                {(sendingRequest || sendRequest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                {isZh ? "发送位置请求" : "Send location request"}
+              </Button>
+              <div className="flex flex-col gap-2 p-3 rounded-lg border bg-destructive/5 border-destructive/30">
+                <p className="text-sm font-medium">{isZh ? "🚨 紧急请求" : "🚨 Emergency request"}</p>
+                {flags?.emergencyAllowed ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}已允许紧急请求：不需要对方确认，只要对方的应用开着，位置会立即发过来，并记为紧急模式。` : `${caredOneName} allows emergency requests: no confirmation needed. As long as their app is open, the location arrives at once and is marked as emergency mode.`}</p>
+                    {emergencyConfirm && <p className="text-xs text-destructive font-medium">{isZh ? "确定吗？再点一次发送。" : "Are you sure? Click again to send."}</p>}
+                    <Button variant="destructive" onClick={() => handleSendRequest(true)} disabled={sendingRequest || sendRequest.isPending}>
+                      {emergencyConfirm ? (isZh ? "确认发送紧急请求" : "Confirm emergency request") : (isZh ? "发送紧急请求" : "Send emergency request")}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}还没有开启紧急请求许可。开启后，紧急时不需要对方确认就能查看位置；开启时会给对方发送通知。` : `Emergency requests are off for ${caredOneName}. Once on, you can see their location in an emergency without them confirming. They are notified when you turn it on.`}</p>
+                    <Button variant="outline" disabled={enableEmergency.isPending}
+                      onClick={() => enableEmergency.mutate(caredOneId, {
+                        onSuccess: () => { refetchFlags(); toast({ title: isZh ? "已开启紧急请求许可，并已通知对方" : "Emergency permission on; they were notified" }); },
+                        onError: (e: any) => toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }),
+                      })}>
+                      {enableEmergency.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      {isZh ? `为${caredOneName}开启紧急请求许可` : `Turn on emergency requests for ${caredOneName}`}
+                    </Button>
+                  </>
                 )}
               </div>
-              {emergencyConfirm && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive font-medium">
-                  {isZh ? "⚠️ 确定吗？再点一次发送确认。" : "⚠️ Are you sure? Click send again to confirm."}
-                </div>
-              )}
-              <Button className="w-full" style={isEmergency ? { background: "#EF4444", color: "white" } : undefined}
-                onClick={handleSendRequest} disabled={sendingRequest || sendRequest.isPending}>
-                {(sendingRequest || sendRequest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                {isEmergency && emergencyConfirm ? (isZh ? "确认发送紧急请求" : "Confirm urgent request") : isEmergency ? (isZh ? "发送紧急请求" : "Send urgent request") : (isZh ? "发送请求" : "Send request")}
-              </Button>
             </CardContent>
           </Card>
 
@@ -1087,7 +1144,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <Card className="border-primary/20 card-elevated mb-4">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">{editingZone ? "Edit Zone" : "New Zone"}</h3>
+                  <h3 className="font-semibold">{editingZone ? (isZh ? "编辑区域" : "Edit zone") : (isZh ? "新建区域" : "New zone")}</h3>
                   <Button variant="ghost" size="icon" className="h-7 w-7"
                     onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
                     <X className="h-3.5 w-3.5" />
@@ -1154,7 +1211,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
 
                 <div>
-                  <Label className="text-xs">Shape Type</Label>
+                  <Label className="text-xs">{isZh ? "形状" : "Shape"}</Label>
                   <div className="flex rounded-lg border overflow-hidden mt-1">
                     {(["radius", "polygon"] as const).map(st => (
                       <button key={st} onClick={() => {
@@ -1234,9 +1291,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     {drawMode === "editing" && (
                       <div className="space-y-2">
                         <p className="text-xs text-success font-medium">
-                          ✓ {drawnPoints.length} vertices · Drag to reposition · Dbl-click to delete
+                          {isZh ? `✓ 已画 ${drawnPoints.length} 个点 · 拖动调整 · 双击删除` : `✓ ${drawnPoints.length} points · Drag to adjust · Double-click to delete`}
                         </p>
-                        {selectedVertex !== null && drawnPoints[selectedVertex] && (
+                        {SHOW_CORNER_ROUNDING && selectedVertex !== null && drawnPoints[selectedVertex] && (
                           <div className="p-3 rounded-lg bg-muted/50 border border-border">
                             <div className="flex justify-between mb-1">
                               <Label className="text-xs">Corner Rounding (Vertex {selectedVertex + 1})</Label>
@@ -1250,17 +1307,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                             <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>Sharp</span><span>Round</span></div>
                           </div>
                         )}
-                        {selectedVertex === null && (
-                          <p className="text-xs text-muted-foreground">Click a vertex to adjust its corner rounding</p>
-                        )}
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" className="flex-1"
                             onClick={() => { setDrawMode("drawing"); setDrawnPoints([]); setCornerRadii([]); }}>
-                            <RotateCcw className="h-3 w-3 mr-1" /> Redraw
+                            <RotateCcw className="h-3 w-3 mr-1" /> {isZh ? "重新画" : "Redraw"}
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1 text-destructive"
                             onClick={() => { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                            Clear All
+                            {isZh ? "全部清除" : "Clear all"}
                           </Button>
                         </div>
                       </div>
@@ -1276,18 +1330,18 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">Notify on enter</Label>
+                    <Label className="text-xs">{isZh ? "进入时提醒" : "Alert on enter"}</Label>
                     <Switch checked={zoneForm.notify_on_enter} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_enter: v }))} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">Notify on exit</Label>
+                    <Label className="text-xs">{isZh ? "离开时提醒" : "Alert on exit"}</Label>
                     <Switch checked={zoneForm.notify_on_exit} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_exit: v }))} />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs font-semibold">Schedule</Label>
+                    <Label className="text-xs font-semibold">{isZh ? "生效时段" : "Active hours"}</Label>
                     <Switch checked={zoneForm.schedule_enabled} onCheckedChange={v => setZoneForm(p => ({ ...p, schedule_enabled: v }))} />
                   </div>
                   {zoneForm.schedule_enabled && (
@@ -1324,7 +1378,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 <div className="flex gap-2 pt-1">
                   <Button variant="outline" className="flex-1"
                     onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                    Cancel
+                    {isZh ? "取消" : "Cancel"}
                   </Button>
                   <Button className="flex-1 text-white"
                     style={{ background: zoneFill(zoneForm.zone_type, zoneForm.color) }}
@@ -1332,7 +1386,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     disabled={createZone.isPending || updateZone.isPending}>
 
                     {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                    {editingZone ? "Save Changes" : "Create Zone"}
+                    {editingZone ? (isZh ? "保存修改" : "Save changes") : (isZh ? "创建区域" : "Create zone")}
                   </Button>
                 </div>
               </CardContent>
@@ -1344,10 +1398,10 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             {(zones || []).length === 0 && !showZoneForm && (
               <div className="text-center py-8 text-muted-foreground">
                 <Shield className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">No zones configured</p>
-                <p className="text-xs">Add safe zones like Home or Work, or danger zones to avoid</p>
+                <p className="text-sm">{isZh ? "还没有区域" : "No zones yet"}</p>
+                <p className="text-xs">{isZh ? "可以加安全区域（如家），或要避开的危险区域" : "Add safe zones like home, or danger zones to avoid"}</p>
                 <Button variant="outline" size="sm" className="mt-3" onClick={() => openZoneForm()}>
-                  <Plus className="h-3 w-3 mr-1" /> Add First Zone
+                  <Plus className="h-3 w-3 mr-1" /> {isZh ? "新建区域" : "New zone"}
                 </Button>
               </div>
             )}
@@ -1359,7 +1413,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
               const active = isZoneActive(zone);
               const breachInfo = currentLocation
                 ? checkZoneBreach(zone, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude))
-                : { breached: false, distance: 0 };
+                : { breached: false, distance: 0, inside: false };
               return (
                 <Card key={zone.id} className="border-transparent card-elevated">
                   <CardContent className="p-3">
@@ -1375,28 +1429,36 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                           {!active && <Badge variant="secondary" className="text-[10px]">{isZh ? "⏰ 定时（当前未生效）" : "⏰ Scheduled (inactive)"}</Badge>}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {zone.shape_type === "polygon" ? (isZh ? "自定义形状" : "Custom shape") : (isZh ? `半径 ${zone.radius_meters || 200} 米` : `${zone.radius_meters || 200}m radius`)}
+                          {String(zone.shape_type).toLowerCase() === "polygon" ? (isZh ? "精确范围" : "Traced area") : (isZh ? `半径 ${zone.radius_meters || 200} 米` : `${zone.radius_meters || 200}m radius`)}
                         </p>
 
                         {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
                         {zone.schedule_enabled && zone.schedule_start_time && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {zone.schedule_start_time}–{zone.schedule_end_time} {zone.schedule_days?.join(", ")}
+                            <Clock className="h-3 w-3" /> {hhmm(zone.schedule_start_time, "")}–{hhmm(zone.schedule_end_time, "")}
                           </p>
                         )}
                         {currentLocation && active && (
                           <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-success"}`}>
                             {isDangerZone(zone.zone_type)
-                              ? (breachInfo.breached ? `⚠ INSIDE danger zone! (${breachInfo.distance}m)` : `✓ Away (${breachInfo.distance}m)`)
-                              : (breachInfo.breached ? `⚠ Outside (${breachInfo.distance}m away)` : `✓ Inside (${breachInfo.distance}m from center)`)}
+                              ? (breachInfo.breached ? (isZh ? `⚠ 现在在危险区域里（${breachInfo.distance} 米）` : `⚠ Inside danger zone (${breachInfo.distance}m)`) : (isZh ? `✓ 现在在区域外（${breachInfo.distance} 米）` : `✓ Outside (${breachInfo.distance}m)`))
+                              : (!breachInfo.inside ? (isZh ? `现在在区域外（距中心 ${breachInfo.distance} 米）` : `Outside (${breachInfo.distance}m away)`) : (isZh ? `现在在区域里（距中心 ${breachInfo.distance} 米）` : `Inside (${breachInfo.distance}m from center)`))}
 
                           </p>
                         )}
                         <div className="flex gap-1 mt-1.5 flex-wrap">
-                          {zone.shape_type === "polygon" && <Badge variant="outline" className="text-[10px]">Custom Shape</Badge>}
-                          {zone.notify_on_enter && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Enter alert</Badge>}
-                          {zone.notify_on_exit && <Badge variant="outline" className="text-[10px]"><Bell className="h-2.5 w-2.5 mr-0.5" />Exit alert</Badge>}
-                          {zone.schedule_enabled && <Badge variant="outline" className="text-[10px]"><Clock className="h-2.5 w-2.5 mr-0.5" />Scheduled</Badge>}
+                          <Badge variant="outline" className="text-[10px]">{isZh ? "类型：" : "Type: "}{isDangerZone(zone.zone_type) ? (isZh ? "危险区域" : "Danger") : isSafeZone(zone.zone_type) ? (isZh ? "安全区域" : "Safe") : (isZh ? "自定义" : "Custom")}</Badge>
+                          {zone.schedule_enabled && <Badge variant="outline" className="text-[10px]"><Clock className="h-2.5 w-2.5 mr-0.5" />{isZh ? "有生效时段" : "Scheduled"}</Badge>}
+                        </div>
+                        <div className="flex gap-4 mt-2 flex-wrap">
+                          <label className="flex items-center gap-2 text-xs">
+                            <Switch checked={!!zone.notify_on_enter} onCheckedChange={(v) => updateZone.mutate({ id: zone.id, notify_on_enter: v })} />
+                            {isZh ? "进入时提醒" : "Alert on enter"}
+                          </label>
+                          <label className="flex items-center gap-2 text-xs">
+                            <Switch checked={!!zone.notify_on_exit} onCheckedChange={(v) => updateZone.mutate({ id: zone.id, notify_on_exit: v })} />
+                            {isZh ? "离开时提醒" : "Alert on exit"}
+                          </label>
                         </div>
                       </div>
                       <div className="flex gap-1 shrink-0">

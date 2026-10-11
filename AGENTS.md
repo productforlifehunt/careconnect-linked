@@ -7,3 +7,5 @@
 - The app runs on TanStack Start with file routes in `src/routes/` and a react-router-style shim in `src/lib/router-compat.tsx`; site-gated sub-apps (NotchSafety, ESM survey) keep their own path lists via `src/lib/path-routes.tsx`, because one codebase serves several brands chosen at runtime.
 - Pages that import browser-only libraries (Leaflet, FullCalendar) are loaded through `src/components/routing/BrowserOnlyPages.tsx`, because those libraries crash server rendering at import time.
 - The root route mounts site/auth providers only after the browser mounts, because brand and language come from the browser tab and must not mismatch the server render.
+- Care-app location views (/find, /cared-ones/:personId/location, care-group location tab) all render `src/components/care/LocationCard.tsx`, and live/emergency sharing permission is read from CCT 258 via `src/features/location/sharing-flags.ts`, so the three pages can never drift apart.
+- Live sharing and emergency answers are written by `LocationSharingAgent` on the shared person's own device while the app is open, because a web app cannot read someone's position remotely.

@@ -12,7 +12,8 @@ import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
-import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones, writeLocationSnapshot } from "@/features/location/source.wordpress";
+import { fetchLocationSharingFlags, setLocationSharingFlags } from "@/features/location/sharing-flags";
 import {
   ZONE_TYPE,
   ZONE_TYPE_CODES,
@@ -383,9 +384,11 @@ export async function fetchCaredOneLocationWordPress(caredOneId: string): Promis
     accuracy_meters: snapshot.accuracy_meters,
     battery_level: snapshot.battery_level,
     address_text: snapshot.address_text,
-    is_sharing_enabled: true,
-    sharing_enabled: true,
-    tracking_enabled: true,
+    platform: snapshot.platform,
+    phone_is_charging: snapshot.phone_is_charging,
+    is_emergency: snapshot.is_emergency === "Yes",
+    moving_type: snapshot.moving_type,
+    captured_at: snapshot.captured_at,
     updated_at: snapshot.captured_at,
     created_at: snapshot.captured_at,
   };
@@ -520,17 +523,22 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   if (!caredOneUserId) throw new Error("Invalid cared one user");
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
-  // Name comes ONLY from CCT 151; no WordPress account name fallback.
-  const askerName = (await fetchMyAppUserName().catch(() => "")) || (zh() ? "你的护理者" : "Your caregiver");
   const cn = zh();
+  if (input.isEmergency) {
+    const flags = await fetchLocationSharingFlags(caredOneUserId);
+    if (!flags.emergencyAllowed) throw new Error(cn ? "对方还没有开启紧急请求许可" : "Emergency requests are not allowed for this person yet");
+  }
+  // Name comes ONLY from CCT 151; no WordPress account name fallback.
+  const askerName = (await fetchMyAppUserName().catch(() => "")) || (cn ? "你的护理者" : "Your caregiver");
   const sent = await runNotificationSkill("send-notification", {
     userIds: [caredOneUserId],
     type: input.isEmergency ? "emergency_location_request" : "location_request",
-    title: input.isEmergency ? (cn ? "🚨 紧急位置请求" : "🚨 Urgent location request") : (cn ? "📍 位置请求" : "📍 Location request"),
-    message: (cn
-      ? `${askerName}${input.isEmergency ? "紧急" : ""}请求查看你现在的位置，点开即可分享。`
-      : `${askerName} ${input.isEmergency ? "urgently " : ""}asks to see where you are. Open to share.`) + (input.message ? ` “${input.message}”` : ""),
-    actionUrl: `/find?request_from=${storedUser.user_id}`,
+    title: input.isEmergency ? (cn ? "🚨 紧急位置请求" : "🚨 Emergency location request") : (cn ? "📍 位置请求" : "📍 Location request"),
+    message: (input.isEmergency
+      ? (cn ? `${askerName}发出了紧急位置请求，你的位置已自动发送。` : `${askerName} sent an emergency location request; your location is sent automatically.`)
+      : (cn ? `${askerName}请求查看你的位置，点开选择是否允许。` : `${askerName} asks to see your location. Open to allow or decline.`))
+      + (input.message ? ` “${input.message}”` : ""),
+    actionUrl: `/find?request_from=${storedUser.user_id}${input.isEmergency ? "&emergency=1" : ""}`,
   });
   if (!sent) throw new Error(cn ? "请求没有送达对方" : "The request was not delivered");
   const log = readReqLog(input.caredOneId);
@@ -544,9 +552,26 @@ export async function cancelLocationRequestWordPress(requestId: string, caredOne
   writeReqLog(caredOneId, readReqLog(caredOneId).filter((r) => r.id !== requestId));
 }
 
+async function notifyRequester(requesterId: number, accept: boolean, emergency = false) {
+  const me = getStoredWPUser();
+  const cn = zh();
+  const name = (await fetchMyAppUserName().catch(() => "")) || (cn ? "被护理者" : "Your cared one");
+  await runNotificationSkill("send-notification", {
+    userIds: [requesterId],
+    type: "location",
+    title: accept ? (cn ? "📍 已收到位置" : "📍 Location received") : (cn ? "位置请求被拒绝" : "Location request declined"),
+    message: accept
+      ? (emergency
+        ? (cn ? `紧急请求：已收到${name}现在的位置。` : `Emergency request: ${name}'s current location arrived.`)
+        : (cn ? `${name}已允许并开启位置分享。` : `${name} allowed it and turned on location sharing.`))
+      : (cn ? `${name}暂不分享位置。` : `${name} is not sharing their location right now.`),
+    actionUrl: `/cared-ones/${me?.user_id}/location`,
+  });
+}
+
 /**
- * The cared one answers a request. Accept = write a fresh snapshot of their own
- * position (CCT 213 / REL 247, user type "cared one") and tell the asker.
+ * Ordinary request answered by the cared one. Allow = CCT 258 a56 → b55
+ * (sharing on), plus one snapshot right away; the sharing agent keeps it going.
  */
 export async function respondToLocationRequestWordPress(input: {
   requesterId: string;
@@ -557,23 +582,62 @@ export async function respondToLocationRequestWordPress(input: {
   if (!me?.user_id) throw new Error("Not authenticated");
   const requester = normalizeWpUserId(input.requesterId);
   if (!requester) throw new Error("Invalid requester");
-  const cn = zh();
   if (input.accept) {
-    if (!input.position) throw new Error(cn ? "没有拿到你的位置" : "No position");
-    await writeLocationAndCheckZones(input.position.latitude, input.position.longitude, {
-      accuracy: input.position.accuracy ?? null,
-      is_cared_one: true,
-    });
+    if (!input.position) throw new Error(zh() ? "没有拿到你的位置" : "No position");
+    await setLocationSharingFlags(me.user_id, { shareOn: true });
+    await writeCaredOneSnapshot(input.position, false);
   }
-  const name = (await fetchMyAppUserName().catch(() => "")) || (cn ? "被护理者" : "Your cared one");
+  await notifyRequester(requester, input.accept);
+}
+
+/** One snapshot of the signed-in person. a68 b55 marks an emergency-only reading. */
+export async function writeCaredOneSnapshot(
+  position: { latitude: number; longitude: number; accuracy?: number | null | undefined },
+  emergencyWithoutPermission: boolean,
+): Promise<void> {
+  const me = getStoredWPUser();
+  if (!me?.user_id) throw new Error("Not authenticated");
+  await writeLocationSnapshot(position.latitude, position.longitude, {
+    accuracy: position.accuracy ?? null,
+    is_emergency: emergencyWithoutPermission,
+    is_cared_one: true,
+  });
+  await createSafeZoneAlertsForLocation(String(me.user_id), position.latitude, position.longitude).catch(() => {});
+}
+
+/**
+ * Emergency request arriving on the cared one's device. Only allowed when the
+ * cared one's CCT 258 a55 is b55. No confirmation: the position is sent at once.
+ * If ordinary sharing (a56) is off, the snapshot is flagged a68 b55.
+ */
+export async function answerEmergencyRequestWordPress(input: {
+  requesterId: string;
+  position: { latitude: number; longitude: number; accuracy?: number | null | undefined };
+}): Promise<void> {
+  const me = getStoredWPUser();
+  if (!me?.user_id) throw new Error("Not authenticated");
+  const flags = await fetchLocationSharingFlags(me.user_id);
+  if (!flags.emergencyAllowed) throw new Error("Emergency requests are not allowed");
+  await writeCaredOneSnapshot(input.position, !flags.shareOn);
+  const requester = normalizeWpUserId(input.requesterId);
+  if (requester) await notifyRequester(requester, true, true);
+}
+
+/** Caregiver switches on "emergency request permission" (a55 → b55) and tells the cared one. */
+export async function enableEmergencyLocationPermissionWordPress(caredOneId: string): Promise<void> {
+  const target = normalizeWpUserId(caredOneId);
+  if (!target) throw new Error("Invalid cared one user");
+  await setLocationSharingFlags(target, { emergencyAllowed: true });
+  const cn = zh();
+  const askerName = (await fetchMyAppUserName().catch(() => "")) || (cn ? "你的护理者" : "Your caregiver");
   await runNotificationSkill("send-notification", {
-    userIds: [requester],
+    userIds: [target],
     type: "location",
-    title: input.accept ? (cn ? "📍 已分享位置" : "📍 Location shared") : (cn ? "位置请求被拒绝" : "Location request declined"),
-    message: input.accept
-      ? (cn ? `${name}已分享现在的位置。` : `${name} shared their current location.`)
-      : (cn ? `${name}暂时不分享位置。` : `${name} is not sharing their location right now.`),
-    actionUrl: input.accept ? `/cared-ones/${me.user_id}/location` : `/cared-ones/${me.user_id}/location`,
+    title: cn ? "已开启紧急定位许可" : "Emergency location permission is on",
+    message: cn
+      ? `${askerName}为你开启了紧急定位许可：遇到紧急情况时，护理者可以不经确认查看你的位置。`
+      : `${askerName} turned on emergency location permission: in an emergency your caregiver can see your location without asking first.`,
+    actionUrl: `/find`,
   });
 }
 
