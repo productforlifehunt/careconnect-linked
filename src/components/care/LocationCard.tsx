@@ -183,7 +183,7 @@ function isZoneActive(zone: any): boolean {
 function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boolean; distance: number } {
   if (!isZoneActive(zone)) return { breached: false, distance: 0 };
   let inside = false, distance = 0;
-  if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
+  if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
     const pts: [number, number][] = zone.polygon_points;
     const smoothed = zone.corner_radius?.some((r: number) => r > 0)
       ? chaikinPerVertex(pts, zone.corner_radius) : pts;
@@ -319,7 +319,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
       if (isNaN(zLat) || isNaN(zLng)) return;
       const color = zoneFill(zone.zone_type, zone.color);
       const isDanger = isDangerZone(zone.zone_type);
-      if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
+      if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
         const pts: [number, number][] = zone.polygon_points;
         const smoothed = zone.corner_radius?.some((r: number) => r > 0)
           ? chaikinPerVertex(pts, zone.corner_radius) : pts;
@@ -605,7 +605,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         schedule_end_time: zone.schedule_end_time || "20:00",
         schedule_days: zone.schedule_days || [],
       });
-      if (zone.shape_type === "polygon" && zone.polygon_points?.length >= 3) {
+      if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
         setDrawnPoints(zone.polygon_points);
         setCornerRadii(zone.corner_radius || Array(zone.polygon_points.length).fill(0));
         setDrawMode("editing");
@@ -851,10 +851,6 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${locationSettings.is_sharing_enabled ? "bg-success" : "bg-muted-foreground"}`} />
                     <span className="text-sm">{locationSettings.is_sharing_enabled ? (isZh ? "5 分钟内有更新" : "Updated in the last 5 minutes") : (isZh ? "超过 5 分钟没有更新" : "No update in the last 5 minutes")}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm">{locationSettings.require_approval ? "Approval required" : "No approval needed"}</span>
                   </div>
                 </div>
               </CardContent>
