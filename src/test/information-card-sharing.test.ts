@@ -12,7 +12,7 @@ describe("fixed card-ID sharing", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.user.mockReturnValue(null);
-    mocks.cct.mockResolvedValue({ _ID: 42, [f.STATUS]: "b56", [f.DISPLAYS_LOCATION]: "b56", [f.SHARE_VISIBILITY]: "b55", [f.SHARE_TOKEN]: "obsolete", [f.SHARE_EXPIRES_AT]: "2000-01-01" });
+    mocks.cct.mockResolvedValue({ _ID: 42, [f.STATUS]: "b56", [f.DISPLAYS_LOCATION]: "b56", [f.SHARE_VISIBILITY]: "b55", [f.PUBLIC_SHARE_STARTS_AT]: "legacy-token-text" });
   });
   it("opens public card by its existing ID without token or expiry state", async () => {
     expect((await fetchSharedInformationCardWordPress("42"))?.id).toBe("42");
@@ -84,5 +84,26 @@ describe("all four information-card visibility scopes", () => {
     await deleteInformationCardWordPress("42");
     expect(mocks.fetch).not.toHaveBeenCalled();
     expect(mocks.cct).toHaveBeenCalledWith(T.infoCard.slug, expect.objectContaining({ method: "DELETE" }));
+  });
+});
+
+import { effectiveVisibility } from "@/features/cared-ones/source.information-cards";
+describe("public share window (a60/a61/a621/a622)", () => {
+  const now = new Date("2026-10-12T10:00").getTime();
+  const base = { id: "1", share_visibility: "Visible to public" };
+  it("non-expiring public stays public", () => {
+    expect(effectiveVisibility({ ...base, public_share_expires: "No", public_share_expires_at: "2026-10-01T00:00" }, now)).toBe("Visible to public");
+  });
+  it("expired public falls back to a621", () => {
+    expect(effectiveVisibility({ ...base, public_share_expires: "Yes", public_share_expires_at: "2026-10-12T09:00", share_visibility_after_expiry: "Visible to caregivers of the cared one" }, now)).toBe("Visible to caregivers of the cared one");
+  });
+  it("expired public defaults to b58 when a621 empty", () => {
+    expect(effectiveVisibility({ ...base, public_share_expires: "Yes", public_share_expires_at: "2026-10-12T09:00" }, now)).toBe("Visible to the care group of the cared one and the caregivers of the cared one");
+  });
+  it("not-yet-started public is not public", () => {
+    expect(effectiveVisibility({ ...base, public_share_starts_at: "2026-10-13T00:00" }, now)).not.toBe("Visible to public");
+  });
+  it("window ignored for non-public", () => {
+    expect(effectiveVisibility({ id: "1", share_visibility: "Visible to caregivers of the cared one", public_share_expires: "Yes", public_share_expires_at: "2000-01-01T00:00" }, now)).toBe("Visible to caregivers of the cared one");
   });
 });
