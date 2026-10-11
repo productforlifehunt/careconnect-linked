@@ -135,3 +135,8 @@
 - [x] Open each homepage task in that person's Care Tasks card, and remove misleading arrow decoration.
 - [x] Make every dashboard cared-one summary open that specific person's card page and show that person's correct pending-task count.
 - [x] Verify the corrected dashboard in the running app with both approved test accounts: unrelated AUDIT/E2E tasks are absent, empty state is correct, and the misleading arrows are gone. A live row-click could not be exercised because neither account currently has a related pending task.
+
+# Fixed information-card links
+- [x] Use the card item ID for sharing; remove token generation, expiry and revoke controls.
+- [x] Read current card visibility and show bilingual family-contact guidance on denied access.
+- [x] Verify anonymous public-card access and zero writes while opening/copying sharing; 4/4 automated tests cover current visibility and denial. Live visibility-change verification remains unperformed to avoid changing real records; existing WordPress direct-API authorization risk remains unresolved.

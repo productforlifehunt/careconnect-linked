@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "@/lib/router-compat";
-import { useInformationCardByToken } from "@/hooks/use-care-data";
+import { useSharedInformationCard } from "@/hooks/use-care-data";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInformationCardContactIdsWordPress, fetchInformationCardCaredOneIdWordPress } from "@/features/cared-ones/source.information-cards";
 import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wordpress-extended";
@@ -8,6 +8,7 @@ import { IdCard, Phone, Loader2, ShieldOff, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
 import { useSite } from "@/contexts/SiteContext";
+import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/BrandMark";
 
 export default function SharedInformationCard() {
@@ -17,7 +18,7 @@ export default function SharedInformationCard() {
   const Z = (cn: string, en: string) => (isCN ? cn : en);
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { data: card, isLoading, isError, error } = useInformationCardByToken(token || null);
+  const { data: card, isLoading, isError, error } = useSharedInformationCard(token || null);
   const denied = (error as any)?.reason as "login" | "forbidden" | undefined;
 
   // REL 220: the cared one this sheet belongs to.
@@ -61,14 +62,14 @@ export default function SharedInformationCard() {
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="text-center max-w-sm">
           <ShieldOff className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h1 className="text-lg font-semibold mb-1">{Z("信息卡不可用", "Information card unavailable")}</h1>
+          <h1 className="text-lg font-semibold mb-1">{Z("暂时无法查看这张信息卡", "This information card is unavailable")}</h1>
           <p className="text-sm text-muted-foreground">{denied === "login"
-            ? Z("这张信息卡只给护理群组成员或护理者看，请先登录。", "This card is only for the care group or caregivers. Please sign in first.")
+            ? Z("这张信息卡目前不对访客开放。如果您是获准查看的亲友或护理者，请先登录；如需帮助，请联系被护理者的家人。", "This card is not open to visitors. Sign in if you have access, or contact the cared one’s family for help.")
             : denied === "forbidden"
-              ? Z("你的账号不在这张信息卡允许查看的范围内。", "Your account is not allowed to view this card.")
-              : Z("此分享链接无效或已过期。", "This share link is invalid or has expired.")}</p>
+              ? Z("这张信息卡目前不对您开放。如需查看，请联系被护理者的家人确认访问权限。", "This card is not currently available to you. Please contact the cared one’s family to request access.")
+              : Z("未找到这张信息卡，或暂时无法加载。如需帮助，请联系被护理者的家人。", "This card could not be found or loaded. Please contact the cared one’s family for help.")}</p>
           {denied === "login" && (
-            <button type="button" onClick={() => navigate("/auth", { state: { from: `/share/card/${token}` } })} className="inline-block mt-4 text-sm font-medium text-primary underline">{Z("登录", "Sign in")}</button>
+            <Button variant="link" onClick={() => navigate("/auth", { state: { from: `/share/card/${token}` } })} className="inline-block mt-4 text-sm font-medium text-primary underline">{Z("登录", "Sign in")}</Button>
           )}
         </div>
       </div>
