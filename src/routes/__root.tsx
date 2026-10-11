@@ -55,7 +55,7 @@ const FAVICON_BOOTSTRAP = `(function () {
     ["icon", "apple-touch-icon"].forEach(function (rel) {
       var link = document.createElement("link");
       link.rel = rel;
-      link.href = href;
+      link.href = href + "?v=flat-20261011";
       document.head.appendChild(link);
     });
   } catch (e) {}
