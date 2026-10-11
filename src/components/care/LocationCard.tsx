@@ -831,7 +831,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <p key={z.id} className="text-xs text-destructive/80">
               {isDangerZone(z.zone_type)
                 ? (isZh ? `⚠ ${caredOneName} 位于危险区域「${zoneLabel(z.zone_type, z.zone_name)}」内` : `⚠ ${caredOneName} is inside danger zone "${zoneLabel(z.zone_type, z.zone_name)}"`)
-                : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type, z.zone_name)}"`)}
+                : checkZoneBreach(z, parseFloat(currentLocation.latitude), parseFloat(currentLocation.longitude)).inside
+                  ? (isZh ? `⚠ ${caredOneName} 已进入区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} entered zone "${zoneLabel(z.zone_type, z.zone_name)}"`)
+                  : (isZh ? `⚠ ${caredOneName} 已离开区域「${zoneLabel(z.zone_type, z.zone_name)}」` : `⚠ ${caredOneName} is outside zone "${zoneLabel(z.zone_type, z.zone_name)}"`)}
 
             </p>
           ))}
