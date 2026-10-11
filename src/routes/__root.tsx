@@ -21,6 +21,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { useApplyDisplaySettings } from "@/features/settings/display";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LocationSharingAgent } from "@/components/location/LocationSharingAgent";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -160,6 +161,7 @@ function RootComponent() {
             <AuthProvider>
               <SiteProvider>
                 <Sonner />
+                <LocationSharingAgent />
                 <AIAssistantProvider>
                   <SiteRouter />
                 </AIAssistantProvider>
