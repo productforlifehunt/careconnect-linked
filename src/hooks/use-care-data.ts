@@ -43,6 +43,7 @@ import {
   fetchCaredOneLocationWordPress, fetchCaredOneLocationHistoryWordPress,
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
   fetchLocationRequestsWordPress, sendLocationRequestWordPress, cancelLocationRequestWordPress,
+  respondToLocationRequestWordPress,
   fetchCaredOneLocationSettingsWordPress,
 } from "@/features/location/source.wordpress-extended";
 import {
@@ -1644,6 +1645,8 @@ export function useCaredOneLocation(caredOneId: string | null) {
     queryKey: ["caredOneLocation", caredOneId],
     queryFn: () => fetchCaredOneLocationWordPress(caredOneId!),
     enabled: !!caredOneId,
+    // A requested location arrives whenever the cared one answers — keep looking.
+    refetchInterval: 30_000,
   });
 }
 
@@ -1709,6 +1712,7 @@ export function useLocationRequests(caredOneId: string | null) {
     queryKey: ["locationRequests", caredOneId],
     queryFn: () => fetchLocationRequestsWordPress(caredOneId!),
     enabled: !!caredOneId,
+    refetchInterval: 30_000,
   });
 }
 
@@ -1726,8 +1730,16 @@ export function useSendLocationRequest() {
 export function useCancelLocationRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (requestId: string) => cancelLocationRequestWordPress(requestId),
+    mutationFn: (input: { requestId: string; caredOneId: string }) => cancelLocationRequestWordPress(input.requestId, input.caredOneId),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["locationRequests"] }); },
+  });
+}
+
+export function useRespondToLocationRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: respondToLocationRequestWordPress,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); },
   });
 }
 
