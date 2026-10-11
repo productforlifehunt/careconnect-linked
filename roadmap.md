@@ -1,5 +1,10 @@
 ## Screening question provenance labels
 
+## Current request: auth boundary and shared information-card internals
+- [ ] Explain the difference between page login protection and the confirmed anonymous data-read vulnerability.
+- [ ] Replace information-card standalone maps with the shared LocationCard in read-only mode, bound only to the card's associated person.
+- [ ] Verify shared map rendering and identify exactly which AI internals are shared with floating chat; preserve information-card AI knowledge.
+
 ## Current request: re-recording guide and flat app logos
 - [x] Deliver all 22 interview questions with natural follow-ups about changes, new experiences, and corrections since the first interview.
 - [x] Standardize app logos in both languages to one Apple-style square silhouette without gradients, retaining each brand's identity.
