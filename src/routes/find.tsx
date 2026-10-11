@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { GPSTracking } from "@/components/routing/BrowserOnlyPages";
+import FindCaredOnes from "@/pages/FindCaredOnes";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
 function RouteFindPage() {
-  return <RequireAuth><GPSTracking /></RequireAuth>;
+  return <RequireAuth><FindCaredOnes /></RequireAuth>;
 }
 
 export const Route = createFileRoute("/find")({
