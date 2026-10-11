@@ -77,7 +77,8 @@ export default function CaredOnes() {
   const activeTab = personId || searchParams.get("person") || null;
   const openCard = cardParam || searchParams.get("card") || null;
   const setActiveTab = (id: string | null) =>
-    navigate(id ? `/cared-ones/${String(id).replace(/^wp-/, "")}` : "/cared-ones");
+    // Switching person keeps the open card (e.g. stays on Location).
+    navigate(id ? `/cared-ones/${String(id).replace(/^wp-/, "")}${openCard ? `/${openCard}` : ""}` : "/cared-ones");
   const setOpenCard = (key: string | null) => {
     const person = String(activeTab || selectedId || "").replace(/^wp-/, "");
     if (!person) return navigate("/cared-ones");

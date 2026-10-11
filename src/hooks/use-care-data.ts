@@ -43,7 +43,7 @@ import {
   fetchCaredOneLocationWordPress, fetchCaredOneLocationHistoryWordPress,
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
   fetchLocationRequestsWordPress, sendLocationRequestWordPress, cancelLocationRequestWordPress,
-  respondToLocationRequestWordPress,
+  respondToLocationRequestWordPress, enableEmergencyLocationPermissionWordPress,
   fetchCaredOneLocationSettingsWordPress,
 } from "@/features/location/source.wordpress-extended";
 import {
@@ -1735,11 +1735,37 @@ export function useCancelLocationRequest() {
   });
 }
 
+export function useLocationSharingFlags(userId: string | null) {
+  return useQuery({
+    queryKey: ["locationSharingFlags", userId],
+    queryFn: async () => (await import("@/features/location/sharing-flags")).fetchLocationSharingFlags(userId!),
+    enabled: !!userId,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useSetLocationSharingFlags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { userId: string; shareOn?: boolean | undefined; emergencyAllowed?: boolean | undefined }) =>
+      (await import("@/features/location/sharing-flags")).setLocationSharingFlags(input.userId, { shareOn: input.shareOn, emergencyAllowed: input.emergencyAllowed }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["locationSharingFlags"] }); },
+  });
+}
+
+export function useEnableEmergencyLocationPermission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (caredOneId: string) => enableEmergencyLocationPermissionWordPress(caredOneId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["locationSharingFlags"] }); },
+  });
+}
+
 export function useRespondToLocationRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: respondToLocationRequestWordPress,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); qc.invalidateQueries({ queryKey: ["locationSharingFlags"] }); },
   });
 }
 
