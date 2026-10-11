@@ -8,6 +8,7 @@ import { useVisitLog, useCreateVisitLog, useDeleteVisitLog } from "@/hooks/use-c
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 /**
@@ -87,13 +88,12 @@ export function VisitLogCard({ caredOneId }: { caredOneId: string }) {
           {(logs || []).map((l: any) => (
             <Card key={l.id} className="border-transparent card-elevated">
               <CardContent className="p-4">
-                <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(l.id))}>
+                <div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(l.id))}>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs text-muted-foreground">{when(l.visited_at)}</span>
                     {l.description && <span className="block text-sm text-foreground mt-1 line-clamp-2">{l.description}</span>}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                </button>
+                </button><RowActions onDelete={() => del.mutateAsync(l.id)} /></div>
               </CardContent>
             </Card>
           ))}

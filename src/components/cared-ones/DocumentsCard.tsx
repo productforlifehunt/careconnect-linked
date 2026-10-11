@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { X, Check, Plus, FileText, Loader2, ChevronRight, Paperclip } from "lucide-react";
+import { X, Check, Plus, FileText, Loader2, ChevronRight, Paperclip, Upload } from "lucide-react";
 import { useCaredOneDocuments, useCreateCaredOneDocument, useUpdateCaredOneDocument, useDeleteCaredOneDocument } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 /**
@@ -64,7 +65,10 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-foreground">{Z("文件资料", "Documents")}</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加", "Add")}</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}><Upload className="h-4 w-4 mr-1" /> {Z("上传", "Upload")}</Button>
+          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加", "Add")}</Button>
+        </div>
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -123,7 +127,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(d.id))}>
+                  <><div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(d.id))}>
                     <span className="min-w-0">
                       <span className="block font-medium text-foreground text-sm">{d.title || Z("文件", "Document")}</span>
                       <span className="block text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
@@ -134,8 +138,8 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                         </span>
                       )}
                     </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  </button>
+                  </button><RowActions onEdit={() => startEdit(d)} onDelete={() => del.mutateAsync(d.id)} /></div>
+                  {Array.isArray(d.attachment_ids) && d.attachment_ids.length > 0 && <MediaAttachmentList ids={d.attachment_ids} />}</>
                 )}
               </CardContent>
             </Card>
