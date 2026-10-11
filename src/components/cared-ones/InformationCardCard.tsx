@@ -1,3 +1,4 @@
+import { toDatetimeLocal, parseCardDate } from "@/features/cared-ones/source.information-cards";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formVisibility, setFormVisibility] = useState<string>("Visible to caregivers of the cared one");
+  const [shareStart, setShareStart] = useState<string>(toDatetimeLocal());
+  const [shareExpires, setShareExpires] = useState<"Yes" | "No">("No");
+  const [shareEnd, setShareEnd] = useState<string>("");
+  const [afterExpiry, setAfterExpiry] = useState<string>("Visible to the care group of the cared one and the caregivers of the cared one");
   const [formContacts, setFormContacts] = useState<Set<string>>(new Set());
   const [formContactsReady, setFormContactsReady] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -98,6 +103,7 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
     setEditId(null);
     setForm({ ...EMPTY_FORM, cared_ones_name: caredOneName || "" });
     setFormVisibility("Visible to caregivers of the cared one");
+    setShareStart(toDatetimeLocal()); setShareExpires("No"); setShareEnd(""); setAfterExpiry("Visible to the care group of the cared one and the caregivers of the cared one");
     // New sheet: all emergency contacts ticked by default.
     setFormContacts(new Set((emergencyContacts || []).map((c: any) => String(c.id))));
     setFormContactsReady(true);
@@ -116,6 +122,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       displays_location: (card.displays_location as DisplaysLocation) || "No",
     });
     setFormVisibility(card.share_visibility || "Visible to caregivers of the cared one");
+    setShareStart(card.public_share_starts_at || toDatetimeLocal());
+    setShareExpires(card.public_share_expires === "Yes" ? "Yes" : "No");
+    setShareEnd(card.public_share_expires_at || "");
+    setAfterExpiry(card.share_visibility_after_expiry || "Visible to the care group of the cared one and the caregivers of the cared one");
     setFormContacts(new Set());
     setFormContactsReady(false);
     setFormOpen(true);
@@ -126,13 +136,30 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
       toast({ title: Z("请先写这份须知的用途", "Please say what this sheet is for"), variant: "destructive" });
       return;
     }
+    const isPublic = formVisibility === "Visible to public";
+    const expiring = isPublic && shareExpires === "Yes";
+    if (expiring && !parseCardDate(shareEnd)) {
+      toast({ title: Z("请填写公开分享的结束时间", "Please choose when public sharing ends"), variant: "destructive" });
+      return;
+    }
+    if (expiring && (parseCardDate(shareEnd) ?? 0) <= (parseCardDate(shareStart) ?? 0)) {
+      toast({ title: Z("结束时间要晚于开始时间", "The end time must be after the start time"), variant: "destructive" });
+      return;
+    }
+    const sharing = {
+      share_visibility: formVisibility as any,
+      public_share_starts_at: isPublic ? (shareStart || toDatetimeLocal()) : "",
+      public_share_expires: (expiring ? "Yes" : "No") as "Yes" | "No",
+      public_share_expires_at: expiring ? shareEnd : "",
+      share_visibility_after_expiry: expiring ? afterExpiry : "",
+    };
     setSaving(true);
     try {
       let cardId = editId;
       if (editId) {
-        await update.mutateAsync({ id: editId, ...form, share_visibility: formVisibility });
+        await update.mutateAsync({ id: editId, ...form, ...sharing });
       } else {
-        const created = await create.mutateAsync({ caredOneUserId: caredOneId, ...form, share_visibility: formVisibility as any });
+        const created = await create.mutateAsync({ caredOneUserId: caredOneId, ...form, ...sharing });
         cardId = String(created.id);
       }
       if (cardId) await setCardContacts.mutateAsync({ cardId, contactIds: [...formContacts] });
@@ -304,7 +331,47 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
                   <SelectItem value="Visible to the care group of the cared one and the caregivers of the cared one">{Z("此被照护者的护理群组成员和护理者（app 内，需登录）", "This cared one's care group members and caregivers (in this app, sign-in needed)")}</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">{Z("您自己永远可以看到这张卡。", "You can always see this card yourself.")}</p>
             </div>
+
+            {formVisibility === "Visible to public" && (
+              <div className="space-y-3 rounded-md border p-3">
+                <div>
+                  <Label htmlFor="share-start">{Z("公开开始时间", "Public sharing starts")}</Label>
+                  <Input id="share-start" type="datetime-local" className="mt-1" value={shareStart} onChange={(e) => setShareStart(e.target.value)} />
+                </div>
+                <div>
+                  <Label>{Z("到时间自动停止公开吗？", "Stop public sharing automatically?")}</Label>
+                  <Select value={shareExpires} onValueChange={(v) => setShareExpires(v as "Yes" | "No")}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="No">{Z("不，一直公开", "No, keep it public")}</SelectItem>
+                      <SelectItem value="Yes">{Z("是，到时间自动停止", "Yes, stop at a set time")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {shareExpires === "Yes" && (
+                  <>
+                    <p className="text-xs text-muted-foreground">{Z("建议在事情办完的时候停止公开。停止后，即使别人手里有链接也看不到了，可以保护被护理者的个人信息。", "We suggest stopping when the task is done. After that, people with the link can no longer see it, which protects the cared one's personal information.")}</p>
+                    <div>
+                      <Label htmlFor="share-end">{Z("公开结束时间", "Public sharing ends")}</Label>
+                      <Input id="share-end" type="datetime-local" className="mt-1" value={shareEnd} min={shareStart} onChange={(e) => setShareEnd(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>{Z("结束后谁还能看", "Who can view after it ends")}</Label>
+                      <Select value={afterExpiry} onValueChange={setAfterExpiry}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Visible to the care group of the cared one">{Z("仅护理群组成员", "Only care group members")}</SelectItem>
+                          <SelectItem value="Visible to caregivers of the cared one">{Z("仅护理者", "Only caregivers")}</SelectItem>
+                          <SelectItem value="Visible to the care group of the cared one and the caregivers of the cared one">{Z("护理群组成员和护理者", "Care group members and caregivers")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <div>
               <Label>{Z("显示哪些紧急联系人", "Emergency contacts to show")}</Label>
