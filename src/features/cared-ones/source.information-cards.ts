@@ -9,8 +9,9 @@ const CCT_SLUG = T.infoCard.slug;
 
 // Opaque field map (live verified). a55 cared one's name, a56 cared one's
 // description, a57 card name, a58 status, a59 displays location,
-// a60 share token, a61 share expires at, a62 share visibility,
-// a63 this sheet's own situation details.
+// a60 public share starts at, a61 public share expires at, a62 share
+// visibility, a621 visibility after public expires, a622 public share
+// expires (Yes/No), a63 this sheet's own situation details.
 const F = T.infoCard.f;
 
 
@@ -31,6 +32,58 @@ const VIS_FROM_CODE: Record<string, string> = {
   b58: "Visible to the care group of the cared one and the caregivers of the cared one",
 };
 
+const AFTER_EXPIRY_DEFAULT = "Visible to the care group of the cared one and the caregivers of the cared one";
+
+/** Parse a JetEngine datetime-local value; legacy non-date text counts as empty. */
+export function parseCardDate(v: unknown): number | null {
+  const s = String(v ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) return null;
+  const t = new Date(s.replace(" ", "T")).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/** Datetime-local string ("YYYY-MM-DDTHH:mm") for a local time. */
+export function toDatetimeLocal(ms: number = Date.now()): string {
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/**
+ * Start/expiry only apply to public cards. Before the start, or once an
+ * expiring public share has passed its end time, the card falls back to a621
+ * (default: care group + caregivers). The author can always see the card.
+ */
+export function effectiveVisibility(card: InformationCard, now: number = Date.now()): string {
+  const v = String(card.share_visibility || "");
+  if (v !== "Visible to public") return v;
+  const fallback = card.share_visibility_after_expiry || AFTER_EXPIRY_DEFAULT;
+  const start = parseCardDate(card.public_share_starts_at);
+  if (start !== null && now < start) return fallback;
+  if (card.public_share_expires === "Yes") {
+    const end = parseCardDate(card.public_share_expires_at);
+    if (end !== null && now >= end) return fallback;
+  }
+  return v;
+}
+
+/** True when the stored a62 is public but the public window has ended. */
+export function publicShareHasExpired(card: InformationCard, now: number = Date.now()): boolean {
+  if (card.share_visibility !== "Visible to public" || card.public_share_expires !== "Yes") return false;
+  const end = parseCardDate(card.public_share_expires_at);
+  return end !== null && now >= end;
+}
+
+/** Persist the automatic switch a62 := a621 once a public share expires. */
+async function applyExpiry(card: InformationCard): Promise<InformationCard> {
+  if (!publicShareHasExpired(card)) return card;
+  const next = card.share_visibility_after_expiry || AFTER_EXPIRY_DEFAULT;
+  if (getStoredWPUser()?.user_id) {
+    try { await updateInformationCardWordPress(card.id, { share_visibility: next }); } catch { /* viewer may lack write rights; read-time check still protects */ }
+  }
+  return { ...card, share_visibility: next };
+}
+
 function decodeCard(raw: any): InformationCard {
   const status = STATUS_FROM_CODE[String(raw[F.STATUS])];
   const displaysLocation = YESNO_FROM_CODE[String(raw[F.DISPLAYS_LOCATION])];
@@ -45,9 +98,11 @@ function decodeCard(raw: any): InformationCard {
 
     status,
     displays_location: displaysLocation,
-    share_token: raw[F.SHARE_TOKEN] || "",
-    share_expires_at: raw[F.SHARE_EXPIRES_AT] || "",
+    public_share_starts_at: parseCardDate(raw[F.PUBLIC_SHARE_STARTS_AT]) !== null ? String(raw[F.PUBLIC_SHARE_STARTS_AT]) : "",
+    public_share_expires_at: parseCardDate(raw[F.PUBLIC_SHARE_EXPIRES_AT]) !== null ? String(raw[F.PUBLIC_SHARE_EXPIRES_AT]) : "",
+    public_share_expires: YESNO_FROM_CODE[String(raw[F.PUBLIC_SHARE_EXPIRES])] || "No",
     share_visibility: visibility,
+    share_visibility_after_expiry: VIS_FROM_CODE[String(raw[F.SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES])] || "",
     cct_author_id: raw.cct_author_id,
     cct_created: raw.cct_created,
   };
@@ -69,8 +124,21 @@ function encodeCardUpdates(u: Partial<InformationCard>): Record<string, string> 
     if (!code) throw new Error(`Invalid displays-location value: ${u.displays_location}`);
     b[F.DISPLAYS_LOCATION] = code;
   }
-  if (u.share_token !== undefined) b[F.SHARE_TOKEN] = u.share_token || "";
-  if (u.share_expires_at !== undefined) b[F.SHARE_EXPIRES_AT] = u.share_expires_at || "";
+  if (u.public_share_starts_at !== undefined) b[F.PUBLIC_SHARE_STARTS_AT] = u.public_share_starts_at || "";
+  if (u.public_share_expires_at !== undefined) b[F.PUBLIC_SHARE_EXPIRES_AT] = u.public_share_expires_at || "";
+  if (u.public_share_expires !== undefined) {
+    const code = YESNO_TO_CODE[String(u.public_share_expires)];
+    if (!code) throw new Error(`Invalid public-share-expires value: ${u.public_share_expires}`);
+    b[F.PUBLIC_SHARE_EXPIRES] = code;
+  }
+  if (u.share_visibility_after_expiry !== undefined) {
+    if (!u.share_visibility_after_expiry) b[F.SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES] = "";
+    else {
+      const code = VIS_TO_CODE[String(u.share_visibility_after_expiry)];
+      if (!code || code === "b55") throw new Error(`Invalid after-expiry visibility: ${u.share_visibility_after_expiry}`);
+      b[F.SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES] = code;
+    }
+  }
   if (u.share_visibility !== undefined) {
     const code = VIS_TO_CODE[String(u.share_visibility)];
     if (!code) throw new Error(`Invalid information-card visibility: ${u.share_visibility}`);
@@ -94,9 +162,15 @@ export interface InformationCard {
   cared_ones_information_card_description?: string | undefined;
   status?: "Draft" | "Active" | "Paused" | string | undefined;
   displays_location?: "Yes" | "No" | string | undefined;
-  share_token?: string | undefined;
-  share_expires_at?: string | undefined;
+  /** a60 — when the public share begins (datetime-local). */
+  public_share_starts_at?: string | undefined;
+  /** a61 — when the public share ends (only used when a622 = Yes). */
+  public_share_expires_at?: string | undefined;
+  /** a622 — whether the public share expires. */
+  public_share_expires?: "Yes" | "No" | string | undefined;
   share_visibility?: ShareVisibility | string | undefined;
+  /** a621 — visibility applied automatically once the public share expires. */
+  share_visibility_after_expiry?: ShareVisibility | string | undefined;
   cct_author_id?: string | number | undefined;
   cct_created?: string | undefined;
 }
@@ -113,7 +187,7 @@ export async function fetchInformationCardsWordPress(caredOneId: string): Promis
   const rows = await Promise.all(rels.map(async (rel: any) => {
     try {
       const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
-      return raw && typeof raw === "object" ? decodeCard(raw) : null;
+      return raw && typeof raw === "object" ? await applyExpiry(decodeCard(raw)) : null;
     } catch {
       // One stale relation must not hide every valid care info sheet.
       return null;
@@ -172,9 +246,11 @@ async function viewerSharesGroupWith(viewerId: number, caredOneId: number): Prom
 /** Fixed card-ID link. Always check the card's current visibility. */
 export async function fetchSharedInformationCardWordPress(cardId: string): Promise<InformationCard | null> {
   if (!/^\d+$/.test(cardId) || !normalizeWpId(cardId)) return null;
-  const card = await fetchInformationCardWordPress(cardId);
-  if (!card) return null;
-  if (card.share_visibility === "Visible to public") return card;
+  const stored = await fetchInformationCardWordPress(cardId);
+  if (!stored) return null;
+  const card = await applyExpiry(stored);
+  const v = effectiveVisibility(card);
+  if (v === "Visible to public") return card;
 
   const viewer = Number(getStoredWPUser()?.user_id || 0);
   if (!viewer) throw new ShareAccessError("login");
@@ -182,7 +258,6 @@ export async function fetchSharedInformationCardWordPress(cardId: string): Promi
   const caredOne = Number(await fetchInformationCardCaredOneIdWordPress(card.id) || 0);
   if (!caredOne) throw new ShareAccessError("forbidden");
 
-  const v = card.share_visibility;
   const groupOk = v === "Visible to the care group of the cared one" || v === "Visible to the care group of the cared one and the caregivers of the cared one";
   const caregiverOk = v === "Visible to caregivers of the cared one" || v === "Visible to the care group of the cared one and the caregivers of the cared one";
   if (caregiverOk && await viewerIsCaregiverOf(viewer, caredOne)) return card;
@@ -199,6 +274,10 @@ export async function createInformationCardWordPress(input: {
   status?: "Draft" | "Active" | "Paused" | undefined;
   displays_location?: "Yes" | "No" | undefined;
   share_visibility?: ShareVisibility | undefined;
+  public_share_starts_at?: string | undefined;
+  public_share_expires_at?: string | undefined;
+  public_share_expires?: "Yes" | "No" | undefined;
+  share_visibility_after_expiry?: ShareVisibility | string | undefined;
 }): Promise<InformationCard> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
@@ -213,6 +292,10 @@ export async function createInformationCardWordPress(input: {
     status: input.status || "Draft",
     displays_location: input.displays_location || "No",
     share_visibility: input.share_visibility || "Visible to caregivers of the cared one",
+    public_share_starts_at: input.public_share_starts_at || toDatetimeLocal(),
+    public_share_expires: input.public_share_expires || "No",
+    public_share_expires_at: input.public_share_expires === "Yes" ? input.public_share_expires_at || "" : "",
+    share_visibility_after_expiry: input.public_share_expires === "Yes" ? input.share_visibility_after_expiry || AFTER_EXPIRY_DEFAULT : "",
   });
   const created = await wordpressCCTFetch<any>(CCT_SLUG, { method: "POST", body });
 

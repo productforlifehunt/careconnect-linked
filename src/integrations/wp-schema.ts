@@ -791,15 +791,19 @@ export const WP = {
         "CARED_ONE_S_INFORMATION_CARD_NAME": "a57",  // Text
         "STATUS": "a58",  // Radio
         "DISPLAYS_LOCATION": "a59",  // Radio
-        "SHARE_TOKEN": "a60",  // Text
-        "SHARE_EXPIRES_AT": "a61",  // Datetime
+        "PUBLIC_SHARE_STARTS_AT": "a60",  // Datetime
+        "PUBLIC_SHARE_EXPIRES_AT": "a61",  // Datetime
         "SHARE_VISIBILITY": "a62",  // Radio
+        "SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES": "a621",  // Radio
+        "PUBLIC_SHARE_EXPIRES": "a622",  // Radio
         "CARED_ONE_S_INFORMATION_CARD_DESCRIPTION": "a63",  // Text
       },
       opt: {
         "STATUS": { "DRAFT": "b55", "ACTIVE": "b56", "PAUSED": "b57" },
         "DISPLAYS_LOCATION": { "YES": "b55", "NO": "b56" },
         "SHARE_VISIBILITY": { "VISIBLE_TO_PUBLIC": "b55", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE": "b56", "VISIBLE_TO_CAREGIVERS_OF_THE_CARED_ONE": "b57", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE_AND_THE_CAREGIVERS_OF_THE_CARED_ONE": "b58" },
+        "SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES": { "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE": "b56", "VISIBLE_TO_CAREGIVERS_OF_THE_CARED_ONE": "b57", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE_AND_THE_CAREGIVERS_OF_THE_CARED_ONE": "b58" },
+        "PUBLIC_SHARE_EXPIRES": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 199. Care Group */
