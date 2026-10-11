@@ -167,6 +167,9 @@ function zoneIcon(code: string) {
   return Target;
 }
 
+// CCT 214 has no column for corner rounding, so the control stays hidden.
+const SHOW_CORNER_ROUNDING: boolean = Boolean(0);
+
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 /** "08:00", an ISO datetime, or an RFC 5545 "…T080000" value → minutes after local midnight. */
@@ -1290,7 +1293,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         <p className="text-xs text-success font-medium">
                           {isZh ? `✓ 已画 ${drawnPoints.length} 个点 · 拖动调整 · 双击删除` : `✓ ${drawnPoints.length} points · Drag to adjust · Double-click to delete`}
                         </p>
-                        {false && selectedVertex !== null && drawnPoints[selectedVertex!] && (
+                        {SHOW_CORNER_ROUNDING && selectedVertex !== null && drawnPoints[selectedVertex] && (
                           <div className="p-3 rounded-lg bg-muted/50 border border-border">
                             <div className="flex justify-between mb-1">
                               <Label className="text-xs">Corner Rounding (Vertex {selectedVertex + 1})</Label>
