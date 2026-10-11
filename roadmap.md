@@ -143,5 +143,7 @@
 
 # Permission audit and information-card reuse
 - [ ] Audit all application permissions, tracking live checks separately from source-only and mocked checks.
-- [ ] Test every information-card visibility scope and both approved accounts plus anonymous reads; do not modify or delete real records.
-- [ ] Identify whether the information-card map and AI reuse standard interfaces and document privacy gaps.
+- [x] Test four information-card visibility scopes in 36 mocked identity combinations; 42/42 tests passed. Live: both approved accounts and anonymous reads checked across all 6 existing information cards and 11 care/location read operations for cared one 46. Anonymous direct reads exposed all 4 private cards, 1 check-in, 1 plan, 1 medicine and 1 safe zone. Empty results do not prove authorization.
+- [x] Confirm information-card map is independent SheetMiniMap, not LocationCard; AI shares AICompanionChat but uses independent inline SheetAIPanel, not AICompanionChatDialog. Public AI knowledge loads additional plans/notes/medicines. Polygon renderer expects lowercase but source returns capitalized Polygon.
+- [ ] Live create/edit/delete/relationship permissions: not exercised to avoid modifying or deleting existing records; mocked update/delete tests demonstrate missing local authorization but do not establish backend write permissions.
+- [ ] Remaining all-app live permission coverage: care-group role changes/subgroup visibility, chat isolation, commerce ownership, file operations, researcher access, location request/emergency writes. Read-only source inventory is not a live audit.
