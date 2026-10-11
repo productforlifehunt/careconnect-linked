@@ -263,7 +263,8 @@ export function MobileBottomBar() {
 
   // Hide on marketing surfaces for unauthenticated visitors; once signed in,
   // always show the bottom bar on mobile (browser or installed PWA).
-  if (!isAuthenticated) return null;
+  // The homepage never shows the bottom bar.
+  if (!isAuthenticated || location.pathname === "/") return null;
 
   return (
     <>
