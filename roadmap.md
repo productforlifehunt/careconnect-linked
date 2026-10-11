@@ -1,5 +1,10 @@
 ## Screening question provenance labels
 
+## Current request: re-recording guide and flat app logos
+- [ ] Deliver all 22 interview questions with natural follow-ups about changes, new experiences, and corrections since the first interview.
+- [ ] Standardize app logos in both languages to one Apple-style square silhouette without gradients, retaining each brand's identity.
+- [ ] Verify logo rendering and matching favicon assets; report any unverified surfaces explicitly.
+
 - [x] Separate researcher primary/secondary viewing and editing using original Sections 1 and 2, preserve shared ADKS/DAS, and verify role boundaries with mixed legacy records. Rendered-component tests verify both viewing and editing; 190/190 tests pass, build OK. Primary ends at DAS20; secondary uses 2.1 then all 50 shared items with 2.2 provenance. Stored answers untouched.
 - [x] Add Chinese translations and original questionnaire/item references to all 146 researcher screening fields, including editing mode.
 - [x] Verify source mapping against the supplied questionnaire; explicitly retain unnumbered ADL/IADL, single-item 1.6, shared 2.1.2 and Other follow-up references. Real researcher login confirmed Age, ADL, ADKS30, DAS20 and editing labels; build OK.
