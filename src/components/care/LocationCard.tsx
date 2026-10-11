@@ -169,21 +169,42 @@ function zoneIcon(code: string) {
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+/** "08:00", an ISO datetime, or an RFC 5545 "…T080000" value → minutes after local midnight. */
+function toMinutes(v: any): number | null {
+  const str = String(v ?? "").trim();
+  if (!str) return null;
+  let m = /^(\d{1,2}):(\d{2})/.exec(str);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  m = /T(\d{2})(\d{2})(\d{2})?(Z)?$/.exec(str);
+  if (m && !str.includes("-")) {
+    if (m[4]) { const d = new Date(Date.UTC(2000, 0, 1, Number(m[1]), Number(m[2]))); return d.getHours() * 60 + d.getMinutes(); }
+    return Number(m[1]) * 60 + Number(m[2]);
+  }
+  const d = new Date(str);
+  if (!Number.isNaN(d.getTime())) return d.getHours() * 60 + d.getMinutes();
+  return null;
+}
+
+function hhmm(v: any, fallback: string): string {
+  const n = toMinutes(v);
+  if (n == null) return fallback;
+  return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+}
+
 function isZoneActive(zone: any): boolean {
   if (!zone.schedule_enabled) return true;
   const now = new Date();
   const dayName = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][now.getDay()];
-  if (!zone.schedule_days?.includes(dayName)) return false;
+  // CCT 214 has no weekday column, so days only limit the zone when present.
+  if (Array.isArray(zone.schedule_days) && zone.schedule_days.length && !zone.schedule_days.includes(dayName)) return false;
   const cur = now.getHours() * 60 + now.getMinutes();
-  if (!zone.schedule_start_time || !zone.schedule_end_time) return true;
-  const [sh, sm] = zone.schedule_start_time.split(":").map(Number);
-  const [eh, em] = zone.schedule_end_time.split(":").map(Number);
-  const s = sh * 60 + sm, e = eh * 60 + em;
+  const s = toMinutes(zone.schedule_start_time), e = toMinutes(zone.schedule_end_time);
+  if (s == null || e == null) return true;
   return s <= e ? cur >= s && cur <= e : cur >= s || cur <= e;
 }
 
-function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boolean; distance: number } {
-  if (!isZoneActive(zone)) return { breached: false, distance: 0 };
+function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boolean; distance: number; inside: boolean } {
+  if (!isZoneActive(zone)) return { breached: false, distance: 0, inside: false };
   let inside = false, distance = 0;
   if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
     const pts: [number, number][] = zone.polygon_points;
@@ -201,7 +222,7 @@ function checkZoneBreach(zone: any, lat: number, lng: number): { breached: boole
     : isSafeZone(zone.zone_type)
       ? !inside
       : (inside ? !!zone.notify_on_enter : !!zone.notify_on_exit);
-  return { breached, distance: Math.round(distance) };
+  return { breached, distance: Math.round(distance), inside };
 }
 
 type Tab = "location" | "requests" | "alerts" | "safezones" | "history";
@@ -620,8 +641,8 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
         polygon_points: zone.polygon_points || [], corner_radius: zone.corner_radius || [],
         notify_on_enter: zone.notify_on_enter ?? true, notify_on_exit: zone.notify_on_exit ?? true,
         schedule_enabled: zone.schedule_enabled ?? false,
-        schedule_start_time: zone.schedule_start_time || "08:00",
-        schedule_end_time: zone.schedule_end_time || "20:00",
+        schedule_start_time: hhmm(zone.schedule_start_time, "08:00"),
+        schedule_end_time: hhmm(zone.schedule_end_time, "20:00"),
         schedule_days: zone.schedule_days || [],
       });
       if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
@@ -915,9 +936,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                               ? (breach.breached
                                   ? (isZh ? "⚠ 已进入危险区域！" : "⚠ INSIDE danger zone!")
                                   : (isZh ? `✓ 已远离（${breach.distance} 米）` : `✓ Away (${breach.distance}m)`))
-                              : (breach.breached
-                                  ? (isZh ? `⚠ 已离开（${breach.distance} 米）` : `⚠ Outside (${breach.distance}m)`)
-                                  : (isZh ? `✓ 在区域内（${breach.distance} 米）` : `✓ Inside (${breach.distance}m)`))}
+                              : (!breach.inside
+                                  ? (isZh ? `${breach.breached ? "⚠ " : ""}在区域外（${breach.distance} 米）` : `${breach.breached ? "⚠ " : ""}Outside (${breach.distance}m)`)
+                                  : (isZh ? `${breach.breached ? "⚠ " : "✓ "}在区域内（${breach.distance} 米）` : `${breach.breached ? "⚠ " : "✓ "}Inside (${breach.distance}m)`))}
                           </span>
 
                         </div>
@@ -1412,14 +1433,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                         {zone.description && <p className="text-xs text-muted-foreground">{zone.description}</p>}
                         {zone.schedule_enabled && zone.schedule_start_time && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {zone.schedule_start_time}–{zone.schedule_end_time} {zone.schedule_days?.join(", ")}
+                            <Clock className="h-3 w-3" /> {hhmm(zone.schedule_start_time, "")}–{hhmm(zone.schedule_end_time, "")}
                           </p>
                         )}
                         {currentLocation && active && (
                           <p className={`text-xs mt-1 font-medium ${breachInfo.breached ? "text-destructive" : "text-success"}`}>
                             {isDangerZone(zone.zone_type)
                               ? (breachInfo.breached ? (isZh ? `⚠ 现在在危险区域里（${breachInfo.distance} 米）` : `⚠ Inside danger zone (${breachInfo.distance}m)`) : (isZh ? `✓ 现在在区域外（${breachInfo.distance} 米）` : `✓ Outside (${breachInfo.distance}m)`))
-                              : (breachInfo.breached ? (isZh ? `⚠ 现在在区域外（距中心 ${breachInfo.distance} 米）` : `⚠ Outside (${breachInfo.distance}m away)`) : (isZh ? `✓ 现在在区域里（距中心 ${breachInfo.distance} 米）` : `✓ Inside (${breachInfo.distance}m from center)`))}
+                              : (!breachInfo.inside ? (isZh ? `现在在区域外（距中心 ${breachInfo.distance} 米）` : `Outside (${breachInfo.distance}m away)`) : (isZh ? `现在在区域里（距中心 ${breachInfo.distance} 米）` : `Inside (${breachInfo.distance}m from center)`))}
 
                           </p>
                         )}
