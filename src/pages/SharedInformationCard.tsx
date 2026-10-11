@@ -91,7 +91,7 @@ export default function SharedInformationCard() {
                 </h1>
                 {card.cared_ones_name && <p className="text-sm text-muted-foreground mt-0.5">{card.cared_ones_name}</p>}
                 <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                  {card.displays_location === "Yes" && <SheetLocationTag caredOneId={caredOneId ? String(caredOneId) : null} caredOneName={card.cared_ones_name} />}
+                  {card.displays_location === "Yes" && <SheetLocationTag caredOneId={caredOneId ? String(caredOneId) : null} caredOneName={card.cared_ones_name || Z("被护理者", "Cared one")} />}
                 </div>
               </div>
             </div>
