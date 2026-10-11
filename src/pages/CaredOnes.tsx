@@ -240,7 +240,7 @@ export default function CaredOnes() {
                           {person.email && <p className="text-xs text-muted-foreground truncate">{maskEmail(person.email)}</p>}
                         </div>
                       </div>
-                      <EmergencyShareSetting caredOneId={String(person.id || detailCaredOne.cared_one_id || "").replace(/^wp-/, "")} />
+                      <EmergencyShareSetting caredOneId={bare(detailCaredOne.user_id)} />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" className="w-full text-destructive hover:text-destructive">
