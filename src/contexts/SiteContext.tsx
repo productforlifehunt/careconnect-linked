@@ -387,7 +387,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       document.querySelectorAll(`link[rel="${rel}"]`).forEach((el) => el.remove());
       const link = document.createElement("link");
       link.rel = rel;
-      link.href = faviconHref;
+      link.href = `${faviconHref}?v=flat-20261011`;
       if (faviconHref.endsWith(".svg")) link.type = "image/svg+xml";
       document.head.appendChild(link);
     });
