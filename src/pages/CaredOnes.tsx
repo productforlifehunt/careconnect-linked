@@ -64,7 +64,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
 }
 
 export default function CaredOnes() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const site = useSite();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
