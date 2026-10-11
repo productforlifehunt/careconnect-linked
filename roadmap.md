@@ -140,3 +140,8 @@
 - [x] Use the card item ID for sharing; remove token generation, expiry and revoke controls.
 - [x] Read current card visibility and show bilingual family-contact guidance on denied access.
 - [x] Verify anonymous public-card access and zero writes while opening/copying sharing; 4/4 automated tests cover current visibility and denial. Live visibility-change verification remains unperformed to avoid changing real records; existing WordPress direct-API authorization risk remains unresolved.
+
+# Permission audit and information-card reuse
+- [ ] Audit all application permissions, tracking live checks separately from source-only and mocked checks.
+- [ ] Test every information-card visibility scope and both approved accounts plus anonymous reads; do not modify or delete real records.
+- [ ] Identify whether the information-card map and AI reuse standard interfaces and document privacy gaps.
