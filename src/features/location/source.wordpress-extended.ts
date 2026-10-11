@@ -489,11 +489,30 @@ export async function disableMyLocationSharingWordPress(): Promise<void> {
 }
 
 // ─── Location Requests ──────────────────────────────────────
-// No `location_requests` CCT live. Requests are pure notifications: the
-// requester pings the target user, who responds by enabling location sharing.
+// No location-request CCT exists. A request is a notification to the cared
+// one (CCT notification via its user relation). The asker keeps a log of what
+// they sent on this device; a request counts as answered once the cared one
+// writes a location snapshot (CCT 213 via REL 247) after it was sent.
 
-export async function fetchLocationRequestsWordPress(_caredOneId: string): Promise<any[]> {
-  return [];
+const REQ_LOG_KEY = (caredOneId: string) => `locreq:${getStoredWPUser()?.user_id || ""}:${normalizeWpUserId(caredOneId)}`;
+
+function readReqLog(caredOneId: string): any[] {
+  try { return JSON.parse(localStorage.getItem(REQ_LOG_KEY(caredOneId)) || "[]"); } catch { return []; }
+}
+function writeReqLog(caredOneId: string, rows: any[]) {
+  try { localStorage.setItem(REQ_LOG_KEY(caredOneId), JSON.stringify(rows.slice(0, 20))); } catch {}
+}
+
+export async function fetchLocationRequestsWordPress(caredOneId: string): Promise<any[]> {
+  const log = readReqLog(caredOneId);
+  if (!log.length) return [];
+  const latest = await fetchCurrentLocation(caredOneId).catch(() => null);
+  const latestMs = latest?.captured_at ? new Date(latest.captured_at).getTime() : 0;
+  return log.map((r) => ({ ...r, status: latestMs > new Date(r.created_at).getTime() ? "accepted" : "pending" }));
+}
+
+function zh(): boolean {
+  try { return (localStorage.getItem("i18nextLng") || navigator.language || "").startsWith("zh"); } catch { return false; }
 }
 
 export async function sendLocationRequestWordPress(input: { caredOneId: string; message?: string | undefined; isEmergency?: boolean | undefined }): Promise<void> {
@@ -501,21 +520,61 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   if (!caredOneUserId) throw new Error("Invalid cared one user");
   const storedUser = getStoredWPUser();
   if (!storedUser?.user_id) throw new Error("Not authenticated");
-  {
-    // Name comes ONLY from CCT 151; no WordPress account name fallback.
-    const askerName = await fetchMyAppUserName().catch(() => "");
-    await runNotificationSkill("send-notification", {
-      userIds: [caredOneUserId],
-      type: input.isEmergency ? "emergency_location_request" : "location_request",
-      title: input.isEmergency ? "🚨 Emergency Location Request" : "📍 Location Request",
-      message: `${askerName || "A care circle member"} ${input.isEmergency ? "urgently needs" : "is requesting"} your location.${input.message ? ` "${input.message}"` : ""}`,
-      actionUrl: `/find?request_from=${storedUser.user_id}`,
-    });
-  }
+  // Name comes ONLY from CCT 151; no WordPress account name fallback.
+  const askerName = (await fetchMyAppUserName().catch(() => "")) || (zh() ? "你的护理者" : "Your caregiver");
+  const cn = zh();
+  const sent = await runNotificationSkill("send-notification", {
+    userIds: [caredOneUserId],
+    type: input.isEmergency ? "emergency_location_request" : "location_request",
+    title: input.isEmergency ? (cn ? "🚨 紧急位置请求" : "🚨 Urgent location request") : (cn ? "📍 位置请求" : "📍 Location request"),
+    message: (cn
+      ? `${askerName}${input.isEmergency ? "紧急" : ""}请求查看你现在的位置，点开即可分享。`
+      : `${askerName} ${input.isEmergency ? "urgently " : ""}asks to see where you are. Open to share.`) + (input.message ? ` “${input.message}”` : ""),
+    actionUrl: `/find?request_from=${storedUser.user_id}`,
+  });
+  if (!sent) throw new Error(cn ? "请求没有送达对方" : "The request was not delivered");
+  const log = readReqLog(input.caredOneId);
+  log.unshift({ id: String(Date.now()), created_at: new Date().toISOString(), message: input.message || "", is_emergency: !!input.isEmergency });
+  writeReqLog(input.caredOneId, log);
 }
 
-export async function cancelLocationRequestWordPress(_requestId: string): Promise<void> {
-  // No-op — requests are notifications; the recipient marks them read.
+export async function cancelLocationRequestWordPress(requestId: string, caredOneId?: string): Promise<void> {
+  // Removes the entry from this device's log only; a delivered notification stays delivered.
+  if (!caredOneId) return;
+  writeReqLog(caredOneId, readReqLog(caredOneId).filter((r) => r.id !== requestId));
+}
+
+/**
+ * The cared one answers a request. Accept = write a fresh snapshot of their own
+ * position (CCT 213 / REL 247, user type "cared one") and tell the asker.
+ */
+export async function respondToLocationRequestWordPress(input: {
+  requesterId: string;
+  accept: boolean;
+  position?: { latitude: number; longitude: number; accuracy?: number | null | undefined } | undefined;
+}): Promise<void> {
+  const me = getStoredWPUser();
+  if (!me?.user_id) throw new Error("Not authenticated");
+  const requester = normalizeWpUserId(input.requesterId);
+  if (!requester) throw new Error("Invalid requester");
+  const cn = zh();
+  if (input.accept) {
+    if (!input.position) throw new Error(cn ? "没有拿到你的位置" : "No position");
+    await writeLocationAndCheckZones(input.position.latitude, input.position.longitude, {
+      accuracy: input.position.accuracy ?? null,
+      is_cared_one: true,
+    });
+  }
+  const name = (await fetchMyAppUserName().catch(() => "")) || (cn ? "被护理者" : "Your cared one");
+  await runNotificationSkill("send-notification", {
+    userIds: [requester],
+    type: "location",
+    title: input.accept ? (cn ? "📍 已分享位置" : "📍 Location shared") : (cn ? "位置请求被拒绝" : "Location request declined"),
+    message: input.accept
+      ? (cn ? `${name}已分享现在的位置。` : `${name} shared their current location.`)
+      : (cn ? `${name}暂时不分享位置。` : `${name} is not sharing their location right now.`),
+    actionUrl: input.accept ? `/cared-ones/${me.user_id}/location` : `/cared-ones/${me.user_id}/location`,
+  });
 }
 
 
