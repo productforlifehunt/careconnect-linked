@@ -112,7 +112,7 @@ export default function CaredOnes() {
     { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
     { key: "checkin", title: t("caredOnes.checkIns", { defaultValue: "Check-Ins" }), icon: ClipboardCheck, subtitle: t("caredOnes.dailyWellness") },
     { key: "tips", title: t("caredOnes.careTips"), icon: Lightbulb, subtitle: t("caredOnes.helpfulReminders") },
-    { key: "tasks", title: t("caredOnes.careTasks", { defaultValue: "Care Tasks" }), icon: ListChecks, subtitle: t("caredOnes.careTasksSubtitle", { defaultValue: "Things to do for this person" }) },
+    { key: "tasks", title: (i18n.language?.startsWith("zh") ? "护理任务" : "Care Tasks"), icon: ListChecks, subtitle: t("caredOnes.careTasksSubtitle", { defaultValue: "Things to do for this person" }) },
     { key: "plan", title: t("caredOnes.carePlan"), icon: Target, subtitle: t("caredOnes.structuredGoals") },
     { key: "notes", title: t("caredOnes.careNotes"), icon: FileText, subtitle: t("caredOnes.freeFormNotes") },
     { key: "emergency", title: t("caredOnes.emergencyContacts"), icon: Phone, subtitle: t("caredOnes.emergencyList") },
