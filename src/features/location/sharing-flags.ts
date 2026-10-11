@@ -40,7 +40,7 @@ export async function fetchLocationSharingFlags(userId: string | number): Promis
 
 export async function setLocationSharingFlags(
   userId: string | number,
-  patch: Partial<LocationSharingFlags>,
+  patch: { shareOn?: boolean | undefined; emergencyAllowed?: boolean | undefined },
 ): Promise<void> {
   const uid = bare(userId);
   if (!uid) throw new Error("Invalid user");

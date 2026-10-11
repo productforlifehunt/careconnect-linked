@@ -45,7 +45,7 @@ export function LocationSharingAgent() {
             const pos = await getCurrentPosition({ timeout: 15000 });
             if (pos) {
               for (const n of emergencies) {
-                const requester = new URL(n.action_url, window.location.origin).searchParams.get("request_from");
+                const requester = new URL(String(n.action_url), window.location.origin).searchParams.get("request_from");
                 if (requester) await ext.answerEmergencyRequestWordPress({ requesterId: requester, position: pos }).catch(() => {});
                 await runNotificationSkill("mark-notification-read", { id: n.id }).catch(() => {});
               }
