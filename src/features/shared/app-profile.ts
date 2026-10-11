@@ -1,3 +1,4 @@
+import { detectSite } from "@/contexts/SiteContext";
 /**
  * ONE row per user per sub-app on JetEngine CCT 151 `users_extended_prof`.
  *
@@ -86,6 +87,8 @@ export function currentAppId(): AppId {
       const p = new URLSearchParams(window.location.search).get("__site");
       if (p === "notchsafety" || p === "safety") return "notchsafety";
       if (/(^|\.)notchsafety\.com$/.test(window.location.hostname)) return "notchsafety";
+      // Links inside Notch Safety drop ?__site; the tab still remembers it.
+      if (detectSite() === "notchsafety") return "notchsafety";
     } catch {
       /* ignore */
     }
