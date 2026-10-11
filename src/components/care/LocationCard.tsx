@@ -702,13 +702,15 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
   };
 
 
-  const handleSendRequest = async () => {
-    if (isEmergency && !emergencyConfirm) { setEmergencyConfirm(true); return; }
+  const handleSendRequest = async (emergency: boolean) => {
+    if (emergency && !emergencyConfirm) { setEmergencyConfirm(true); return; }
+    const isEmergency = emergency;
     setSendingRequest(true);
     sendRequest.mutate({ caredOneId, message: requestMessage, isEmergency }, {
       onSuccess: () => {
         setSendingRequest(false); setRequestMessage(""); setIsEmergency(false); setEmergencyConfirm(false);
-        toast({ title: isZh ? (isEmergency ? "紧急请求已发送 🚨" : "位置请求已发送 ✓") : (isEmergency ? "Urgent request sent 🚨" : "Location request sent ✓"), description: isZh ? "对方同意后，位置会出现在「实时位置」。" : "Once they agree, the location appears under Live location." });
+        toast({ title: isZh ? (isEmergency ? "紧急请求已发送 🚨" : "位置请求已发送 ✓") : (isEmergency ? "Emergency request sent 🚨" : "Location request sent ✓"), description: isEmergency ? (isZh ? "对方应用开着时位置会立即到达。" : "The location arrives as soon as their app is open.") : (isZh ? "对方允许后，位置会出现在「实时位置」。" : "Once they allow it, the location appears under Live location.") });
+        refetchFlags();
         refetchRequests();
       },
       onError: (e: any) => { setSendingRequest(false); toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); },
@@ -947,31 +949,37 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
           <Card className="border-transparent card-elevated">
             <CardContent className="p-4 space-y-3">
               <h3 className="font-semibold text-sm">{isZh ? `请求${caredOneName}的位置` : `Ask ${caredOneName} for their location`}</h3>
-              <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}会收到通知，点开后可选择分享或拒绝。分享后位置会出现在「实时位置」。` : `${caredOneName} gets a notification and can share or decline. A shared location appears under Live location.`}</p>
+              <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}会收到消息，选择是否允许。允许后会开启实时位置分享，位置显示在「实时位置」。` : `${caredOneName} gets a message and chooses whether to allow it. Allowing turns on live sharing; the location shows under Live location.`}</p>
               <Textarea value={requestMessage} onChange={e => setRequestMessage(e.target.value)}
                 placeholder={isZh ? "可选：说明为什么需要位置" : "Optional: why you need their location"} rows={2} />
-              <div className={`flex flex-col gap-2 p-3 rounded-lg border ${isEmergency ? "bg-destructive/10 border-destructive/30" : "bg-muted/30 border-border"}`}>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="emerg-chk" checked={isEmergency}
-                    onChange={e => { setIsEmergency(e.target.checked); setEmergencyConfirm(false); }} className="rounded-sm" />
-                  <label htmlFor="emerg-chk" className="text-sm font-medium cursor-pointer">{isZh ? "🚨 标为紧急" : "🚨 Mark as urgent"}</label>
-                </div>
-                {isEmergency && (
-                  <p className="text-xs text-destructive pl-5">
-                    {isZh ? `通知会标为紧急。仍需${caredOneName}点开同意才能看到位置。` : `The notification is marked urgent. ${caredOneName} still has to agree before you see the location.`}
-                  </p>
+              <Button className="w-full" onClick={() => handleSendRequest(false)} disabled={sendingRequest || sendRequest.isPending}>
+                {(sendingRequest || sendRequest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                {isZh ? "发送位置请求" : "Send location request"}
+              </Button>
+              <div className="flex flex-col gap-2 p-3 rounded-lg border bg-destructive/5 border-destructive/30">
+                <p className="text-sm font-medium">{isZh ? "🚨 紧急请求" : "🚨 Emergency request"}</p>
+                {flags?.emergencyAllowed ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}已允许紧急请求：不需要对方确认，只要对方的应用开着，位置会立即发过来，并记为紧急模式。` : `${caredOneName} allows emergency requests: no confirmation needed. As long as their app is open, the location arrives at once and is marked as emergency mode.`}</p>
+                    {emergencyConfirm && <p className="text-xs text-destructive font-medium">{isZh ? "确定吗？再点一次发送。" : "Are you sure? Click again to send."}</p>}
+                    <Button variant="destructive" onClick={() => handleSendRequest(true)} disabled={sendingRequest || sendRequest.isPending}>
+                      {emergencyConfirm ? (isZh ? "确认发送紧急请求" : "Confirm emergency request") : (isZh ? "发送紧急请求" : "Send emergency request")}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}还没有开启紧急请求许可。开启后，紧急时不需要对方确认就能查看位置；开启时会给对方发送通知。` : `Emergency requests are off for ${caredOneName}. Once on, you can see their location in an emergency without them confirming. They are notified when you turn it on.`}</p>
+                    <Button variant="outline" disabled={enableEmergency.isPending}
+                      onClick={() => enableEmergency.mutate(caredOneId, {
+                        onSuccess: () => { refetchFlags(); toast({ title: isZh ? "已开启紧急请求许可，并已通知对方" : "Emergency permission on; they were notified" }); },
+                        onError: (e: any) => toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }),
+                      })}>
+                      {enableEmergency.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      {isZh ? `为${caredOneName}开启紧急请求许可` : `Turn on emergency requests for ${caredOneName}`}
+                    </Button>
+                  </>
                 )}
               </div>
-              {emergencyConfirm && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive font-medium">
-                  {isZh ? "⚠️ 确定吗？再点一次发送确认。" : "⚠️ Are you sure? Click send again to confirm."}
-                </div>
-              )}
-              <Button className="w-full" style={isEmergency ? { background: "#EF4444", color: "white" } : undefined}
-                onClick={handleSendRequest} disabled={sendingRequest || sendRequest.isPending}>
-                {(sendingRequest || sendRequest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                {isEmergency && emergencyConfirm ? (isZh ? "确认发送紧急请求" : "Confirm urgent request") : isEmergency ? (isZh ? "发送紧急请求" : "Send urgent request") : (isZh ? "发送请求" : "Send request")}
-              </Button>
             </CardContent>
           </Card>
 
