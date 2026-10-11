@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Circle, Clock, Loader2, MapPin, ChevronRight, RotateCcw } from "lucide-react";
+import { CheckCircle, Circle, Clock, Loader2, MapPin, ChevronRight, RotateCcw, Plus } from "lucide-react";
 import { useCareTasks, useCreateTask, useUpdateTaskStatus, useDeleteTask } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -153,12 +153,13 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-foreground mb-4">{Z("护理任务", "Care Tasks")}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-foreground">{Z("护理任务", "Care Tasks")}</h2>
+        {tab === "add"
+          ? <Button size="sm" variant="ghost" onClick={() => setTab("view")}>{Z("取消", "Cancel")}</Button>
+          : <Button size="sm" onClick={() => setTab("add")}><Plus className="h-4 w-4 mr-1" /> {Z("添加", "Add")}</Button>}
+      </div>
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full mb-4">
-          <TabsTrigger value="view" className="flex-1">{Z(`任务（${tasks.length}）`, `Tasks (${tasks.length})`)}</TabsTrigger>
-          <TabsTrigger value="add" className="flex-1">{Z("新增", "Add New")}</TabsTrigger>
-        </TabsList>
         <TabsContent value="view">
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
