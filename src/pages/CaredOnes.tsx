@@ -41,6 +41,7 @@ import { CarePlanCard } from "@/components/cared-ones/CarePlanCard";
 import { NotesCard } from "@/components/cared-ones/NotesCard";
 import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
 import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
+import { EmergencyShareSetting } from "@/components/cared-ones/EmergencyShareSetting";
 import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
@@ -239,6 +240,7 @@ export default function CaredOnes() {
                           {person.email && <p className="text-xs text-muted-foreground truncate">{maskEmail(person.email)}</p>}
                         </div>
                       </div>
+                      <EmergencyShareSetting caredOneId={String(person.id || detailCaredOne.cared_one_id || "").replace(/^wp-/, "")} />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" className="w-full text-destructive hover:text-destructive">
