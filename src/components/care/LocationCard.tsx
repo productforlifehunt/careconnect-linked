@@ -1141,7 +1141,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
             <Card className="border-primary/20 card-elevated mb-4">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">{editingZone ? "Edit Zone" : "New Zone"}</h3>
+                  <h3 className="font-semibold">{editingZone ? (isZh ? "编辑区域" : "Edit zone") : (isZh ? "新建区域" : "New zone")}</h3>
                   <Button variant="ghost" size="icon" className="h-7 w-7"
                     onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
                     <X className="h-3.5 w-3.5" />
@@ -1208,7 +1208,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
 
                 <div>
-                  <Label className="text-xs">Shape Type</Label>
+                  <Label className="text-xs">{isZh ? "形状" : "Shape"}</Label>
                   <div className="flex rounded-lg border overflow-hidden mt-1">
                     {(["radius", "polygon"] as const).map(st => (
                       <button key={st} onClick={() => {
@@ -1288,9 +1288,9 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     {drawMode === "editing" && (
                       <div className="space-y-2">
                         <p className="text-xs text-success font-medium">
-                          ✓ {drawnPoints.length} vertices · Drag to reposition · Dbl-click to delete
+                          {isZh ? `✓ 已画 ${drawnPoints.length} 个点 · 拖动调整 · 双击删除` : `✓ ${drawnPoints.length} points · Drag to adjust · Double-click to delete`}
                         </p>
-                        {selectedVertex !== null && drawnPoints[selectedVertex] && (
+                        {false && selectedVertex !== null && drawnPoints[selectedVertex!] && (
                           <div className="p-3 rounded-lg bg-muted/50 border border-border">
                             <div className="flex justify-between mb-1">
                               <Label className="text-xs">Corner Rounding (Vertex {selectedVertex + 1})</Label>
@@ -1304,17 +1304,14 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                             <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5"><span>Sharp</span><span>Round</span></div>
                           </div>
                         )}
-                        {selectedVertex === null && (
-                          <p className="text-xs text-muted-foreground">Click a vertex to adjust its corner rounding</p>
-                        )}
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" className="flex-1"
                             onClick={() => { setDrawMode("drawing"); setDrawnPoints([]); setCornerRadii([]); }}>
-                            <RotateCcw className="h-3 w-3 mr-1" /> Redraw
+                            <RotateCcw className="h-3 w-3 mr-1" /> {isZh ? "重新画" : "Redraw"}
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1 text-destructive"
                             onClick={() => { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                            Clear All
+                            {isZh ? "全部清除" : "Clear all"}
                           </Button>
                         </div>
                       </div>
@@ -1330,18 +1327,18 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">Notify on enter</Label>
+                    <Label className="text-xs">{isZh ? "进入时提醒" : "Alert on enter"}</Label>
                     <Switch checked={zoneForm.notify_on_enter} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_enter: v }))} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">Notify on exit</Label>
+                    <Label className="text-xs">{isZh ? "离开时提醒" : "Alert on exit"}</Label>
                     <Switch checked={zoneForm.notify_on_exit} onCheckedChange={v => setZoneForm(p => ({ ...p, notify_on_exit: v }))} />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs font-semibold">Schedule</Label>
+                    <Label className="text-xs font-semibold">{isZh ? "生效时段" : "Active hours"}</Label>
                     <Switch checked={zoneForm.schedule_enabled} onCheckedChange={v => setZoneForm(p => ({ ...p, schedule_enabled: v }))} />
                   </div>
                   {zoneForm.schedule_enabled && (
@@ -1378,7 +1375,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                 <div className="flex gap-2 pt-1">
                   <Button variant="outline" className="flex-1"
                     onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
-                    Cancel
+                    {isZh ? "取消" : "Cancel"}
                   </Button>
                   <Button className="flex-1 text-white"
                     style={{ background: zoneFill(zoneForm.zone_type, zoneForm.color) }}
@@ -1386,7 +1383,7 @@ export default function LocationCard({ caredOneId, caredOneName }: Props) {
                     disabled={createZone.isPending || updateZone.isPending}>
 
                     {(createZone.isPending || updateZone.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                    {editingZone ? "Save Changes" : "Create Zone"}
+                    {editingZone ? (isZh ? "保存修改" : "Save changes") : (isZh ? "创建区域" : "Create zone")}
                   </Button>
                 </div>
               </CardContent>
