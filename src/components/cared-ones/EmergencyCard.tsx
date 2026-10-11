@@ -11,6 +11,7 @@ import { Phone, X, Check, Plus, Users, Loader2, ChevronRight } from "lucide-reac
 import { useEmergencyContacts, useCreateEmergencyContact, useUpdateEmergencyContact, useDeleteEmergencyContact } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 const RELATIONSHIP_VALUES = ["Spouse", "Parent", "Child", "Sibling", "Doctor", "Nurse", "Caregiver", "Neighbor", "Friend", "Other"];
@@ -152,7 +153,7 @@ export function EmergencyCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(c.id))}>
+                  <div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(c.id))}>
                     <span className="min-w-0">
                       <span className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-foreground text-sm">{c.name}</span>
@@ -160,8 +161,7 @@ export function EmergencyCard({ caredOneId }: { caredOneId: string }) {
                       </span>
                       <span className="block text-xs text-muted-foreground mt-0.5">{c.phone}</span>
                     </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  </button>
+                  </button><RowActions onEdit={() => startEdit(c)} onDelete={() => del.mutateAsync(c.id)} /></div>
                 )}
               </CardContent>
             </Card>

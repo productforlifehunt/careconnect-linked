@@ -10,6 +10,7 @@ import { useCareTasks, useCreateTask, useUpdateTaskStatus, useDeleteTask } from 
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 const numId = (v: any) => String(v ?? "").replace(/^wp-/, "");
@@ -117,9 +118,10 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
     <Card key={t.id} className="border-transparent card-elevated">
       <CardContent className="p-4">
         {editId === String(t.id) ? editFields : (
+          <div className="flex items-start gap-2">
           <button
             type="button"
-            className="w-full text-left flex items-start gap-3"
+            className="min-w-0 flex-1 text-left flex items-start gap-3"
             onClick={() => setOpenId(String(t.id))}
             aria-label={Z(`打开任务 ${t.title}`, `Open task ${t.title}`) as string}
           >
@@ -141,8 +143,9 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
                 {t.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {t.location}</span>}
               </span>
             </span>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
           </button>
+          <RowActions onEdit={() => startEdit(t)} onDelete={() => del.mutateAsync(t.id)} />
+          </div>
         )}
       </CardContent>
     </Card>

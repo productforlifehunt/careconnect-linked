@@ -9,6 +9,7 @@ import { useCareNotes, useCreateCareNote, useUpdateCareNote, useDeleteCareNote }
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 // Backend (CCT 197 "Cared one's care note") stores ONLY a55 Title and a56 Content.
@@ -91,14 +92,13 @@ export function NotesCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(n.id))}>
+                  <div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(n.id))}>
                     <span className="min-w-0">
                       {n.title && <span className="block font-medium text-foreground text-sm">{n.title}</span>}
                       <span className="block text-xs text-muted-foreground line-clamp-2">{n.content}</span>
                       <span className="block text-[10px] text-muted-foreground mt-1">{formatDate(n.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                     </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  </button>
+                  </button><RowActions onEdit={() => startEdit(n)} onDelete={() => del.mutateAsync(n.id)} /></div>
                 )}
               </CardContent>
             </Card>

@@ -10,6 +10,7 @@ import { X, Check, ChevronRight } from "lucide-react";
 import { useCareTips, useCreateCareTip, useUpdateCareTip, useDeleteCareTip } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 // Backend (CCT 209 "Cared one's care tip", field a57) only stores two options:
@@ -75,7 +76,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
                       </div>
                     </div>
                   ) : (
-                    <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(t.id))}>
+                    <div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(t.id))}>
                       <span className="min-w-0">
                         <span className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-foreground text-sm">{t.title}</span>
@@ -83,8 +84,7 @@ export function TipsCard({ caredOneId }: { caredOneId: string }) {
                         </span>
                         <span className="block text-xs text-muted-foreground mt-1 line-clamp-2">{t.content}</span>
                       </span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                    </button>
+                    </button><RowActions onEdit={() => startEdit(t)} onDelete={() => del.mutateAsync(t.id)} /></div>
                   )}
                 </CardContent>
               </Card>

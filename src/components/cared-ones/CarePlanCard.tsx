@@ -9,6 +9,7 @@ import { Plus, Check, X, ClipboardList, Loader2, ChevronRight } from "lucide-rea
 import { useCarePlans, useCreateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 function useZ() {
@@ -105,13 +106,12 @@ export function CarePlanCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(p.id))}>
+                  <div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(p.id))}>
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium text-foreground">{p.title || Z("未命名方案", "Untitled plan")}</span>
                       <span className="block text-xs text-muted-foreground mt-1 line-clamp-2">{p.description || Z("暂无内容", "No details added yet")}</span>
                     </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  </button>
+                  </button><RowActions onEdit={() => startEdit(p)} onDelete={() => del.mutateAsync(p.id)} /></div>
                 )}
               </CardContent>
             </Card>

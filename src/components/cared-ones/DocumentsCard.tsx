@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
 import { MediaAttachments, MediaAttachmentList } from "@/components/shared/MediaAttachments";
+import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
 
 /**
@@ -123,7 +124,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                     </div>
                   </div>
                 ) : (
-                  <button type="button" className="w-full text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(d.id))}>
+                  <div className="flex items-start gap-2"><button type="button" className="min-w-0 flex-1 text-left flex justify-between items-start gap-2" onClick={() => setOpenId(String(d.id))}>
                     <span className="min-w-0">
                       <span className="block font-medium text-foreground text-sm">{d.title || Z("文件", "Document")}</span>
                       <span className="block text-[10px] text-muted-foreground">{formatDate(d.created_at, isCN ? "zh-CN" : undefined)}</span>
@@ -134,8 +135,7 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
                         </span>
                       )}
                     </span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  </button>
+                  </button><RowActions onEdit={() => startEdit(d)} onDelete={() => del.mutateAsync(d.id)} /></div>
                 )}
               </CardContent>
             </Card>
