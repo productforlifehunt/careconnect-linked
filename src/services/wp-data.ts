@@ -233,23 +233,9 @@ export async function wpFetchBookings(): Promise<WPBooking[]> {
 
 // ─── Care Tasks ─────────────────────────────────────────────
 export async function wpFetchCareTasks(): Promise<any[]> {
-  try {
-    // Care tasks live in JetEngine CCT `care_task_real`, not as a CPT
-    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const tasks = await wordpressCCTFetch<any[]>(T.careTask.slug, { params: { _limit: 100 } });
-    if (!Array.isArray(tasks)) return [];
-    return tasks.map((t: any) => ({
-      id: String(t._ID || t.id),
-      title: t.a55 || "Task",
-      status: String(t.a66 ?? "b55") === "b56" ? "completed" : "pending",
-      priority: "medium",
-      due_date: t.a61 || null,
-      assignee_profile: null,
-      created_at: t.cct_created || null,
-    }));
-  } catch {
-    return [];
-  }
+  const { fetchCareTasksWordPress } = await import("@/features/care-tasks/source.wordpress");
+  const { filterVisibleTasks } = await import("@/features/care-groups/visibility");
+  return filterVisibleTasks(await fetchCareTasksWordPress());
 }
 
 // ─── Cared Ones ─────────────────────────────────────────────
@@ -300,21 +286,8 @@ export async function wpFetchProviders(): Promise<any[]> {
 
 // ─── Care Groups ────────────────────────────────────────────
 export async function wpFetchCareGroups(): Promise<any[]> {
-  try {
-    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const groups = await wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { _limit: 50 } });
-    if (!Array.isArray(groups)) return [];
-    return groups.map((g: any) => ({
-      id: String(g.id || g._ID),
-      name: g.a55 || "Care Group",
-      description: g.a56 || null,
-      is_private: String(g.a57) === "b56",
-      created_at: g.created_at,
-      owner_id: null,
-    }));
-  } catch {
-    return [];
-  }
+  const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
+  return fetchCareGroupsWordPress();
 }
 
 // ─── Care Group Members ─────────────────────────────────────
@@ -324,32 +297,16 @@ export async function wpFetchCareGroupMembers(_groupId: string): Promise<any[]> 
 
 // ─── Conversations (empty in WP mode — no real-time chat) ───
 export async function wpFetchConversations(): Promise<any[]> {
-  return [];
+  const { fetchConversationsWordPress } = await import("@/features/conversations/source.wordpress");
+  return fetchConversationsWordPress();
 }
 
 // ─── Notifications ──────────────────────────────────────────
 export async function wpFetchNotifications(): Promise<any[]> {
-  try {
-    const { wordpressCCTFetch } = await import("@/features/shared/wordpress-client");
-    const { T } = await import("@/integrations/wp-schema");
-    const { appScopeParams, filterAppScope } = await import("@/features/shared/app-scope");
-    const F = T.notification.f;
-    const notifs = await wordpressCCTFetch<any[]>(T.notification.slug, {
-      params: { _limit: 100, ...appScopeParams("notification") },
-    });
-    if (!Array.isArray(notifs)) return [];
-    return filterAppScope("notification", notifs).map((n: any) => ({
-      id: String(n.id || n._ID),
-      type: n[F.NOTIFICATION_TYPE] || "info",
-      title: n[F.NOTIFICATION_TITLE] || "Notification",
-      content: n[F.NOTIFICATION_CONTENT] || "",
-      link_url: n[F.ACTION_URL] || null,
-      is_read: String(n[F.NOTIFICATION_IS_READ]) === T.notification.opt.NOTIFICATION_IS_READ.YES,
-      created_at: n.created_at,
-    }));
-  } catch {
-    return [];
-  }
+  const { fetchNotificationsWordPress } = await import("@/features/notifications/source.wordpress");
+  return (await fetchNotificationsWordPress()).map((n) => ({
+    ...n, content: n.message, link_url: n.action_url,
+  }));
 }
 
 // ─── Provider Bookings (orders for the current vendor via Dokan) ────

@@ -12,3 +12,5 @@
 - All runtime brand icons render through BrandIcon using one shared square silhouette; favicon artwork derives from that renderer, preventing shape and language drift across surfaces.
 
 - Information-card links use the existing card item ID and the shared viewer checks current visibility; sharing only copies/sends the URL, avoiding duplicate token/expiry/revocation state.
+
+- Private task, group, notification and AI-summary reads resolve current-user JetEngine relations before loading CCT rows; legacy service entrypoints delegate to feature sources and account transitions clear read caches so ownership rules and cached identities cannot drift.

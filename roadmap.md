@@ -1,3 +1,8 @@
+## Current request: user-data scope audit and NotchSafety green
+- [ ] Audit private user-facing aggregates for unrelated whole-app data; distinguish intentionally public listings.
+- [ ] Report concrete findings and verification coverage without claiming a complete live permissions audit.
+- [ ] Match NotchSafety theme and favicon to CareCNC green and verify both languages in the browser.
+
 ## Screening question provenance labels
 
 ## Current request: Life360 comparison and card-only visibility

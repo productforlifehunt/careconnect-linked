@@ -11,6 +11,7 @@ import {
 } from "@/services/wp-auth";
 import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
 import { ensureAppProfile } from "@/features/shared/app-profile";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type AuthSource = "wordpress" | null;
 
@@ -65,6 +66,11 @@ function wpUserToProfile(wp: WPUser, appName = ""): Profile {
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
+  const clearAccountReads = useCallback(() => {
+    queryClient.clear();
+    window.dispatchEvent(new CustomEvent("wp-write"));
+  }, [queryClient]);
   const [user, setUser] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authSource, setAuthSource] = useState<AuthSource>(null);
@@ -134,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (email: string, password: string) => {
     const result: WPAuthResult = await wpAuthLogin(email, password);
+    clearAccountReads();
     const wpUser: WPUser = {
       user_id: result.user_id,
       user_email: result.user_email,
@@ -145,10 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
     setAuthSource("wordpress");
     setIsLoading(false);
-  }, []);
+  }, [clearAccountReads]);
 
   const loginWithWP = useCallback(async (username: string, password: string) => {
     const result: WPAuthResult = await wpAuthLogin(username, password);
+    clearAccountReads();
     const wpUser: WPUser = {
       user_id: result.user_id,
       user_email: result.user_email,
@@ -160,10 +168,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
     setAuthSource("wordpress");
     setIsLoading(false);
-  }, []);
+  }, [clearAccountReads]);
 
   const signup = useCallback(async (name: string, email: string, password: string, _role: string) => {
     const result: WPAuthResult = await wpAuthRegister(email, password, name);
+    clearAccountReads();
     const wpUser: WPUser = {
       user_id: result.user_id,
       user_email: result.user_email,
@@ -176,13 +185,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(wpUserToProfile(wpUser, name));
     setAuthSource("wordpress");
     setIsLoading(false);
-  }, []);
+  }, [clearAccountReads]);
 
   const logout = useCallback(async () => {
     wpAuthLogout();
+    clearAccountReads();
     setUser(null);
     setAuthSource(null);
-  }, []);
+  }, [clearAccountReads]);
 
   return (
     <AuthContext.Provider value={{
