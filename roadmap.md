@@ -1,5 +1,10 @@
 ## Screening question provenance labels
 
+## Current request: Life360 comparison and card-only visibility
+- [ ] Evaluate blue versus mint/teal for NotchSafety without changing colors.
+- [ ] Verify that admitted information-card viewers encounter no extra location or AI viewer-permission checks; distinguish missing data and the author's display choice.
+- [ ] Research official Life360 circle invitations, location-sharing controls/status/history, and Tile item-finding requirements; explain code collisions accurately.
+
 ## Current request: auth boundary and shared information-card internals
 - [x] Distinguish page login protection from data authorization: fresh anonymous browser redirected /cared-ones/46/location to /auth and denied private shared card 5; previous direct-read evidence still establishes a data-layer vulnerability, not a bypass of that page redirect. No backend fix was made.
 - [x] Replace information-card standalone maps with shared LocationCard read-only mode, bound only to the card's associated person; disable management queries and viewer geolocation in this mode.
