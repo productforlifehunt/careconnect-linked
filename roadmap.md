@@ -1,6 +1,6 @@
 ## Current request: user-data scope audit and NotchSafety green
 - [x] Audit task/group/notification/AI services and private feature sources; remove whole-CCT reads from private task/group/notification lists, delegate legacy services, and clear account caches. Public helper-task listings are intentionally shared; their global transport read remains, as do chat bulk transport reads (not an all-page security audit).
-- [ ] Final live verification of latest briefing identity/schedule correction: earlier test1 run found 8 vs 2 unread messages because the service omitted the current-user ID; corrected caller and added person-specific medicine/checkin facts, but latest result must be re-read.
+- [x] Live test1 verification after briefing identity/schedule correction: tasks 0 in both list and briefing, unread messages 2 in both, QA Morning Checkin appears in timeline and briefing; no runtime errors, build OK. AI still produced contradictory wording about whether the listed check-in is scheduled; report this remaining output-quality issue, plus chat/public-task bulk transport reads and incomplete all-page live coverage.
 - [x] Match NotchSafety theme and favicon to CareCNC green: both brands resolve primary 173 100% 41%; English/Chinese NotchSafety login screenshots verified; build OK.
 
 ## Screening question provenance labels
