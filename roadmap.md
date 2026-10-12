@@ -1,7 +1,7 @@
 ## Current request: user-data scope audit and NotchSafety green
-- [ ] Audit private user-facing aggregates for unrelated whole-app data; distinguish intentionally public listings.
-- [ ] Report concrete findings and verification coverage without claiming a complete live permissions audit.
-- [ ] Match NotchSafety theme and favicon to CareCNC green and verify both languages in the browser.
+- [x] Audit task/group/notification/AI services and private feature sources; remove whole-CCT reads from private task/group/notification lists, delegate legacy services, and clear account caches. Public helper-task listings are intentionally shared; their global transport read remains, as do chat bulk transport reads (not an all-page security audit).
+- [ ] Final live verification of latest briefing identity/schedule correction: earlier test1 run found 8 vs 2 unread messages because the service omitted the current-user ID; corrected caller and added person-specific medicine/checkin facts, but latest result must be re-read.
+- [x] Match NotchSafety theme and favicon to CareCNC green: both brands resolve primary 173 100% 41%; English/Chinese NotchSafety login screenshots verified; build OK.
 
 ## Screening question provenance labels
 

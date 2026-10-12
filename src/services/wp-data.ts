@@ -298,7 +298,10 @@ export async function wpFetchCareGroupMembers(_groupId: string): Promise<any[]> 
 // ─── Conversations (empty in WP mode — no real-time chat) ───
 export async function wpFetchConversations(): Promise<any[]> {
   const { fetchConversationsWordPress } = await import("@/features/conversations/source.wordpress");
-  return fetchConversationsWordPress();
+  const { getStoredWPUser } = await import("@/services/wp-auth");
+  const user = getStoredWPUser();
+  if (!user?.user_id) return [];
+  return fetchConversationsWordPress(`wp-${user.user_id}`);
 }
 
 // ─── Notifications ──────────────────────────────────────────
