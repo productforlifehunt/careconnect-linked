@@ -1,5 +1,10 @@
 ## Screening question provenance labels
 
+## Current request: Life360 comparison and card-only visibility
+- [x] Evaluate blue versus mint/teal for NotchSafety without changing colors: favor restrained teal identity with pale mint surfaces and dark readable text; color does not establish eye protection or children's preferences.
+- [x] Verify card-only viewer permissions in source and anonymous browser on card 10: shared LocationCard map and safe zone rendered, associated care-plan/medicine reads returned 200, AI answered an actual typed question without login. No person-position record exists for this card, so a live person marker remains unverified. Subagent's claimed transport auth gate was disproven by current source and browser evidence; no application change needed.
+- [x] Research official Life360 invitations (72 hours), per-circle sharing and visible paused status, Bubbles, temporary browser links, temporary Circles, and Tile Bluetooth finding; explain collision math without claiming unpublished server internals. No official who-viewed log documentation found; absence is not conclusively established. Native app interaction was not tested.
+
 ## Current request: auth boundary and shared information-card internals
 - [x] Distinguish page login protection from data authorization: fresh anonymous browser redirected /cared-ones/46/location to /auth and denied private shared card 5; previous direct-read evidence still establishes a data-layer vulnerability, not a bypass of that page redirect. No backend fix was made.
 - [x] Replace information-card standalone maps with shared LocationCard read-only mode, bound only to the card's associated person; disable management queries and viewer geolocation in this mode.
