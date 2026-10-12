@@ -1,5 +1,7 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { getStoredWPUser } from "@/services/wp-auth";
+import { fetchCareGroupsWordPress } from "@/features/care-groups/source.wordpress";
+import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
 import { R, T, WP } from "@/integrations/wp-schema";
 
 
@@ -135,42 +137,44 @@ function mapTask(t: any, groupId?: string | null | undefined) {
 }
 
 export async function fetchCareTasksWordPress(groupId?: string | null | undefined): Promise<any[]> {
-    // Everything the task list needs leaves in ONE parallel wave: the group's
-    // task relation rows, the bulk task read, and both batched relation maps.
-    const [groupRels, bulkTasks, assigneeMap, caredOneMap] = await Promise.all([
-      groupId
-        ? wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(groupId)}`)
-        : Promise.resolve(null),
-      wordpressCCTFetch<any[]>(CCT_SLUG, { params: { _limit: 100 } }),
-      fetchRelChildrenMap(REL_TASK_ASSIGNEE),
-      fetchRelChildrenMap(REL_TASK_CARED_ONE),
-    ]);
-    if (!Array.isArray(bulkTasks)) throw new Error("Care tasks returned an invalid response");
-    let taskList: any[] = bulkTasks;
+    const userId = getStoredWPUser()?.user_id;
+    if (!userId) return [];
+    let taskIds: string[] = [];
+    let ownRows: any[] = [];
     if (groupId) {
-      const taskIds = (Array.isArray(groupRels) ? groupRels : [])
-        .map((r: any) => String(r.child_object_id || ""))
-        .filter(Boolean);
-      if (taskIds.length === 0) return [];
-      const byId = new Map<string, any>(bulkTasks.map((t: any) => [String(t.id ?? t._ID), t]));
-      const missing = taskIds.filter((id) => !byId.has(id));
-      const fetched = await Promise.all(
-        missing.map((id) => wordpressCCTFetch<any>(CCT_SLUG, { id })),
-      );
-      for (const t of fetched) if (t) byId.set(String((t as any).id ?? (t as any)._ID), t);
-      taskList = taskIds.map((id) => byId.get(id)).filter(Boolean);
+      const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(groupId)}`);
+      taskIds = (Array.isArray(rels) ? rels : []).map((r) => String(r.child_object_id || "")).filter(Boolean);
+    } else {
+      // Resolve existing JetEngine relations first; never download all tasks.
+      const [groups, people, assigned, visible, authored] = await Promise.all([
+        fetchCareGroupsWordPress(),
+        fetchUserCaredOnesWordPress(),
+        wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${userId}`),
+        wordpressFetch<any[]>(`jet-rel/${REL_TASK_USERS}/parents/${userId}`),
+        // cct_author_id is JetEngine's native ownership, not a custom relation.
+        wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: userId, _limit: 100 } }),
+      ]);
+      ownRows = (Array.isArray(authored) ? authored : []).filter((t) => Number(t.cct_author_id) === Number(userId));
+      const links = await Promise.all([
+        ...groups.map((g) => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(g.id)}`)),
+        ...people.map((p) => wordpressFetch<any[]>(`jet-rel/${REL_TASK_CARED_ONE}/parents/${normalizeWpObjectId(p.user_id)}`)),
+      ]);
+      taskIds = [
+        ...ownRows.map((t) => String(t._ID || t.id || "")),
+        ...[assigned, visible].flatMap((rows) => (Array.isArray(rows) ? rows : []).map((r) => String(r.parent_object_id || ""))),
+        ...links.flatMap((rows, index) => (Array.isArray(rows) ? rows : []).map((r) => String(index < groups.length ? r.child_object_id || "" : r.parent_object_id || ""))),
+      ].filter(Boolean);
     }
+    const ownById = new Map(ownRows.map((t) => [String(t._ID || t.id), t]));
+    const taskList = (await Promise.all([...new Set(taskIds)].map((id) =>
+      ownById.get(id) || wordpressCCTFetch<any>(CCT_SLUG, { id }),
+    ))).filter(Boolean);
 
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const base = mapTask(t, groupId);
-      const pid = String(normalizeWpObjectId(base.id));
-      const assignees = assigneeMap.loaded
-        ? mapAssigneeRows(assigneeMap.get(pid) || [])
-        : await fetchAssignees(base.id);
-      const caredOneChild = caredOneMap.get(pid)?.map((c) => normalizeWpObjectId(c.childId)).find(Boolean);
-      const caredOne = caredOneMap.loaded
-        ? (caredOneChild ? `wp-${caredOneChild}` : null)
-        : await fetchCaredOneId(base.id);
+      const [assignees, caredOne] = await Promise.all([
+        fetchAssignees(base.id), fetchCaredOneId(base.id),
+      ]);
       const assignedIds = assignees.map((a) => a.user_id);
       return {
         ...base,

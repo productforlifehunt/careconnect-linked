@@ -381,6 +381,19 @@ export async function resolveBriefingFacts({ isChinese }: Lang): Promise<string>
   ]);
   let bookings = "";
   let unread = "";
+  let schedules = "";
+  try {
+    const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
+    const people = await fetchUserCaredOnesWordPress();
+    schedules = (await Promise.all(people.map(async (person) => {
+      const id = String(person.user_id).replace(/^wp-/, "");
+      const [medicine, checkins] = await Promise.all([
+        resolveMedicineFacts(id, { isChinese }),
+        resolveCheckInFacts(id, { isChinese }),
+      ]);
+      return join([person.cared_one?.full_name, medicine, checkins]);
+    }))).join("\n");
+  } catch { /* optional */ }
   try {
     const { wpFetchBookings } = await import("@/services/wp-data");
     const list = await wpFetchBookings().catch(() => []);
@@ -398,7 +411,7 @@ export async function resolveBriefingFacts({ isChinese }: Lang): Promise<string>
     const n = convos.reduce((sum: number, c: any) => sum + Number(c.unread_count || 0), 0);
     unread = line(Z(isChinese, "未读消息", "Unread messages"), n);
   } catch { /* optional */ }
-  return join([viewer, tasks, bookings, unread]);
+  return join([viewer, tasks, schedules, bookings, unread]);
 }
 
 /** Group facts, gated on membership. */
