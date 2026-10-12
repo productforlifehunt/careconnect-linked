@@ -5,6 +5,8 @@ import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayM
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { useNavigate } from "@/lib/router-compat";
+import { useSite } from "@/contexts/SiteContext";
 
 interface DailyTimelineProps {
   caredOneId: string;
@@ -23,6 +25,12 @@ interface TimelineItem {
 export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) {
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
+  const navigate = useNavigate();
+  const site = useSite();
+  const personId = String(caredOneId).replace(/^wp-/, "");
+  const shownName = caredOneName || (isZh ? "被护理者" : site.caredOneSingular);
+  const targetFor = (type: TimelineItem["type"]) =>
+    type === "booking" ? "/bookings" : `/cared-ones/${personId}/${type === "medicine" ? "medicine" : type === "checkin" ? "checkin" : "tasks"}`;
   const { data: medicines } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
   const { data: tasks } = useCareTasks();
@@ -163,7 +171,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" />
-          {isZh ? `今日事项 — ${caredOneName}` : `Today's Events — ${caredOneName}`}
+          {isZh ? `今日事项 — ${shownName}` : `Today's Events — ${shownName}`}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
@@ -173,7 +181,8 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
 
           <div className="space-y-2">
             {timelineItems.map((item, i) => (
-              <div key={`${item.type}-${i}`} className="flex items-start gap-3 relative">
+              <button key={`${item.type}-${i}`} type="button" onClick={() => navigate(targetFor(item.type))}
+                className="w-full text-left flex items-start gap-3 relative rounded-lg hover:bg-muted/60 transition-colors">
                 <div className={`z-10 shrink-0 w-9 h-9 rounded-full bg-card border-2 border-border flex items-center justify-center ${iconColor[item.type]}`}>
                   <item.icon className="h-4 w-4" />
                 </div>
@@ -186,7 +195,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
                   </div>
                   <p className="text-sm text-foreground truncate">{item.label}</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
