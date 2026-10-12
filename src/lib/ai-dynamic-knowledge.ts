@@ -346,8 +346,18 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
 export async function resolveTaskFacts({ isChinese }: Lang): Promise<string> {
   try {
     const { wpFetchCareTasks } = await import("@/services/wp-data");
-    const tasks = await wpFetchCareTasks().catch(() => []);
-    const open = tasks.filter((t: any) => t.status !== "completed");
+    const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
+    const [tasks, caredOnes] = await Promise.all([
+      wpFetchCareTasks().catch(() => []),
+      fetchUserCaredOnesWordPress().catch(() => []),
+    ]);
+    // Same rule as the dashboard task list: only tasks linked (task → cared-one
+    // relation) to someone in this viewer's own cared-one list.
+    const mine = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
+    const open = tasks.filter((t: any) => {
+      const co = String(t.cared_one_id ?? "").replace(/^wp-/, "");
+      return !!co && mine.has(co) && t.status !== "completed";
+    });
     return join([
       line(Z(isChinese, "未完成任务数", "Open tasks"), open.length),
       line(
