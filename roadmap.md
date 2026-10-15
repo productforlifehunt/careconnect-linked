@@ -1,3 +1,8 @@
+## Current request: Network 8 context mapping
+- [x] Both Network 8 participant titles already match saved interviews exactly; confirmed with researcher login.
+- [x] Add seven reconstructed Daily context notes per participant through JetEngine GUI, link through existing REL307, and read all fourteen back in researcher view. Every note labels reconstruction and archived sentence references; uncollected daily scale scores remain blank, not invented.
+- [x] Add one further transcript-grounded, time-unbound Hourly note per participant through JetEngine GUI and existing REL306. Verified final counts: Chen 7 hourly / 7 daily / 1 screening; Lin 5 hourly / 7 daily / 1 screening. No schema, relation configuration, existing answers or account credentials changed; no browser runtime errors.
+
 ## Current request: user-data scope audit and NotchSafety green
 - [x] Audit task/group/notification/AI services and private feature sources; remove whole-CCT reads from private task/group/notification lists, delegate legacy services, and clear account caches. Public helper-task listings are intentionally shared; their global transport read remains, as do chat bulk transport reads (not an all-page security audit).
 - [x] Live test1 verification after briefing identity/schedule correction: tasks 0 in both list and briefing, unread messages 2 in both, QA Morning Checkin appears in timeline and briefing; no runtime errors, build OK. AI still produced contradictory wording about whether the listed check-in is scheduled; report this remaining output-quality issue, plus chat/public-task bulk transport reads and incomplete all-page live coverage.
