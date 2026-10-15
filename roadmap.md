@@ -1,7 +1,7 @@
 ## Current request: Network 8 context mapping
-- [ ] Match both participant names exactly to saved interview titles and verify in researcher view.
-- [ ] Add transcript-grounded reconstructed Daily notes for both participants, with explicit mock provenance.
-- [ ] Add only further Hourly notes supported by the archived interviews and verify saved counts.
+- [x] Both Network 8 participant titles already match saved interviews exactly; confirmed with researcher login.
+- [x] Add seven reconstructed Daily context notes per participant through JetEngine GUI, link through existing REL307, and read all fourteen back in researcher view. Every note labels reconstruction and archived sentence references; uncollected daily scale scores remain blank, not invented.
+- [x] Add one further transcript-grounded, time-unbound Hourly note per participant through JetEngine GUI and existing REL306. Verified final counts: Chen 7 hourly / 7 daily / 1 screening; Lin 5 hourly / 7 daily / 1 screening. No schema, relation configuration, existing answers or account credentials changed; no browser runtime errors.
 
 ## Current request: user-data scope audit and NotchSafety green
 - [x] Audit task/group/notification/AI services and private feature sources; remove whole-CCT reads from private task/group/notification lists, delegate legacy services, and clear account caches. Public helper-task listings are intentionally shared; their global transport read remains, as do chat bulk transport reads (not an all-page security audit).
