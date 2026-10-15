@@ -304,6 +304,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 }} />
             </div>
           )}
+          {playError && <p className="text-sm text-destructive">{playError}</p>}
           <div className="flex flex-wrap items-center gap-2">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
