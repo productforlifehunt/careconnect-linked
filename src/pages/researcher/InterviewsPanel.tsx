@@ -123,13 +123,16 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [showArchive, setShowArchive] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [buffering, setBuffering] = useState(false);
+  const [playError, setPlayError] = useState("");
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const abort = useRef<AbortController | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    playUrl(path).then(setAudio).catch(() => undefined);
+    setPlayError("");
+    playUrl(path).then(setAudio).catch(() => setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"));
     loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
     return () => abort.current?.abort();
   }, [path]);
@@ -278,16 +281,20 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <audio ref={player} src={audio} preload="metadata" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()}
                 onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
                 onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
+                onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onCanPlay={() => setBuffering(false)}
+                onError={() => { setPlaying(false); setBuffering(false); setPlayError("This recording could not play. Please refresh. / 录音无法播放，请刷新重试。"); }}
                 onEnded={() => { setPlaying(false); setPosition(0); }} />
               <Button variant="ghost" size="icon" aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
                 const element = player.current;
                 if (!element) return;
-                if (element.paused) { void element.play(); setPlaying(true); }
-                else { element.pause(); setPlaying(false); }
+                if (element.paused) {
+                  setPlayError(""); setBuffering(true); setPlaying(true);
+                  element.play().catch(() => { setPlaying(false); setBuffering(false); setPlayError("Playback did not start. Please tap play again. / 播放未开始，请再点一次播放。"); });
+                } else { element.pause(); setPlaying(false); }
               }}>
-                {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                {buffering && playing ? <Loader2 className="h-5 w-5 animate-spin" /> : playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
               </Button>
-              <span className="text-sm text-foreground">Play recording / 播放录音</span>
+              <span className="text-sm text-foreground">{buffering && playing ? "Loading… / 加载中…" : "Play recording / 播放录音"}</span>
               <Slider className="min-w-0 flex-1" min={0} max={duration || 1} step={0.1} value={[Math.min(position, duration || 1)]}
                 aria-label="Recording position / 录音位置" onValueChange={([next]) => {
                   const element = player.current;
