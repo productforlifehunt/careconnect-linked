@@ -463,6 +463,11 @@ export function AnswerCard({ kind, row: initialRow, participantName = "", start,
             }
             const v = row[item.column];
             if (v === undefined || v === null || v === "") return null;
+            // JetEngine normalizes empty numeric inputs to zero. Explicitly
+            // reconstructed notes have no collected scale scores; do not render
+            // those storage defaults as neutral participant responses.
+            const reconstructedNote = String(row[kind === "daily" ? "a01" : "a07"] ?? "").startsWith("Reconstructed context-mapping note /");
+            if (reconstructedNote && item.scale && String(v) === "0") return null;
             // JetEngine stores a cleared number as 0; hide it where 0 is not a valid answer.
             const zeroIsBlank = item.type === "number" || (item.scale ? item.scale.min > 0 : false);
             if (zeroIsBlank && String(v) === "0") return null;
