@@ -1,5 +1,5 @@
 /** Select complete MPEG Layer III frames; never return raw bytes to visitors. */
-export function mp3Segment(buffer: ArrayBuffer, absoluteStart: number, fileSize: number) {
+export function mp3Segment(buffer: ArrayBuffer, absoluteStart: number, fileSize: number, limitSeconds = 30) {
   const bytes = new Uint8Array(buffer);
   let pos = 0;
   if (absoluteStart === 0 && bytes[0] === 73 && bytes[1] === 68 && bytes[2] === 51) {
@@ -7,7 +7,7 @@ export function mp3Segment(buffer: ArrayBuffer, absoluteStart: number, fileSize:
   }
   const chunks: Uint8Array[] = [];
   let seconds = 0;
-  while (pos + 4 <= bytes.length && seconds < 30) {
+  while (pos + 4 <= bytes.length && seconds < limitSeconds) {
     const a = bytes[pos] ?? 0, b = bytes[pos + 1] ?? 0, c = bytes[pos + 2] ?? 0;
     const version = b >> 3 & 3, layer = b >> 1 & 3, rateIndex = c >> 2 & 3, bitrateIndex = c >> 4;
     if (a !== 255 || (b & 224) !== 224 || version === 1 || layer !== 1 || rateIndex === 3 || bitrateIndex === 0 || bitrateIndex === 15) { pos++; continue; }
@@ -26,5 +26,5 @@ export function mp3Segment(buffer: ArrayBuffer, absoluteStart: number, fileSize:
   for (const chunk of chunks) { result.set(chunk, out); out += chunk.length; }
   let binary = "";
   for (let i = 0; i < result.length; i += 0x8000) binary += String.fromCharCode(...result.subarray(i, i + 0x8000));
-  return { audio: btoa(binary), nextOffset, estimatedRemaining: nextOffset === null ? 0 : Math.ceil((fileSize - nextOffset) / Math.max(1, pos)) };
+  return { audio: btoa(binary), nextOffset, seconds, estimatedRemaining: nextOffset === null ? 0 : Math.ceil((fileSize - nextOffset) / Math.max(1, pos)) };
 }
