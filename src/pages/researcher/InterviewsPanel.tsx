@@ -263,6 +263,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     setLineKind(kind); setEditLines(source.map((line) => ({ ...line })));
     setEditing(true); setShowArchive(kind); setSaved(""); setError("");
   };
+  const generateEditedFromRaw = () => {
+    if (!canEdit || busy || running || saving || !archive?.lines.length) return;
+    const out = archive.lines.map((line) => ({ ...line }));
+    localStorage.setItem(textDraftKey("edited"), JSON.stringify(out));
+    setLineKind("edited"); setEditLines(out); setEditing(true); setShowArchive("edited");
+    setSaved(""); setError("");
+  };
   const generateManualAnonymized = () => {
     if (!canEdit || busy || running || saving || !editedArchive?.lines.length) return;
     const out = editedArchive.lines.map((line) => ({ ...line }));
@@ -487,6 +494,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <Archive className="mr-2 h-4 w-4" />View Edited Archived Translation and Transcription / 查看修订翻译与转录归档
             </Button>
             <p className="text-sm text-foreground">Click to read the Edited archive. / 点击查看修订归档。</p>
+            {canEdit && !busy && <Button variant="outline" disabled={saving || running || !archive?.lines.length} onClick={generateEditedFromRaw}>Generate from current Raw archive / 用当前原始归档生成</Button>}
             {canEdit && archive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("edited")}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
           </div>
           <div className="space-y-3 border-t border-border pt-5">
