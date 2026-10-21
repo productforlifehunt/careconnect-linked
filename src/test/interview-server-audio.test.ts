@@ -1,11 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { generateTranscript } from "@/features/interviews/transcribe";
 import { readWavInfo, wavBase64, wavChunkToMono } from "../../supabase/functions/_shared/interview-wav";
+import { mp3Segment } from "../../supabase/functions/_shared/interview-mp3";
 
 vi.mock("@/services/wp-auth", () => ({ getWPToken: () => "" }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 describe("server-only recording transcription", () => {
+  it("keeps complete MP3 frames on the server with an exact byte cursor", () => {
+    const frame = new Uint8Array(417);
+    frame.set([255, 251, 144, 0]);
+    const bytes = new Uint8Array(417 * 1200);
+    for (let i = 0; i < 1200; i++) bytes.set(frame, i * 417);
+    const first = mp3Segment(bytes.buffer, 0, bytes.length);
+    expect(first.nextOffset).toBe(417 * 1149);
+    expect(atob(first.audio).length).toBe(417 * 1149);
+    if (first.nextOffset === null) throw new Error("Missing next frame");
+    const last = mp3Segment(bytes.buffer.slice(first.nextOffset), first.nextOffset, bytes.length);
+    expect(last.nextOffset).toBeNull();
+    expect(atob(last.audio).length).toBe(417 * 51);
+  });
   beforeEach(() => vi.restoreAllMocks());
   it("generates fresh WAV text without receiving any audio URL or downloading audio", async () => {
     const requests: Record<string, unknown>[] = [];
