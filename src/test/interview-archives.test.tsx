@@ -25,10 +25,30 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("independent interview archives", () => {
   it("saves a researcher playback switch without generating or rewriting archives", async () => {
-    api.saveMeta.mockImplementation(async (_path, value) => value);
+    api.saveMeta.mockImplementation(async (_path, value) => ({ title: "Network1", ...value }));
     render(<InterviewsPanel canEdit />);
     fireEvent.click(await screen.findByRole("switch", { name: "Allow visitor playback / 允许访客播放" }));
     await waitFor(() => expect(api.saveMeta).toHaveBeenCalledWith("sample.wav", expect.objectContaining({ playbackAllowed: false })));
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
+  });
+  it("persists all three switches across reload without changing recording metadata", async () => {
+    let stored = { title: "Network1", notes: "Keep notes", instructions: "Keep instructions", playbackAllowed: true, showPlayback: true, showGenerate: true };
+    api.listRecordings.mockImplementation(async () => [{ path: "sample.wav", size: 500, meta: stored }]);
+    api.saveMeta.mockImplementation(async (_path, patch) => { stored = { ...stored, ...patch }; return stored; });
+    const view = render(<InterviewsPanel canEdit />);
+    for (const name of ["Allow visitor playback / 允许访客播放", "Show visitor player / 显示访客播放器", "Show visitor Generate New / 显示访客重新生成"]) {
+      const control = await screen.findByRole("switch", { name });
+      await waitFor(() => expect(control).toBeEnabled());
+      fireEvent.click(control);
+      await waitFor(() => expect(control).not.toBeChecked());
+    }
+    view.unmount();
+    render(<InterviewsPanel canEdit />);
+    expect(await screen.findByRole("switch", { name: "Allow visitor playback / 允许访客播放" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "Show visitor player / 显示访客播放器" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "Show visitor Generate New / 显示访客重新生成" })).not.toBeChecked();
+    expect(stored).toEqual({ title: "Network1", notes: "Keep notes", instructions: "Keep instructions", playbackAllowed: false, showPlayback: false, showGenerate: false });
     expect(api.generateTranscript).not.toHaveBeenCalled();
     expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
   });
