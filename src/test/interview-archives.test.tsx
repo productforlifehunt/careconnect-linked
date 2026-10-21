@@ -82,14 +82,16 @@ describe("independent interview archives", () => {
     expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
   });
   it("disables visitor playback without obtaining audio and preserves generation", async () => {
+    const request = vi.spyOn(globalThis, "fetch");
     api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1", notes: "", instructions: "", playbackAllowed: false, showPlayback: true } }]);
     render(<InterviewsPanel canEdit={false} />);
     expect(await screen.findByRole("button", { name: "Play recording" })).toBeDisabled();
-    expect(api.playUrl).not.toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled();
     expect(screen.queryByRole("switch")).toBeNull();
   });
   it("hides visitor player and new generation while retaining Raw and Edited archive access", async () => {
+    const request = vi.spyOn(globalThis, "fetch");
     edited = raw;
     api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1", notes: "", instructions: "", showPlayback: false, showGenerate: false } }]);
     render(<InterviewsPanel canEdit={false} />);
@@ -98,7 +100,7 @@ describe("independent interview archives", () => {
     expect(screen.queryByRole("button", { name: "Play recording" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Generate New Raw/ })).toBeNull();
     expect(screen.getByRole("button", { name: "View Edited Archived Translation and Transcription / 查看修订翻译与转录归档" })).toBeEnabled();
-    expect(api.playUrl).not.toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
   });
   it("saves recruitment source with existing title, notes and instructions without generating a transcript", async () => {
     api.saveMeta.mockImplementation(async (_path, value) => value);

@@ -14,6 +14,7 @@ export class InterviewPlayback {
   private duration = 0;
   private start = 0;
   private active = false;
+  private generation = 0;
   constructor(private path: string, private update: (state: PlaybackState) => void, private error: (message: string) => void) {}
 
   private emit(buffering = false) { this.update({ playing: this.active, buffering, position: this.position, duration: this.duration }); }
@@ -30,11 +31,13 @@ export class InterviewPlayback {
 
   private async next() {
     if (!this.active || !this.context) return;
-    this.controller = new AbortController();
+    const generation = this.generation;
+    const controller = new AbortController();
+    this.controller = controller;
     this.emit(true);
     try {
       const response = await fetch(`https://${import.meta.env["VITE_SUPABASE_PROJECT_ID"]}.supabase.co/functions/v1/interview-audio`, {
-        method: "POST", signal: this.controller.signal,
+        method: "POST", signal: controller.signal,
         headers: { "Content-Type": "application/json", apikey: import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"],
           Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`, "x-wp-token": getWPToken() || "" },
         body: JSON.stringify({ action: "stream", path: this.path, offset: this.offset }),
@@ -48,7 +51,7 @@ export class InterviewPlayback {
       const data = await response.arrayBuffer();
       if (data.byteLength > 4_000_044) throw new Error("Invalid stream chunk");
       const buffer = await this.context.decodeAudioData(data);
-      if (!this.active) return;
+      if (!this.active || generation !== this.generation) return;
       this.duration = duration; this.size = size; this.position = position;
       this.start = this.context.currentTime;
       const node = this.context.createBufferSource();
@@ -69,13 +72,13 @@ export class InterviewPlayback {
       };
       node.start();
     } catch (e) {
-      if (this.controller?.signal.aborted) return;
+      if (controller.signal.aborted || generation !== this.generation) return;
       this.pause(); this.error(e instanceof Error ? e.message : "Playback unavailable");
     }
   }
 
   pause() {
-    this.active = false; this.controller?.abort();
+    this.active = false; this.generation++; this.controller?.abort();
     if (this.source) { this.source.onended = null; this.source.stop(); this.source = null; }
     if (this.timer) clearInterval(this.timer);
     this.timer = null; this.emit();
