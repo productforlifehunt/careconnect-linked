@@ -6,12 +6,13 @@ const api = vi.hoisted(() => ({ preloadRecordingUrl: vi.fn() }));
 vi.mock("@/features/interviews/transcribe", () => api);
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
-describe("six consented full-preload demos", () => {
-  it("grants full preload to exactly the six currently consented recording identities", () => {
+describe("four consented full-preload demos", () => {
+  it("grants full preload to exactly the four currently consented recording identities", () => {
     expect(DEMO_RECORDINGS).toEqual([
-      "1792069468864_34.wav", "1790775526991_32.wav", "1791796863950_33_-edited.wav",
-      "1791798861562_31_-edited.wav", "1790781885160_57.wav", "1790783161922_27.wav",
+      "1792069468864_34.wav", "1790775526991_32.wav", "1791796863950_33_-edited.wav", "1790783161922_27.wav",
     ]);
+    expect(isDemoRecording("1791798861562_31_-edited.wav")).toBe(false);
+    expect(isDemoRecording("1790781885160_57.wav")).toBe(false);
     for (const path of DEMO_RECORDINGS) expect(canPreloadInterviewAudio(path, { showPlayback: true, playbackAllowed: true }, false)).toBe(true);
     expect(isDemoRecording("1790786958895_40.wav")).toBe(false);
     expect(canPreloadInterviewAudio("1790786958895_40.wav", { title: "P-CN1-A1", showPlayback: true, playbackAllowed: true }, true)).toBe(false);

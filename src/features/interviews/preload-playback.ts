@@ -2,7 +2,7 @@ import { preloadRecordingUrl } from "./transcribe";
 
 interface PlaybackState { playing: boolean; buffering: boolean; position: number; duration: number }
 
-/** Native full-recording preload for the six explicitly consented demos only. */
+/** Native full-recording preload for the four explicitly consented demos only. */
 export class PreloadedInterviewPlayback {
   private audio: HTMLAudioElement;
   private ready: Promise<void>;
