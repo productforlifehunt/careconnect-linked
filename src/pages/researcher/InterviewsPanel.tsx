@@ -430,17 +430,37 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!editedArchive || editing} onClick={() => setShowArchive("edited")}>
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!editedArchive || busy} onClick={() => setShowArchive("edited")}>
               <Archive className="mr-2 h-4 w-4" />View Edited Archived Translation and Transcription / 查看修订翻译与转录归档
             </Button>
-            {canEdit && archive && !editing && <Button variant="outline" disabled={saving || running} onClick={startEditing}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
-            {canEdit && editing && <>
-              <Button variant="success" disabled={saving || !editLines.some((line) => line.zh.trim() || line.en.trim())} onClick={storeEditedArchive}>
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save to Edited archive / 存入修订归档
-              </Button>
-              <Button variant="outline" disabled={saving} onClick={() => { setEditing(false); setShowArchive(editedArchive ? "edited" : "raw"); }}><X className="mr-2 h-4 w-4" />Cancel / 取消</Button>
-            </>}
+            {canEdit && archive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("edited")}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!anonArchive || busy} onClick={() => setShowArchive("anonymized")}>
+              <Archive className="mr-2 h-4 w-4" />View Anonymized Edited Archived Translation and Transcription / 查看匿名修订翻译与转录归档
+            </Button>
+            {canEdit && !busy && <Button variant="outline" disabled={saving || running || !editedArchive} onClick={generateAnonymized}>Generate from current Edited archive / 用当前修订归档生成</Button>}
+            {canEdit && anonArchive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("anonymized")}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
+            {anonProgress && <span className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Anonymizing… / 匿名化中… {anonProgress}</span>}
+          </div>
+          {([["text", "View Edited Archived Translation and Transcription in Text / 查看修订翻译与转录归档文本版", editedArchive, "edited"], ["anonymized-text", "View Anonymized Edited Archived Translation and Transcription in Text / 查看匿名修订翻译与转录归档文本版", anonArchive, "anonymized"]] as const).map(([kind, label, src, suffix]) => (
+            <div key={kind} className="flex flex-wrap items-center gap-2">
+              <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!archiveOf(kind) || busy} onClick={() => setShowArchive(kind)}>
+                <Archive className="mr-2 h-4 w-4" />{label}
+              </Button>
+              {archiveOf(kind)?.text && <Button variant="outline" onClick={() => downloadText(archiveOf(kind)!.text!, `${fileBase}-${suffix}${kind === "anonymized-text" ? "" : ""}.txt`)}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
+              {canEdit && !busy && <Button variant="outline" disabled={saving || running || !src} onClick={() => startText(kind, true)}>Generate from current {suffix === "edited" ? "Edited" : "Anonymized"} archive / 用当前{suffix === "edited" ? "修订" : "匿名"}归档生成</Button>}
+              {canEdit && archiveOf(kind) && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startText(kind, false)}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
+            </div>
+          ))}
+          {canEdit && (editing || textDraft) && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="success" disabled={saving || (editing ? !editLines.some((line) => line.zh.trim() || line.en.trim()) : !textDraft?.value.trim())} onClick={editing ? storeEditedArchive : storeText}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}{editing ? (lineKind === "edited" ? "Save to Edited archive / 存入修订归档" : "Save to Anonymized archive / 存入匿名归档") : "Save text archive / 存入文本归档"}
+              </Button>
+              <Button variant="outline" disabled={saving} onClick={() => { setEditing(false); setTextDraft(null); setShowArchive(false); }}><X className="mr-2 h-4 w-4" />Cancel / 取消</Button>
+            </div>
+          )}
           {canEdit && !running && !complete && lines.length > 0 && !showArchive && (
             <p className="text-sm text-muted-foreground">This run was not completed, so it cannot be saved to the archive. Generate again and let it finish. / 本次生成未完成，不能存入归档；请重新生成并等待全部完成。</p>
           )}
@@ -467,10 +487,19 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           {error && <p className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
-      {showArchive && !editing && <h3 className="font-medium text-foreground">{showArchive === "raw" ? "Raw archive / 原始归档" : "Edited archive / 修订归档"}</h3>}
-      {showArchive && !editing && !(showArchive === "raw" ? archive : editedArchive) && <p className="text-sm text-muted-foreground">No transcript archive has been saved yet. / 暂无已保存的转录归档</p>}
+      {showArchive && <h3 className="font-medium text-foreground">{{
+        raw: "Raw archive / 原始归档", edited: "Edited archive / 修订归档", anonymized: "Anonymized Edited archive / 匿名修订归档",
+        text: "Edited archive in text / 修订归档文本版", "anonymized-text": "Anonymized Edited archive in text / 匿名修订归档文本版",
+      }[showArchive]}{(editing || textDraft) && " — editing, not saved yet / 编辑中，尚未保存"}</h3>}
+      {showArchive && !editing && !textDraft && !archiveOf(showArchive) && <p className="text-sm text-muted-foreground">No transcript archive has been saved yet. / 暂无已保存的转录归档</p>}
+      {canEdit && textDraft ? (
+        <Textarea aria-label="Text archive" className="min-h-[60vh] font-mono text-sm" value={textDraft.value} disabled={saving}
+          onChange={(e) => { setTextDraft({ ...textDraft, value: e.target.value }); localStorage.setItem(textDraftKey(textDraft.kind), e.target.value); }} />
+      ) : (showArchive === "text" || showArchive === "anonymized-text") && archiveOf(showArchive)?.text ? (
+        <pre className="whitespace-pre-wrap rounded-md border border-border bg-card p-3 text-sm text-foreground">{archiveOf(showArchive)?.text}</pre>
+      ) : null}
       <ol className="space-y-2">
-        {(canEdit && editing ? editLines : showArchive === "raw" ? archive?.lines || [] : showArchive === "edited" ? editedArchive?.lines || [] : lines).map((l, i) => (
+        {(showArchive === "text" || showArchive === "anonymized-text" ? [] : canEdit && editing ? editLines : showArchive ? archiveOf(showArchive)?.lines || [] : lines).map((l, i) => (
           <li key={i} className="flex gap-3 rounded-md border border-border bg-card p-3">
             <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${l.s === "A" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{l.s}</span>
             <div className="min-w-0 flex-1 space-y-1">
