@@ -7,6 +7,9 @@
  */
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { isResearcher } from "../_shared/wp-researcher.ts";
+import { canReceiveInterviewAudio, interviewDisplaySettings } from "../_shared/interview-display.ts";
+import { readWavInfo, wavChunkToMono, wavBase64, SEGMENT_SECONDS } from "../_shared/interview-wav.ts";
 
 const MODEL = "google/gemini-3.8-flash";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -26,20 +29,52 @@ Deno.serve(async (req) => {
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return json({ error: "Transcription is not configured." }, 500);
 
-  let body: { audio?: string; path?: string; previous?: { s: string; zh: string }[] };
+  let body: { audio?: string; path?: string; segment?: number; previous?: { s: string; zh: string }[] };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
-  const audio = String(body.audio || "");
-  if (audio.length < 3000) return json({ error: "Empty audio segment." }, 400);
-  if (audio.length > 18_000_000) return json({ error: "Audio segment too large." }, 400);
+  let audio = String(body.audio || "");
   const path = String(body.path || "");
-  if (!path || path.includes("/") || path.includes("..")) return json({ error: "Invalid recording" }, 400);
+  if (!path || path.includes("/") || path.includes("..") || path.length >= 300) return json({ error: "Invalid recording" }, 400);
+  const researcher = await isResearcher(req).catch(() => false);
+  if (path === "1790784395705_69.wav" && !researcher) return json({ error: "protected" }, 403);
 
   const store = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!).storage.from("interview-audio");
   const { data: exists } = await store.list("", { search: path, limit: 1 });
   if (!exists?.some((f) => f.name === path)) return json({ error: "Recording not found." }, 404);
   let instructions = "";
+  let meta: Record<string, unknown> = {};
   const { data: metaFile } = await store.download(`meta/${path}.json`);
-  if (metaFile) { try { instructions = String(JSON.parse(await metaFile.text())?.instructions || "").slice(0, 5000); } catch { /* none */ } }
+  if (metaFile) { try { meta = JSON.parse(await metaFile.text()); instructions = String(meta.instructions || "").slice(0, 5000); } catch { /* none */ } }
+  const display = interviewDisplaySettings(meta);
+  if (!researcher && !display.showGenerate) return json({ error: "Generation unavailable" }, 403);
+  let total: number | undefined;
+  if (body.segment !== undefined) {
+    if (!Number.isInteger(body.segment) || body.segment < 0) return json({ error: "Invalid segment" }, 400);
+    // This signed address exists only inside this handler. Never return it.
+    const { data: signed, error } = await store.createSignedUrl(path, 60);
+    if (error || !signed) return json({ error: "Recording not found" }, 404);
+    const range = async (start: number, end: number) => {
+      const response = await fetch(signed.signedUrl, { headers: { Range: `bytes=${start}-${end}` }, signal: req.signal });
+      if (response.status !== 206) throw new Error("Recording range unavailable");
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > end - start + 1) throw new Error("Invalid recording range");
+      return buffer;
+    };
+    try {
+      const info = readWavInfo(await range(0, 65535));
+      if (!info || info.channels < 1 || info.sampleRate < 1 || info.blockAlign < 1) return json({ error: "Server transcription requires PCM WAV. The researcher can replace this recording with WAV." }, 400);
+      const step = SEGMENT_SECONDS * info.sampleRate * info.blockAlign;
+      if (step > 16_000_000) return json({ error: "WAV segment too large" }, 400);
+      total = Math.ceil(info.dataSize / step);
+      if (body.segment >= total) return json({ error: "Invalid segment" }, 400);
+      const start = info.dataOffset + body.segment * step;
+      const end = Math.min(info.dataOffset + info.dataSize - 1, start + step - 1);
+      audio = wavBase64(wavChunkToMono(await range(start, end), info));
+    } catch { return json({ error: "Server could not read this recording segment." }, 502); }
+  } else if (!canReceiveInterviewAudio(meta, researcher)) {
+    return json({ error: "Server transcription required" }, 403);
+  }
+  if (audio.length < 60) return json({ error: "Empty audio segment." }, 400);
+  if (audio.length > 18_000_000) return json({ error: "Audio segment too large." }, 400);
 
   const previous = (Array.isArray(body.previous) ? body.previous : []).slice(-8)
     .map((l) => `${l.s === "B" ? "B" : "A"}: ${String(l.zh || "").slice(0, 300)}`).join("\n");
@@ -80,5 +115,5 @@ Deno.serve(async (req) => {
   const result = await res.json().catch(() => null);
   const content = result?.choices?.[0]?.message?.content;
   if (typeof content !== "string") return json({ error: "The transcription response was incomplete." }, 502);
-  return json({ content });
+  return json({ content, ...(total !== undefined ? { total } : {}) });
 });

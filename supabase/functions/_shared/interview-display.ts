@@ -12,3 +12,8 @@ export function interviewDisplaySettings(meta: InterviewDisplaySettings & { titl
     showGenerate: typeof meta.showGenerate === "boolean" ? meta.showGenerate : true,
   };
 }
+
+export function canReceiveInterviewAudio(meta: InterviewDisplaySettings & { title?: string }, researcher: boolean) {
+  const display = interviewDisplaySettings(meta);
+  return researcher || (display.playbackAllowed && display.showPlayback);
+}

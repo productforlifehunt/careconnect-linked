@@ -18,4 +18,4 @@
 - Private task, group, notification and AI-summary reads resolve current-user JetEngine relations before loading CCT rows; legacy service entrypoints delegate to feature sources and account transitions clear read caches so ownership rules and cached identities cannot drift.
 
 - Interview appendix display, editing and TXT export share the timestamp-free formatter, including legacy text, without overwriting stored manual corrections.
-- Per-recording visitor display settings live with private recording metadata and use one shared playback policy in the UI and existing audio service; this prevents hidden/disabled players from receiving playback URLs while preserving independent transcription access.
+- Per-recording visitor settings use a shared server-enforced audio policy: hidden or disabled players receive neither playback nor transcription audio URLs; restricted WAV generation reads and segments audio inside the existing transcription handler and returns only text, preserving independent archives and researcher access.
