@@ -6,7 +6,7 @@ export const PLAYBACK_SECONDS = 5;
 /** Fetch bounded ranges server-side; the storage address never leaves the server. */
 export async function recordingStreamChunk(url: string, offset: number, signal?: AbortSignal) {
   const range = async (start: number, end: number) => {
-    const response = await fetch(url, { headers: { Range: `bytes=${start}-${end}` }, signal });
+    const response = await fetch(url, { headers: { Range: `bytes=${start}-${end}` }, ...(signal ? { signal } : {}) });
     if (response.status !== 206) throw new Error("Recording range unavailable");
     const bytes = await response.arrayBuffer();
     if (bytes.byteLength > end - start + 1) throw new Error("Invalid recording range");
