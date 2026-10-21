@@ -1,3 +1,7 @@
+## Current request: Simple model explanations
+- [x] Remove reasoning/budget/snapshot and historical-settings caveats from interview explanations; Raw generation names the actual model/ID and the transcription and translation instructions shown above. No model behavior changed.
+- [x] Live page and paragraph screenshot verify model/ID plus above-instructions wording; removed English/Chinese caveats absent; build OK.
+
 ## Current request: Manual anonymization
 - [x] Add researcher-only manual anonymization beside automatic generation, opening current Edited lines immediately without AI; explicit save uses the existing separate anonymized archive and overwrite confirmation.
 - [x] 17/17 tests pass, including manual draft/edit/save/readback without AI, Edited preservation and visitor restriction; live public page loads and build OK. Real researcher-authenticated save remains unverified; tested save uses mocked storage.
