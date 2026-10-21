@@ -59,7 +59,21 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
+    if (!researcher && OCCASIONAL_SECONDARY.test((await readMeta(path)).title)) {
+      return json({ error: "This participant did not sign the ethics consent, so only the researcher can play this recording. / 该参与者未签署伦理协议，录音仅供研究者播放。", consent: true }, 403);
+    }
     const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
+    if (error) return json({ error: error.message }, 404);
+    return json({ url: data.signedUrl });
+  }
+
+  // Transcription needs the audio bytes; this short-lived URL keeps transcript
+  // generation working for everyone without exposing a long-lived play link.
+  if (body.action === "transcribe_url") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (locked(path)) return json({ error: "protected", protected: true }, 403);
+    const { data, error } = await store.createSignedUrl(path, 60 * 15);
     if (error) return json({ error: error.message }, 404);
     return json({ url: data.signedUrl });
   }
