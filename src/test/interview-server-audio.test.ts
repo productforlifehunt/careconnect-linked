@@ -17,7 +17,7 @@ describe("server-only recording transcription", () => {
     });
     const lines = await generateTranscript("sample.wav", vi.fn(), vi.fn(), new AbortController().signal);
     expect(lines.map((l) => l.zh)).toEqual(["文字0", "文字1"]);
-    expect(requests.map((r) => r.segment)).toEqual([0, 1]);
+    expect(requests.map((r) => r['segment'])).toEqual([0, 1]);
     expect(requests.every((r) => !("audio" in r) && !("url" in r))).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
