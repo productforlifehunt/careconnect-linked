@@ -34,6 +34,8 @@ async function audioFn<T>(body: Record<string, unknown>): Promise<T> {
 
 export const listRecordings = () => audioFn<{ items: Recording[] }>({ action: "list" }).then((d) => d.items);
 export const playUrl = (path: string) => audioFn<{ url: string }>({ action: "play_url", path }).then((d) => d.url);
+/** Short-lived URL for transcript generation only — not offered for playback. */
+const transcribeUrl = (path: string) => audioFn<{ url: string }>({ action: "transcribe_url", path }).then((d) => d.url);
 
 export const saveMeta = (path: string, meta: Meta) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
 export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });
@@ -196,7 +198,7 @@ export async function generateTranscript(
   onLines: (lines: Line[]) => void,
   signal: AbortSignal,
 ): Promise<Line[]> {
-  const url = await playUrl(path);
+  const url = await transcribeUrl(path);
   // Large PCM WAV files are read in short byte ranges. This avoids a fragile
   // 100–500 MB browser download before the first transcript request starts.
   if (/\.wav$/i.test(path)) {
