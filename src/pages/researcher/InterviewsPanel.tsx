@@ -209,15 +209,29 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     finally { setSaving(false); }
   };
 
-  const startEditing = () => {
+  const startEditing = (kind: "edited" | "anonymized" = "edited") => {
     if (!canEdit || !archive) return;
-    let source = editedArchive?.lines || archive.lines;
+    let source = kind === "edited" ? editedArchive?.lines || archive.lines : anonArchive?.lines || [];
     try {
-      const draft: unknown = JSON.parse(localStorage.getItem(editedDraftKey) || "null");
+      const draft: unknown = JSON.parse(localStorage.getItem(textDraftKey(kind)) || "null");
       if (Array.isArray(draft) && draft.length) source = draft;
     } catch { /* use the saved archive */ }
-    setEditLines(source.map((line) => ({ ...line })));
-    setEditing(true); setShowArchive("edited"); setSaved(""); setError("");
+    if (!source.length) return;
+    setLineKind(kind); setEditLines(source.map((line) => ({ ...line })));
+    setEditing(true); setShowArchive(kind); setSaved(""); setError("");
+  };
+  const generateAnonymized = async () => {
+    if (!canEdit || !editedArchive?.lines.length) return;
+    if (anonArchive && !window.confirm("Generate a new anonymized version from the current Edited archive? The saved anonymized archive only changes when you save. / 用当前修订归档重新生成匿名版本？只有点保存才会覆盖已存的匿名归档。")) return;
+    setError(""); setSaved(""); setAnonProgress("0");
+    try {
+      await asResearcher(async () => {
+        const out = await anonymizeLines(editedArchive.lines, (d, t) => setAnonProgress(`${d}/${t}`));
+        localStorage.setItem(textDraftKey("anonymized"), JSON.stringify(out));
+        setLineKind("anonymized"); setEditLines(out); setEditing(true); setShowArchive("anonymized");
+      });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setAnonProgress(""); }
   };
   const changeLine = (index: number, update: Partial<Line>) => {
     const next = editLines.map((line, i) => i === index ? { ...line, ...update } : line);
@@ -225,20 +239,51 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   };
   const storeEditedArchive = async () => {
     if (!canEdit || !editing || !editLines.some((line) => line.zh.trim() || line.en.trim())) return;
-    if (editedArchive && !window.confirm("Overwrite the existing Edited archive? The Raw archive will not change. / 覆盖现有修订归档？原始归档不会改变。")) return;
+    const kind = lineKind;
+    const label = kind === "edited" ? "Edited archive / 修订归档" : "Anonymized Edited archive / 匿名修订归档";
+    if (archiveOf(kind) && !window.confirm(`Overwrite the existing ${label}? Other archives will not change. / 覆盖现有归档？其他归档不会改变。`)) return;
     setSaving(true); setError("");
     try {
       await asResearcher(async () => {
-        const stored = await saveTranscriptArchive(path, editLines, "edited");
-        const check = await loadTranscriptArchive(path, "edited");
-        if (!check || JSON.stringify(check.lines) !== JSON.stringify(stored.lines)) throw new Error("Edited archive could not be verified after saving. / 修订归档保存后校验失败。");
-        setEditedArchive(check); setEditing(false); setShowArchive("edited");
-        localStorage.removeItem(editedDraftKey);
-        setSaved("Edited archive saved / 修订归档已保存");
+        const stored = await saveTranscriptArchive(path, editLines, kind);
+        const check = await loadTranscriptArchive(path, kind);
+        if (!check || JSON.stringify(check.lines) !== JSON.stringify(stored.lines)) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败。");
+        setArchiveOf(kind, check); setEditing(false); setShowArchive(kind);
+        localStorage.removeItem(textDraftKey(kind));
+        setSaved(`${label} saved / 已保存`);
       });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
+  const startText = (kind: "text" | "anonymized-text", fresh: boolean) => {
+    if (!canEdit) return;
+    const src = kind === "text" ? editedArchive : anonArchive;
+    let value = !fresh && archiveOf(kind)?.text || "";
+    if (!fresh && localStorage.getItem(textDraftKey(kind))) value = localStorage.getItem(textDraftKey(kind)) || value;
+    if (fresh || !value) {
+      if (!src?.lines.length) return;
+      value = archiveToText(titleText, src.lines);
+    }
+    setTextDraft({ kind, value }); setShowArchive(kind); setSaved(""); setError("");
+  };
+  const storeText = async () => {
+    if (!canEdit || !textDraft?.value.trim()) return;
+    const { kind, value } = textDraft;
+    if (archiveOf(kind) && !window.confirm("Overwrite the existing text archive? Other archives will not change. / 覆盖现有文本归档？其他归档不会改变。")) return;
+    setSaving(true); setError("");
+    try {
+      await asResearcher(async () => {
+        await saveTextArchive(path, value, kind);
+        const check = await loadTranscriptArchive(path, kind);
+        if (!check || check.text !== value) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败。");
+        setArchiveOf(kind, check); setTextDraft(null); setShowArchive(kind);
+        localStorage.removeItem(textDraftKey(kind));
+        setSaved("Text archive saved / 文本归档已保存");
+      });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSaving(false); }
+  };
+  const fileBase = titleText.replace(/[\\/:*?"<>|]+/g, "_").slice(0, 80);
 
   const reSignIn = async () => {
     setSaving(true); setError("");
