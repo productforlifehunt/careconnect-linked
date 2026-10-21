@@ -8,7 +8,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
-import { canReceiveInterviewAudio, interviewDisplaySettings } from "../_shared/interview-display.ts";
+import { interviewDisplaySettings } from "../_shared/interview-display.ts";
 import { readWavInfo, wavChunkToMono, wavBase64, SEGMENT_SECONDS } from "../_shared/interview-wav.ts";
 import { mp3Segment } from "../_shared/interview-mp3.ts";
 
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
   const path = String(body.path || "");
   if (!path || path.includes("/") || path.includes("..") || path.length >= 300) return json({ error: "Invalid recording" }, 400);
   const researcher = await isResearcher(req).catch(() => false);
-  void canReceiveInterviewAudio;
+  // Transcribe returns text only; playback permissions are enforced by interview-audio.
 
   const store = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!).storage.from("interview-audio");
   const { data: exists } = await store.list("", { search: path, limit: 1 });
