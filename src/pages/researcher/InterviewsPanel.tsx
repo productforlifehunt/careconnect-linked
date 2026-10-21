@@ -341,13 +341,6 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <Textarea rows={2} value={meta.notes} onChange={(e) => setMeta({ ...meta, notes: e.target.value })} />
               <label className="text-xs text-muted-foreground">Transcription instructions / 转录指令（例如 A/B 是谁、专有名词）</label>
               <Textarea rows={3} value={meta.instructions} onChange={(e) => setMeta({ ...meta, instructions: e.target.value })} />
-              <div className="space-y-3">
-                {([["playbackAllowed", "Allow visitor playback / 允许访客播放"], ["showPlayback", "Show visitor player / 显示访客播放器"], ["showGenerate", "Show visitor Generate New / 显示访客重新生成"]] as const).map(([key, label]) => (
-                  <label key={key} className="flex items-center justify-between gap-3 text-sm">
-                    <span>{label}</span><Switch aria-label={label} checked={display[key]} disabled={saving} onCheckedChange={(value) => void saveDisplay(key, value)} />
-                  </label>
-                ))}
-              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button onClick={save} disabled={saving}>
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save / 保存
@@ -442,6 +435,15 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </div>
           )}
           {playError && <p className="text-sm text-destructive">{playError}</p>}
+          {canEdit && (
+            <div className="space-y-3 border-t border-border pt-4">
+              {([["playbackAllowed", "Allow visitor playback / 允许访客播放"], ["showPlayback", "Show visitor player / 显示访客播放器"], ["showGenerate", "Show visitor Generate New / 显示访客重新生成"]] as const).map(([key, label]) => (
+                <label key={key} className="flex items-center justify-between gap-3 text-sm">
+                  <span>{label}</span><Switch aria-label={label} checked={display[key]} disabled={saving} onCheckedChange={(value) => void saveDisplay(key, value)} />
+                </label>
+              ))}
+            </div>
+          )}
           <div className="space-y-3 border-t border-border pt-5">
             {generateVisible && <>
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running || editing} variant={canEdit ? "secondary" : "default"}>

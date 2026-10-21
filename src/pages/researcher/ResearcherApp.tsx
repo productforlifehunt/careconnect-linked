@@ -119,11 +119,11 @@ export default function ResearcherApp() {
       </header>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="mx-auto max-w-5xl px-4 pt-4">
+          <ResearchCodeLegend />
           <TabsList>
             <TabsTrigger value="participants">Participants / 参与者</TabsTrigger>
             <TabsTrigger value="interviews">Interviews / 访谈记录</TabsTrigger>
           </TabsList>
-          <ResearchCodeLegend />
         </div>
         <TabsContent value="participants">
           {signedIn ? <Dashboard /> : <Login onDone={() => setSignedIn(true)} />}

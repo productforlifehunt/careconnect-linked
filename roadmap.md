@@ -1,3 +1,8 @@
+## Current request: Recording controls screenshot correction
+- [x] Left recording list has no size rendering; move legend above Participants/Interviews tabs and New interview.
+- [x] Move all three researcher-only visitor controls below Delete and Play recording; visitors see no switches. No archive or recording changed.
+- [ ] Run focused tests and verify current live visitor layout. Actual researcher session save remains unverified.
+
 ## Current request: Recording display controls
 - [x] Remove displayed recording sizes and move the code legend full-width between the tabs and the interview/list area; live screenshot and position checks pass.
 - [x] Add researcher-only per-recording saved switches for visitor playback permission, player visibility and Generate New visibility, with no extra explanations; disabled visitor playback has an unclickable control and no playback URL; researcher retains playback and generation. Preserve generation and all archives. Existing service deployed.
