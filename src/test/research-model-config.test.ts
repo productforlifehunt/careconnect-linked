@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const source = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
+const source = (path: string) => readFileSync(`${process.cwd()}/${path}`, "utf8");
 
 describe("actual research model request settings", () => {
   it("uses Gemini 3.8 Flash for joint audio transcription and translation without explicit reasoning controls", () => {
