@@ -92,21 +92,22 @@ Deno.serve(async (req) => {
   if (!researcher) return json({ error: "Only the researcher can add or edit recordings." }, 403);
 
   if (body.action === "list_participant_meta") {
-    const { data, error } = await store.download("participant-display.json");
-    if (error || !data) return json({ items: {} });
-    const items = await data.text().then((text) => JSON.parse(text)).catch(() => ({}));
-    return json({ items });
+    const { data, error } = await store.list("participant-meta", { limit: 1000 });
+    if (error) return json({ error: error.message }, 500);
+    const pairs = await Promise.all((data || []).filter((f) => /^[1-9]\d*\.json$/.test(f.name)).map(async (f) => {
+      const { data: file, error: readError } = await store.download(`participant-meta/${f.name}`);
+      if (readError || !file) throw new Error("Participant metadata could not be read");
+      return [f.name.replace(/\.json$/, ""), await file.text().then((text) => JSON.parse(text))];
+    }));
+    return json({ items: Object.fromEntries(pairs) });
   }
 
   if (body.action === "save_participant_meta") {
     const id = String(body.participantId || "");
     if (!/^[1-9]\d*$/.test(id)) return json({ error: "Invalid participant" }, 400);
-    const { data } = await store.download("participant-display.json");
-    const items = data ? await data.text().then((text) => JSON.parse(text)).catch(() => ({})) : {};
     const meta = { title: String(body.meta?.title || "").slice(0, 2000), recruitmentSource: String(body.meta?.recruitmentSource || "").slice(0, 5000), notes: String(body.meta?.notes || "").slice(0, 5000) };
     if (!meta.title.trim()) return json({ error: "A title is required" }, 400);
-    items[id] = meta;
-    const { error } = await store.upload("participant-display.json", new Blob([JSON.stringify(items)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
+    const { error } = await store.upload(`participant-meta/${id}.json`, new Blob([JSON.stringify(meta)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
     if (error) return json({ error: error.message }, 500);
     return json({ meta });
   }
