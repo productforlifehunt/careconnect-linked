@@ -50,7 +50,7 @@ describe("independent interview archives", () => {
   it("never offers manual anonymization to visitors", async () => {
     edited = raw;
     render(<InterviewsPanel canEdit={false} />);
-    await screen.findByRole("button", { name: /View Anonymized Edited Archived Translation/ });
+    await screen.findByRole("button", { name: "View Anonymized Edited Archived Translation and Transcription / 查看匿名修订翻译与转录归档" });
     expect(screen.queryByRole("button", { name: /Manually generate anonymization/ })).toBeNull();
   });
   it("saves a researcher playback switch without generating or rewriting archives", async () => {
