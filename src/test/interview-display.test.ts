@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { interviewDisplaySettings } from "../../supabase/functions/_shared/interview-display";
+import { canReceiveInterviewAudio, interviewDisplaySettings } from "../../supabase/functions/_shared/interview-display";
 
 describe("recording visitor controls", () => {
+  it("denies every visitor audio URL when playback is disabled even with a visible player", () => {
+    expect(canReceiveInterviewAudio({ playbackAllowed: false, showPlayback: true }, false)).toBe(false);
+  });
+  it("denies every visitor audio URL when the player is hidden even with playback permission", () => {
+    expect(canReceiveInterviewAudio({ playbackAllowed: true, showPlayback: false }, false)).toBe(false);
+  });
+  it("preserves researcher audio access in both restricted states", () => {
+    expect(canReceiveInterviewAudio({ playbackAllowed: false, showPlayback: true }, true)).toBe(true);
+    expect(canReceiveInterviewAudio({ playbackAllowed: true, showPlayback: false }, true)).toBe(true);
+  });
   it("keeps existing consented recording playback and generation available", () => {
     expect(interviewDisplaySettings({ title: "P-CN2-B1" })).toEqual({ playbackAllowed: true, showPlayback: true, showGenerate: true });
   });
