@@ -58,6 +58,7 @@ describe("independent interview archives", () => {
     expect(await screen.findByRole("button", { name: "Play recording" })).toBeDisabled();
     expect(api.playUrl).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled();
+    expect(screen.queryByRole("switch")).toBeNull();
   });
   it("hides visitor player and new generation while retaining Raw and Edited archive access", async () => {
     edited = raw;
