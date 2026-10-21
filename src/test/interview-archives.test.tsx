@@ -23,6 +23,32 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe("independent interview archives", () => {
+  it("saves a researcher playback switch without generating or rewriting archives", async () => {
+    api.saveMeta.mockImplementation(async (_path, value) => value);
+    render(<InterviewsPanel canEdit />);
+    fireEvent.click(await screen.findByRole("switch", { name: "Allow visitor playback / 允许访客播放" }));
+    await waitFor(() => expect(api.saveMeta).toHaveBeenCalledWith("sample.wav", expect.objectContaining({ playbackAllowed: false })));
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
+  });
+  it("disables visitor playback without obtaining audio and preserves generation", async () => {
+    api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1", notes: "", instructions: "", playbackAllowed: false, showPlayback: true } }]);
+    render(<InterviewsPanel canEdit={false} />);
+    expect(await screen.findByRole("button", { name: "Play recording" })).toBeDisabled();
+    expect(api.playUrl).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled();
+  });
+  it("hides visitor player and new generation while retaining Raw and Edited archive access", async () => {
+    edited = raw;
+    api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1", notes: "", instructions: "", showPlayback: false, showGenerate: false } }]);
+    render(<InterviewsPanel canEdit={false} />);
+    const rawButton = await screen.findByRole("button", { name: "View Raw Archived Translation and Transcription / 查看原始翻译与转录归档" });
+    await waitFor(() => expect(rawButton).toBeEnabled());
+    expect(screen.queryByRole("button", { name: "Play recording" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Generate New Raw/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "View Edited Archived Translation and Transcription / 查看修订翻译与转录归档" })).toBeEnabled();
+    expect(api.playUrl).not.toHaveBeenCalled();
+  });
   it("saves recruitment source with existing title, notes and instructions without generating a transcript", async () => {
     api.saveMeta.mockImplementation(async (_path, value) => value);
     render(<InterviewsPanel canEdit />);
