@@ -7,6 +7,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
+import { archiveObjectPath, normalizeArchiveLines } from "../_shared/interview-archive.ts";
 
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -18,15 +19,15 @@ const PROTECTED = new Set(["1790784395705_69.wav"]);
 const OCCASIONAL_SECONDARY = /^occasional\s+secondary\s+caregiver/i;
 
 export interface Meta { title: string; notes: string; instructions: string }
-interface Line { s: "A" | "B"; zh: string; en: string; t: number }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  let body: { action?: string; name?: string; path?: string; meta?: Partial<Meta>; lines?: unknown[] };
+  let body: { action?: string; name?: string; path?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: "raw" | "edited" };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
+  if (body.kind !== undefined && body.kind !== "raw" && body.kind !== "edited") return json({ error: "Invalid archive kind" }, 400);
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const store = admin.storage.from(BUCKET);
@@ -82,7 +83,7 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
-    const { data, error } = await store.download(`archive/${path}.json`);
+    const { data, error } = await store.download(archiveObjectPath(path, body.kind));
     if (error || !data) return json({ archive: null });
     const archive = await data.text().then((text) => JSON.parse(text)).catch(() => null);
     return json({ archive });
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
   if (body.action === "delete") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
-    const { error } = await store.remove([path, `meta/${path}.json`, `archive/${path}.json`]);
+    const { error } = await store.remove([path, `meta/${path}.json`, archiveObjectPath(path), archiveObjectPath(path, "edited")]);
     if (error) return json({ error: error.message }, 500);
     return json({ ok: true });
   }
@@ -130,18 +131,11 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (!Array.isArray(body.lines) || body.lines.length > 20_000) return json({ error: "Invalid transcript archive" }, 400);
-    const lines: Line[] = body.lines.map((item) => {
-      const line = item && typeof item === "object" ? item as Record<string, unknown> : {};
-      return {
-        s: line.s === "B" ? "B" : "A",
-        zh: String(line.zh || "").slice(0, 5000),
-        en: String(line.en || "").slice(0, 5000),
-        t: Math.max(0, Number(line.t) || 0),
-      };
-    }).filter((line) => line.zh || line.en);
+    const lines = normalizeArchiveLines(body.lines);
+    if (!lines.length) return json({ error: "The transcript archive cannot be empty." }, 400);
     const archive = { lines, savedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(archive)], { type: "application/json" });
-    const { error } = await store.upload(`archive/${path}.json`, blob, { upsert: true, contentType: "application/json" });
+    const { error } = await store.upload(archiveObjectPath(path, body.kind), blob, { upsert: true, contentType: "application/json" });
     if (error) return json({ error: error.message }, 500);
     return json({ archive });
   }

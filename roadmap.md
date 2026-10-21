@@ -1,3 +1,8 @@
+## Current request: Raw and edited interview archives
+- [ ] Label fresh generation and existing archives Raw; add green Edited archive view.
+- [ ] Let only the researcher edit and explicitly save a separate Edited archive without changing Raw; preserve manual drafts and overwrite confirmation.
+- [ ] Verify storage isolation, visitor read-only permissions, and researcher edit/save/readback flow.
+
 ## Current request: Network 8 context mapping
 - [x] Both Network 8 participant titles already match saved interviews exactly; confirmed with researcher login.
 - [x] Add seven reconstructed Daily context notes per participant through JetEngine GUI, link through existing REL307, and read all fourteen back in researcher view. Every note labels reconstruction and archived sentence references; uncollected daily scale scores remain blank, not invented.
