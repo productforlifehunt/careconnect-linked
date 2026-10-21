@@ -188,13 +188,13 @@ function wavChunkToMono(buffer: ArrayBuffer, info: WavInfo): Float32Array {
   return resampled;
 }
 
-async function transcribeSegment(path: string, audio: string, previous: Line[], signal: AbortSignal, segment?: number, onTotal?: (total: number) => void): Promise<Omit<Line, "t">[]> {
+async function transcribeSegment(path: string, audio: string, previous: Line[], signal: AbortSignal, segment?: number, onTotal?: (total: number, nextOffset?: number | null) => void, offset?: number): Promise<Omit<Line, "t">[]> {
   for (let attempt = 0; ; attempt++) {
     let res: Response;
     try {
       res = await fetch(`${FN_BASE}/interview-transcribe`, {
         method: "POST", headers: authHeaders(), signal,
-        body: JSON.stringify({ path, ...(segment === undefined ? { audio } : { segment }), previous: previous.map(({ s, zh }) => ({ s, zh })) }),
+        body: JSON.stringify({ path, ...(segment === undefined ? { audio } : { segment, offset }), previous: previous.map(({ s, zh }) => ({ s, zh })) }),
       });
     } catch (error) {
       if (signal.aborted) throw error;
@@ -215,7 +215,7 @@ async function transcribeSegment(path: string, audio: string, previous: Line[], 
     const payload = await res.json().catch(() => ({}));
     if (segment !== undefined) {
       if (!Number.isInteger(payload.total) || payload.total < 1) throw new Error("Invalid transcription segment count");
-      onTotal?.(payload.total);
+      onTotal?.(payload.total, payload.nextOffset);
     }
     const text = String(payload?.content || "");
     const match = text.match(/\{[\s\S]*\}/);
@@ -239,14 +239,16 @@ export async function generateTranscript(
 ): Promise<Line[]> {
   // WAV bytes stay on the server. The browser sends a segment index and
   // receives text only, irrespective of player visibility or permission.
-  if (/\.wav$/i.test(path)) {
+  if (/\.(wav|mp3)$/i.test(path)) {
     let total = 1;
+    let offset: number | undefined;
+    let finished = false;
     const complete: Line[] = [];
     let previous: Line[] = [];
     onProgress(0, total);
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < total && !finished; i++) {
       if (signal.aborted) throw new DOMException("Stopped", "AbortError");
-      const lines = (await transcribeSegment(path, "", previous, signal, i, (count) => { total = count; }))
+      const lines = (await transcribeSegment(path, "", previous, signal, i, (count, next) => { total = count; if (next === null) finished = true; else if (typeof next === "number") offset = next; }, offset))
         .map((line) => ({ ...line, t: i * SEGMENT_SECONDS }));
       if (lines.length) { onLines(lines); complete.push(...lines); previous = lines; }
       onProgress(i + 1, total);

@@ -10,6 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
 import { canReceiveInterviewAudio, interviewDisplaySettings } from "../_shared/interview-display.ts";
 import { readWavInfo, wavChunkToMono, wavBase64, SEGMENT_SECONDS } from "../_shared/interview-wav.ts";
+import { mp3Segment } from "../_shared/interview-mp3.ts";
 
 const MODEL = "google/gemini-3.8-flash";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return json({ error: "Transcription is not configured." }, 500);
 
-  let body: { audio?: string; path?: string; segment?: number; previous?: { s: string; zh: string }[] };
+  let body: { audio?: string; path?: string; segment?: number; offset?: number; previous?: { s: string; zh: string }[] };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
   let audio = String(body.audio || "");
   const path = String(body.path || "");
@@ -47,6 +48,8 @@ Deno.serve(async (req) => {
   const display = interviewDisplaySettings(meta);
   if (!researcher && !display.showGenerate) return json({ error: "Generation unavailable" }, 403);
   let total: number | undefined;
+  let nextOffset: number | null | undefined;
+  let audioFormat = "wav";
   if (body.segment !== undefined) {
     if (!Number.isInteger(body.segment) || body.segment < 0) return json({ error: "Invalid segment" }, 400);
     // This signed address exists only inside this handler. Never return it.
@@ -60,16 +63,22 @@ Deno.serve(async (req) => {
       return buffer;
     };
     try {
-      const header = await range(0, 65535);
+      const headerResponse = await fetch(signed.signedUrl, { headers: { Range: "bytes=0-65535" }, signal: req.signal });
+      if (headerResponse.status !== 206) throw new Error("Recording range unavailable");
+      const fileSize = Number(headerResponse.headers.get("Content-Range")?.split("/")[1]);
+      const header = await headerResponse.arrayBuffer();
       let info = readWavInfo(header);
       // Recorder WAV files may include large metadata/JUNK chunks before data.
       for (let end = 262143; !info && end <= 4194303; end = (end + 1) * 4 - 1) {
         info = readWavInfo(await range(0, end));
       }
       if (!info || info.channels < 1 || info.sampleRate < 1 || info.blockAlign < 1) {
-        console.log("Recording container", { signature: Array.from(new Uint8Array(header, 0, Math.min(12, header.byteLength))), headerSize: header.byteLength });
-        return json({ error: "Server transcription requires PCM WAV. The researcher can replace this recording with WAV." }, 400);
-      }
+        const offset = body.offset ?? 0;
+        if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isFinite(fileSize) || offset >= fileSize) return json({ error: "Invalid recording offset" }, 400);
+        const selected = mp3Segment(await range(offset, Math.min(fileSize - 1, offset + 2097151)), offset, fileSize);
+        audio = selected.audio; nextOffset = selected.nextOffset; audioFormat = "mp3";
+        total = body.segment + 1 + selected.estimatedRemaining;
+      } else {
       const step = SEGMENT_SECONDS * info.sampleRate * info.blockAlign;
       if (step > 16_000_000) return json({ error: "WAV segment too large" }, 400);
       total = Math.ceil(info.dataSize / step);
@@ -77,6 +86,7 @@ Deno.serve(async (req) => {
       const start = info.dataOffset + body.segment * step;
       const end = Math.min(info.dataOffset + info.dataSize - 1, start + step - 1);
       audio = wavBase64(wavChunkToMono(await range(start, end), info));
+      }
     } catch { return json({ error: "Server could not read this recording segment." }, 502); }
   } else if (!canReceiveInterviewAudio(meta, researcher)) {
     return json({ error: "Server transcription required" }, 403);
@@ -103,7 +113,7 @@ Deno.serve(async (req) => {
           role: "user",
           content: [
             { type: "text", text: previous ? `The previous segment ended with (keep the same A/B labels):\n${previous}` : "This is the first segment." },
-            { type: "input_audio", input_audio: { data: audio, format: "wav" } },
+            { type: "input_audio", input_audio: { data: audio, format: audioFormat } },
           ],
         },
       ],
@@ -123,5 +133,5 @@ Deno.serve(async (req) => {
   const result = await res.json().catch(() => null);
   const content = result?.choices?.[0]?.message?.content;
   if (typeof content !== "string") return json({ error: "The transcription response was incomplete." }, 502);
-  return json({ content, ...(total !== undefined ? { total } : {}) });
+  return json({ content, ...(total !== undefined ? { total } : {}), ...(nextOffset !== undefined ? { nextOffset } : {}) });
 });
