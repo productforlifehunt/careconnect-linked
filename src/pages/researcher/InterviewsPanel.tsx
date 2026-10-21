@@ -11,24 +11,12 @@ import {
   loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
+import { compareResearchTitles } from "@/features/interviews/research-order";
+import { ResearchCodeLegend } from "@/components/esm/ResearchCodeLegend";
 
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
-const interviewOrder = (a: Recording, b: Recording) => {
-  const parse = (recording: Recording) => {
-    const title = titleOf(recording);
-    const network = title.match(/\bNetwork\s*(\d+)/i);
-    const caregiver = title.match(/\bCaregiver\s*(\d+)/i);
-    return {
-      network: network ? Number(network[1]) : Number.POSITIVE_INFINITY,
-      caregiver: caregiver ? Number(caregiver[1]) : Number.POSITIVE_INFINITY,
-      title,
-    };
-  };
-  const left = parse(a);
-  const right = parse(b);
-  return left.network - right.network || left.caregiver - right.caregiver || left.title.localeCompare(right.title);
-};
+const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
 
 /**
  * Interview records. Anyone with the page can listen and regenerate transcripts;
@@ -61,7 +49,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
     setError(""); setUploading(true);
     try {
       const path = await uploadRecording(file);
-      await saveMeta(path, { title: file.name.replace(/\.[^.]+$/, ""), notes: "", instructions: "" });
+      await saveMeta(path, { title: file.name.replace(/\.[^.]+$/, ""), recruitmentSource: "", notes: "", instructions: "" });
       await refresh(); setSelected(path);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
@@ -81,6 +69,7 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
             </Button>
           </>
         )}
+        <ResearchCodeLegend />
         {error && <p className="text-sm text-destructive">{error}</p>}
         {!items && <p className="text-sm text-muted-foreground">Loading… / 加载中…</p>}
         {items?.length === 0 && <p className="text-sm text-muted-foreground">No recordings yet. / 暂无录音</p>}
@@ -110,7 +99,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     return rec.meta;
   });
   const setMeta = (next: Meta) => { setMetaState(next); localStorage.setItem(draftKey, JSON.stringify(next)); };
-  const dirty = meta.title !== rec.meta.title || meta.notes !== rec.meta.notes || meta.instructions !== rec.meta.instructions;
+  const dirty = meta.title !== rec.meta.title || meta.notes !== rec.meta.notes || meta.instructions !== rec.meta.instructions || (meta.recruitmentSource || "") !== (rec.meta.recruitmentSource || "");
   const retry = useRef<(() => Promise<void>) | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState("");
@@ -264,6 +253,8 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             <div className="space-y-2">
               <label className="text-xs text-muted-foreground">Title / 标题</label>
               <Input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} />
+              <label htmlFor="interview-recruitment" className="text-xs text-muted-foreground">Recruitment source / 招募来源</label>
+              <Textarea id="interview-recruitment" rows={2} value={meta.recruitmentSource || ""} onChange={(e) => setMeta({ ...meta, recruitmentSource: e.target.value })} />
               <label className="text-xs text-muted-foreground">Notes / 备注</label>
               <Textarea rows={2} value={meta.notes} onChange={(e) => setMeta({ ...meta, notes: e.target.value })} />
               <label className="text-xs text-muted-foreground">Transcription instructions / 转录指令（例如 A/B 是谁、专有名词）</label>
@@ -298,6 +289,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           ) : (
             <div className="space-y-1">
               <p className="font-medium text-foreground">{rec.meta.title || displayName(path)}</p>
+              {rec.meta.recruitmentSource && <div><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{rec.meta.recruitmentSource}</p></div>}
               {rec.meta.notes && (
                 <div className="pt-1">
                   <p className="text-xs text-muted-foreground">Notes / 备注</p>

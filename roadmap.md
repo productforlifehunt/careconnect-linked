@@ -1,3 +1,9 @@
+## Current request: Research participant metadata and code ordering
+- [ ] Add researcher-only persisted participant display title/identity, recruitment source and notes without changing accounts, answers or relations.
+- [ ] Add recruitment source between interview title and notes; preserve it across saves.
+- [ ] Use shared CN-first numeric ordering and show P/CN/A/B/C definitions in both lists.
+- [ ] Verify focused tests, anonymous denial, live visitor ordering and researcher save/readback.
+
 ## Current request: Raw and edited interview archives
 - [x] Label fresh generation and existing archives Raw; add green Edited archive view. Live visitor screenshot confirms both buttons and 312 existing Raw sentences.
 - [x] Implement researcher-only editing and explicit separate Edited save, browser draft preservation, and overwrite confirmation; 5/5 focused tests pass including save/readback and Raw isolation.
