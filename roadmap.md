@@ -1,7 +1,8 @@
 ## Current request: Interview explanations and appendix text
-- [ ] Separate public metadata and archive actions, with a dark bilingual explanation below each archive action.
-- [ ] Remove timestamps from generated and existing displayed/downloaded text; expand speaker labels on every utterance and test both rules.
-- [ ] Verify the live visitor view and model capability; do not mislabel Gemini audio transcription as ChatGPT nano.
+- [x] Separate public metadata and archive actions, with six dark bilingual explanations; live visitor screenshot checked.
+- [x] Remove timestamps from generated and existing displayed/downloaded text with a shared formatter; expand speaker labels on every utterance. 14/14 focused tests pass; existing live text has expanded labels and no sentence timestamps. Stored manual corrections remain untouched.
+- [x] Verify live visitor view with zero runtime errors and build OK. Authenticated model catalog confirms GPT-5 nano accepts only text/image, not audio; keep truthful Gemini Flash labeling.
+- [ ] Requested ChatGPT 5 nano direct raw-audio generation cannot be implemented: model has no audio input support. Existing audio engine retained; no misleading model claim added.
 
 ## Current request: Research participant metadata and code ordering
 - [x] Add researcher-only persisted participant display title/identity, recruitment source and notes without changing accounts, answers or relations; backend rejects anonymous reads and writes with 403.
