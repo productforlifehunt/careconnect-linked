@@ -17,6 +17,8 @@ import { appendixText, archiveToText, downloadText, speakerLabel } from "@/featu
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 import { compareResearchTitles } from "@/features/interviews/research-order";
 import { InterviewPlayback } from "@/features/interviews/playback";
+import { PreloadedInterviewPlayback } from "@/features/interviews/preload-playback";
+import { isDemoRecording } from "../../../supabase/functions/_shared/interview-demo";
 
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
@@ -141,19 +143,20 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const abort = useRef<AbortController | null>(null);
-  const player = useRef<InterviewPlayback | null>(null);
+  const player = useRef<InterviewPlayback | PreloadedInterviewPlayback | null>(null);
   const replaceInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setPlayError("");
     setPlaying(false); setBuffering(false); setPosition(0); setDuration(0);
-    if (playbackEnabled) {
-      player.current = new InterviewPlayback(path, (state) => {
+    if (playbackEnabled && archivesReady) {
+      const Playback = isDemoRecording(path) ? PreloadedInterviewPlayback : InterviewPlayback;
+      player.current = new Playback(path, (state) => {
         setPlaying(state.playing); setBuffering(state.buffering); setPosition(state.position); setDuration(state.duration);
       }, setPlayError);
     }
     return () => { player.current?.dispose(); player.current = null; };
-  }, [path, playbackEnabled]);
+  }, [path, playbackEnabled, archivesReady]);
 
   useEffect(() => {
     let active = true;

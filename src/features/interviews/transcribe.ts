@@ -38,6 +38,7 @@ export const saveMeta = (path: string, meta: Partial<Meta>) => audioFn<{ meta: M
 export const listParticipantMeta = () => audioFn<{ items: Record<string, ParticipantMeta> }>({ action: "list_participant_meta" }).then((d) => d.items);
 export const saveParticipantMeta = (participantId: string, meta: ParticipantMeta) => audioFn<{ meta: ParticipantMeta }>({ action: "save_participant_meta", participantId, meta }).then((d) => d.meta);
 export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });
+export const preloadRecordingUrl = (path: string) => audioFn<{ url: string }>({ action: "preload_url", path }).then((d) => d.url);
 export const loadTranscriptArchive = (path: string, kind: ArchiveKind = "raw") => audioFn<{ archive: TranscriptArchive | null }>({ action: "load_archive", path, kind }).then((d) => d.archive);
 export const saveTranscriptArchive = (path: string, lines: Line[], kind: ArchiveKind = "raw") => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, lines, kind }).then((d) => d.archive);
 export const saveTextArchive = (path: string, text: string, kind: "text" | "anonymized-text") => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, text, kind }).then((d) => d.archive);

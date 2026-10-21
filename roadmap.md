@@ -1,3 +1,7 @@
+## Current request: Six consented demo recordings preload
+- [x] Freeze the first six currently displayed interviews by recording identity; use native full preload only for these, with existing playback switches still enforced and no download control. Remaining recordings retain five-second click-started streaming. No audio, metadata, archives or WordPress records changed.
+- [ ] Deploy existing audio handler and verify six eligible recordings, all non-demo denials, preload playback and retained streaming with focused tests and live visitor checks.
+
 ## Current request: Atomic interview button readiness
 - [x] Load all five archives concurrently and commit together; lock interview controls and fresh generation until the entire set succeeds. Failed reads remain locked with a whole-set retry; late results from a different interview are ignored.
 - [x] 25/25 focused tests pass, including delayed fifth read and whole-set retry after failure. Real visitor delayed-read check locks all five archives and generation together; after release all five existing archives enable together and Raw reads 238 sentences. Screenshot checked, zero runtime errors or generation/audio/archive-write calls; latest build OK. Researcher-specific loading tested with mocked requests, not a real researcher session; no researcher write changes in this request.

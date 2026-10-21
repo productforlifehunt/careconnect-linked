@@ -10,6 +10,7 @@ import { isResearcher } from "../_shared/wp-researcher.ts";
 import { ARCHIVE_FOLDERS, archiveObjectPath, isArchiveKind, isTextKind, normalizeArchiveLines } from "../_shared/interview-archive.ts";
 import { canReceiveInterviewAudio, interviewDisplaySettings, type InterviewDisplaySettings } from "../_shared/interview-display.ts";
 import { recordingStreamChunk } from "../_shared/interview-stream.ts";
+import { canPreloadInterviewAudio } from "../_shared/interview-demo.ts";
 
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token`, "Access-Control-Expose-Headers": "X-Next-Offset, X-Duration, X-Position, X-Recording-Size", "Cache-Control": "no-store" };
@@ -77,7 +78,18 @@ Deno.serve(async (req) => {
     } catch { return json({ error: "Recording stream unavailable" }, 422); }
   }
 
-  // Old clients cannot obtain a reusable storage address either.
+  if (body.action === "preload_url") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (locked(path) || !canPreloadInterviewAudio(path, await readMeta(path), researcher)) {
+      return json({ error: "Playback unavailable" }, 403);
+    }
+    const { data, error } = await store.createSignedUrl(path, 300);
+    if (error || !data) return json({ error: "Recording unavailable" }, 404);
+    return json({ url: data.signedUrl });
+  }
+
+  // Legacy URL actions remain denied; full preload is limited to consented demos.
   if (body.action === "play_url" || body.action === "transcribe_url") {
     return json({ error: "Audio URLs unavailable" }, 403);
   }

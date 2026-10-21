@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock("@/features/interviews/transcribe", () => ({ ...api, displayName: (s: string) => s, deleteRecording: vi.fn(), uploadRecording: vi.fn(), replaceRecording: vi.fn() }));
 vi.mock("@/services/wp-auth", () => ({ wpEnsureFreshToken: vi.fn(), wpLogin: vi.fn() }));
+vi.mock("@/features/interviews/preload-playback", () => ({ PreloadedInterviewPlayback: vi.fn() }));
 const raw = { lines: [{ s: "A", zh: "原始录音", en: "Original transcript", t: 30 }], savedAt: "2026-10-21" };
 let edited: typeof raw | null;
 beforeEach(() => {
