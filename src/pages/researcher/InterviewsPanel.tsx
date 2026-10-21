@@ -159,8 +159,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     let active = true;
     setArchiveStatus("loading");
     setError("");
-    Promise.all((["raw", "edited", "anonymized", "text", "anonymized-text"] as const)
-      .map((kind) => loadTranscriptArchive(path, kind)))
+    Promise.all([
+      loadTranscriptArchive(path, "raw"),
+      loadTranscriptArchive(path, "edited"),
+      loadTranscriptArchive(path, "anonymized"),
+      loadTranscriptArchive(path, "text"),
+      loadTranscriptArchive(path, "anonymized-text"),
+    ])
       .then(([raw, edited, anonymized, text, anonymizedText]) => {
         if (!active) return;
         setArchive(raw); setEditedArchive(edited); setAnonArchive(anonymized);
