@@ -194,7 +194,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     try {
       await asResearcher(async () => {
         const stored = await saveMeta(path, { ...rec.meta, [key]: value });
-        const next = { ...meta, playbackAllowed: stored.playbackAllowed, showPlayback: stored.showPlayback, showGenerate: stored.showGenerate };
+        const next = { ...meta, ...interviewDisplaySettings(stored) };
         setMeta(next); onSaved();
       });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }

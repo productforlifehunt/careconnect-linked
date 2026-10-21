@@ -12,6 +12,7 @@ vi.mock("@/services/wp-auth", () => ({ wpEnsureFreshToken: vi.fn(), wpLogin: vi.
 const raw = { lines: [{ s: "A", zh: "原始录音", en: "Original transcript", t: 30 }], savedAt: "2026-10-21" };
 let edited: typeof raw | null;
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.clearAllMocks(); localStorage.clear(); edited = null;
   api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1 Caregiver1", notes: "", instructions: "" } }]);
   api.playUrl.mockResolvedValue("");
@@ -21,7 +22,7 @@ beforeEach(() => {
     edited = { lines, savedAt: "2026-10-21" }; return edited;
   });
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("independent interview archives", () => {
   it("saves a researcher playback switch without generating or rewriting archives", async () => {
     api.saveMeta.mockImplementation(async (_path, value) => value);
