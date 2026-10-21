@@ -113,10 +113,21 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [error, setError] = useState("");
   const [archive, setArchive] = useState<TranscriptArchive | null>(null);
   const [editedArchive, setEditedArchive] = useState<TranscriptArchive | null>(null);
-  const [showArchive, setShowArchive] = useState<false | "raw" | "edited">(false);
+  const [anonArchive, setAnonArchive] = useState<TranscriptArchive | null>(null);
+  const [textArchive, setTextArchive] = useState<TranscriptArchive | null>(null);
+  const [anonTextArchive, setAnonTextArchive] = useState<TranscriptArchive | null>(null);
+  const [showArchive, setShowArchive] = useState<false | ArchiveKind>(false);
   const [editing, setEditing] = useState(false);
+  const [lineKind, setLineKind] = useState<"edited" | "anonymized">("edited");
   const [editLines, setEditLines] = useState<Line[]>([]);
-  const editedDraftKey = `interview-edited-draft:${path}`;
+  const [textDraft, setTextDraft] = useState<{ kind: "text" | "anonymized-text"; value: string } | null>(null);
+  const [anonProgress, setAnonProgress] = useState("");
+  const editedDraftKey = `interview-${lineKind}-draft:${path}`;
+  const textDraftKey = (kind: string) => `interview-${kind}-draft:${path}`;
+  const busy = editing || !!textDraft || !!anonProgress;
+  const archiveOf = (kind: ArchiveKind) => ({ raw: archive, edited: editedArchive, anonymized: anonArchive, text: textArchive, "anonymized-text": anonTextArchive }[kind]);
+  const setArchiveOf = (kind: ArchiveKind, value: TranscriptArchive) => ({ raw: setArchive, edited: setEditedArchive, anonymized: setAnonArchive, text: setTextArchive, "anonymized-text": setAnonTextArchive }[kind](value));
+  const titleText = meta.title || displayName(path);
   const [showInstructions, setShowInstructions] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);
@@ -135,6 +146,9 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     }
     loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
     loadTranscriptArchive(path, "edited").then(setEditedArchive).catch((e) => setError(e instanceof Error ? e.message : String(e)));
+    loadTranscriptArchive(path, "anonymized").then(setAnonArchive).catch(() => setAnonArchive(null));
+    loadTranscriptArchive(path, "text").then(setTextArchive).catch(() => setTextArchive(null));
+    loadTranscriptArchive(path, "anonymized-text").then(setAnonTextArchive).catch(() => setAnonTextArchive(null));
     return () => abort.current?.abort();
   }, [path, voiceRestricted]);
 
