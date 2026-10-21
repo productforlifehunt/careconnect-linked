@@ -242,6 +242,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     setLineKind(kind); setEditLines(source.map((line) => ({ ...line })));
     setEditing(true); setShowArchive(kind); setSaved(""); setError("");
   };
+  const generateManualAnonymized = () => {
+    if (!canEdit || busy || running || saving || !editedArchive?.lines.length) return;
+    const out = editedArchive.lines.map((line) => ({ ...line }));
+    localStorage.setItem(textDraftKey("anonymized"), JSON.stringify(out));
+    setLineKind("anonymized"); setEditLines(out); setEditing(true); setShowArchive("anonymized");
+    setSaved(""); setError("");
+  };
   const generateAnonymized = async () => {
     if (!canEdit || !editedArchive?.lines.length) return;
     if (anonArchive && !window.confirm("Generate a new anonymized version from the current Edited archive? The saved anonymized archive only changes when you save. / 用当前修订归档重新生成匿名版本？只有点保存才会覆盖已存的匿名归档。")) return;
@@ -476,6 +483,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </Button>
             <p className="text-sm text-foreground">Click to read the anonymized Edited archive. New anonymization uses Google Gemini 3.8 Flash (model ID: google/gemini-3.8-flash). Reasoning effort and thinking budget: not explicitly set; provider defaults apply, not confirmed disabled. The underlying dated model snapshot is not available. Only the researcher can generate, manually edit and save; viewing calls no model. / 点击查看匿名修订归档。新匿名化使用 Google Gemini 3.8 Flash（模型 ID：google/gemini-3.8-flash）。推理强度与思考预算：未显式设置，使用提供方默认值，不能标为关闭推理。底层日期版本未提供。仅研究者可生成、手动编辑和保存；查看不调用模型。</p>
             {canEdit && !busy && <Button variant="outline" disabled={saving || running || !editedArchive} onClick={generateAnonymized}>Generate from current Edited archive / 用当前修订归档生成</Button>}
+            {canEdit && !busy && <Button variant="success" disabled={saving || running || !editedArchive?.lines.length} onClick={generateManualAnonymized}><Pencil className="mr-2 h-4 w-4" />Manually generate anonymization / 手动生成匿名化</Button>}
             {canEdit && anonArchive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("anonymized")}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
             {anonProgress && <span className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Anonymizing… / 匿名化中… {anonProgress}</span>}
           </div>

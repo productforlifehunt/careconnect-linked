@@ -5,7 +5,7 @@ import { archiveObjectPath, normalizeArchiveLines } from "../../supabase/functio
 
 const api = vi.hoisted(() => ({
   listRecordings: vi.fn(), playUrl: vi.fn(), loadTranscriptArchive: vi.fn(), saveTranscriptArchive: vi.fn(),
-  generateTranscript: vi.fn(), saveMeta: vi.fn(),
+  generateTranscript: vi.fn(), saveMeta: vi.fn(), anonymizeLines: vi.fn(),
 }));
 vi.mock("@/features/interviews/transcribe", () => ({ ...api, displayName: (s: string) => s, deleteRecording: vi.fn(), uploadRecording: vi.fn(), replaceRecording: vi.fn() }));
 vi.mock("@/services/wp-auth", () => ({ wpEnsureFreshToken: vi.fn(), wpLogin: vi.fn() }));
@@ -24,6 +24,35 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("independent interview archives", () => {
+  it("starts manual anonymization from Edited without AI and saves only the anonymized archive", async () => {
+    edited = { ...raw, lines: [{ s: "B", zh: "我丈夫是王军", en: "My husband is Wang Jun", t: 30 }] };
+    let anonymized = null as typeof raw | null;
+    api.loadTranscriptArchive.mockImplementation(async (_path, kind) => kind === "edited" ? edited : kind === "anonymized" ? anonymized : raw);
+    api.saveTranscriptArchive.mockImplementation(async (_path, lines, kind) => {
+      if (kind !== "anonymized") throw new Error("Other archives must not change");
+      anonymized = { lines, savedAt: "2026-10-21" }; return anonymized;
+    });
+    render(<InterviewsPanel canEdit />);
+    const button = await screen.findByRole("button", { name: /Manually generate anonymization/ });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+    expect(screen.getByLabelText("Chinese transcript 1")).toHaveValue("我丈夫是王军");
+    expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Chinese transcript 1"), { target: { value: "我丈夫" } });
+    fireEvent.change(screen.getByLabelText("English translation 1"), { target: { value: "My husband" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save to Anonymized archive / 存入匿名归档" }));
+    await screen.findByText("我丈夫");
+    expect(api.saveTranscriptArchive).toHaveBeenCalledWith("sample.wav", [{ s: "B", zh: "我丈夫", en: "My husband", t: 30 }], "anonymized");
+    expect(edited.lines[0]?.zh).toBe("我丈夫是王军");
+    expect(api.anonymizeLines).not.toHaveBeenCalled();
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+  });
+  it("never offers manual anonymization to visitors", async () => {
+    edited = raw;
+    render(<InterviewsPanel canEdit={false} />);
+    await screen.findByRole("button", { name: "View Anonymized Edited Archived Translation and Transcription / 查看匿名修订翻译与转录归档" });
+    expect(screen.queryByRole("button", { name: /Manually generate anonymization/ })).toBeNull();
+  });
   it("saves a researcher playback switch without generating or rewriting archives", async () => {
     api.saveMeta.mockImplementation(async (_path, value) => ({ title: "Network1", ...value }));
     render(<InterviewsPanel canEdit />);
