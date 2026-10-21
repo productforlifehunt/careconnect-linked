@@ -1,6 +1,6 @@
 ## Current request: Manual anonymization
 - [x] Add researcher-only manual anonymization beside automatic generation, opening current Edited lines immediately without AI; explicit save uses the existing separate anonymized archive and overwrite confirmation.
-- [ ] Run focused tests for manual save, archive isolation and visitor restriction; verify public page. Real researcher login/save remains unavailable.
+- [x] 17/17 tests pass, including manual draft/edit/save/readback without AI, Edited preservation and visitor restriction; live public page loads and build OK. Real researcher-authenticated save remains unverified; tested save uses mocked storage.
 
 ## Current request: Recording controls screenshot correction
 - [x] Left recording list has no size rendering; move legend above Participants/Interviews tabs and New interview.
