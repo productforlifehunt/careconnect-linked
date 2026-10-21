@@ -5,9 +5,9 @@ import { archiveObjectPath, normalizeArchiveLines } from "../../supabase/functio
 
 const api = vi.hoisted(() => ({
   listRecordings: vi.fn(), playUrl: vi.fn(), loadTranscriptArchive: vi.fn(), saveTranscriptArchive: vi.fn(),
-  generateTranscript: vi.fn(),
+  generateTranscript: vi.fn(), saveMeta: vi.fn(),
 }));
-vi.mock("@/features/interviews/transcribe", () => ({ ...api, displayName: (s: string) => s, saveMeta: vi.fn(), deleteRecording: vi.fn(), uploadRecording: vi.fn() }));
+vi.mock("@/features/interviews/transcribe", () => ({ ...api, displayName: (s: string) => s, deleteRecording: vi.fn(), uploadRecording: vi.fn(), replaceRecording: vi.fn() }));
 vi.mock("@/services/wp-auth", () => ({ wpEnsureFreshToken: vi.fn(), wpLogin: vi.fn() }));
 const raw = { lines: [{ s: "A", zh: "原始录音", en: "Original transcript", t: 30 }], savedAt: "2026-10-21" };
 let edited: typeof raw | null;
@@ -23,6 +23,15 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe("independent interview archives", () => {
+  it("saves recruitment source with existing title, notes and instructions without generating a transcript", async () => {
+    api.saveMeta.mockImplementation(async (_path, value) => value);
+    render(<InterviewsPanel canEdit />);
+    fireEvent.change(await screen.findByLabelText("Recruitment source / 招募来源"), { target: { value: "Hospital referral" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save / 保存" }));
+    await waitFor(() => expect(api.saveMeta).toHaveBeenCalledWith("sample.wav", { title: "Network1 Caregiver1", notes: "", instructions: "", recruitmentSource: "Hospital referral" }));
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
+  });
   it("keeps existing Raw objects and Edited objects at different paths", () => {
     expect(archiveObjectPath("sample.wav")).toBe("archive/sample.wav.json");
     expect(archiveObjectPath("sample.wav", "edited")).toBe("archive-edited/sample.wav.json");
