@@ -448,7 +448,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!archiveOf(kind) || busy} onClick={() => setShowArchive(kind)}>
                 <Archive className="mr-2 h-4 w-4" />{label}
               </Button>
-              {archiveOf(kind)?.text && <Button variant="outline" onClick={() => downloadText(archiveOf(kind)!.text!, `${fileBase}-${suffix}${kind === "anonymized-text" ? "" : ""}.txt`)}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
+              {archiveOf(kind)?.text && <Button variant="outline" onClick={() => downloadText(archiveOf(kind)!.text!, `${fileBase}-${kind}.txt`)}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
               {canEdit && !busy && <Button variant="outline" disabled={saving || running || !src} onClick={() => startText(kind, true)}>Generate from current {suffix === "edited" ? "Edited" : "Anonymized"} archive / 用当前{suffix === "edited" ? "修订" : "匿名"}归档生成</Button>}
               {canEdit && archiveOf(kind) && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startText(kind, false)}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
             </div>
