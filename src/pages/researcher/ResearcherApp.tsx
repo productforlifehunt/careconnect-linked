@@ -87,21 +87,6 @@ export default function ResearcherApp() {
     };
   }, [signedIn]);
 
-  if (!signedIn && false) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background px-4 text-center">
-        <h1 className="text-xl font-semibold text-foreground">This site is under construction / 本页面正在建设中</h1>
-        <p className="text-sm text-muted-foreground">Only the admin can sign in. / 仅管理员可登录。</p>
-        <Dialog open>
-          <DialogContent className="[&>button]:hidden">
-            <DialogTitle>Admin sign in / 管理员登录</DialogTitle>
-            <Login onDone={() => setSignedIn(true)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
