@@ -474,14 +474,14 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!editedArchive || busy} onClick={() => setShowArchive("edited")}>
               <Archive className="mr-2 h-4 w-4" />View Edited Archived Translation and Transcription / 查看修订翻译与转录归档
             </Button>
-            <p className="text-sm text-foreground">Click to read the researcher’s saved manual corrections. Viewing, manual editing and saving call no model. Only the researcher can edit and save this separate Edited archive; Raw stays unchanged. / 点击查看研究者已保存的手动修订。查看、手动编辑和保存均不调用模型。仅研究者可编辑和保存独立的修订归档，原始归档不变。</p>
+            <p className="text-sm text-foreground">Click to read the Edited archive. / 点击查看修订归档。</p>
             {canEdit && archive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("edited")}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
           </div>
           <div className="space-y-3 border-t border-border pt-5">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!anonArchive || busy} onClick={() => setShowArchive("anonymized")}>
               <Archive className="mr-2 h-4 w-4" />View Anonymized Edited Archived Translation and Transcription / 查看匿名修订翻译与转录归档
             </Button>
-            <p className="text-sm text-foreground">Click to read the anonymized Edited archive. Automatic anonymization uses the Google Gemini 3.8 Flash model (model ID: google/gemini-3.8-flash). Only the researcher can generate, manually edit and save. / 点击查看匿名修订归档。自动匿名化使用 Google Gemini 3.8 Flash 模型（model ID：google/gemini-3.8-flash）。仅研究者可生成、手动编辑和保存。</p>
+            <p className="text-sm text-foreground">Click to read the anonymized Edited archive. / 点击查看匿名修订归档。</p>
             {canEdit && !busy && <Button variant="outline" disabled={saving || running || !editedArchive} onClick={generateAnonymized}>Generate from current Edited archive / 用当前修订归档生成</Button>}
             {canEdit && !busy && <Button variant="success" disabled={saving || running || !editedArchive?.lines.length} onClick={generateManualAnonymized}><Pencil className="mr-2 h-4 w-4" />Manually generate anonymization / 手动生成匿名化</Button>}
             {canEdit && anonArchive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("anonymized")}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
@@ -493,8 +493,8 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 <Archive className="mr-2 h-4 w-4" />{label}
               </Button>
               <p className="text-sm text-foreground">{kind === "text"
-                ? "Click to read the Edited archive as a paper appendix without timestamps. A = Interviewer; B = Interviewee. Only the researcher can generate, edit and save. Download as TXT. / 点击查看无时间标记的论文附件文本：A 为访谈者，B 为受访者。仅研究者可生成、编辑和保存，可下载为 TXT。"
-                : "Click to read the anonymized Edited archive as a paper appendix without timestamps. Generate formats the current anonymized archive. Only the researcher can generate, edit and save. Download as TXT. / 点击查看无时间标记的匿名论文附件文本。生成会整理当前匿名归档。仅研究者可生成、编辑和保存，可下载为 TXT。"}</p>
+                ? "Click to read the Edited archive in text format. / 点击查看修订归档文本版。"
+                : "Click to read the anonymized Edited archive in text format. / 点击查看匿名修订归档文本版。"}</p>
               {archiveOf(kind)?.text && <Button variant="outline" onClick={() => (() => { const text = archiveOf(kind)?.text; if (text) downloadText(appendixText(text), `${fileBase}-${kind}.txt`); })()}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
               {canEdit && !busy && <Button variant="outline" disabled={saving || running || !src} onClick={() => startText(kind, true)}>Generate from current {suffix === "edited" ? "Edited" : "Anonymized"} archive / 用当前{suffix === "edited" ? "修订" : "匿名"}归档生成</Button>}
               {canEdit && archiveOf(kind) && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startText(kind, false)}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
