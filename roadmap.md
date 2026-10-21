@@ -1,3 +1,8 @@
+## Current request: Prevent restricted recording extraction
+- [ ] Deny visitor audio URLs for both hidden and disabled players, including transcription URL requests.
+- [ ] Process restricted WAV transcription server-side and return text only; preserve archives and researcher playback.
+- [ ] Verify focused tests, live anonymous denial/generation and browser audio-request absence; report previously issued signed URL lifetime separately.
+
 ## Current request: Simple model explanations
 - [x] Remove reasoning/budget/snapshot and historical-settings caveats from interview explanations; Raw generation names the actual model/ID and the transcription and translation instructions shown above. No model behavior changed.
 - [x] Live page and paragraph screenshot verify model/ID plus above-instructions wording; removed English/Chinese caveats absent; build OK.
