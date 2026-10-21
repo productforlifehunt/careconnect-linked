@@ -99,6 +99,9 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
 
 function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canEdit: boolean; onSaved: () => void; onDeleted: () => void }) {
   const path = rec.path;
+  // Occasional secondary caregivers did not sign the ethics consent: only the
+  // researcher may hear their voice. Transcripts stay visible to everyone.
+  const voiceRestricted = /^occasional\s+secondary\s+caregiver/i.test(titleOf(rec)) && !canEdit;
   const [audio, setAudio] = useState("");
   // Unsaved edits are kept in this browser so a refresh or sign-in expiry never wipes them.
   const draftKey = `interview-meta-draft:${path}`;
