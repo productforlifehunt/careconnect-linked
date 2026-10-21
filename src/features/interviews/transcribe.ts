@@ -15,6 +15,7 @@ export interface Meta { title: string; notes: string; instructions: string }
 export interface Recording { path: string; size: number; type: string; created: string; meta: Meta }
 export interface Line { s: "A" | "B"; zh: string; en: string; t: number }
 export interface TranscriptArchive { lines: Line[]; savedAt: string }
+export type ArchiveKind = "raw" | "edited";
 
 function authHeaders() {
   return {
@@ -39,8 +40,8 @@ const transcribeUrl = (path: string) => audioFn<{ url: string }>({ action: "tran
 
 export const saveMeta = (path: string, meta: Meta) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
 export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });
-export const loadTranscriptArchive = (path: string) => audioFn<{ archive: TranscriptArchive | null }>({ action: "load_archive", path }).then((d) => d.archive);
-export const saveTranscriptArchive = (path: string, lines: Line[]) => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, lines }).then((d) => d.archive);
+export const loadTranscriptArchive = (path: string, kind: ArchiveKind = "raw") => audioFn<{ archive: TranscriptArchive | null }>({ action: "load_archive", path, kind }).then((d) => d.archive);
+export const saveTranscriptArchive = (path: string, lines: Line[], kind: ArchiveKind = "raw") => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, lines, kind }).then((d) => d.archive);
 
 export async function uploadRecording(file: File): Promise<string> {
   const { path, token } = await audioFn<{ path: string; token: string }>({ action: "upload_url", name: file.name });
