@@ -8,6 +8,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
 import { ARCHIVE_FOLDERS, archiveObjectPath, isArchiveKind, isTextKind, normalizeArchiveLines } from "../_shared/interview-archive.ts";
+import { interviewDisplaySettings, type InterviewDisplaySettings } from "../_shared/interview-display.ts";
 
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -16,9 +17,8 @@ const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") &&
 const PROTECTED = new Set(["1790784395705_69.wav"]);
 // Occasional secondary caregivers did not sign the ethics consent: their voice
 // must not be played for anyone except the researcher. Transcripts stay public.
-const OCCASIONAL_SECONDARY = /occasional\s+secondary\s+caregiver/i;
 
-export interface Meta { title: string; notes: string; instructions: string; recruitmentSource: string }
+export interface Meta extends InterviewDisplaySettings { title: string; notes: string; instructions: string; recruitmentSource: string }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
@@ -34,7 +34,8 @@ Deno.serve(async (req) => {
   const readMeta = async (path: string): Promise<Meta> => {
     const { data } = await store.download(`meta/${path}.json`);
     const m = data ? await data.text().then((t) => JSON.parse(t)).catch(() => ({})) : {};
-    return { title: String(m.title || ""), notes: String(m.notes || ""), instructions: String(m.instructions || ""), recruitmentSource: String(m.recruitmentSource || "") };
+    const meta = { title: String(m.title || ""), notes: String(m.notes || ""), instructions: String(m.instructions || ""), recruitmentSource: String(m.recruitmentSource || "") };
+    return { ...meta, ...interviewDisplaySettings({ ...m, title: meta.title }) };
   };
 
   const researcher = await isResearcher(req).catch(() => false);
@@ -60,8 +61,9 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
-    if (!researcher && OCCASIONAL_SECONDARY.test((await readMeta(path)).title)) {
-      return json({ error: "This participant did not sign the ethics consent, so only the researcher can play this recording. / 该参与者未签署伦理协议，录音仅供研究者播放。", consent: true }, 403);
+    const display = interviewDisplaySettings(await readMeta(path));
+    if (!researcher && (!display.playbackAllowed || !display.showPlayback)) {
+      return json({ error: "Playback unavailable", consent: true }, 403);
     }
     const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
     if (error) return json({ error: error.message }, 404);
@@ -151,6 +153,7 @@ Deno.serve(async (req) => {
       recruitmentSource: String(m.recruitmentSource ?? "").slice(0, 5000),
       notes: String(m.notes ?? "").slice(0, 5000),
       instructions: String(m.instructions ?? "").slice(0, 5000),
+      ...interviewDisplaySettings(m),
     };
     const blob = new Blob([JSON.stringify(meta)], { type: "application/json" });
     const { error } = await store.upload(`meta/${path}.json`, blob, { upsert: true, contentType: "application/json" });
