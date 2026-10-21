@@ -1,3 +1,7 @@
+## Current request: Atomic interview button readiness
+- [x] Load all five archives concurrently and commit together; lock interview controls and fresh generation until the entire set succeeds. Failed reads remain locked with a whole-set retry; late results from a different interview are ignored.
+- [ ] Run focused delayed-read/failure regression tests and verify the real visitor loading-to-archive-reading flow without generating or writing archives.
+
 ## Current request: Click-only streaming playback
 - [x] Replace playback signed URLs with five-second server-authorized binary chunks requested only after Play; hidden/disabled visitors receive no audio; legacy play_url/transcribe_url return 403 for everyone.
 - [x] Remove browser audio download/decode fallback from transcript generation; retain server-only WAV/MP3 generation and independent archives. All 17 current recordings have .wav names; unsupported formats fail closed.
