@@ -1,3 +1,9 @@
+## Current request: Prevent restricted recording extraction
+- [x] Deny visitor audio URLs for both hidden and disabled players, including transcription URL requests; shared permission tests pass. Live restricted recording play_url and transcribe_url both return 403. Bucket is private and deployed storage.objects has no direct-read policies.
+- [x] Process WAV/MP3 transcription server-side and return text only; preserve archives and researcher access. Actual .wav file 73 is MP3 internally, handled without replacing the recording.
+- [x] 26/26 focused tests pass; live anonymous recording 73 generates its first segment (200, text plus numeric cursor only), browser has zero audio elements/storage-audio requests/transcribe_url requests, zero runtime errors; build OK. No archives/settings edited.
+- [ ] Full long-recording run and actual researcher access not exercised. Previously issued six-hour playback and fifteen-minute transcription URLs cannot be retroactively revoked by these switches; may remain valid until expiry. Non-WAV/MP3 restricted formats fail closed, rather than return audio.
+
 ## Current request: Simple model explanations
 - [x] Remove reasoning/budget/snapshot and historical-settings caveats from interview explanations; Raw generation names the actual model/ID and the transcription and translation instructions shown above. No model behavior changed.
 - [x] Live page and paragraph screenshot verify model/ID plus above-instructions wording; removed English/Chinese caveats absent; build OK.

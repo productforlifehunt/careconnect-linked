@@ -8,7 +8,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
 import { ARCHIVE_FOLDERS, archiveObjectPath, isArchiveKind, isTextKind, normalizeArchiveLines } from "../_shared/interview-archive.ts";
-import { interviewDisplaySettings, type InterviewDisplaySettings } from "../_shared/interview-display.ts";
+import { canReceiveInterviewAudio, interviewDisplaySettings, type InterviewDisplaySettings } from "../_shared/interview-display.ts";
 
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -61,8 +61,7 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
-    const display = interviewDisplaySettings(await readMeta(path));
-    if (!researcher && (!display.playbackAllowed || !display.showPlayback)) {
+    if (!canReceiveInterviewAudio(await readMeta(path), researcher)) {
       return json({ error: "Playback unavailable", consent: true }, 403);
     }
     const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
@@ -70,12 +69,12 @@ Deno.serve(async (req) => {
     return json({ url: data.signedUrl });
   }
 
-  // Transcription needs the audio bytes; this short-lived URL keeps transcript
-  // generation working for everyone without exposing a long-lived play link.
+  // Restricted audio must never reach a visitor, even via transcription.
   if (body.action === "transcribe_url") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
+    if (!canReceiveInterviewAudio(await readMeta(path), researcher)) return json({ error: "Playback unavailable" }, 403);
     const { data, error } = await store.createSignedUrl(path, 60 * 15);
     if (error) return json({ error: error.message }, 404);
     return json({ url: data.signedUrl });
