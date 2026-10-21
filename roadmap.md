@@ -1,7 +1,7 @@
 ## Current request: Raw and edited interview archives
-- [ ] Label fresh generation and existing archives Raw; add green Edited archive view.
-- [ ] Let only the researcher edit and explicitly save a separate Edited archive without changing Raw; preserve manual drafts and overwrite confirmation.
-- [ ] Verify storage isolation, visitor read-only permissions, and researcher edit/save/readback flow.
+- [x] Label fresh generation and existing archives Raw; add green Edited archive view. Live visitor screenshot confirms both buttons and 312 existing Raw sentences.
+- [x] Implement researcher-only editing and explicit separate Edited save, browser draft preservation, and overwrite confirmation; 5/5 focused tests pass including save/readback and Raw isolation.
+- [ ] Authenticated researcher live edit/save/readback remains unverified: no existing researcher session or known researcher password found; approved challenged/test1 accounts are not the researcher identity. Live anonymous save is denied 403, Edited read returns 200/null, visitor has zero edit controls and zero runtime errors. No existing archive was modified for verification.
 
 ## Current request: Network 8 context mapping
 - [x] Both Network 8 participant titles already match saved interviews exactly; confirmed with researcher login.
