@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { interviewDisplaySettings } from "../../../supabase/functions/_shared/interview-display";
-import { Archive, ChevronDown, Download, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X } from "lucide-react";
+import { Archive, ChevronDown, Download, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X, RotateCw } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, displayName, saveMeta, deleteRecording, replaceRecording,
   loadTranscriptArchive, saveTranscriptArchive, saveTextArchive, anonymizeLines,
@@ -119,6 +119,9 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [anonArchive, setAnonArchive] = useState<TranscriptArchive | null>(null);
   const [textArchive, setTextArchive] = useState<TranscriptArchive | null>(null);
   const [anonTextArchive, setAnonTextArchive] = useState<TranscriptArchive | null>(null);
+  const [archiveStatus, setArchiveStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [archiveAttempt, setArchiveAttempt] = useState(0);
+  const archivesReady = archiveStatus === "ready";
   const [showArchive, setShowArchive] = useState<false | ArchiveKind>(false);
   const [editing, setEditing] = useState(false);
   const [lineKind, setLineKind] = useState<"edited" | "anonymized">("edited");
@@ -153,13 +156,28 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   }, [path, playbackEnabled]);
 
   useEffect(() => {
-    loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
-    loadTranscriptArchive(path, "edited").then(setEditedArchive).catch((e) => setError(e instanceof Error ? e.message : String(e)));
-    loadTranscriptArchive(path, "anonymized").then(setAnonArchive).catch(() => setAnonArchive(null));
-    loadTranscriptArchive(path, "text").then(setTextArchive).catch(() => setTextArchive(null));
-    loadTranscriptArchive(path, "anonymized-text").then(setAnonTextArchive).catch(() => setAnonTextArchive(null));
-    return () => abort.current?.abort();
-  }, [path]);
+    let active = true;
+    setArchiveStatus("loading");
+    setError("");
+    Promise.all([
+      loadTranscriptArchive(path, "raw"),
+      loadTranscriptArchive(path, "edited"),
+      loadTranscriptArchive(path, "anonymized"),
+      loadTranscriptArchive(path, "text"),
+      loadTranscriptArchive(path, "anonymized-text"),
+    ])
+      .then(([raw, edited, anonymized, text, anonymizedText]) => {
+        if (!active) return;
+        setArchive(raw); setEditedArchive(edited); setAnonArchive(anonymized);
+        setTextArchive(text); setAnonTextArchive(anonymizedText);
+        setArchiveStatus("ready");
+      }).catch((e) => {
+        if (!active) return;
+        setArchiveStatus("error");
+        setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => { active = false; abort.current?.abort(); };
+  }, [path, archiveAttempt]);
 
   /** Runs a researcher-only action; if the sign-in has expired, asks for the password and retries. */
   const asResearcher = async (action: () => Promise<void>) => {
@@ -202,7 +220,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   };
 
   const generate = async () => {
-    if (editing) return;
+    if (!archivesReady || running || busy || saving) return;
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
@@ -337,7 +355,9 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   return (
     <div className="space-y-4">
       <Card>
-        <CardContent className="space-y-3 pt-6">
+        <CardContent className="space-y-3 pt-6" aria-busy={archiveStatus === "loading"}>
+          {archiveStatus === "loading" && <Loader2 role="status" aria-label="Loading interview / 加载访谈" className="h-5 w-5 animate-spin text-muted-foreground" />}
+          <fieldset disabled={!archivesReady} className="min-w-0 space-y-3">
           {canEdit ? (
             <div className="space-y-4">
               <label className="text-xs text-muted-foreground">Title / 标题</label>
@@ -442,7 +462,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           )}
           <div className="space-y-3 border-t border-border pt-5">
             {generateVisible && <>
-            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running || editing} variant={canEdit ? "secondary" : "default"}>
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={!archivesReady || running || busy || saving} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate New Raw Translation and Transcription / 生成新的原始翻译与转录 (may take 20–30 minutes)
             </Button>
@@ -514,7 +534,9 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </div>
           )}
           {running && !progress && <p className="text-xs text-muted-foreground">Downloading and reading audio… / 下载并读取录音…</p>}
+          </fieldset>
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {archiveStatus === "error" && <Button variant="outline" size="icon" aria-label="Retry loading archives / 重试加载归档" title="Retry / 重试" onClick={() => setArchiveAttempt((value) => value + 1)}><RotateCw className="h-4 w-4" /></Button>}
         </CardContent>
       </Card>
       {showArchive && <h3 className="font-medium text-foreground">{{

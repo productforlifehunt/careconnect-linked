@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import InterviewsPanel from "@/pages/researcher/InterviewsPanel";
 import { archiveObjectPath, normalizeArchiveLines } from "../../supabase/functions/_shared/interview-archive";
 
@@ -24,6 +24,43 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("independent interview archives", () => {
+  it("keeps playback, generation and all five archives locked until every archive has loaded", async () => {
+    const pending = new Map<string, (archive: typeof raw | null) => void>();
+    api.loadTranscriptArchive.mockImplementation((_path, kind) => new Promise((resolve) => pending.set(kind, resolve)));
+    render(<InterviewsPanel canEdit />);
+    const generate = await screen.findByRole("button", { name: /Generate New Raw/ });
+    expect(pending.size).toBe(5);
+    expect(generate).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Play recording" })).toBeDisabled();
+    await act(async () => {
+      for (const kind of ["raw", "edited", "anonymized", "text"]) pending.get(kind)?.(raw);
+    });
+    const archiveButtons = screen.getAllByRole("button", { name: /^View .*Archived Translation/ });
+    expect(archiveButtons).toHaveLength(5);
+    for (const button of archiveButtons) expect(button).toBeDisabled();
+    fireEvent.click(generate);
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    await act(async () => pending.get("anonymized-text")?.(raw));
+    for (const button of archiveButtons) expect(button).toBeEnabled();
+    expect(generate).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Play recording" })).toBeEnabled();
+  });
+  it("does not treat a failed archive read as missing or permit generation, and retries the whole set", async () => {
+    api.loadTranscriptArchive.mockImplementation(async (_path, kind) => {
+      if (kind === "text") throw new Error("Connection interrupted");
+      return raw;
+    });
+    render(<InterviewsPanel canEdit={false} />);
+    const retry = await screen.findByRole("button", { name: "Retry loading archives / 重试加载归档" });
+    expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeDisabled();
+    for (const button of screen.getAllByRole("button", { name: /^View .*Archived Translation/ })) expect(button).toBeDisabled();
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    api.loadTranscriptArchive.mockResolvedValue(raw);
+    fireEvent.click(retry);
+    await waitFor(() => expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled());
+    expect(api.loadTranscriptArchive).toHaveBeenCalledTimes(10);
+    for (const button of screen.getAllByRole("button", { name: /^View .*Archived Translation/ })) expect(button).toBeEnabled();
+  });
   it("starts manual anonymization from Edited without AI and saves only the anonymized archive", async () => {
     edited = { ...raw, lines: [{ s: "B", zh: "我丈夫是王军", en: "My husband is Wang Jun", t: 30 }] };
     let anonymized = null as typeof raw | null;
@@ -87,7 +124,7 @@ describe("independent interview archives", () => {
     render(<InterviewsPanel canEdit={false} />);
     expect(await screen.findByRole("button", { name: "Play recording" })).toBeDisabled();
     expect(request).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled();
+    await waitFor(() => expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled());
     expect(screen.queryByRole("switch")).toBeNull();
   });
   it("hides visitor player and new generation while retaining Raw and Edited archive access", async () => {

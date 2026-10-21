@@ -19,3 +19,4 @@
 
 - Interview appendix display, editing and TXT export share the timestamp-free formatter, including legacy text, without overwriting stored manual corrections.
 - Interview playback uses click-started, bounded binary chunks from the existing audio handler, with permissions checked on every chunk and no browser storage/blob recording URLs; hidden or disabled visitors receive no audio, and transcription stays server-only, preventing whole-recording preload while preserving independent archives and researcher access.
+- Interview controls unlock only after all five archive reads succeed and commit together; failed reads keep controls locked with a whole-set retry, preventing incomplete loading from suggesting missing archives or triggering costly generation.
