@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { Archive, ChevronDown, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X } from "lucide-react";
+import { Archive, ChevronDown, Download, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording, replaceRecording,
-  loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
+  loadTranscriptArchive, saveTranscriptArchive, saveTextArchive, anonymizeLines,
+  type ArchiveKind, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
+import { archiveToText, downloadText } from "@/features/interviews/archive-text";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 import { compareResearchTitles } from "@/features/interviews/research-order";
 import { ResearchCodeLegend } from "@/components/esm/ResearchCodeLegend";
