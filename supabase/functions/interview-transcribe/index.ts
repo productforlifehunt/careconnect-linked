@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
   const path = String(body.path || "");
   if (!path || path.includes("/") || path.includes("..") || path.length >= 300) return json({ error: "Invalid recording" }, 400);
   const researcher = await isResearcher(req).catch(() => false);
-  if (path === "1790784395705_69.wav" && !researcher) return json({ error: "protected" }, 403);
+  if (!canReceiveInterviewAudio(await readMeta(path), researcher) && body.action !== "transcribe") {
+    return json({ error: "protected" }, 403);
+  }
 
   const store = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!).storage.from("interview-audio");
   const { data: exists } = await store.list("", { search: path, limit: 1 });
