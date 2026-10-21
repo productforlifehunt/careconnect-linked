@@ -52,6 +52,15 @@ export async function uploadRecording(file: File): Promise<string> {
   return path;
 }
 
+/** Overwrites the audio of an existing recording; title, notes and archives stay as they are. */
+export async function replaceRecording(path: string, file: File): Promise<void> {
+  const { token } = await audioFn<{ path: string; token: string }>({ action: "replace_url", path });
+  const { error } = await supabase.storage.from("interview-audio").uploadToSignedUrl(path, token, file, {
+    contentType: file.type || "audio/mpeg", upsert: true,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export const displayName = (path: string) => path.replace(/^\d+_/, "");
 
 function wavBase64(samples: Float32Array): string {

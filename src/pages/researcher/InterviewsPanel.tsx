@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { Archive, ChevronDown, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Pencil, X } from "lucide-react";
+import { Archive, ChevronDown, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X } from "lucide-react";
 import {
-  listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
+  listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording, replaceRecording,
   loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
@@ -136,6 +136,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [duration, setDuration] = useState(0);
   const abort = useRef<AbortController | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
+  const replaceInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setPlayError("");
@@ -272,6 +273,18 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save / 保存
                 </Button>
                 <Button variant="outline" onClick={share}><Link2 className="mr-2 h-4 w-4" />Copy link / 复制链接</Button>
+                <input ref={replaceInput} type="file" accept="audio/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0]; e.target.value = "";
+                  if (!file) return;
+                  setSaving(true); setError("");
+                  try {
+                    await asResearcher(async () => { await replaceRecording(path, file); });
+                    setAudio(""); setPlaying(false); setPosition(0);
+                    setAudio(await playUrl(path)); setSaved("Recording replaced / 录音已替换"); onSaved();
+                  } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
+                  finally { setSaving(false); }
+                }} />
+                <Button variant="outline" disabled={saving} onClick={() => replaceInput.current?.click()}><Upload className="mr-2 h-4 w-4" />Replace recording / 替换录音</Button>
                 <Button variant="destructive" disabled={saving} onClick={async () => {
                   if (!window.confirm("Delete this recording and its notes? This cannot be undone. / 删除这条录音和备注？不可恢复。")) return;
                   setSaving(true); setError("");
@@ -318,11 +331,6 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 </div>
               )}
             </div>
-          )}
-          {voiceRestricted && (
-            <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-              This participant did not sign the ethics consent, so this recording can only be played by the researcher. The transcript below is still available. / 该参与者未签署伦理协议，录音仅供研究者播放；下方转录内容仍可查看。
-            </p>
           )}
           {audio && !voiceRestricted && (
             <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
