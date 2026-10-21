@@ -1,6 +1,6 @@
 ## Current request: Atomic interview button readiness
 - [x] Load all five archives concurrently and commit together; lock interview controls and fresh generation until the entire set succeeds. Failed reads remain locked with a whole-set retry; late results from a different interview are ignored.
-- [ ] Run focused delayed-read/failure regression tests and verify the real visitor loading-to-archive-reading flow without generating or writing archives.
+- [x] 25/25 focused tests pass, including delayed fifth read and whole-set retry after failure. Real visitor delayed-read check locks all five archives and generation together; after release all five existing archives enable together and Raw reads 238 sentences. Screenshot checked, zero runtime errors or generation/audio/archive-write calls; latest build OK. Researcher-specific loading tested with mocked requests, not a real researcher session; no researcher write changes in this request.
 
 ## Current request: Click-only streaming playback
 - [x] Replace playback signed URLs with five-second server-authorized binary chunks requested only after Play; hidden/disabled visitors receive no audio; legacy play_url/transcribe_url return 403 for everyone.
