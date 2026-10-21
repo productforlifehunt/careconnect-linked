@@ -1,3 +1,8 @@
+## Current request: Interview explanations and appendix text
+- [ ] Separate public metadata and archive actions, with a dark bilingual explanation below each archive action.
+- [ ] Remove timestamps from generated and existing displayed/downloaded text; expand speaker labels on every utterance and test both rules.
+- [ ] Verify the live visitor view and model capability; do not mislabel Gemini audio transcription as ChatGPT nano.
+
 ## Current request: Research participant metadata and code ordering
 - [x] Add researcher-only persisted participant display title/identity, recruitment source and notes without changing accounts, answers or relations; backend rejects anonymous reads and writes with 403.
 - [x] Add recruitment source between interview title and notes; preserve it across saves. Focused test verifies no generation or archive write during metadata save.
