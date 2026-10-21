@@ -1,3 +1,8 @@
+## Current request: Truthful research AI model labels
+- [ ] Verify transcription/translation/anonymization model IDs and explicit reasoning settings against requests.
+- [ ] Correct research labels with exact versions, unspecified defaults and non-AI manual/text operations.
+- [ ] Run focused tests and check live interview labels without generating or changing archives.
+
 ## Current request: Interview explanations and appendix text
 - [x] Separate public metadata and archive actions, with six dark bilingual explanations; live visitor screenshot checked.
 - [x] Remove timestamps from generated and existing displayed/downloaded text with a shared formatter; expand speaker labels on every utterance. 14/14 focused tests pass; existing live text has expanded labels and no sentence timestamps. Stored manual corrections remain untouched.
