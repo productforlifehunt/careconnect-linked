@@ -16,7 +16,7 @@ const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token`, "Access-Control-Expose-Headers": "X-Next-Offset, X-Duration, X-Position, X-Recording-Size", "Cache-Control": "no-store" };
 const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
 // Leaked links: these recordings are disabled for everyone (play, list, archive).
-const PROTECTED = new Set(["1790784395705_69.wav"]);
+const PROTECTED = new Set<string>();
 // Occasional secondary caregivers did not sign the ethics consent: their voice
 // must not be played for anyone except the researcher. Transcripts stay public.
 
