@@ -123,6 +123,7 @@ export default function ResearcherApp() {
             <TabsTrigger value="participants">Participants / 参与者</TabsTrigger>
             <TabsTrigger value="interviews">Interviews / 访谈记录</TabsTrigger>
           </TabsList>
+          <ResearchCodeLegend />
         </div>
         <TabsContent value="participants">
           {signedIn ? <Dashboard /> : <Login onDone={() => setSignedIn(true)} />}
@@ -226,7 +227,6 @@ function Dashboard() {
   return (
     <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <aside className="space-y-1">
-        <ResearchCodeLegend />
         {data.map((p) => (
           <button
             key={p.id}

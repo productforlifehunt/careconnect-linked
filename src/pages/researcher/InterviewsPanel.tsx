@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { interviewDisplaySettings } from "../../../supabase/functions/_shared/interview-display";
 import { Archive, ChevronDown, Download, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording, replaceRecording,
@@ -14,9 +16,7 @@ import {
 import { appendixText, archiveToText, downloadText, speakerLabel } from "@/features/interviews/archive-text";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 import { compareResearchTitles } from "@/features/interviews/research-order";
-import { ResearchCodeLegend } from "@/components/esm/ResearchCodeLegend";
 
-const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
 
@@ -71,7 +71,6 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
             </Button>
           </>
         )}
-        <ResearchCodeLegend />
         {error && <p className="text-sm text-destructive">{error}</p>}
         {!items && <p className="text-sm text-muted-foreground">Loading… / 加载中…</p>}
         {items?.length === 0 && <p className="text-sm text-muted-foreground">No recordings yet. / 暂无录音</p>}
@@ -79,7 +78,6 @@ export default function InterviewsPanel({ canEdit }: { canEdit: boolean }) {
           <button key={r.path} onClick={() => setSelected(r.path)}
             className={`w-full rounded-md px-3 py-2 text-left text-sm ${r.path === selected ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}>
              <div className="whitespace-normal break-words font-medium leading-snug">{titleOf(r)}</div>
-            <div className="text-xs opacity-80">{mb(r.size)}</div>
           </button>
         ))}
       </aside>
@@ -92,7 +90,6 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const path = rec.path;
   // Occasional secondary caregivers did not sign the ethics consent: only the
   // researcher may hear their voice. Transcripts stay visible to everyone.
-  const voiceRestricted = /occasional\s+secondary\s+caregiver/i.test(titleOf(rec)) && !canEdit;
   const [audio, setAudio] = useState("");
   // Unsaved edits are kept in this browser so a refresh or sign-in expiry never wipes them.
   const draftKey = `interview-meta-draft:${path}`;
@@ -101,6 +98,10 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     return rec.meta;
   });
   const setMeta = (next: Meta) => { setMetaState(next); localStorage.setItem(draftKey, JSON.stringify(next)); };
+  const display = interviewDisplaySettings(meta);
+  const playerVisible = canEdit || display.showPlayback;
+  const playbackEnabled = canEdit || (display.showPlayback && display.playbackAllowed);
+  const generateVisible = canEdit || display.showGenerate;
   const dirty = meta.title !== rec.meta.title || meta.notes !== rec.meta.notes || meta.instructions !== rec.meta.instructions || (meta.recruitmentSource || "") !== (rec.meta.recruitmentSource || "");
   const retry = useRef<(() => Promise<void>) | null>(null);
   const [saving, setSaving] = useState(false);
@@ -143,16 +144,22 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   useEffect(() => {
     setPlayError("");
     setAudio("");
-    if (!voiceRestricted) {
-      playUrl(path).then(setAudio).catch(() => setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"));
+    let active = true;
+    player.current?.pause(); setPlaying(false); setBuffering(false);
+    if (playbackEnabled) {
+      playUrl(path).then((url) => { if (active) setAudio(url); }).catch(() => { if (active) setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"); });
     }
+    return () => { active = false; };
+  }, [path, playbackEnabled]);
+
+  useEffect(() => {
     loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
     loadTranscriptArchive(path, "edited").then(setEditedArchive).catch((e) => setError(e instanceof Error ? e.message : String(e)));
     loadTranscriptArchive(path, "anonymized").then(setAnonArchive).catch(() => setAnonArchive(null));
     loadTranscriptArchive(path, "text").then(setTextArchive).catch(() => setTextArchive(null));
     loadTranscriptArchive(path, "anonymized-text").then(setAnonTextArchive).catch(() => setAnonTextArchive(null));
     return () => abort.current?.abort();
-  }, [path, voiceRestricted]);
+  }, [path]);
 
   /** Runs a researcher-only action; if the sign-in has expired, asks for the password and retries. */
   const asResearcher = async (action: () => Promise<void>) => {
@@ -178,6 +185,19 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
       });
     }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSaving(false); }
+  };
+
+  const saveDisplay = async (key: "playbackAllowed" | "showPlayback" | "showGenerate", value: boolean) => {
+    if (!canEdit || saving) return;
+    setSaving(true); setError("");
+    try {
+      await asResearcher(async () => {
+        const stored = await saveMeta(path, { ...rec.meta, [key]: value });
+        const next = { ...meta, playbackAllowed: stored.playbackAllowed, showPlayback: stored.showPlayback, showGenerate: stored.showGenerate };
+        setMeta(next); onSaved();
+      });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   };
 
@@ -321,6 +341,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <Textarea rows={2} value={meta.notes} onChange={(e) => setMeta({ ...meta, notes: e.target.value })} />
               <label className="text-xs text-muted-foreground">Transcription instructions / 转录指令（例如 A/B 是谁、专有名词）</label>
               <Textarea rows={3} value={meta.instructions} onChange={(e) => setMeta({ ...meta, instructions: e.target.value })} />
+              <div className="space-y-3">
+                {([["playbackAllowed", "Allow visitor playback / 允许访客播放"], ["showPlayback", "Show visitor player / 显示访客播放器"], ["showGenerate", "Show visitor Generate New / 显示访客重新生成"]] as const).map(([key, label]) => (
+                  <label key={key} className="flex items-center justify-between gap-3 text-sm">
+                    <span>{label}</span><Switch aria-label={label} checked={display[key]} disabled={saving} onCheckedChange={(value) => void saveDisplay(key, value)} />
+                  </label>
+                ))}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button onClick={save} disabled={saving}>
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save / 保存
@@ -386,15 +413,15 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               )}
             </div>
           )}
-          {audio && !voiceRestricted && (
+          {playerVisible && (
             <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
-              <audio ref={player} src={audio} preload="metadata" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()}
+              {audio && playbackEnabled && <audio ref={player} src={audio} preload="metadata" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()}
                 onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
                 onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
                 onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onCanPlay={() => setBuffering(false)}
                 onError={() => { setPlaying(false); setBuffering(false); setPlayError("This recording could not play. Please refresh. / 录音无法播放，请刷新重试。"); }}
-                onEnded={() => { setPlaying(false); setPosition(0); }} />
-              <Button variant="ghost" size="icon" aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
+                onEnded={() => { setPlaying(false); setPosition(0); }} />}
+              <Button variant="ghost" size="icon" disabled={!playbackEnabled || !audio} aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
                 const element = player.current;
                 if (!element) return;
                 if (element.paused) {
@@ -405,7 +432,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 {buffering && playing ? <Loader2 className="h-5 w-5 animate-spin" /> : playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
               </Button>
               <span className="text-sm text-foreground">{buffering && playing ? "Loading… / 加载中…" : "Play recording / 播放录音"}</span>
-              <Slider className="min-w-0 flex-1" min={0} max={duration || 1} step={0.1} value={[Math.min(position, duration || 1)]}
+              <Slider disabled={!playbackEnabled || !audio} className="min-w-0 flex-1" min={0} max={duration || 1} step={0.1} value={[Math.min(position, duration || 1)]}
                 aria-label="Recording position / 录音位置" onValueChange={([next]) => {
                   const element = player.current;
                   if (!element || typeof next !== "number") return;
@@ -416,11 +443,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           )}
           {playError && <p className="text-sm text-destructive">{playError}</p>}
           <div className="space-y-3 border-t border-border pt-5">
+            {generateVisible && <>
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running || editing} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate New Raw Translation and Transcription / 生成新的原始翻译与转录 (may take 20–30 minutes)
             </Button>
             <p className="text-sm text-foreground">Click to generate new Raw transcription and translation from the recording and the instructions above. Both tasks use Google Gemini 3.8 Flash (model ID: google/gemini-3.8-flash) in the same request. Reasoning effort and thinking budget: not explicitly set; provider defaults apply, not confirmed disabled. The underlying dated model snapshot is not available. Existing archives are not used or changed. / 点击后，根据录音和上方指导生成新的原始转录与翻译。两项任务在同一次请求中使用 Google Gemini 3.8 Flash（模型 ID：google/gemini-3.8-flash）。推理强度与思考预算：未显式设置，使用提供方默认值，不能标为关闭推理。底层日期版本未提供。不读取或更改现有归档。</p>
+            </>}
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive("raw")} disabled={!archive || editing}>
               <Archive className="mr-2 h-4 w-4" />View Raw Archived Translation and Transcription / 查看原始翻译与转录归档
             </Button>
