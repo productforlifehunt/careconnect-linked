@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
+import type { DiagramPlugin, MermaidConfig } from "@streamdown/mermaid";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
@@ -320,6 +320,26 @@ export const MessageBranchPage = ({
 };
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
+
+// Diagram dependencies must not execute while the shared app shell starts.
+// Keep the synchronous plugin contract, but import the engine only on render.
+const mermaid: DiagramPlugin = {
+  name: "mermaid",
+  type: "diagram",
+  language: "mermaid",
+  getMermaid(initialConfig) {
+    let config: MermaidConfig | undefined = initialConfig;
+    return {
+      initialize(nextConfig) {
+        config = nextConfig;
+      },
+      async render(id, source) {
+        const { createMermaidPlugin } = await import("@streamdown/mermaid");
+        return createMermaidPlugin().getMermaid(config).render(id, source);
+      },
+    };
+  },
+};
 
 const streamdownPlugins = { cjk, code, math, mermaid };
 

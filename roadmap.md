@@ -145,6 +145,13 @@
 - [x] Reopen every changed record and verify the saved values person by person.
 
 
+# Preview startup recovery
+
+- [x] Identify graphlib startup exception in the user's preview telemetry; localhost homepage renders without that error.
+- [x] Defer the shared Mermaid engine until an actual diagram renders, preserving diagram support without executing its dependency graph on app startup.
+- [x] Verify all five sub-app entry screens locally at the user's 743×669 viewport, including loaded researcher interview rows: HTTP 200 and zero runtime errors for each; routing test passed and latest build OK.
+- [ ] Confirm the user's editor preview itself recovers after refresh; external automation redirects to the Lovable login wall and cannot observe that session.
+
 # Framework upgrade (TanStack Start)
 
 - [x] Migrate from Classic Vite + React Router to TanStack Start; type check clean, build green, every page opens, tests pass.
