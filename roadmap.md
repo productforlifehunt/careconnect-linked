@@ -145,6 +145,12 @@
 - [x] Reopen every changed record and verify the saved values person by person.
 
 
+# Preview startup recovery
+
+- [x] Identify graphlib startup exception in the user's preview telemetry; localhost homepage renders without that error.
+- [x] Defer the shared Mermaid engine until an actual diagram renders, preserving diagram support without executing its dependency graph on app startup.
+- [ ] Verify all five sub-app entry screens locally and inspect the latest build signal; the editor-protected preview cannot be checked from the unauthenticated external browser.
+
 # Framework upgrade (TanStack Start)
 
 - [x] Migrate from Classic Vite + React Router to TanStack Start; type check clean, build green, every page opens, tests pass.
