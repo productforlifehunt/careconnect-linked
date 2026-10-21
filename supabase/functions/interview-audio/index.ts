@@ -13,6 +13,9 @@ const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders
 const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
 // Leaked links: these recordings are disabled for everyone (play, list, archive).
 const PROTECTED = new Set(["1790784395705_69.wav"]);
+// Occasional secondary caregivers did not sign the ethics consent: their voice
+// must not be played for anyone except the researcher. Transcripts stay public.
+const OCCASIONAL_SECONDARY = /^occasional\s+secondary\s+caregiver/i;
 
 export interface Meta { title: string; notes: string; instructions: string }
 interface Line { s: "A" | "B"; zh: string; en: string; t: number }
