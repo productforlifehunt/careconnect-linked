@@ -60,12 +60,16 @@ Deno.serve(async (req) => {
       return buffer;
     };
     try {
-      let info = readWavInfo(await range(0, 65535));
+      const header = await range(0, 65535);
+      let info = readWavInfo(header);
       // Recorder WAV files may include large metadata/JUNK chunks before data.
       for (let end = 262143; !info && end <= 4194303; end = (end + 1) * 4 - 1) {
         info = readWavInfo(await range(0, end));
       }
-      if (!info || info.channels < 1 || info.sampleRate < 1 || info.blockAlign < 1) return json({ error: "Server transcription requires PCM WAV. The researcher can replace this recording with WAV." }, 400);
+      if (!info || info.channels < 1 || info.sampleRate < 1 || info.blockAlign < 1) {
+        console.log("Recording container", { signature: Array.from(new Uint8Array(header, 0, Math.min(12, header.byteLength))), headerSize: header.byteLength });
+        return json({ error: "Server transcription requires PCM WAV. The researcher can replace this recording with WAV." }, 400);
+      }
       const step = SEGMENT_SECONDS * info.sampleRate * info.blockAlign;
       if (step > 16_000_000) return json({ error: "WAV segment too large" }, 400);
       total = Math.ceil(info.dataSize / step);
