@@ -104,6 +104,15 @@ Deno.serve(async (req) => {
     return json({ path, token: data.token });
   }
 
+  // Replace the audio file in place (e.g. a denoised version); meta and archives are untouched.
+  if (body.action === "replace_url") {
+    const path = String(body.path || "");
+    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    const { data, error } = await store.createSignedUploadUrl(path, { upsert: true });
+    if (error) return json({ error: error.message }, 500);
+    return json({ path, token: data.token });
+  }
+
   if (body.action === "delete") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
