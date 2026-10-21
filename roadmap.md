@@ -1,3 +1,8 @@
+## Current request: Truthful research AI model labels
+- [x] Verify transcription/translation/anonymization model IDs and explicit reasoning settings against source requests and successful gateway logs: google/gemini-3.8-flash for joint audio transcription/translation and anonymization; openai/gpt-5-nano with reasoning_effort none for diary translation.
+- [x] Correct research labels with exact model IDs, unspecified Gemini defaults, explicit GPT reasoning_effort none, unavailable underlying snapshots, historical/cached provenance caveats and non-AI manual/text operations. No model calls or archives changed.
+- [x] Run 17/17 focused tests including three concrete model-request configuration checks; live visitor verifies joint transcription/translation model, reasoning defaults, anonymization model, no-AI text operations and historical uncertainty; existing Raw archive reads 312 lines, zero runtime errors, screenshot checked, build OK. GPT gateway response additionally confirms gpt-5-nano-2025-08-07 and reasoning_tokens 0 on 2026-10-21; label distinguishes observed snapshot from unpinned alias. Researcher-only translation label checked in source, not authenticated live UI.
+
 ## Current request: Interview explanations and appendix text
 - [x] Separate public metadata and archive actions, with six dark bilingual explanations; live visitor screenshot checked.
 - [x] Remove timestamps from generated and existing displayed/downloaded text with a shared formatter; expand speaker labels on every utterance. 14/14 focused tests pass; existing live text has expanded labels and no sentence timestamps. Stored manual corrections remain untouched.
