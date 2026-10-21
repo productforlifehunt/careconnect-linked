@@ -61,8 +61,7 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
-    const display = interviewDisplaySettings(await readMeta(path));
-    if (!researcher && (!display.playbackAllowed || !display.showPlayback)) {
+    if (!canReceiveInterviewAudio(await readMeta(path), researcher)) {
       return json({ error: "Playback unavailable", consent: true }, 403);
     }
     const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
