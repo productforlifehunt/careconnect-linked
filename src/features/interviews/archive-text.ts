@@ -1,6 +1,12 @@
 import type { Line } from "./transcribe";
 
-const stamp = (t: number) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+export const speakerLabel = (speaker: "A" | "B") => speaker === "A" ? "A — Interviewer / 访谈者" : "B — Interviewee / 受访者";
+
+/** Format legacy text archives for reading/export without rewriting stored corrections. */
+export function appendixText(text: string): string {
+  return text.replace(/^(\d+\.\s*)(?:\[\d+:\d+(?::\d+)?\]\s*)?([AB])(?:\s*—\s*(?:Interviewer \/ 访谈者|Interviewee \/ 受访者))?\s*$/gm,
+    (_match, number: string, speaker: "A" | "B") => `${number}${speakerLabel(speaker)}`);
+}
 
 /** Plain-text transcript laid out like a paper appendix. */
 export function archiveToText(title: string, lines: Line[]): string {
@@ -8,7 +14,7 @@ export function archiveToText(title: string, lines: Line[]): string {
     title, "Interview transcript and translation / 访谈转录与翻译",
     "A = Interviewer / 访谈者; B = Interviewee / 受访者", "",
   ];
-  const body = lines.map((l, i) => [`${i + 1}. [${stamp(l.t)}] ${l.s}`, l.zh && `中文：${l.zh}`, l.en && `English: ${l.en}`].filter(Boolean).join("\n"));
+  const body = lines.map((l, i) => [`${i + 1}. ${speakerLabel(l.s)}`, l.zh && `中文：${l.zh}`, l.en && `English: ${l.en}`].filter(Boolean).join("\n"));
   return `${head.join("\n")}\n${body.join("\n\n")}\n`;
 }
 

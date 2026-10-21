@@ -11,7 +11,7 @@ import {
   loadTranscriptArchive, saveTranscriptArchive, saveTextArchive, anonymizeLines,
   type ArchiveKind, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
-import { archiveToText, downloadText } from "@/features/interviews/archive-text";
+import { appendixText, archiveToText, downloadText, speakerLabel } from "@/features/interviews/archive-text";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 import { compareResearchTitles } from "@/features/interviews/research-order";
 import { ResearchCodeLegend } from "@/components/esm/ResearchCodeLegend";
@@ -266,11 +266,12 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
       if (!src?.lines.length) return;
       value = archiveToText(titleText, src.lines);
     }
-    setTextDraft({ kind, value }); setShowArchive(kind); setSaved(""); setError("");
+    setTextDraft({ kind, value: appendixText(value) }); setShowArchive(kind); setSaved(""); setError("");
   };
   const storeText = async () => {
     if (!canEdit || !textDraft?.value.trim()) return;
-    const { kind, value } = textDraft;
+    const kind = textDraft.kind;
+    const value = appendixText(textDraft.value);
     if (archiveOf(kind) && !window.confirm("Overwrite the existing text archive? Other archives will not change. / 覆盖现有文本归档？其他归档不会改变。")) return;
     setSaving(true); setError("");
     try {
@@ -311,7 +312,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
       <Card>
         <CardContent className="space-y-3 pt-6">
           {canEdit ? (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <label className="text-xs text-muted-foreground">Title / 标题</label>
               <Input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} />
               <label htmlFor="interview-recruitment" className="text-xs text-muted-foreground">Recruitment source / 招募来源</label>
@@ -348,17 +349,17 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               </div>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-6">
               <p className="font-medium text-foreground">{rec.meta.title || displayName(path)}</p>
-              {rec.meta.recruitmentSource && <div><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{rec.meta.recruitmentSource}</p></div>}
+              {rec.meta.recruitmentSource && <div className="space-y-2"><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{rec.meta.recruitmentSource}</p></div>}
               {rec.meta.notes && (
-                <div className="pt-1">
+                <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Notes / 备注</p>
                   <p className="whitespace-pre-wrap text-sm text-foreground">{rec.meta.notes}</p>
                 </div>
               )}
               {rec.meta.instructions && (
-                <div className="space-y-2 pt-1">
+                <div className="space-y-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -414,14 +415,16 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </div>
           )}
           {playError && <p className="text-sm text-destructive">{playError}</p>}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="space-y-3 border-t border-border pt-5">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running || editing} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate New Raw Translation and Transcription / 生成新的原始翻译与转录 (may take 20–30 minutes)
             </Button>
+            <p className="text-sm text-foreground">Click to generate a new Raw translation and transcription from the original recording using Gemini Flash and the transcription and translation instructions above. Existing archives are not used or changed. / 点击后，Gemini Flash 根据原始录音和上方转录与翻译指导生成新的原始翻译与转录，不读取或更改现有归档。</p>
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive("raw")} disabled={!archive || editing}>
               <Archive className="mr-2 h-4 w-4" />View Raw Archived Translation and Transcription / 查看原始翻译与转录归档
             </Button>
+            <p className="text-sm text-foreground">Click to read the saved Raw translation and transcription. Viewing does not generate a new version. / 点击查看已保存的原始翻译与转录，不会重新生成。</p>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
             {canEdit && complete && !running && lines.length > 0 && !showArchive && (
               <Button onClick={storeArchive} disabled={saving}>
@@ -429,26 +432,31 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               </Button>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="space-y-3 border-t border-border pt-5">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!editedArchive || busy} onClick={() => setShowArchive("edited")}>
               <Archive className="mr-2 h-4 w-4" />View Edited Archived Translation and Transcription / 查看修订翻译与转录归档
             </Button>
+            <p className="text-sm text-foreground">Click to read the researcher’s saved manual corrections. Only the researcher can edit and save this separate Edited archive; Raw stays unchanged. / 点击查看研究者已保存的手动修订。仅研究者可编辑和保存独立的修订归档，原始归档不变。</p>
             {canEdit && archive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("edited")}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="space-y-3 border-t border-border pt-5">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!anonArchive || busy} onClick={() => setShowArchive("anonymized")}>
               <Archive className="mr-2 h-4 w-4" />View Anonymized Edited Archived Translation and Transcription / 查看匿名修订翻译与转录归档
             </Button>
+            <p className="text-sm text-foreground">Click to read the anonymized Edited archive. The researcher can generate it from the current Edited archive, replace names with anonymous codes, manually edit, and save separately. / 点击查看匿名修订归档。研究者可从当前修订归档生成，将姓名替换为匿名代号，再手动编辑、单独保存。</p>
             {canEdit && !busy && <Button variant="outline" disabled={saving || running || !editedArchive} onClick={generateAnonymized}>Generate from current Edited archive / 用当前修订归档生成</Button>}
             {canEdit && anonArchive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("anonymized")}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
             {anonProgress && <span className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Anonymizing… / 匿名化中… {anonProgress}</span>}
           </div>
           {([["text", "View Edited Archived Translation and Transcription in Text / 查看修订翻译与转录归档文本版", editedArchive, "edited"], ["anonymized-text", "View Anonymized Edited Archived Translation and Transcription in Text / 查看匿名修订翻译与转录归档文本版", anonArchive, "anonymized"]] as const).map(([kind, label, src, suffix]) => (
-            <div key={kind} className="flex flex-wrap items-center gap-2">
+            <div key={kind} className="space-y-3 border-t border-border pt-5">
               <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!archiveOf(kind) || busy} onClick={() => setShowArchive(kind)}>
                 <Archive className="mr-2 h-4 w-4" />{label}
               </Button>
-              {archiveOf(kind)?.text && <Button variant="outline" onClick={() => downloadText(archiveOf(kind)!.text!, `${fileBase}-${kind}.txt`)}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
+              <p className="text-sm text-foreground">{kind === "text"
+                ? "Click to read the Edited archive as a paper appendix without timestamps. A = Interviewer; B = Interviewee. Only the researcher can generate, edit and save; Download TXT exports the saved text. / 点击查看无时间标记的论文附件文本：A 为访谈者，B 为受访者。仅研究者可生成、编辑和保存；下载 TXT 导出已保存文本。"
+                : "Click to read the anonymized Edited archive as a paper appendix without timestamps. Generate uses the current anonymized archive. Only the researcher can edit and save; Download TXT exports the saved text. / 点击查看无时间标记的匿名论文附件文本。生成使用当前匿名归档；仅研究者可编辑和保存，下载 TXT 导出已保存文本。"}</p>
+              {archiveOf(kind)?.text && <Button variant="outline" onClick={() => (() => { const text = archiveOf(kind)?.text; if (text) downloadText(appendixText(text), `${fileBase}-${kind}.txt`); })()}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
               {canEdit && !busy && <Button variant="outline" disabled={saving || running || !src} onClick={() => startText(kind, true)}>Generate from current {suffix === "edited" ? "Edited" : "Anonymized"} archive / 用当前{suffix === "edited" ? "修订" : "匿名"}归档生成</Button>}
               {canEdit && archiveOf(kind) && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startText(kind, false)}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
             </div>
@@ -471,12 +479,6 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </form>
           )}
           {saved && !canEdit ? null : saved && <p className="text-sm text-muted-foreground">{saved}</p>}
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>each click makes a fresh transcript and translation using the latest gemini flash model</p>
-            <p>the transcript and translation will appear gradually</p>
-            <p>It can take up to 20 minutes for the whole transcription and translation.</p>
-            <p>You can view the previously saved originals in the Raw archive and manual corrections in the Edited archive.</p>
-          </div>
           {progress && (
             <div className="space-y-1">
               <Progress value={progress.total ? (progress.done / progress.total) * 100 : 0} />
@@ -496,17 +498,17 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
         <Textarea aria-label="Text archive" className="min-h-[60vh] font-mono text-sm" value={textDraft.value} disabled={saving}
           onChange={(e) => { setTextDraft({ ...textDraft, value: e.target.value }); localStorage.setItem(textDraftKey(textDraft.kind), e.target.value); }} />
       ) : (showArchive === "text" || showArchive === "anonymized-text") && archiveOf(showArchive)?.text ? (
-        <pre className="whitespace-pre-wrap rounded-md border border-border bg-card p-3 text-sm text-foreground">{archiveOf(showArchive)?.text}</pre>
+        <pre className="whitespace-pre-wrap rounded-md border border-border bg-card p-3 text-sm text-foreground">{appendixText(archiveOf(showArchive)?.text || "")}</pre>
       ) : null}
       <ol className="space-y-2">
         {(showArchive === "text" || showArchive === "anonymized-text" ? [] : canEdit && editing ? editLines : showArchive ? archiveOf(showArchive)?.lines || [] : lines).map((l, i) => (
           <li key={i} className="flex gap-3 rounded-md border border-border bg-card p-3">
             <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${l.s === "A" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{l.s}</span>
             <div className="min-w-0 flex-1 space-y-1">
-              <p className="text-xs text-muted-foreground">#{i + 1}</p>
+              <p className="text-xs text-muted-foreground">#{i + 1} · {speakerLabel(l.s)}</p>
               {canEdit && editing ? <>
                 <label className="flex items-center gap-2 text-sm">Speaker / 说话人
-                  <select aria-label={`Speaker ${i + 1}`} className="rounded-md border border-input bg-background p-1 text-foreground" value={l.s} disabled={saving} onChange={(e) => changeLine(i, { s: e.target.value === "B" ? "B" : "A" })}><option value="A">A</option><option value="B">B</option></select>
+                  <select aria-label={`Speaker ${i + 1}`} className="rounded-md border border-input bg-background p-1 text-foreground" value={l.s} disabled={saving} onChange={(e) => changeLine(i, { s: e.target.value === "B" ? "B" : "A" })}><option value="A">A — Interviewer / 访谈者</option><option value="B">B — Interviewee / 受访者</option></select>
                 </label>
                 <Textarea aria-label={`Chinese transcript ${i + 1}`} value={l.zh} disabled={saving} onChange={(e) => changeLine(i, { zh: e.target.value })} />
                 <Textarea aria-label={`English translation ${i + 1}`} value={l.en} disabled={saving} onChange={(e) => changeLine(i, { en: e.target.value })} />

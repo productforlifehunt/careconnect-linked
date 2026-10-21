@@ -20,7 +20,7 @@ export function ParticipantDetails({ id, meta, canEdit, onSaved }: { id: string;
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
   }
-  return <div className="mb-4 space-y-2 border-b border-border pb-4">
+  return <div className="mb-6 space-y-4 border-b border-border pb-4">
     {editing && canEdit ? <>
       <label htmlFor="participant-title" className="text-xs text-muted-foreground">Title / 标题（姓名与身份）</label>
       <Input id="participant-title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
@@ -31,8 +31,8 @@ export function ParticipantDetails({ id, meta, canEdit, onSaved }: { id: string;
       <div className="flex gap-2"><Button onClick={save} disabled={saving || !draft.title.trim()}>{saving ? "Saving… / 保存中…" : "Save / 保存"}</Button><Button variant="outline" disabled={saving} onClick={() => { setDraft(meta); setEditing(false); setError(""); }}>Cancel / 取消</Button></div>
     </> : <>
       <p className="break-words font-medium">{meta.title}</p>
-      {meta.recruitmentSource && <div><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{meta.recruitmentSource}</p></div>}
-      {meta.notes && <div><p className="text-xs text-muted-foreground">Notes / 备注</p><p className="whitespace-pre-wrap text-sm">{meta.notes}</p></div>}
+      {meta.recruitmentSource && <div className="space-y-2"><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{meta.recruitmentSource}</p></div>}
+      {meta.notes && <div className="space-y-2"><p className="text-xs text-muted-foreground">Notes / 备注</p><p className="whitespace-pre-wrap text-sm">{meta.notes}</p></div>}
       {canEdit && <Button size="sm" variant="outline" onClick={() => { setDraft(meta); setEditing(true); }}>Edit participant / 编辑参与者</Button>}
     </>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
