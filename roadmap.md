@@ -1,3 +1,9 @@
+## Current request: Click-only streaming playback
+- [x] Replace playback signed URLs with five-second server-authorized binary chunks requested only after Play; hidden/disabled visitors receive no audio; legacy play_url/transcribe_url return 403 for everyone.
+- [x] Remove browser audio download/decode fallback from transcript generation; retain server-only WAV/MP3 generation and independent archives. All 17 current recordings have .wav names; unsupported formats fail closed.
+- [x] 27/27 tests pass. Real visitor Play returns audio/wav, advances playback position, and has zero pre-click stream requests, storage requests, signed URL requests or audio elements. All 8 currently restricted recordings reject stream with 403/no URL. Restricted fresh-generation first segment returns text only (200); zero browser audio requests/runtime errors; build OK.
+- [ ] Researcher-authenticated streaming and full long-recording playback/generation remain unverified. Previously issued signed URLs expire on their original schedule and already-copied audio cannot be recalled; permitted streaming does not prevent capture by listeners.
+
 ## Current request: Prevent restricted recording extraction
 - [x] Deny visitor audio URLs for both hidden and disabled players, including transcription URL requests; shared permission tests pass. Live restricted recording play_url and transcribe_url both return 403. Bucket is private and deployed storage.objects has no direct-read policies.
 - [x] Process WAV/MP3 transcription server-side and return text only; preserve archives and researcher access. Actual .wav file 73 is MP3 internally, handled without replacing the recording.

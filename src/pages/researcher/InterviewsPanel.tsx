@@ -9,13 +9,14 @@ import { Switch } from "@/components/ui/switch";
 import { interviewDisplaySettings } from "../../../supabase/functions/_shared/interview-display";
 import { Archive, ChevronDown, Download, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Upload, Pencil, X } from "lucide-react";
 import {
-  listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording, replaceRecording,
+  listRecordings, uploadRecording, generateTranscript, displayName, saveMeta, deleteRecording, replaceRecording,
   loadTranscriptArchive, saveTranscriptArchive, saveTextArchive, anonymizeLines,
   type ArchiveKind, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
 import { appendixText, archiveToText, downloadText, speakerLabel } from "@/features/interviews/archive-text";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 import { compareResearchTitles } from "@/features/interviews/research-order";
+import { InterviewPlayback } from "@/features/interviews/playback";
 
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
@@ -90,7 +91,6 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const path = rec.path;
   // Occasional secondary caregivers did not sign the ethics consent: only the
   // researcher may hear their voice. Transcripts stay visible to everyone.
-  const [audio, setAudio] = useState("");
   // Unsaved edits are kept in this browser so a refresh or sign-in expiry never wipes them.
   const draftKey = `interview-meta-draft:${path}`;
   const [meta, setMetaState] = useState<Meta>(() => {
@@ -138,18 +138,18 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const abort = useRef<AbortController | null>(null);
-  const player = useRef<HTMLAudioElement | null>(null);
+  const player = useRef<InterviewPlayback | null>(null);
   const replaceInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setPlayError("");
-    setAudio("");
-    let active = true;
-    player.current?.pause(); setPlaying(false); setBuffering(false);
+    setPlaying(false); setBuffering(false); setPosition(0); setDuration(0);
     if (playbackEnabled) {
-      playUrl(path).then((url) => { if (active) setAudio(url); }).catch(() => { if (active) setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"); });
+      player.current = new InterviewPlayback(path, (state) => {
+        setPlaying(state.playing); setBuffering(state.buffering); setPosition(state.position); setDuration(state.duration);
+      }, setPlayError);
     }
-    return () => { active = false; };
+    return () => { player.current?.dispose(); player.current = null; };
   }, [path, playbackEnabled]);
 
   useEffect(() => {
@@ -359,8 +359,8 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                   setSaving(true); setError("");
                   try {
                     await asResearcher(async () => { await replaceRecording(path, file); });
-                    setAudio(""); setPlaying(false); setPosition(0);
-                    setAudio(await playUrl(path)); setSaved("Recording replaced / 录音已替换"); onSaved();
+                    player.current?.pause(); setPlaying(false); setPosition(0);
+                    player.current?.seek(0); setSaved("Recording replaced / 录音已替换"); onSaved();
                   } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
                   finally { setSaving(false); }
                 }} />
@@ -401,8 +401,6 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                   {showInstructions && (
                     <div className="space-y-3 rounded-md border border-border bg-muted p-3 text-sm">
                       <div className="space-y-1 text-muted-foreground">
-                        <p>If you want to download the recording and translate it yourself, you can copy the instructions below into your transcription or translation tool.</p>
-                        <p>如果你想下载录音自行翻译，可以把以下指导复制给你的转录或翻译工具。</p>
                         <p>These instructions identify dialect, informal expressions, homophones with different meanings, and similarly pronounced phrases that may be misheard in this interview.</p>
                         <p>这些指导说明了访谈中容易出错的方言、非正式说法、中文同音异义词，以及发音近似、可能被听错的表述。</p>
                       </div>
@@ -415,29 +413,20 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           )}
           {playerVisible && (
             <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
-              {audio && playbackEnabled && <audio ref={player} src={audio} preload="metadata" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()}
-                onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
-                onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
-                onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onCanPlay={() => setBuffering(false)}
-                onError={() => { setPlaying(false); setBuffering(false); setPlayError("This recording could not play. Please refresh. / 录音无法播放，请刷新重试。"); }}
-                onEnded={() => { setPlaying(false); setPosition(0); }} />}
-              <Button variant="ghost" size="icon" disabled={!playbackEnabled || !audio} aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
+              <Button variant="ghost" size="icon" disabled={!playbackEnabled} aria-label={playing ? "Pause recording" : "Play recording"} title={playing ? "Pause / 暂停" : "Play / 播放"} onClick={() => {
                 const element = player.current;
                 if (!element) return;
-                if (element.paused) {
-                  setPlayError(""); setBuffering(true); setPlaying(true);
-                  element.play().catch(() => { setPlaying(false); setBuffering(false); setPlayError("Playback did not start. Please tap play again. / 播放未开始，请再点一次播放。"); });
-                } else { element.pause(); setPlaying(false); }
+                if (!playing) { setPlayError(""); void element.play(); }
+                else element.pause();
               }}>
                 {buffering && playing ? <Loader2 className="h-5 w-5 animate-spin" /> : playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
               </Button>
               <span className="text-sm text-foreground">{buffering && playing ? "Loading… / 加载中…" : "Play recording / 播放录音"}</span>
-              <Slider disabled={!playbackEnabled || !audio} className="min-w-0 flex-1" min={0} max={duration || 1} step={0.1} value={[Math.min(position, duration || 1)]}
+              <Slider disabled={!playbackEnabled || !duration} className="min-w-0 flex-1" min={0} max={duration || 1} step={0.1} value={[Math.min(position, duration || 1)]}
                 aria-label="Recording position / 录音位置" onValueChange={([next]) => {
                   const element = player.current;
                   if (!element || typeof next !== "number") return;
-                  element.currentTime = next;
-                  setPosition(next);
+                  element.seek(next);
                 }} />
             </div>
           )}

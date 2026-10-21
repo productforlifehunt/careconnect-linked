@@ -7,6 +7,11 @@ vi.mock("@/services/wp-auth", () => ({ getWPToken: () => "" }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
 describe("server-only recording transcription", () => {
+  it("never falls back to downloading unsupported recording formats", async () => {
+    const request = vi.spyOn(globalThis, "fetch");
+    await expect(generateTranscript("sample.m4a", vi.fn(), vi.fn(), new AbortController().signal)).rejects.toThrow("Server transcription");
+    expect(request).not.toHaveBeenCalled();
+  });
   it("keeps complete MP3 frames on the server with an exact byte cursor", () => {
     const frame = new Uint8Array(417);
     frame.set([255, 251, 144, 0]);

@@ -9,9 +9,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
 import { ARCHIVE_FOLDERS, archiveObjectPath, isArchiveKind, isTextKind, normalizeArchiveLines } from "../_shared/interview-archive.ts";
 import { canReceiveInterviewAudio, interviewDisplaySettings, type InterviewDisplaySettings } from "../_shared/interview-display.ts";
+import { recordingStreamChunk } from "../_shared/interview-stream.ts";
 
 const BUCKET = "interview-audio";
-const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
+const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token`, "Access-Control-Expose-Headers": "X-Next-Offset, X-Duration, X-Position, X-Recording-Size", "Cache-Control": "no-store" };
 const validPath = (p: string) => !!p && !p.includes("/") && !p.includes("..") && p.length < 300;
 // Leaked links: these recordings are disabled for everyone (play, list, archive).
 const PROTECTED = new Set(["1790784395705_69.wav"]);
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  let body: { action?: string; name?: string; path?: string; participantId?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: string; text?: string; names?: Record<string, string> };
+  let body: { action?: string; name?: string; path?: string; offset?: number; participantId?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: string; text?: string; names?: Record<string, string> };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
   if (body.kind !== undefined && !isArchiveKind(body.kind)) return json({ error: "Invalid archive kind" }, 400);
 
@@ -57,27 +58,28 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (body.action === "play_url") {
+  if (body.action === "stream") {
     const path = String(body.path || "");
+    const offset = body.offset ?? 0;
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (!Number.isSafeInteger(offset) || offset < 0) return json({ error: "Invalid recording offset" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
     if (!canReceiveInterviewAudio(await readMeta(path), researcher)) {
       return json({ error: "Playback unavailable", consent: true }, 403);
     }
-    const { data, error } = await store.createSignedUrl(path, 60 * 60 * 6);
-    if (error) return json({ error: error.message }, 404);
-    return json({ url: data.signedUrl });
+    const { data, error } = await store.createSignedUrl(path, 30);
+    if (error || !data) return json({ error: "Recording unavailable" }, 404);
+    try {
+      const part = await recordingStreamChunk(data.signedUrl, offset, req.signal);
+      return new Response(part.bytes, { headers: { ...headers, "Content-Type": part.type,
+        "X-Next-Offset": part.nextOffset === null ? "end" : String(part.nextOffset),
+        "X-Duration": String(part.duration), "X-Position": String(part.position), "X-Recording-Size": String(part.fileSize) } });
+    } catch { return json({ error: "Recording stream unavailable" }, 422); }
   }
 
-  // Restricted audio must never reach a visitor, even via transcription.
-  if (body.action === "transcribe_url") {
-    const path = String(body.path || "");
-    if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
-    if (locked(path)) return json({ error: "protected", protected: true }, 403);
-    if (!canReceiveInterviewAudio(await readMeta(path), researcher)) return json({ error: "Playback unavailable" }, 403);
-    const { data, error } = await store.createSignedUrl(path, 60 * 15);
-    if (error) return json({ error: error.message }, 404);
-    return json({ url: data.signedUrl });
+  // Old clients cannot obtain a reusable storage address either.
+  if (body.action === "play_url" || body.action === "transcribe_url") {
+    return json({ error: "Audio URLs unavailable" }, 403);
   }
 
   if (body.action === "load_archive") {
