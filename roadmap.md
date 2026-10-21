@@ -1,3 +1,9 @@
+## Current request: Recording display controls
+- [x] Remove displayed recording sizes and move the code legend full-width between the tabs and the interview/list area; live screenshot and position checks pass.
+- [x] Add researcher-only per-recording saved switches for visitor playback permission, player visibility and Generate New visibility, with no extra explanations; disabled visitor playback has an unclickable control and no playback URL; researcher retains playback and generation. Preserve generation and all archives. Existing service deployed.
+- [x] 26/26 focused tests pass, including three-switch save/reload, visitor no-audio and archive-only views; anonymous settings write denied 403. Live public layout and occasional-caregiver hidden audio/no-note/generate retained pass; Raw archive reads 312 lines, zero runtime errors, build OK.
+- [ ] Actual researcher-authenticated live switch save/readback remains unverified: no researcher WordPress session is available in this sandbox. Test save/reload uses mocked storage; no existing recording settings or archives modified for verification.
+
 ## Current request: Truthful research AI model labels
 - [x] Verify transcription/translation/anonymization model IDs and explicit reasoning settings against source requests and successful gateway logs: google/gemini-3.8-flash for joint audio transcription/translation and anonymization; openai/gpt-5-nano with reasoning_effort none for diary translation.
 - [x] Correct research labels with exact model IDs, unspecified Gemini defaults, explicit GPT reasoning_effort none, unavailable underlying snapshots, historical/cached provenance caveats and non-AI manual/text operations. No model calls or archives changed.

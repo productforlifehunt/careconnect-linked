@@ -11,7 +11,7 @@ const FN_BASE = `https://${import.meta.env["VITE_SUPABASE_PROJECT_ID"]}.supabase
 const SEGMENT_SECONDS = 30;
 const RATE = 16000;
 
-export interface Meta { title: string; notes: string; instructions: string; recruitmentSource?: string }
+export interface Meta { title: string; notes: string; instructions: string; recruitmentSource?: string; playbackAllowed?: boolean; showPlayback?: boolean; showGenerate?: boolean }
 export interface ParticipantMeta { title: string; recruitmentSource: string; notes: string }
 export interface Recording { path: string; size: number; type: string; created: string; meta: Meta }
 export interface Line { s: "A" | "B"; zh: string; en: string; t: number }
@@ -39,7 +39,7 @@ export const playUrl = (path: string) => audioFn<{ url: string }>({ action: "pla
 /** Short-lived URL for transcript generation only — not offered for playback. */
 const transcribeUrl = (path: string) => audioFn<{ url: string }>({ action: "transcribe_url", path }).then((d) => d.url);
 
-export const saveMeta = (path: string, meta: Meta) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
+export const saveMeta = (path: string, meta: Partial<Meta>) => audioFn<{ meta: Meta }>({ action: "save_meta", path, meta }).then((d) => d.meta);
 export const listParticipantMeta = () => audioFn<{ items: Record<string, ParticipantMeta> }>({ action: "list_participant_meta" }).then((d) => d.items);
 export const saveParticipantMeta = (participantId: string, meta: ParticipantMeta) => audioFn<{ meta: ParticipantMeta }>({ action: "save_participant_meta", participantId, meta }).then((d) => d.meta);
 export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });

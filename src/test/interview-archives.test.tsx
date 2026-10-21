@@ -12,6 +12,7 @@ vi.mock("@/services/wp-auth", () => ({ wpEnsureFreshToken: vi.fn(), wpLogin: vi.
 const raw = { lines: [{ s: "A", zh: "原始录音", en: "Original transcript", t: 30 }], savedAt: "2026-10-21" };
 let edited: typeof raw | null;
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.clearAllMocks(); localStorage.clear(); edited = null;
   api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1 Caregiver1", notes: "", instructions: "" } }]);
   api.playUrl.mockResolvedValue("");
@@ -21,8 +22,54 @@ beforeEach(() => {
     edited = { lines, savedAt: "2026-10-21" }; return edited;
   });
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("independent interview archives", () => {
+  it("saves a researcher playback switch without generating or rewriting archives", async () => {
+    api.saveMeta.mockImplementation(async (_path, value) => ({ title: "Network1", ...value }));
+    render(<InterviewsPanel canEdit />);
+    fireEvent.click(await screen.findByRole("switch", { name: "Allow visitor playback / 允许访客播放" }));
+    await waitFor(() => expect(api.saveMeta).toHaveBeenCalledWith("sample.wav", expect.objectContaining({ playbackAllowed: false })));
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
+  });
+  it("persists all three switches across reload without changing recording metadata", async () => {
+    let stored = { title: "Network1", notes: "Keep notes", instructions: "Keep instructions", playbackAllowed: true, showPlayback: true, showGenerate: true };
+    api.listRecordings.mockImplementation(async () => [{ path: "sample.wav", size: 500, meta: stored }]);
+    api.saveMeta.mockImplementation(async (_path, patch) => { stored = { ...stored, ...patch }; return stored; });
+    const view = render(<InterviewsPanel canEdit />);
+    for (const name of ["Allow visitor playback / 允许访客播放", "Show visitor player / 显示访客播放器", "Show visitor Generate New / 显示访客重新生成"]) {
+      const control = await screen.findByRole("switch", { name });
+      await waitFor(() => expect(control).toBeEnabled());
+      fireEvent.click(control);
+      await waitFor(() => expect(control).not.toBeChecked());
+    }
+    view.unmount();
+    render(<InterviewsPanel canEdit />);
+    expect(await screen.findByRole("switch", { name: "Allow visitor playback / 允许访客播放" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "Show visitor player / 显示访客播放器" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "Show visitor Generate New / 显示访客重新生成" })).not.toBeChecked();
+    expect(stored).toEqual({ title: "Network1", notes: "Keep notes", instructions: "Keep instructions", playbackAllowed: false, showPlayback: false, showGenerate: false });
+    expect(api.generateTranscript).not.toHaveBeenCalled();
+    expect(api.saveTranscriptArchive).not.toHaveBeenCalled();
+  });
+  it("disables visitor playback without obtaining audio and preserves generation", async () => {
+    api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1", notes: "", instructions: "", playbackAllowed: false, showPlayback: true } }]);
+    render(<InterviewsPanel canEdit={false} />);
+    expect(await screen.findByRole("button", { name: "Play recording" })).toBeDisabled();
+    expect(api.playUrl).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Generate New Raw/ })).toBeEnabled();
+  });
+  it("hides visitor player and new generation while retaining Raw and Edited archive access", async () => {
+    edited = raw;
+    api.listRecordings.mockResolvedValue([{ path: "sample.wav", size: 500, meta: { title: "Network1", notes: "", instructions: "", showPlayback: false, showGenerate: false } }]);
+    render(<InterviewsPanel canEdit={false} />);
+    const rawButton = await screen.findByRole("button", { name: "View Raw Archived Translation and Transcription / 查看原始翻译与转录归档" });
+    await waitFor(() => expect(rawButton).toBeEnabled());
+    expect(screen.queryByRole("button", { name: "Play recording" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Generate New Raw/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "View Edited Archived Translation and Transcription / 查看修订翻译与转录归档" })).toBeEnabled();
+    expect(api.playUrl).not.toHaveBeenCalled();
+  });
   it("saves recruitment source with existing title, notes and instructions without generating a transcript", async () => {
     api.saveMeta.mockImplementation(async (_path, value) => value);
     render(<InterviewsPanel canEdit />);
