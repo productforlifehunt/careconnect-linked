@@ -7,7 +7,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isResearcher } from "../_shared/wp-researcher.ts";
-import { archiveObjectPath, normalizeArchiveLines } from "../_shared/interview-archive.ts";
+import { ARCHIVE_FOLDERS, archiveObjectPath, isArchiveKind, isTextKind, normalizeArchiveLines } from "../_shared/interview-archive.ts";
 
 const BUCKET = "interview-audio";
 const headers = { ...corsHeaders, "Access-Control-Allow-Headers": `${corsHeaders["Access-Control-Allow-Headers"]}, x-wp-token` };
@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  let body: { action?: string; name?: string; path?: string; participantId?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: "raw" | "edited" };
+  let body: { action?: string; name?: string; path?: string; participantId?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: string; text?: string; names?: Record<string, string> };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
-  if (body.kind !== undefined && body.kind !== "raw" && body.kind !== "edited") return json({ error: "Invalid archive kind" }, 400);
+  if (body.kind !== undefined && !isArchiveKind(body.kind)) return json({ error: "Invalid archive kind" }, 400);
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const store = admin.storage.from(BUCKET);
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
   if (body.action === "delete") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
-    const { error } = await store.remove([path, `meta/${path}.json`, archiveObjectPath(path), archiveObjectPath(path, "edited")]);
+    const { error } = await store.remove([path, `meta/${path}.json`, ...Object.keys(ARCHIVE_FOLDERS).map((k) => archiveObjectPath(path, k))]);
     if (error) return json({ error: error.message }, 500);
     return json({ ok: true });
   }
@@ -158,9 +158,58 @@ Deno.serve(async (req) => {
     return json({ ok: true, meta });
   }
 
+  // Researcher-only: replace personal names in a chunk of edited lines with codes.
+  if (body.action === "anonymize") {
+    const key = Deno.env.get("LOVABLE_API_KEY");
+    if (!key) return json({ error: "Anonymization is not configured." }, 500);
+    if (!Array.isArray(body.lines) || !body.lines.length || body.lines.length > 150) return json({ error: "Invalid lines" }, 400);
+    const input = normalizeArchiveLines(body.lines);
+    const names = body.names && typeof body.names === "object" ? body.names : {};
+    const prompt = `You anonymize lines of a research interview transcript for a paper appendix.
+Replace every personal name (Chinese or English, full names, surnames with titles, nicknames) with an anonymous code. Reuse the existing mapping exactly; give new people new codes like "[Person 1]" in en and "[人物1]" in zh (same number in both).
+If a sentence states someone's name (e.g. "my husband is Wang Jun" / "我丈夫是王军"), remove the name and keep only the relationship ("my husband" / "我丈夫").
+Also replace identifying workplaces, hospitals, schools, street addresses and phone numbers with "[place]" / "[地点]".
+Change nothing else: keep wording, order and the number of lines exactly the same.
+Respond with JSON only: {"lines":[{"zh":"...","en":"..."}],"names":{"original name":"code"}}`;
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, Authorization: `Bearer ${key}`, "X-Lovable-AIG-SDK": "fetch" },
+      body: JSON.stringify({
+        model: "google/gemini-3.8-flash",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: prompt },
+          { role: "user", content: `Existing mapping: ${JSON.stringify(names)}\nLines:\n${JSON.stringify(input.map(({ zh, en }) => ({ zh, en })))}` },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error(`Anonymize failed [${res.status}]: ${detail}`);
+      return json({ error: res.status === 402 ? "AI credits are used up." : res.status === 429 ? "Too many requests" : "Anonymization failed." }, res.status);
+    }
+    const content = String((await res.json().catch(() => null))?.choices?.[0]?.message?.content || "");
+    let parsed: { lines?: { zh?: string; en?: string }[]; names?: Record<string, string> } = {};
+    try { parsed = JSON.parse((content.match(/\{[\s\S]*\}/) || [content])[0]); } catch { /* checked below */ }
+    const out = parsed.lines;
+    if (!Array.isArray(out) || out.length !== input.length) return json({ error: "Anonymization returned a different number of lines." }, 502);
+    return json({
+      lines: input.map((line, i) => ({ ...line, zh: String(out[i]?.zh ?? ""), en: String(out[i]?.en ?? "") })),
+      names: { ...names, ...(parsed.names && typeof parsed.names === "object" ? parsed.names : {}) },
+    });
+  }
+
   if (body.action === "save_archive") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
+    if (isTextKind(body.kind)) {
+      const text = String(body.text || "").slice(0, 5_000_000);
+      if (!text.trim()) return json({ error: "The transcript archive cannot be empty." }, 400);
+      const archive = { lines: [], text, savedAt: new Date().toISOString() };
+      const { error } = await store.upload(archiveObjectPath(path, body.kind), new Blob([JSON.stringify(archive)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
+      if (error) return json({ error: error.message }, 500);
+      return json({ archive });
+    }
     if (!Array.isArray(body.lines) || body.lines.length > 20_000) return json({ error: "Invalid transcript archive" }, 400);
     const lines = normalizeArchiveLines(body.lines);
     if (!lines.length) return json({ error: "The transcript archive cannot be empty." }, 400);
