@@ -52,8 +52,6 @@ interface Participant {
   rows: Record<Kind, Record<string, any>[]>;
 }
 
-const PROTECTED_RECORDINGS = new Set(["1790784395705_69.wav"]);
-
 function isResearcher() {
   return getStoredWPUser()?.user_login === RESEARCHER;
 }
@@ -89,8 +87,7 @@ export default function ResearcherApp() {
     };
   }, [signedIn]);
 
-  const rec = new URL(window.location.href).searchParams.get("rec") || "";
-  if (!signedIn && PROTECTED_RECORDINGS.has(rec)) {
+  if (!signedIn && false) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background px-4 text-center">
         <h1 className="text-xl font-semibold text-foreground">This site is under construction / 本页面正在建设中</h1>
