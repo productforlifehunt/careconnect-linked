@@ -504,7 +504,7 @@ export function AnswerCard({ kind, row: initialRow, participantName = "", start,
                 <dd className="text-foreground whitespace-pre-wrap">{shown}</dd>
                 {isFree && (
                   <dd className="mt-1 rounded-md bg-muted px-3 py-2">
-                    <span className="block text-xs text-muted-foreground">Auto translation (ChatGPT 5 nano, non-reasoning) / 自动翻译（ChatGPT 5 nano，无推理）</span>
+                    <span className="block text-xs text-muted-foreground">Auto translation: OpenAI GPT-5 nano (model ID: openai/gpt-5-nano); reasoning_effort = none (explicit); reasoning budget not set. Underlying dated snapshot not provided. This configuration applies to new translations; cached translations have no per-result model record. / 自动翻译：OpenAI GPT-5 nano（模型 ID：openai/gpt-5-nano）；推理强度 reasoning_effort = none（显式设置）；未设置推理预算。底层日期版本未提供。此配置适用于新翻译；缓存译文未逐条记录模型。</span>
                     <span className="whitespace-pre-wrap text-foreground">{tr ?? (trError ? "Translation unavailable right now." : "Translating…")}</span>
                   </dd>
                 )}

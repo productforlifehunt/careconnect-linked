@@ -420,11 +420,11 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate New Raw Translation and Transcription / 生成新的原始翻译与转录 (may take 20–30 minutes)
             </Button>
-            <p className="text-sm text-foreground">Click to generate a new Raw translation and transcription from the original recording using Gemini Flash and the transcription and translation instructions above. Existing archives are not used or changed. / 点击后，Gemini Flash 根据原始录音和上方转录与翻译指导生成新的原始翻译与转录，不读取或更改现有归档。</p>
+            <p className="text-sm text-foreground">Click to generate new Raw transcription and translation from the recording and the instructions above. Both tasks use Google Gemini 3.8 Flash (model ID: google/gemini-3.8-flash) in the same request. Reasoning effort and thinking budget: not explicitly set; provider defaults apply, not confirmed disabled. The underlying dated model snapshot is not available. Existing archives are not used or changed. / 点击后，根据录音和上方指导生成新的原始转录与翻译。两项任务在同一次请求中使用 Google Gemini 3.8 Flash（模型 ID：google/gemini-3.8-flash）。推理强度与思考预算：未显式设置，使用提供方默认值，不能标为关闭推理。底层日期版本未提供。不读取或更改现有归档。</p>
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive("raw")} disabled={!archive || editing}>
               <Archive className="mr-2 h-4 w-4" />View Raw Archived Translation and Transcription / 查看原始翻译与转录归档
             </Button>
-            <p className="text-sm text-foreground">Click to read the saved Raw translation and transcription. Viewing does not generate a new version. / 点击查看已保存的原始翻译与转录，不会重新生成。</p>
+            <p className="text-sm text-foreground">Click to read the saved Raw translation and transcription. No model is called. Historical archives do not store model versions or reasoning settings; their original settings cannot be verified from the archive. / 点击查看已保存的原始翻译与转录，不调用模型。历史归档未记录模型版本与推理设置，无法从归档核实当时的配置。</p>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
             {canEdit && complete && !running && lines.length > 0 && !showArchive && (
               <Button onClick={storeArchive} disabled={saving}>
@@ -436,14 +436,14 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!editedArchive || busy} onClick={() => setShowArchive("edited")}>
               <Archive className="mr-2 h-4 w-4" />View Edited Archived Translation and Transcription / 查看修订翻译与转录归档
             </Button>
-            <p className="text-sm text-foreground">Click to read the researcher’s saved manual corrections. Only the researcher can edit and save this separate Edited archive; Raw stays unchanged. / 点击查看研究者已保存的手动修订。仅研究者可编辑和保存独立的修订归档，原始归档不变。</p>
+            <p className="text-sm text-foreground">Click to read the researcher’s saved manual corrections. Viewing, manual editing and saving call no model. Only the researcher can edit and save this separate Edited archive; Raw stays unchanged. / 点击查看研究者已保存的手动修订。查看、手动编辑和保存均不调用模型。仅研究者可编辑和保存独立的修订归档，原始归档不变。</p>
             {canEdit && archive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("edited")}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
           </div>
           <div className="space-y-3 border-t border-border pt-5">
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!anonArchive || busy} onClick={() => setShowArchive("anonymized")}>
               <Archive className="mr-2 h-4 w-4" />View Anonymized Edited Archived Translation and Transcription / 查看匿名修订翻译与转录归档
             </Button>
-            <p className="text-sm text-foreground">Click to read the anonymized Edited archive. The researcher can generate it from the current Edited archive, replace names with anonymous codes, manually edit, and save separately. / 点击查看匿名修订归档。研究者可从当前修订归档生成，将姓名替换为匿名代号，再手动编辑、单独保存。</p>
+            <p className="text-sm text-foreground">Click to read the anonymized Edited archive. New anonymization uses Google Gemini 3.8 Flash (model ID: google/gemini-3.8-flash). Reasoning effort and thinking budget: not explicitly set; provider defaults apply, not confirmed disabled. The underlying dated model snapshot is not available. Only the researcher can generate, manually edit and save; viewing calls no model. / 点击查看匿名修订归档。新匿名化使用 Google Gemini 3.8 Flash（模型 ID：google/gemini-3.8-flash）。推理强度与思考预算：未显式设置，使用提供方默认值，不能标为关闭推理。底层日期版本未提供。仅研究者可生成、手动编辑和保存；查看不调用模型。</p>
             {canEdit && !busy && <Button variant="outline" disabled={saving || running || !editedArchive} onClick={generateAnonymized}>Generate from current Edited archive / 用当前修订归档生成</Button>}
             {canEdit && anonArchive && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startEditing("anonymized")}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
             {anonProgress && <span className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Anonymizing… / 匿名化中… {anonProgress}</span>}
@@ -454,8 +454,8 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 <Archive className="mr-2 h-4 w-4" />{label}
               </Button>
               <p className="text-sm text-foreground">{kind === "text"
-                ? "Click to read the Edited archive as a paper appendix without timestamps. A = Interviewer; B = Interviewee. Only the researcher can generate, edit and save; Download TXT exports the saved text. / 点击查看无时间标记的论文附件文本：A 为访谈者，B 为受访者。仅研究者可生成、编辑和保存；下载 TXT 导出已保存文本。"
-                : "Click to read the anonymized Edited archive as a paper appendix without timestamps. Generate uses the current anonymized archive. Only the researcher can edit and save; Download TXT exports the saved text. / 点击查看无时间标记的匿名论文附件文本。生成使用当前匿名归档；仅研究者可编辑和保存，下载 TXT 导出已保存文本。"}</p>
+                ? "Click to read the Edited archive as a paper appendix without timestamps. A = Interviewer; B = Interviewee. Text formatting, manual editing, saving and TXT download call no model; reasoning is not applicable. Only the researcher can generate, edit and save. / 点击查看无时间标记的论文附件文本：A 为访谈者，B 为受访者。文本整理、手动编辑、保存与 TXT 下载均不调用模型，推理设置不适用。仅研究者可生成、编辑和保存。"
+                : "Click to read the anonymized Edited archive as a paper appendix without timestamps. Generate formats the current anonymized archive; it does not anonymize again. Text formatting, manual editing, saving and TXT download call no model; reasoning is not applicable. Only the researcher can generate, edit and save. / 点击查看无时间标记的匿名论文附件文本。生成仅整理当前匿名归档，不再次匿名化。文本整理、手动编辑、保存与 TXT 下载均不调用模型，推理设置不适用。仅研究者可生成、编辑和保存。"}</p>
               {archiveOf(kind)?.text && <Button variant="outline" onClick={() => (() => { const text = archiveOf(kind)?.text; if (text) downloadText(appendixText(text), `${fileBase}-${kind}.txt`); })()}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
               {canEdit && !busy && <Button variant="outline" disabled={saving || running || !src} onClick={() => startText(kind, true)}>Generate from current {suffix === "edited" ? "Edited" : "Anonymized"} archive / 用当前{suffix === "edited" ? "修订" : "匿名"}归档生成</Button>}
               {canEdit && archiveOf(kind) && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startText(kind, false)}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}

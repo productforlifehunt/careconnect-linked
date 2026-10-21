@@ -1,6 +1,6 @@
 ## Current request: Truthful research AI model labels
-- [ ] Verify transcription/translation/anonymization model IDs and explicit reasoning settings against requests.
-- [ ] Correct research labels with exact versions, unspecified defaults and non-AI manual/text operations.
+- [x] Verify transcription/translation/anonymization model IDs and explicit reasoning settings against source requests and successful gateway logs: google/gemini-3.8-flash for joint audio transcription/translation and anonymization; openai/gpt-5-nano with reasoning_effort none for diary translation.
+- [x] Correct research labels with exact model IDs, unspecified Gemini defaults, explicit GPT reasoning_effort none, unavailable underlying snapshots, historical/cached provenance caveats and non-AI manual/text operations. No model calls or archives changed.
 - [ ] Run focused tests and check live interview labels without generating or changing archives.
 
 ## Current request: Interview explanations and appendix text
