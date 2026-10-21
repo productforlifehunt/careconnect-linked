@@ -18,14 +18,14 @@ const PROTECTED = new Set(["1790784395705_69.wav"]);
 // must not be played for anyone except the researcher. Transcripts stay public.
 const OCCASIONAL_SECONDARY = /occasional\s+secondary\s+caregiver/i;
 
-export interface Meta { title: string; notes: string; instructions: string }
+export interface Meta { title: string; notes: string; instructions: string; recruitmentSource: string }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
-  let body: { action?: string; name?: string; path?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: "raw" | "edited" };
+  let body: { action?: string; name?: string; path?: string; participantId?: string; meta?: Partial<Meta>; lines?: unknown[]; kind?: "raw" | "edited" };
   try { body = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
   if (body.kind !== undefined && body.kind !== "raw" && body.kind !== "edited") return json({ error: "Invalid archive kind" }, 400);
 
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
   const readMeta = async (path: string): Promise<Meta> => {
     const { data } = await store.download(`meta/${path}.json`);
     const m = data ? await data.text().then((t) => JSON.parse(t)).catch(() => ({})) : {};
-    return { title: String(m.title || ""), notes: String(m.notes || ""), instructions: String(m.instructions || "") };
+    return { title: String(m.title || ""), notes: String(m.notes || ""), instructions: String(m.instructions || ""), recruitmentSource: String(m.recruitmentSource || "") };
   };
 
   const researcher = await isResearcher(req).catch(() => false);
@@ -91,6 +91,27 @@ Deno.serve(async (req) => {
 
   if (!researcher) return json({ error: "Only the researcher can add or edit recordings." }, 403);
 
+  if (body.action === "list_participant_meta") {
+    const { data, error } = await store.list("participant-meta", { limit: 1000 });
+    if (error) return json({ error: error.message }, 500);
+    const pairs = await Promise.all((data || []).filter((f) => /^[1-9]\d*\.json$/.test(f.name)).map(async (f) => {
+      const { data: file, error: readError } = await store.download(`participant-meta/${f.name}`);
+      if (readError || !file) throw new Error("Participant metadata could not be read");
+      return [f.name.replace(/\.json$/, ""), await file.text().then((text) => JSON.parse(text))];
+    }));
+    return json({ items: Object.fromEntries(pairs) });
+  }
+
+  if (body.action === "save_participant_meta") {
+    const id = String(body.participantId || "");
+    if (!/^[1-9]\d*$/.test(id)) return json({ error: "Invalid participant" }, 400);
+    const meta = { title: String(body.meta?.title || "").slice(0, 2000), recruitmentSource: String(body.meta?.recruitmentSource || "").slice(0, 5000), notes: String(body.meta?.notes || "").slice(0, 5000) };
+    if (!meta.title.trim()) return json({ error: "A title is required" }, 400);
+    const { error } = await store.upload(`participant-meta/${id}.json`, new Blob([JSON.stringify(meta)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
+    if (error) return json({ error: error.message }, 500);
+    return json({ meta });
+  }
+
   if (body.action === "upload_url") {
     const name = String(body.name || "").trim();
     if (!name || name.length > 200) return json({ error: "A file name is required." }, 400);
@@ -124,9 +145,10 @@ Deno.serve(async (req) => {
   if (body.action === "save_meta") {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
-    const m = body.meta || {};
+    const m = { ...await readMeta(path), ...body.meta };
     const meta: Meta = {
-      title: String(m.title ?? "").slice(0, 200),
+      title: String(m.title ?? "").slice(0, 2000),
+      recruitmentSource: String(m.recruitmentSource ?? "").slice(0, 5000),
       notes: String(m.notes ?? "").slice(0, 5000),
       instructions: String(m.instructions ?? "").slice(0, 5000),
     };

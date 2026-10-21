@@ -13,6 +13,10 @@ import { screeningSource, scaleRangeLabel, screeningRole, screeningItemsForRole 
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
 import { wpAdminOps } from "@/services/woocommerce-api";
 import InterviewsPanel from "./InterviewsPanel";
+import { listParticipantMeta, listRecordings, type ParticipantMeta } from "@/features/interviews/transcribe";
+import { compareResearchTitles } from "@/features/interviews/research-order";
+import { ResearchCodeLegend } from "@/components/esm/ResearchCodeLegend";
+import { ParticipantDetails } from "@/components/esm/ParticipantDetails";
 
 const RESEARCHER = "researcher";
 type Kind = "screening" | "hourly" | "daily";
@@ -43,6 +47,8 @@ const interviewParticipant = (name: string) => INTERVIEW_PARTICIPANTS.find((part
 interface Participant {
   id: string;
   name: string;
+  sourceName?: string;
+  displayMeta?: ParticipantMeta;
   rows: Record<Kind, Record<string, any>[]>;
 }
 
@@ -165,9 +171,11 @@ function Login({ onDone }: { onDone: () => void }) {
 
 async function loadAll(): Promise<Participant[]> {
   const kinds: Kind[] = ["screening", "hourly", "daily"];
-  const [rels, tables] = await Promise.all([
+  const [rels, tables, displayMetas, recordings] = await Promise.all([
     Promise.all(kinds.map((k) => wordpressFetch<Record<string, { child_object_id: string }[]>>(`jet-rel/${ESM_REL[k]}`).catch(() => ({})))),
     Promise.all(kinds.map((k) => wordpressCCTFetch<Record<string, any>[]>(ESM_CCT[k]).catch(() => []))),
+    listParticipantMeta(),
+    listRecordings(),
   ]);
   const byId = kinds.map((_, i) => new Map((tables[i] || []).map((r) => [String(r["id"] ?? r["_ID"]), r])));
   const map = new Map<string, Participant>();
@@ -185,17 +193,21 @@ async function loadAll(): Promise<Participant[]> {
       const p = map.get(String(u.id));
       if (!p) return;
       const storedName = u.name || u.email || p.name;
-       p.name = interviewParticipant(storedName)?.title || storedName;
+      const known = interviewParticipant(storedName);
+      // Existing name aliases are presentation defaults only, not stored relations.
+      const interviewTitle = known && recordings.find((r) => known.aliases.some((alias) => r.meta.title.includes(alias)))?.meta.title;
+      p.name = interviewTitle || known?.title || storedName;
     });
   }
-  map.forEach((p) => kinds.forEach((k) => p.rows[k].sort((a, b) => compareStudyRows(k, a, b))));
+  map.forEach((p) => {
+    p.sourceName = p.name;
+    p.displayMeta = displayMetas[p.id] || { title: p.name, recruitmentSource: "", notes: "" };
+    p.name = p.displayMeta.title;
+    kinds.forEach((k) => p.rows[k].sort((a, b) => compareStudyRows(k, a, b)));
+  });
   return [...map.values()]
     .filter((p) => p.rows.screening.length + p.rows.hourly.length + p.rows.daily.length > 0)
-    .sort((a, b) => {
-      const left = INTERVIEW_PARTICIPANTS.findIndex((participant) => participant.title === a.name);
-      const right = INTERVIEW_PARTICIPANTS.findIndex((participant) => participant.title === b.name);
-      return (left < 0 ? Number.POSITIVE_INFINITY : left) - (right < 0 ? Number.POSITIVE_INFINITY : right) || Number(a.id) - Number(b.id);
-    });
+    .sort((a, b) => compareResearchTitles(a.name, b.name) || Number(a.id) - Number(b.id));
 }
 
 function Dashboard() {
@@ -214,6 +226,7 @@ function Dashboard() {
   return (
     <div className="mx-auto grid max-w-5xl gap-4 px-4 py-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <aside className="space-y-1">
+        <ResearchCodeLegend />
         {data.map((p) => (
           <button
             key={p.id}
@@ -227,6 +240,7 @@ function Dashboard() {
       </aside>
       {current && (
         <Tabs defaultValue="hourly" key={current.id}>
+          <ParticipantDetails id={current.id} meta={current.displayMeta || { title: current.name, recruitmentSource: "", notes: "" }} canEdit={isResearcher()} onSaved={(meta) => setData((rows) => rows?.map((p) => p.id === current.id ? { ...p, name: meta.title, displayMeta: meta } : p).sort((a, b) => compareResearchTitles(a.name, b.name) || Number(a.id) - Number(b.id)) || [])} />
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="screening">Screening ({current.rows.screening.length})</TabsTrigger>
             <TabsTrigger value="hourly">Hourly ({current.rows.hourly.length})</TabsTrigger>
@@ -235,7 +249,7 @@ function Dashboard() {
           {(["screening", "hourly", "daily"] as Kind[]).map((k) => (
             <TabsContent key={k} value={k} className="mt-4 space-y-3">
               {current.rows[k].length === 0 && <p className="text-muted-foreground">No answers yet.</p>}
-              {current.rows[k].map((row, index) => <AnswerCard key={row["id"]} kind={k} row={row} participantName={current.name} start={studyStart(current)} studyDay={k === "daily" ? index + 1 : undefined} canEdit={isResearcher()} />)}
+              {current.rows[k].map((row, index) => <AnswerCard key={row["id"]} kind={k} row={row} participantName={current.sourceName || current.name} start={studyStart(current)} studyDay={k === "daily" ? index + 1 : undefined} canEdit={isResearcher()} />)}
             </TabsContent>
           ))}
         </Tabs>
