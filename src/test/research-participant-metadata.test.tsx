@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ParticipantDetails } from "@/components/esm/ParticipantDetails";
 import { compareResearchTitles } from "@/features/interviews/research-order";
 
@@ -25,12 +25,14 @@ describe("researcher-only participant display editing", () => {
   it("saves title and recruitment source with unchanged notes and displays the returned stored values", async () => {
     api.saveParticipantMeta.mockImplementation(async (_id, value) => value);
     const onSaved = vi.fn();
-    render(<ParticipantDetails id="68" meta={meta} canEdit onSaved={onSaved} />);
+    const view = render(<ParticipantDetails id="68" meta={meta} canEdit onSaved={onSaved} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit participant / 编辑参与者" }));
     fireEvent.change(screen.getByLabelText("Title / 标题（姓名与身份）"), { target: { value: "P-CN3-B1 Lin Mei" } });
     fireEvent.change(screen.getByLabelText("Recruitment source / 招募来源"), { target: { value: "Community referral" } });
     fireEvent.click(screen.getByRole("button", { name: "Save / 保存" }));
-    expect(await screen.findByText("P-CN3-B1 Lin Mei")).toBeTruthy();
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    view.rerender(<ParticipantDetails id="68" meta={onSaved.mock.calls[0]?.[0]} canEdit onSaved={onSaved} />);
+    expect(screen.getByText("P-CN3-B1 Lin Mei")).toBeTruthy();
     expect(api.saveParticipantMeta).toHaveBeenCalledWith("68", { title: "P-CN3-B1 Lin Mei", recruitmentSource: "Community referral", notes: "Existing notes" });
     expect(onSaved).toHaveBeenCalledWith({ title: "P-CN3-B1 Lin Mei", recruitmentSource: "Community referral", notes: "Existing notes" });
   });

@@ -13,7 +13,7 @@ import { screeningSource, scaleRangeLabel, screeningRole, screeningItemsForRole 
 import { ESM_CCT, ESM_REL } from "@/features/esm/backend";
 import { wpAdminOps } from "@/services/woocommerce-api";
 import InterviewsPanel from "./InterviewsPanel";
-import { listParticipantMeta, type ParticipantMeta } from "@/features/interviews/transcribe";
+import { listParticipantMeta, listRecordings, type ParticipantMeta } from "@/features/interviews/transcribe";
 import { compareResearchTitles } from "@/features/interviews/research-order";
 import { ResearchCodeLegend } from "@/components/esm/ResearchCodeLegend";
 import { ParticipantDetails } from "@/components/esm/ParticipantDetails";
@@ -171,10 +171,11 @@ function Login({ onDone }: { onDone: () => void }) {
 
 async function loadAll(): Promise<Participant[]> {
   const kinds: Kind[] = ["screening", "hourly", "daily"];
-  const [rels, tables, displayMetas] = await Promise.all([
+  const [rels, tables, displayMetas, recordings] = await Promise.all([
     Promise.all(kinds.map((k) => wordpressFetch<Record<string, { child_object_id: string }[]>>(`jet-rel/${ESM_REL[k]}`).catch(() => ({})))),
     Promise.all(kinds.map((k) => wordpressCCTFetch<Record<string, any>[]>(ESM_CCT[k]).catch(() => []))),
     listParticipantMeta(),
+    listRecordings(),
   ]);
   const byId = kinds.map((_, i) => new Map((tables[i] || []).map((r) => [String(r["id"] ?? r["_ID"]), r])));
   const map = new Map<string, Participant>();
@@ -192,7 +193,10 @@ async function loadAll(): Promise<Participant[]> {
       const p = map.get(String(u.id));
       if (!p) return;
       const storedName = u.name || u.email || p.name;
-       p.name = interviewParticipant(storedName)?.title || storedName;
+      const known = interviewParticipant(storedName);
+      // Existing name aliases are presentation defaults only, not stored relations.
+      const interviewTitle = known && recordings.find((r) => known.aliases.some((alias) => r.meta.title.includes(alias)))?.meta.title;
+      p.name = interviewTitle || known?.title || storedName;
     });
   }
   map.forEach((p) => {
