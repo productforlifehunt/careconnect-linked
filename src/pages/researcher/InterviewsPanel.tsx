@@ -135,10 +135,13 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
 
   useEffect(() => {
     setPlayError("");
-    playUrl(path).then(setAudio).catch(() => setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"));
+    setAudio("");
+    if (!voiceRestricted) {
+      playUrl(path).then(setAudio).catch(() => setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"));
+    }
     loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
     return () => abort.current?.abort();
-  }, [path]);
+  }, [path, voiceRestricted]);
 
   /** Runs a researcher-only action; if the sign-in has expired, asks for the password and retries. */
   const asResearcher = async (action: () => Promise<void>) => {
@@ -279,7 +282,12 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               )}
             </div>
           )}
-          {audio && (
+          {voiceRestricted && (
+            <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+              This participant did not sign the ethics consent, so this recording can only be played by the researcher. The transcript below is still available. / 该参与者未签署伦理协议，录音仅供研究者播放；下方转录内容仍可查看。
+            </p>
+          )}
+          {audio && !voiceRestricted && (
             <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
               <audio ref={player} src={audio} preload="metadata" controlsList="nodownload noplaybackrate" onContextMenu={(event) => event.preventDefault()}
                 onLoadedMetadata={(event) => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
