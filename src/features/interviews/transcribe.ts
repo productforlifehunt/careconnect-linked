@@ -15,8 +15,8 @@ export interface Meta { title: string; notes: string; instructions: string; recr
 export interface ParticipantMeta { title: string; recruitmentSource: string; notes: string }
 export interface Recording { path: string; size: number; type: string; created: string; meta: Meta }
 export interface Line { s: "A" | "B"; zh: string; en: string; t: number }
-export interface TranscriptArchive { lines: Line[]; savedAt: string }
-export type ArchiveKind = "raw" | "edited";
+export interface TranscriptArchive { lines: Line[]; text?: string; savedAt: string }
+export type ArchiveKind = "raw" | "edited" | "anonymized" | "text" | "anonymized-text";
 
 function authHeaders() {
   return {
@@ -45,6 +45,28 @@ export const saveParticipantMeta = (participantId: string, meta: ParticipantMeta
 export const deleteRecording = (path: string) => audioFn<{ ok: boolean }>({ action: "delete", path });
 export const loadTranscriptArchive = (path: string, kind: ArchiveKind = "raw") => audioFn<{ archive: TranscriptArchive | null }>({ action: "load_archive", path, kind }).then((d) => d.archive);
 export const saveTranscriptArchive = (path: string, lines: Line[], kind: ArchiveKind = "raw") => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, lines, kind }).then((d) => d.archive);
+export const saveTextArchive = (path: string, text: string, kind: "text" | "anonymized-text") => audioFn<{ archive: TranscriptArchive }>({ action: "save_archive", path, text, kind }).then((d) => d.archive);
+
+/** Researcher only: replaces names with codes, chunk by chunk, keeping one mapping. */
+export async function anonymizeLines(lines: Line[], onProgress?: (done: number, total: number) => void): Promise<Line[]> {
+  const size = 100;
+  const total = Math.ceil(lines.length / size);
+  let names: Record<string, string> = {};
+  const out: Line[] = [];
+  for (let i = 0; i < total; i++) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await audioFn<{ lines: Line[]; names: Record<string, string> }>({ action: "anonymize", lines: lines.slice(i * size, (i + 1) * size), names });
+        out.push(...res.lines); names = res.names; break;
+      } catch (e) {
+        if (attempt >= 2 || /only the researcher|credits/i.test(String((e as Error)?.message))) throw e;
+        await new Promise((r) => setTimeout(r, 3000 * 2 ** attempt));
+      }
+    }
+    onProgress?.(i + 1, total);
+  }
+  return out;
+}
 
 export async function uploadRecording(file: File): Promise<string> {
   const { path, token } = await audioFn<{ path: string; token: string }>({ action: "upload_url", name: file.name });
