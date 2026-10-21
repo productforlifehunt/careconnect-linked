@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { Archive, ChevronDown, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2 } from "lucide-react";
+import { Archive, ChevronDown, Loader2, Pause, Play, Plus, Save, Square, Link2, Trash2, Pencil, X } from "lucide-react";
 import {
   listRecordings, uploadRecording, generateTranscript, playUrl, displayName, saveMeta, deleteRecording,
   loadTranscriptArchive, saveTranscriptArchive, type Recording, type Line, type Meta, type TranscriptArchive,
@@ -123,7 +123,11 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [archive, setArchive] = useState<TranscriptArchive | null>(null);
-  const [showArchive, setShowArchive] = useState(false);
+  const [editedArchive, setEditedArchive] = useState<TranscriptArchive | null>(null);
+  const [showArchive, setShowArchive] = useState<false | "raw" | "edited">(false);
+  const [editing, setEditing] = useState(false);
+  const [editLines, setEditLines] = useState<Line[]>([]);
+  const editedDraftKey = `interview-edited-draft:${path}`;
   const [showInstructions, setShowInstructions] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);
@@ -140,6 +144,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
       playUrl(path).then(setAudio).catch(() => setPlayError("Could not load this recording. Please refresh. / 录音加载失败，请刷新重试。"));
     }
     loadTranscriptArchive(path).then(setArchive).catch(() => setArchive(null));
+    loadTranscriptArchive(path, "edited").then(setEditedArchive).catch((e) => setError(e instanceof Error ? e.message : String(e)));
     return () => abort.current?.abort();
   }, [path, voiceRestricted]);
 
@@ -171,6 +176,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   };
 
   const generate = async () => {
+    if (editing) return;
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
@@ -194,6 +200,37 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
         if (!check || check.lines.length !== savedArchive.lines.length) throw new Error("Archive could not be verified after saving. / 归档保存后校验失败");
         setArchive(check);
         setSaved(`Transcript archive saved (${check.lines.length} sentences) / 转录归档已保存（${check.lines.length} 句）`);
+      });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSaving(false); }
+  };
+
+  const startEditing = () => {
+    if (!canEdit || !archive) return;
+    let source = editedArchive?.lines || archive.lines;
+    try {
+      const draft: unknown = JSON.parse(localStorage.getItem(editedDraftKey) || "null");
+      if (Array.isArray(draft) && draft.length) source = draft;
+    } catch { /* use the saved archive */ }
+    setEditLines(source.map((line) => ({ ...line })));
+    setEditing(true); setShowArchive("edited"); setSaved(""); setError("");
+  };
+  const changeLine = (index: number, update: Partial<Line>) => {
+    const next = editLines.map((line, i) => i === index ? { ...line, ...update } : line);
+    setEditLines(next); localStorage.setItem(editedDraftKey, JSON.stringify(next));
+  };
+  const storeEditedArchive = async () => {
+    if (!canEdit || !editing || !editLines.some((line) => line.zh.trim() || line.en.trim())) return;
+    if (editedArchive && !window.confirm("Overwrite the existing Edited archive? The Raw archive will not change. / 覆盖现有修订归档？原始归档不会改变。")) return;
+    setSaving(true); setError("");
+    try {
+      await asResearcher(async () => {
+        const stored = await saveTranscriptArchive(path, editLines, "edited");
+        const check = await loadTranscriptArchive(path, "edited");
+        if (!check || JSON.stringify(check.lines) !== JSON.stringify(stored.lines)) throw new Error("Edited archive could not be verified after saving. / 修订归档保存后校验失败。");
+        setEditedArchive(check); setEditing(false); setShowArchive("edited");
+        localStorage.removeItem(editedDraftKey);
+        setSaved("Edited archive saved / 修订归档已保存");
       });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
@@ -317,19 +354,31 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           )}
           {playError && <p className="text-sm text-destructive">{playError}</p>}
           <div className="flex flex-wrap items-center gap-2">
-            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running} variant={canEdit ? "secondary" : "default"}>
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" onClick={generate} disabled={running || editing} variant={canEdit ? "secondary" : "default"}>
               {running && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate New Translation and Transcription / 生成新的翻译与转录 (may take 20–30 minutes)
+              Generate New Raw Translation and Transcription / 生成新的原始翻译与转录 (may take 20–30 minutes)
             </Button>
-            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive(true)} disabled={!archive}>
-              <Archive className="mr-2 h-4 w-4" />View Archived Translation and Transcription / 查看已归档的翻译与转录
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive("raw")} disabled={!archive || editing}>
+              <Archive className="mr-2 h-4 w-4" />View Raw Archived Translation and Transcription / 查看原始翻译与转录归档
             </Button>
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
             {canEdit && complete && !running && lines.length > 0 && !showArchive && (
               <Button onClick={storeArchive} disabled={saving}>
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save to transcript archive / 存入转录归档
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save to Raw transcript archive / 存入原始转录归档
               </Button>
             )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="success" disabled={!editedArchive || editing} onClick={() => setShowArchive("edited")}>
+              <Archive className="mr-2 h-4 w-4" />View Edited Archived Translation and Transcription / 查看修订翻译与转录归档
+            </Button>
+            {canEdit && archive && !editing && <Button variant="outline" disabled={saving || running} onClick={startEditing}><Pencil className="mr-2 h-4 w-4" />Edit transcript archive / 编辑转录归档</Button>}
+            {canEdit && editing && <>
+              <Button variant="success" disabled={saving || !editLines.some((line) => line.zh.trim() || line.en.trim())} onClick={storeEditedArchive}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save to Edited archive / 存入修订归档
+              </Button>
+              <Button variant="outline" disabled={saving} onClick={() => { setEditing(false); setShowArchive(editedArchive ? "edited" : "raw"); }}><X className="mr-2 h-4 w-4" />Cancel / 取消</Button>
+            </>}
           </div>
           {canEdit && !running && !complete && lines.length > 0 && !showArchive && (
             <p className="text-sm text-muted-foreground">This run was not completed, so it cannot be saved to the archive. Generate again and let it finish. / 本次生成未完成，不能存入归档；请重新生成并等待全部完成。</p>
@@ -345,7 +394,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             <p>each click makes a fresh transcript and translation using the latest gemini flash model</p>
             <p>the transcript and translation will appear gradually</p>
             <p>It can take up to 20 minutes for the whole transcription and translation.</p>
-            <p>You can view the previously saved transcript and translation in Transcript archive.</p>
+            <p>You can view the previously saved originals in the Raw archive and manual corrections in the Edited archive.</p>
           </div>
           {progress && (
             <div className="space-y-1">
@@ -357,15 +406,21 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           {error && <p className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
-      {showArchive && !archive && <p className="text-sm text-muted-foreground">No transcript archive has been saved yet. / 暂无已保存的转录归档</p>}
+      {showArchive && !editing && <h3 className="font-medium text-foreground">{showArchive === "raw" ? "Raw archive / 原始归档" : "Edited archive / 修订归档"}</h3>}
+      {showArchive && !editing && !(showArchive === "raw" ? archive : editedArchive) && <p className="text-sm text-muted-foreground">No transcript archive has been saved yet. / 暂无已保存的转录归档</p>}
       <ol className="space-y-2">
-        {(showArchive ? archive?.lines || [] : lines).map((l, i) => (
+        {(canEdit && editing ? editLines : showArchive === "raw" ? archive?.lines || [] : showArchive === "edited" ? editedArchive?.lines || [] : lines).map((l, i) => (
           <li key={i} className="flex gap-3 rounded-md border border-border bg-card p-3">
             <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${l.s === "A" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{l.s}</span>
-            <div className="min-w-0 space-y-1">
+            <div className="min-w-0 flex-1 space-y-1">
               <p className="text-xs text-muted-foreground">#{i + 1}</p>
-              <p className="text-foreground">{l.zh}</p>
-              {l.en && <p className="text-sm text-muted-foreground">{l.en}</p>}
+              {canEdit && editing ? <>
+                <label className="flex items-center gap-2 text-sm">Speaker / 说话人
+                  <select aria-label={`Speaker ${i + 1}`} className="rounded-md border border-input bg-background p-1 text-foreground" value={l.s} disabled={saving} onChange={(e) => changeLine(i, { s: e.target.value === "B" ? "B" : "A" })}><option value="A">A</option><option value="B">B</option></select>
+                </label>
+                <Textarea aria-label={`Chinese transcript ${i + 1}`} value={l.zh} disabled={saving} onChange={(e) => changeLine(i, { zh: e.target.value })} />
+                <Textarea aria-label={`English translation ${i + 1}`} value={l.en} disabled={saving} onChange={(e) => changeLine(i, { en: e.target.value })} />
+              </> : <><p className="text-foreground">{l.zh}</p>{l.en && <p className="text-sm text-muted-foreground">{l.en}</p>}</>}
             </div>
           </li>
         ))}
