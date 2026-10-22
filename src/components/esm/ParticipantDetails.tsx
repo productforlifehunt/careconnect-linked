@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { saveParticipantMeta, type ParticipantMeta } from "@/features/interviews/transcribe";
 import { wpEnsureFreshToken } from "@/services/wp-auth";
 import { RecruitmentSourceSelect } from "@/components/researcher/RecruitmentSourceSelect";
+import { RecruitmentSourceDetails } from "@/components/researcher/RecruitmentSourceDetails";
 
 export function ParticipantDetails({ id, meta, canEdit, onSaved }: { id: string; meta: ParticipantMeta; canEdit: boolean; onSaved: (meta: ParticipantMeta) => void }) {
   const [draft, setDraft] = useState(meta);
@@ -32,7 +33,7 @@ export function ParticipantDetails({ id, meta, canEdit, onSaved }: { id: string;
       <div className="flex gap-2"><Button onClick={save} disabled={saving || !draft.title.trim()}>{saving ? "Saving… / 保存中…" : "Save / 保存"}</Button><Button variant="outline" disabled={saving} onClick={() => { setDraft(meta); setEditing(false); setError(""); }}>Cancel / 取消</Button></div>
     </> : <>
       <p className="break-words font-medium">{meta.title}</p>
-      {meta.recruitmentSource && <div className="space-y-2"><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{meta.recruitmentSource}</p></div>}
+      <RecruitmentSourceDetails key={id} value={meta.recruitmentSource} />
       {meta.notes && <div className="space-y-2"><p className="text-xs text-muted-foreground">Notes / 备注</p><p className="whitespace-pre-wrap text-sm">{meta.notes}</p></div>}
       {canEdit && <Button size="sm" variant="outline" onClick={() => { setDraft(meta); setEditing(true); }}>Edit participant / 编辑参与者</Button>}
     </>}

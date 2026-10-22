@@ -1,6 +1,7 @@
 
 - Interview audio and transcript archives live in the private `interview-audio` bucket; existing Raw archives and separate Edited archives never overwrite each other. Fresh generation never reads either archive; only the WordPress-verified researcher saves archives, with Raw saving limited to a complete run and Edited saving explicit manual corrections.
 - Research participant display overrides are private research-file metadata, not account changes or participant/interview relations; both research lists use one explicit-code comparator, and display renames never alter questionnaire roles or answers.
+- Participant and interview read-only recruitment sources share RecruitmentSourceDetails, keeping disclosure behavior consistent without changing saved metadata or researcher editing.
 - The application is light-only; keep one forced light theme and do not expose theme-switching controls, because the care interface must remain visually stable.
 - NotchSafety uses the shared `Index` homepage with site-gated family-location content while retaining its reduced `SafetyShell` route tree, preventing landing-page drift without exposing care-marketplace features.
 - All user-visible brand identity must come from the current site and language; ChallengeD/忆畅, CareCNC/护畅, and Notch Safety/诺驰安全 must never cross-leak in pages, dialogs, metadata, AI labels, or notifications.
