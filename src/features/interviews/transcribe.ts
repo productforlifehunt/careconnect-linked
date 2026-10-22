@@ -10,7 +10,7 @@ const FN_BASE = `https://${import.meta.env["VITE_SUPABASE_PROJECT_ID"]}.supabase
 // Keep each base64 WAV request below common browser/edge gateway body limits.
 const SEGMENT_SECONDS = 30;
 
-export interface Meta { title: string; notes: string; instructions: string; recruitmentSource?: string; playbackAllowed?: boolean; showPlayback?: boolean; showGenerate?: boolean }
+export interface Meta { title: string; notes: string; instructions: string; recruitmentSource?: string; playbackAllowed?: boolean; showPlayback?: boolean; showGenerate?: boolean; showRaw?: boolean }
 export interface ParticipantMeta { title: string; recruitmentSource: string; notes: string }
 export interface Recording { path: string; size: number; type: string; created: string; meta: Meta }
 export interface Line { s: "A" | "B"; zh: string; en: string; t: number }
