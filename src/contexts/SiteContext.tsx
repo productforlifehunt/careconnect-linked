@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 
-export type SiteId = "carecnc" | "challenged" | "notchsafety" | "esm_survey" | "researcher" | "consent";
+export type SiteId = "carecnc" | "challenged" | "notchsafety" | "esm_survey" | "researcher" | "consent" | "sick";
 
 /** b = beta, p = public release, t = internal test, none = internal full build. */
 export type ReleaseChannel = "internal" | "beta" | "public" | "test";
@@ -24,7 +24,7 @@ export interface BrandConfig {
   id: SiteId;
   /** Brand family — every release of a brand shares the same family so
    *  id-based UI checks keep working. */
-  family?: "challenged" | "carecnc" | "notchsafety" | "esm_survey" | "researcher" | "consent" | undefined;
+  family?: "challenged" | "carecnc" | "notchsafety" | "esm_survey" | "researcher" | "consent" | "sick" | undefined;
   name: string;
   tagline: string;
   logoText: string;
@@ -187,7 +187,7 @@ const SLUG_ALIASES: Record<string, string> = {
  * Public / beta builds are always a SUBSET of the internal build — never a
  * second codebase.
  */
-const SLUG_RE = /^(challenged|carecnc|notchsafety|esm_survey|researcher|consent)(?:-([bpt])(\d+))?(?:-v(\d+))?(?:-([a-z]{2}))?$/;
+const SLUG_RE = /^(challenged|carecnc|notchsafety|esm_survey|researcher|consent|sick)(?:-([bpt])(\d+))?(?:-v(\d+))?(?:-([a-z]{2}))?$/;
 
 export interface SiteRelease {
   /** The slug exactly as requested, e.g. "challenged-b1-v1". */
@@ -224,7 +224,7 @@ function parseSlug(raw: string): { brand: SiteId; release: SiteRelease } | null 
  * and the open discussion community.
  */
 function featuresFor(release: SiteRelease, brand: SiteId): SiteFeatures {
-  if (brand === "notchsafety" || brand === "consent") {
+  if (brand === "notchsafety" || brand === "consent" || brand === "sick") {
     return { paidCaregivers: false, facilities: false, community: false };
   }
   const trimmed = release.channel === "beta" || release.channel === "public";
@@ -327,6 +327,23 @@ const consentConfig: BrandConfig = {
   brandSlug: "consent",
 };
 
+/** Sick-leave notice micro site: one picture, no words, no app shell, no brand. */
+const sickConfig: BrandConfig = {
+  ...esmSurveyConfig,
+  id: "sick",
+  family: "sick",
+  name: "Sick Leave",
+  tagline: "病假",
+  logoText: "",
+  logoAccent: "",
+  footerBrand: "",
+  metaTitle: "Sick Leave · 病假",
+  metaDescription:
+    "A one-picture sick-leave notice. 一张图片说明请假，页面上没有任何文字。",
+  cssClass: "site-sick",
+  brandSlug: "sick",
+};
+
 const BRAND_CONFIGS: Record<SiteId, BrandConfig> = {
   challenged: challengedConfig,
   carecnc: careCNCConfig,
@@ -334,6 +351,7 @@ const BRAND_CONFIGS: Record<SiteId, BrandConfig> = {
   esm_survey: esmSurveyConfig,
   researcher: { ...esmSurveyConfig, id: "researcher", family: "researcher", name: "Study Researcher", brandSlug: "researcher", metaTitle: "Researcher dashboard — A Week in the Life study" },
   consent: consentConfig,
+  sick: sickConfig,
 };
 
 const INTERNAL_RELEASE: SiteRelease = { slug: "challenged", channel: "internal", channelNumber: 0, version: 0 };
@@ -363,7 +381,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const html = document.documentElement;
     // Remove any existing site class
-    html.classList.remove("site-carecnc", "site-challenged", "site-notchsafety", "site-esm-survey", "site-consent");
+    html.classList.remove("site-carecnc", "site-challenged", "site-notchsafety", "site-esm-survey", "site-consent", "site-sick");
     html.classList.add(config.cssClass);
 
     // Keep every browser/share surface aligned with the current brand and language.
@@ -379,7 +397,7 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
       : isChinese && config.family === "carecnc" ? "查找护理服务，预约并协调照护。"
       : isChinese && config.family === "challenged" ? "失智症照护知识、家庭协作与位置安全。"
       : config.metaDescription;
-    const faviconHref = config.family === "researcher" || config.family === "esm_survey" || config.family === "consent"
+    const faviconHref = config.family === "researcher" || config.family === "esm_survey" || config.family === "consent" || config.family === "sick"
       ? "/favicon-research.svg"
       : config.family === "notchsafety"
       ? "/favicon-notchsafety.png"
