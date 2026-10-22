@@ -19,6 +19,7 @@ import { compareResearchTitles } from "@/features/interviews/research-order";
 import { InterviewPlayback } from "@/features/interviews/playback";
 import { PreloadedInterviewPlayback } from "@/features/interviews/preload-playback";
 import { isDemoRecording } from "../../../supabase/functions/_shared/interview-demo";
+import { InterviewOverview } from "@/features/interviews/InterviewOverview";
 
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
@@ -369,6 +370,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
         <CardContent className="space-y-3 pt-6" aria-busy={archiveStatus === "loading"}>
           {archiveStatus === "loading" && <Loader2 role="status" aria-label="Loading interview / 加载访谈" className="h-5 w-5 animate-spin text-muted-foreground" />}
           <fieldset disabled={!archivesReady} className="min-w-0 space-y-3">
+          <InterviewOverview key={path} path={path} />
           {canEdit ? (
             <div className="space-y-4">
               <label className="text-xs text-muted-foreground">Title / 标题</label>
