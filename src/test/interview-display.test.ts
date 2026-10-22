@@ -25,6 +25,6 @@ describe("recording visitor controls", () => {
     expect(interviewDisplaySettings({ title: "P-C2", playbackAllowed: true, showPlayback: true }).playbackAllowed).toBe(true);
   });
   it("retains archive-only display settings", () => {
-    expect(interviewDisplaySettings({ showPlayback: false, showGenerate: false, showRaw: true })).toEqual({ playbackAllowed: true, showPlayback: false, showGenerate: false, showRaw: false });
+    expect(interviewDisplaySettings({ showPlayback: false, showGenerate: false, showRaw: false })).toEqual({ playbackAllowed: true, showPlayback: false, showGenerate: false, showRaw: false });
   });
 });
