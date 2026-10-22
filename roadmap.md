@@ -240,3 +240,6 @@
 - [x] Confirm information-card map is independent SheetMiniMap, not LocationCard; AI shares AICompanionChat but uses independent inline SheetAIPanel, not AICompanionChatDialog. Public AI knowledge loads additional plans/notes/medicines. Polygon renderer expects lowercase but source returns capitalized Polygon.
 - [ ] Live create/edit/delete/relationship permissions: not exercised to avoid modifying or deleting existing records; mocked update/delete tests demonstrate missing local authorization but do not establish backend write permissions.
 - [ ] Remaining all-app live permission coverage: care-group role changes/subgroup visibility, chat isolation, commerce ownership, file operations, researcher access, location request/emergency writes. Read-only source inventory is not a live audit.
+
+## 2026-10-22
+- [x] /?__site=consent 知情同意书微站：新增 consent 站点（SiteContext + __root + src/pages/consent/ConsentApp.tsx），单页双语（英文在前），仅展示与确认键；伦理批号/日期留空不编造；确认仅存本机 localStorage。

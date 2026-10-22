@@ -89,3 +89,4 @@
 - [WP users context=edit 403](mem://infrastructure/wp-users-context-edit-403) — App roles 403 on context=edit user reads; use fetchWPUserSafe public fallback
 - [AI Memory Standard](mem://features/ai-memory-standard) — Two-bucket rule: casual chat frontend-only 10k char rolling window; care-fact calls re-read DB and only persist conclusions
 - [Location standard card](mem://features/location-standard-card) — /find 3 tabs, shared LocationCard, CCT258 a55/a56 sharing + emergency rules
+- [Consent micro site](mem://features/consent-micro-site) — /?__site=consent 单页双语知情同意微站，仅一个确认键，批号留空，确认只存本机
