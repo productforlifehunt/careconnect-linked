@@ -34,7 +34,8 @@ export async function interviewOverview(path: string): Promise<{ text?: string; 
     let streamError: unknown;
     const result = streamText({ model: provider("google/gemini-3.8-flash"), system: INSTRUCTIONS, prompt: source,
       maxRetries: 0, onError: ({ error }) => { streamError = error; } });
-    const summary = await result.text.catch((error: unknown) => { throw streamError || error; });
+    let summary: string;
+    try { summary = await result.text; } catch (error) { throw streamError || error; }
     if (streamError) throw streamError;
     if (!summary.trim() || await result.finishReason === "content-filter") return { error: "The AI did not provide an overview. / AI 未提供概要。", status: 422 };
     return { text: summary };

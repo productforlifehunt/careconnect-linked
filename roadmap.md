@@ -1,6 +1,7 @@
 ## Current request: Interview overview
-- [ ] Add a default-collapsed overview to each interview, summarizing recorded care context, challenges, coordination and service/product needs with Gemini Flash.
-- [ ] Verify source selection, no invented missing facts, existing archives unchanged, and live expand/collapse plus real AI generation.
+- [x] Add a default-collapsed overview to each interview, using Gemini Flash and saved corrected text before Edited lines; cover care context, challenges, coordination and stated services/products by importance, with no archive writes.
+- [x] 17/17 source-selection and existing archive tests pass; real first interview defaults collapsed, expands and collapses again, with zero browser runtime errors. AI failure clears loading and displays the actual credit error.
+- [ ] Successful real overview and factual output review blocked: gateway returns “Not enough credits”. No additional model probes; no summaries have been generated or saved. Only one interview's interaction exercised live.
 
 ## Current request: Six consented demo recordings preload
 - [x] Freeze the first four currently displayed interviews by recording identity; use native full preload only for these, with existing playback switches still enforced and no download control. Remaining recordings retain five-second click-started streaming. No audio, metadata, archives or WordPress records changed.
