@@ -19,12 +19,12 @@ describe("recording visitor controls", () => {
     expect(interviewDisplaySettings({ title: "P-C1 Occasional caregiver" })).toEqual({ playbackAllowed: false, showPlayback: false, showGenerate: true, showRaw: true });
   });
   it("retains disabled playback independently of visible controls and generation", () => {
-    expect(interviewDisplaySettings({ playbackAllowed: false, showPlayback: true, showGenerate: true, showRaw: true })).toEqual({ playbackAllowed: false, showPlayback: true, showGenerate: true });
+    expect(interviewDisplaySettings({ playbackAllowed: false, showPlayback: true, showGenerate: true, showRaw: true })).toEqual({ playbackAllowed: false, showPlayback: true, showGenerate: true, showRaw: true });
   });
   it("allows researcher-approved playback for an occasional caregiver", () => {
     expect(interviewDisplaySettings({ title: "P-C2", playbackAllowed: true, showPlayback: true }).playbackAllowed).toBe(true);
   });
   it("retains archive-only display settings", () => {
-    expect(interviewDisplaySettings({ showPlayback: false, showGenerate: false, showRaw: true })).toEqual({ playbackAllowed: true, showPlayback: false, showGenerate: false });
+    expect(interviewDisplaySettings({ showPlayback: false, showGenerate: false, showRaw: true })).toEqual({ playbackAllowed: true, showPlayback: false, showGenerate: false, showRaw: false });
   });
 });
