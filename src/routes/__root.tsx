@@ -30,6 +30,7 @@ import SafetyApp from "@/pages/safety/SafetyApp";
 import EsmApp from "@/pages/esm/EsmApp";
 import ResearcherApp from "@/pages/researcher/ResearcherApp";
 import ConsentApp from "@/pages/consent/ConsentApp";
+import SickApp from "@/pages/sick/SickApp";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 
 // Pick the brand + language tab icon before the first paint so a Chinese app
@@ -49,7 +50,7 @@ const FAVICON_BOOTSTRAP = `(function () {
     if (!lang) lang = navigator.language || "en";
     var zh = lang.toLowerCase().indexOf("zh") === 0;
     var href;
-    if (slug.indexOf("researcher") === 0 || slug.indexOf("esm_survey") === 0 || slug.indexOf("consent") === 0) href = "/favicon-research.svg";
+    if (slug.indexOf("researcher") === 0 || slug.indexOf("esm_survey") === 0 || slug.indexOf("consent") === 0 || slug.indexOf("sick") === 0) href = "/favicon-research.svg";
     else if (slug.indexOf("notchsafety") === 0) href = "/favicon-notchsafety.png";
     else if (slug.indexOf("carecnc") === 0) href = zh ? "/favicon-huchang.png" : "/favicon-carecnc-en.png";
     else href = zh ? "/favicon-yichang.png" : "/favicon-challenged.png";
@@ -141,6 +142,8 @@ function SiteRouter() {
   if (site.id === "esm_survey") return <EsmApp />;
   // Informed-consent micro site — one page for study participants, no app shell.
   if (site.id === "consent") return <ConsentApp />;
+  // Sick-leave notice — one picture, no words, no app shell.
+  if (site.id === "sick") return <SickApp />;
   return (
     <AppLayout>
       <ErrorBoundary>

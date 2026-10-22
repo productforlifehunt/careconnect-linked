@@ -405,6 +405,16 @@ export const SiteProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? (isChinese ? "/favicon-huchang.png" : "/favicon-carecnc-en.png")
         : (isChinese ? "/favicon-yichang.png" : "/favicon-challenged.png");
 
+    // The sick-leave notice is link-only: keep it out of search results while
+    // the shared homepage served on the same path stays indexable.
+    document.querySelector('meta[name="robots"]')?.remove();
+    if (config.family === "sick") {
+      const robots = document.createElement("meta");
+      robots.name = "robots";
+      robots.content = "noindex, nofollow";
+      document.head.appendChild(robots);
+    }
+
     document.documentElement.lang = isChinese ? "zh-CN" : "en";
     document.title = localizedTitle;
     const setMeta = (selector: string, content: string) => {
