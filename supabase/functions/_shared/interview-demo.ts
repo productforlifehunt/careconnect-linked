@@ -7,7 +7,6 @@ export const DEMO_RECORDINGS = [
   "1790775526991_32.wav",
   "1791796863950_33_-edited.wav",
   "1791798861562_31_-edited.wav",
-  "1790783161922_27.wav",
 ] as const;
 
 export function isDemoRecording(path: string) {
