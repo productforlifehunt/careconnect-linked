@@ -1,3 +1,8 @@
+## Current request: One-picture sick-leave notice
+- [x] Add a standalone `sick` micro site at `/?__site=sick`: one picture, no words, no app shell, no brand; user's photo stored as a stripped-metadata CDN asset.
+- [x] Real browser (clean session): page renders only the picture (0 body characters, no nav/header/footer), right-click over the picture is cancelled, drag/selection disabled, `noindex` applied, zero page errors; homepage and consent page unaffected in clean sessions. 8/8 tests pass, build OK.
+- [ ] Published site not updated; true download prevention is impossible in a browser (screenshot / network panel remain available to any visitor).
+
 ## Current request: Recruitment source collapsed display
 - [x] Replace expanded read-only recruitment paragraphs in Participants and Interviews with a default-collapsed button; preserve full text and existing researcher editing.
 - [x] Real visitor first interview defaults collapsed, expands the original full paragraph, and collapses again; screenshots captured, zero runtime errors. Affected tests 20/20 pass and latest build OK. Participant surface uses the same disclosure; authenticated participant interaction not separately exercised. Published site not updated; no saved research records changed.
