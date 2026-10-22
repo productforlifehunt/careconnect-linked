@@ -13,7 +13,7 @@ import {
   loadTranscriptArchive, saveTranscriptArchive, saveTextArchive, anonymizeLines,
   type ArchiveKind, type Recording, type Line, type Meta, type TranscriptArchive,
 } from "@/features/interviews/transcribe";
-import { appendixText, archiveToText, downloadText, speakerLabel } from "@/features/interviews/archive-text";
+import { appendixText, archiveToText, downloadDocx, downloadText, speakerLabel } from "@/features/interviews/archive-text";
 import { wpLogin, wpEnsureFreshToken } from "@/services/wp-auth";
 import { compareResearchTitles } from "@/features/interviews/research-order";
 import { InterviewPlayback } from "@/features/interviews/playback";
@@ -519,6 +519,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
                 ? "Click to read the Edited archive in text format. / 点击查看修订归档文本版。"
                 : "Click to read the anonymized Edited archive in text format. / 点击查看匿名修订归档文本版。"}</p>
               {archiveOf(kind)?.text && <Button variant="outline" onClick={() => (() => { const text = archiveOf(kind)?.text; if (text) downloadText(appendixText(text), `${fileBase}-${kind}.txt`); })()}><Download className="mr-2 h-4 w-4" />Download TXT / 下载 TXT</Button>}
+              {archiveOf(kind)?.text && <Button variant="outline" onClick={() => { const text = archiveOf(kind)?.text; if (text) void downloadDocx(appendixText(text), `${fileBase}-${kind}.docx`).catch(() => setError("Word download failed. / Word 下载失败。")); }}><Download className="mr-2 h-4 w-4" />Download Word / 下载 Word</Button>}
               {canEdit && !busy && <Button variant="outline" disabled={saving || running || !src} onClick={() => startText(kind, true)}>Generate from current {suffix === "edited" ? "Edited" : "Anonymized"} archive / 用当前{suffix === "edited" ? "修订" : "匿名"}归档生成</Button>}
               {canEdit && archiveOf(kind) && !busy && <Button variant="outline" disabled={saving || running} onClick={() => startText(kind, false)}><Pencil className="mr-2 h-4 w-4" />Edit / 编辑</Button>}
             </div>
