@@ -1,3 +1,7 @@
+## Current request: Interview overview
+- [ ] Add a default-collapsed overview to each interview, summarizing recorded care context, challenges, coordination and service/product needs with Gemini Flash.
+- [ ] Verify source selection, no invented missing facts, existing archives unchanged, and live expand/collapse plus real AI generation.
+
 ## Current request: Six consented demo recordings preload
 - [x] Freeze the first four currently displayed interviews by recording identity; use native full preload only for these, with existing playback switches still enforced and no download control. Remaining recordings retain five-second click-started streaming. No audio, metadata, archives or WordPress records changed.
 - [x] Existing handler deployed; 29/29 tests pass. Live visitor: all six demo preload calls return 200, all eleven non-demo calls return 403; Li Ting preloads before click without autoplay and advances on Play, Wang Hai Tao uses stream only. Playback screenshots checked, zero runtime errors; latest build OK. Full end-to-end playback of every recording not exercised; full preload is browser-managed and cannot guarantee extraction prevention or instantaneous complete buffering.
