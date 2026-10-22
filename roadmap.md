@@ -243,3 +243,6 @@
 
 ## 2026-10-22
 - [x] /?__site=consent 知情同意书微站：新增 consent 站点（SiteContext + __root + src/pages/consent/ConsentApp.tsx），单页双语（英文在前），仅展示与确认键；伦理批号/日期留空不编造；确认仅存本机 localStorage。
+- [x] 知情同意书措辞修订：第五条改为"研究结果仅以文字形式呈现（含匿名原话）"，新增"录音与录像文件均不会在研究发表或公开演示中呈现"；第二条确定"一周"不写"例如"。浏览器实测新旧措辞替换，测试 4/4。
+- [x] 招募来源改为下拉框（RecruitmentSourceSelect，5 个预设 + Other 自定义，旧值不匹配自动进自定义模式保留原值）：ParticipantDetails 与 InterviewsPanel 两处替换；测试 24/24 通过，构建 OK。
+- [x] 研究者登录实测恢复可用：researcher / superstrongpassword（历史会话确认）；?__site=researcher 参与者编辑框与访谈记录编辑框两处下拉框 Playwright 实测渲染与选择正常，未保存任何真实记录。

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { saveParticipantMeta, type ParticipantMeta } from "@/features/interviews/transcribe";
 import { wpEnsureFreshToken } from "@/services/wp-auth";
+import { RecruitmentSourceSelect } from "@/components/researcher/RecruitmentSourceSelect";
 
 export function ParticipantDetails({ id, meta, canEdit, onSaved }: { id: string; meta: ParticipantMeta; canEdit: boolean; onSaved: (meta: ParticipantMeta) => void }) {
   const [draft, setDraft] = useState(meta);
@@ -25,7 +26,7 @@ export function ParticipantDetails({ id, meta, canEdit, onSaved }: { id: string;
       <label htmlFor="participant-title" className="text-xs text-muted-foreground">Title / 标题（姓名与身份）</label>
       <Input id="participant-title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
       <label htmlFor="participant-recruitment" className="text-xs text-muted-foreground">Recruitment source / 招募来源</label>
-      <Textarea id="participant-recruitment" value={draft.recruitmentSource} onChange={(e) => setDraft({ ...draft, recruitmentSource: e.target.value })} />
+      <RecruitmentSourceSelect id="participant-recruitment" value={draft.recruitmentSource} onChange={(recruitmentSource) => setDraft({ ...draft, recruitmentSource })} />
       <label htmlFor="participant-notes" className="text-xs text-muted-foreground">Notes / 备注</label>
       <Textarea id="participant-notes" value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} />
       <div className="flex gap-2"><Button onClick={save} disabled={saving || !draft.title.trim()}>{saving ? "Saving… / 保存中…" : "Save / 保存"}</Button><Button variant="outline" disabled={saving} onClick={() => { setDraft(meta); setEditing(false); setError(""); }}>Cancel / 取消</Button></div>
