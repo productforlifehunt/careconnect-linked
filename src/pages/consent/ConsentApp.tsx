@@ -115,8 +115,10 @@ export default function ConsentApp() {
                 <p>
                   Your information will be stored securely, used only for this research, and handled in a way
                   that protects your identity. Audio or video recordings are made only with your permission
-                  and are used only for research analysis. Results are reported in summary form and will not
-                  identify you personally.
+                  and are used only for research analysis. Results will be reported in written form,
+                  including anonymized quotations from interviews, and will not include any information
+                  that could identify you personally. Audio and video recordings will not be presented or
+                  played in any publication or public presentation of this study.
                 </p>
               </Section>
               <Section title="6. Contact">
@@ -149,7 +151,7 @@ export default function ConsentApp() {
               </Section>
               <Section title="五、隐私与保密">
                 <p>
-                  您的信息将被安全保存，仅用于本研究，并以保护您身份的方式处理。录音或录像仅在您允许的情况下进行，且仅用于研究分析。研究结果以汇总形式呈现，不会识别您的个人身份。
+                  您的信息将被安全保存，仅用于本研究，并以保护您身份的方式处理。录音或录像仅在您允许的情况下进行，且仅用于研究分析。研究结果仅以文字形式呈现（包括引用访谈中的匿名原话），不会包含任何能够识别您个人身份的信息。录音与录像文件均不会在研究发表或公开演示中呈现。
                 </p>
               </Section>
               <Section title="六、联系方式">
