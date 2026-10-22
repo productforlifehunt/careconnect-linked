@@ -17,6 +17,6 @@
 
 - Private task, group, notification and AI-summary reads resolve current-user JetEngine relations before loading CCT rows; legacy service entrypoints delegate to feature sources and account transitions clear read caches so ownership rules and cached identities cannot drift.
 
-- Interview appendix display, editing and TXT export share the timestamp-free formatter, including legacy text, without overwriting stored manual corrections.
+- Interview appendix display, editing and TXT/Word export share the timestamp-free formatter, including legacy text, without overwriting stored manual corrections; Word files are built in the browser from that same text so both exports cannot diverge.
 - Interview playback uses click-started, authorized binary chunks except a fixed allowlist of consented demos, which use authorized native full preload with custom no-download controls; hidden/disabled visitors receive no new audio, and transcription stays server-only. Freeze demo eligibility by existing recording identity so sorting/title edits cannot extend consent.
 - Interview controls unlock only after all five archive reads succeed and commit together; failed reads keep controls locked with a whole-set retry, preventing incomplete loading from suggesting missing archives or triggering costly generation.
