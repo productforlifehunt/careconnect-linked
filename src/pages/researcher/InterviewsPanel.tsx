@@ -21,6 +21,7 @@ import { PreloadedInterviewPlayback } from "@/features/interviews/preload-playba
 import { isDemoRecording } from "../../../supabase/functions/_shared/interview-demo";
 import { InterviewOverview } from "@/features/interviews/InterviewOverview";
 import { RecruitmentSourceSelect } from "@/components/researcher/RecruitmentSourceSelect";
+import { RecruitmentSourceDetails } from "@/components/researcher/RecruitmentSourceDetails";
 
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
@@ -412,7 +413,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           ) : (
             <div className="space-y-6">
               <p className="font-medium text-foreground">{rec.meta.title || displayName(path)}</p>
-              {rec.meta.recruitmentSource && <div className="space-y-2"><p className="text-xs text-muted-foreground">Recruitment source / 招募来源</p><p className="whitespace-pre-wrap text-sm">{rec.meta.recruitmentSource}</p></div>}
+              <RecruitmentSourceDetails value={rec.meta.recruitmentSource || ""} />
               {rec.meta.notes && (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Notes / 备注</p>

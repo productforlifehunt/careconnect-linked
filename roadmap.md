@@ -1,3 +1,7 @@
+## Current request: Recruitment source collapsed display
+- [x] Replace expanded read-only recruitment paragraphs in Participants and Interviews with a default-collapsed button; preserve full text and existing researcher editing.
+- [ ] Verify real visitor expand/collapse and run affected tests; no saved research records changed.
+
 ## Current request: Interview overview
 - [x] Add a default-collapsed overview to each interview, using Gemini Flash and saved corrected text before Edited lines; cover care context, challenges, coordination and stated services/products by importance, with no archive writes.
 - [x] 17/17 source-selection and existing archive tests pass; real first interview defaults collapsed, expands and collapses again, with zero browser runtime errors. AI failure clears loading and displays the actual credit error.
