@@ -494,3 +494,15 @@ body > div:not(#root) > [data-state="closed"],
   isolation: isolate;
   z-index: 0;
 }
+
+/* Sick-leave notice picture (`/?__site=sick`): no drag-to-desktop save, no
+   mobile long-press callout, no selection. The class is defined here because
+   these vendor prefixes are not part of React's inline-style typing. */
+.sick-notice-img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
