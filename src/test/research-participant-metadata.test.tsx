@@ -49,6 +49,6 @@ describe("researcher-only participant display editing", () => {
     fireEvent.change(screen.getByLabelText("Custom source / 自定义来源"), { target: { value: "Retained source" } });
     fireEvent.click(screen.getByRole("button", { name: "Save / 保存" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Only the researcher");
-    expect(screen.getByLabelText("Recruitment source / 招募来源")).toHaveValue("Retained source");
+    expect(screen.getByLabelText("Custom source / 自定义来源")).toHaveValue("Retained source");
   });
 });
