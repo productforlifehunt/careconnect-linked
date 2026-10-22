@@ -45,7 +45,8 @@ describe("researcher-only participant display editing", () => {
     api.saveParticipantMeta.mockRejectedValue(new Error("Only the researcher"));
     render(<ParticipantDetails id="68" meta={meta} canEdit onSaved={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Edit participant / 编辑参与者" }));
-    fireEvent.change(screen.getByLabelText("Recruitment source / 招募来源"), { target: { value: "Retained source" } });
+    fireEvent.change(screen.getByLabelText("Recruitment source / 招募来源"), { target: { value: "__other__" } });
+    fireEvent.change(screen.getByLabelText("Custom source / 自定义来源"), { target: { value: "Retained source" } });
     fireEvent.click(screen.getByRole("button", { name: "Save / 保存" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Only the researcher");
     expect(screen.getByLabelText("Recruitment source / 招募来源")).toHaveValue("Retained source");
