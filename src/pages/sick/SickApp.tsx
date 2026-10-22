@@ -23,13 +23,7 @@ export default function SickApp() {
         src={sickNotice.url}
         alt="Sick leave notice"
         draggable={false}
-        className="pointer-events-none h-auto max-h-dvh w-auto max-w-full select-none object-contain"
-        style={{
-          WebkitUserDrag: "none",
-          WebkitUserSelect: "none",
-          WebkitTouchCallout: "none",
-          userSelect: "none",
-        }}
+        className="sick-notice-img pointer-events-none h-auto max-h-dvh w-auto max-w-full select-none object-contain"
       />
       {/*
         Transparent layer over the picture: right-click and long-press land
