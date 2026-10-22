@@ -104,6 +104,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
   const playerVisible = canEdit || display.showPlayback;
   const playbackEnabled = canEdit || (display.showPlayback && display.playbackAllowed);
   const generateVisible = canEdit || display.showGenerate;
+  const rawVisible = canEdit || display.showRaw;
   const dirty = meta.title !== rec.meta.title || meta.notes !== rec.meta.notes || meta.instructions !== rec.meta.instructions || (meta.recruitmentSource || "") !== (rec.meta.recruitmentSource || "");
   const retry = useRef<(() => Promise<void>) | null>(null);
   const [saving, setSaving] = useState(false);
@@ -209,7 +210,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
     finally { setSaving(false); }
   };
 
-  const saveDisplay = async (key: "playbackAllowed" | "showPlayback" | "showGenerate", value: boolean) => {
+  const saveDisplay = async (key: "playbackAllowed" | "showPlayback" | "showGenerate" | "showRaw", value: boolean) => {
     if (!canEdit || saving) return;
     setSaving(true); setError("");
     try {
@@ -463,7 +464,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
           {playError && <p className="text-sm text-destructive">{playError}</p>}
           {canEdit && (
             <div className="space-y-3 border-t border-border pt-4">
-              {([["playbackAllowed", "Allow visitor playback / 允许访客播放"], ["showPlayback", "Show visitor player / 显示访客播放器"], ["showGenerate", "Show visitor Generate New / 显示访客重新生成"]] as const).map(([key, label]) => (
+              {([["playbackAllowed", "Allow visitor playback / 允许访客播放"], ["showPlayback", "Show visitor player / 显示访客播放器"], ["showGenerate", "Show visitor Generate New / 显示访客重新生成"], ["showRaw", "Show visitor Raw archive / 显示访客原始归档"]] as const).map(([key, label]) => (
                 <label key={key} className="flex items-center justify-between gap-3 text-sm">
                   <span>{label}</span><Switch aria-label={label} checked={display[key]} disabled={saving} onCheckedChange={(value) => void saveDisplay(key, value)} />
                 </label>
@@ -478,10 +479,12 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
             </Button>
             <p className="text-sm text-foreground">Click to generate new Raw transcription and translation from the raw recording. Both tasks use the Google Gemini 3.8 Flash model (model ID: google/gemini-3.8-flash) with the transcription and translation instructions shown above. / 点击后，从原始录音生成新的原始转录与翻译。两项任务均使用 Google Gemini 3.8 Flash 模型（model ID：google/gemini-3.8-flash），并采用上方展示的转录与翻译指导。</p>
             </>}
+            {rawVisible && <>
             <Button className="h-auto min-h-10 max-w-full whitespace-normal py-2 text-left" variant="destructive" onClick={() => setShowArchive("raw")} disabled={!archive || editing}>
               <Archive className="mr-2 h-4 w-4" />View Raw Archived Translation and Transcription / 查看原始翻译与转录归档
             </Button>
             <p className="text-sm text-foreground">Click to read the saved Raw translation and transcription. / 点击查看已保存的原始翻译与转录。</p>
+            </>}
             {running && <Button variant="outline" onClick={() => abort.current?.abort()}><Square className="mr-2 h-4 w-4" />Stop / 停止</Button>}
             {canEdit && complete && !running && lines.length > 0 && !showArchive && (
               <Button onClick={storeArchive} disabled={saving}>

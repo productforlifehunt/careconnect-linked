@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
     const path = String(body.path || "");
     if (!validPath(path)) return json({ error: "Invalid recording" }, 400);
     if (locked(path)) return json({ error: "protected", protected: true }, 403);
+    if (!researcher && (body.kind ?? "raw") === "raw" && !(await readMeta(path)).showRaw) return json({ archive: null });
     const { data, error } = await store.download(archiveObjectPath(path, body.kind));
     if (error || !data) return json({ archive: null });
     const archive = await data.text().then((text) => JSON.parse(text)).catch(() => null);
