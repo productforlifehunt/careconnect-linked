@@ -20,6 +20,7 @@ import { InterviewPlayback } from "@/features/interviews/playback";
 import { PreloadedInterviewPlayback } from "@/features/interviews/preload-playback";
 import { isDemoRecording } from "../../../supabase/functions/_shared/interview-demo";
 import { InterviewOverview } from "@/features/interviews/InterviewOverview";
+import { RecruitmentSourceSelect } from "@/components/researcher/RecruitmentSourceSelect";
 
 const titleOf = (r: Recording) => r.meta?.title || displayName(r.path);
 const interviewOrder = (a: Recording, b: Recording) => compareResearchTitles(titleOf(a), titleOf(b)) || a.path.localeCompare(b.path);
@@ -376,7 +377,7 @@ function Transcript({ rec, canEdit, onSaved, onDeleted }: { rec: Recording; canE
               <label className="text-xs text-muted-foreground">Title / 标题</label>
               <Input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} />
               <label htmlFor="interview-recruitment" className="text-xs text-muted-foreground">Recruitment source / 招募来源</label>
-              <Textarea id="interview-recruitment" rows={2} value={meta.recruitmentSource || ""} onChange={(e) => setMeta({ ...meta, recruitmentSource: e.target.value })} />
+              <RecruitmentSourceSelect id="interview-recruitment" value={meta.recruitmentSource || ""} onChange={(recruitmentSource) => setMeta({ ...meta, recruitmentSource })} />
               <label className="text-xs text-muted-foreground">Notes / 备注</label>
               <Textarea rows={2} value={meta.notes} onChange={(e) => setMeta({ ...meta, notes: e.target.value })} />
               <label className="text-xs text-muted-foreground">Transcription instructions / 转录指令（例如 A/B 是谁、专有名词）</label>
