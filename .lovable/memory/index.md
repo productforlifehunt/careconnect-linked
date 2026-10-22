@@ -63,7 +63,8 @@
 - [Authentication Strategy](mem://ux/authentication-strategy)
 - [Test Credentials](mem://testing/credentials)
 - [WordPress Multisite](mem://infrastructure/wordpress-multisite-config) — careconnected subsite only
-- [WordPress Credentials](mem://testing/wordpress-credentials)
+- [WordPress Credentials](mem://testing/wordpress-credentials) — challenged / testing account
+- [Researcher Credentials](mem://testing/researcher-credentials) — researcher / superstrongpassword, verified live
 - [Honesty Protocol](mem://constraints/honesty-completion-protocol)
 - [Safe Zone Model 214](mem://data/safe-zone-model-214) — a55 three types (Safe/Danger/Custom), name in a57; app settings JSON in CCT 151 a95/a96
 - [Opaque Naming Convention](mem://constraints/opaque-data-naming)
