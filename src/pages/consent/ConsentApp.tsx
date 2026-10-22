@@ -92,8 +92,8 @@ export default function ConsentApp() {
               </Section>
               <Section title="2. What participation involves">
                 <p>
-                  You may be asked to complete questionnaires, record your caregiving experiences over a period
-                  of time (for example, one week) using a study platform, where you may write text or record
+                  You may be asked to complete questionnaires, record your caregiving experiences over one
+                  week using a study platform, where you may write text or record
                   voice or video, and take part in interviews. Taking part in each part of the study is your
                   own choice.
                 </p>
@@ -138,7 +138,7 @@ export default function ConsentApp() {
               </Section>
               <Section title="二、参加内容">
                 <p>
-                  参加本研究可能需要您填写问卷，在一段时间内（例如一周）通过研究平台记录照护经历（可文字记录，也可语音或视频记录），并参加访谈。是否参加每一部分，均由您自行决定。
+                  参加本研究可能需要您填写问卷，在一周内通过研究平台记录照护经历（可文字记录，也可语音或视频记录），并参加访谈。是否参加每一部分，均由您自行决定。
                 </p>
               </Section>
               <Section title="三、自愿参加">
