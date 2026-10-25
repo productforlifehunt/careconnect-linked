@@ -5706,18 +5706,18 @@
       "fields": []
     },
     {
-      "id": 167,
-      "name": "One comment can have many related 30. votes",
-      "parent": "141. Comment",
-      "child": "30. Vote",
-      "type": "One to Many",
-      "fields": []
-    },
-    {
       "id": 240,
       "name": "One 187. cared one's checkin schedule can have many related 161. care one's checkin logs",
       "parent": "187. User's calendar event",
       "child": "161. user's log events",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 167,
+      "name": "One comment can have many related 30. votes",
+      "parent": "141. Comment",
+      "child": "30. Vote",
       "type": "One to Many",
       "fields": []
     }
