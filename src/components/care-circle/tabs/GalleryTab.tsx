@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Image, Trash2, Loader2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useTranslation } from "react-i18next";
 import {
   createCareGroupGalleryItemWordPress,
@@ -123,9 +122,6 @@ export function GalleryTab({ gallery, activeGroupId }: GalleryTabProps) {
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
               {img.caption && <CardContent className="p-2"><p className="text-xs text-muted-foreground truncate">{img.caption}</p></CardContent>}
-              <CardContent className="p-2 pt-0">
-                <CommentsSection entityType="gallery" entityId={img.id} compact />
-              </CardContent>
             </Card>
           ))}
         </div>

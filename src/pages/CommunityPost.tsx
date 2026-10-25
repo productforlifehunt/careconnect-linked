@@ -234,7 +234,7 @@ export default function CommunityPost() {
                 size="sm"
                 className={`h-8 px-2 ${voteState.userVote === 1 ? "text-primary" : "text-muted-foreground"}`}
                 disabled={!isAuthenticated || toggleVote.isPending}
-                onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: 1 })}
+                onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: 1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
               >
                 <ThumbsUp className="h-4 w-4 mr-1.5" />
                 {voteState.upvotes}
@@ -244,7 +244,7 @@ export default function CommunityPost() {
                 size="sm"
                 className={`h-8 px-2 ${voteState.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`}
                 disabled={!isAuthenticated || toggleVote.isPending}
-                onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: -1 })}
+                onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: -1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
               >
                 <ThumbsDown className="h-4 w-4 mr-1.5" />
                 {voteState.downvotes}
