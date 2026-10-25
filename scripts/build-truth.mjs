@@ -213,7 +213,29 @@ for (const [id, fields] of Object.entries(FIELD_PATCHES)) {
   }
 }
 
+// Dictionary table typos, verified in the /afresh JetEngine Relations GUI.
+// 166's row prints parent "141. Community post"; the GUI shows
+// "149. Community post -> 30. Vote", matching the prose above the table.
+const RELATION_PATCHES = {
+  166: { name: 'One 149. Afresh community post can have many related 30. votes', parent: '149. Community post', child: '30. Vote' },
+};
+for (const [id, patch] of Object.entries(RELATION_PATCHES)) {
+  const r = cleanRels.find((x) => Number(x.id) === Number(id));
+  if (r) Object.assign(r, patch);
+}
+
 const EXTRA_RELATIONS = [
+  {
+    // Prose: 回复的点赞使用 Relation "167. One 141. comment can have many related
+    // 30. votes"; the table row below it repeats 142 by mistake. GUI-verified:
+    // "167. One comment can have many related 30. votes" (141. Comment -> 30. Vote).
+    id: 167,
+    name: 'One comment can have many related 30. votes',
+    parent: '141. Comment',
+    child: '30. Vote',
+    type: 'One to Many',
+    fields: [],
+  },
   {
     // Prose-only in the dictionary ("查看/探望记录通过通用 Jet Engine Relation
     // 240 ... 关联到查看/探望计划"): the checkin schedule now lives in CCT 187 and

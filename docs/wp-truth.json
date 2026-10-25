@@ -4627,9 +4627,9 @@
     },
     {
       "id": 166,
-      "name": "One 149. comment can have many related 30. Votes",
-      "parent": "141. Community post",
-      "child": "30. Votes",
+      "name": "One 149. Afresh community post can have many related 30. votes",
+      "parent": "149. Community post",
+      "child": "30. Vote",
       "type": "One to Many",
       "fields": []
     },
@@ -5702,6 +5702,14 @@
       "name": "One Challenged App Content can have many related cared one's care tips",
       "parent": "217. Challenged App Content",
       "child": "209. Cared one's care tip",
+      "type": "One to Many",
+      "fields": []
+    },
+    {
+      "id": 167,
+      "name": "One comment can have many related 30. votes",
+      "parent": "141. Comment",
+      "child": "30. Vote",
       "type": "One to Many",
       "fields": []
     },

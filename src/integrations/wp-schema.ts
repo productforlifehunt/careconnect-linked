@@ -492,7 +492,6 @@ export const WP = {
         "LOCATION_CATEGORY": "a71",  // Radio
         "LOCATION_DETAIL": "a72",  // Textarea
         "CBT_THOUGHT_RECORD": "a73",  // Textarea
-        "CBT_COGNITIVE_DISTORTION_TYPE": "a74",  // Textarea
         "CBT_REFRAMED_THOUGHT": "a75",  // Textarea
         "CRAVING_INTENSITY_AFTER_CRAVING_SMOKING_OR_WHATEVER_SHIT": "a76",  // Number
         "NOTE_CONTENT": "a77",  // Textarea
@@ -501,29 +500,14 @@ export const WP = {
         "CUSTOM_RECIPE_DETAIL": "a80",  // Textarea
         "CUSTOM_WORKOUT_DETAIL": "a81",  // Textarea
         "CUSTOM_MEDICINE_DETAIL": "a82",  // Textarea
-        "DOSE_EVENT_LOG_STATUS": "a83",  // Radio (Apple HKMedicationDoseEvent.LogStatus)
-        "DOSE_EVENT_NOTE": "a84",  // Textarea
-        "DOSE_QUANTITY": "a85",  // Number (Apple doseQuantity)
-        "SCHEDULED_DOSE_QUANTITY": "a86",  // Number (Apple scheduledDoseQuantity)
-        "DOSE_UNIT": "a87",  // Text (UCUM)
-        "SCHEDULED_DATE": "a88",  // Datetime (Apple scheduledDate)
-        "SCHEDULE_TYPE": "a89",  // Radio (Apple ScheduleType)
-        "CONCEPT_IDENTIFIER": "a90",  // Text (Apple HKMedicationConcept.identifier)
-        "CONCEPT_DISPLAY_TEXT": "a91",  // Text
-        "CONCEPT_GENERAL_FORM": "a92",  // Text
-        "CLINICAL_CODING_SYSTEM": "a93",  // Text
-        "CLINICAL_CODING_CODE": "a94",  // Text (RxCUI)
-        "CLINICAL_CODING_VERSION": "a95",  // Text
-        "CHECK_TYPE": "a96",  // Radio
-        "LOG_MEDICINE_NOTE": "a97",  // Text
-        "LOG_CHECKIN_NOTE": "a98",  // Text
-        "CHECKED_BY_AI": "a99",  // Radio
-        "FOR_APP": "a100",  // Text (lowercase app name)
-        "AI_MEMORY_STATUS": "a101",  // Radio
-        "AI_MEMORY_SOURCE": "a102",  // Radio
+        "CHECK_TYPE": "a83",  // Radio
+        "LOG_MEDICINE_NOTE": "a84",  // Text
+        "LOG_CHECKIN_NOTE": "a85",  // Text
+        "CHECKED_BY_AI": "a86",  // Radio
+        "FOR_APP": "a87",  // Radio
       },
       opt: {
-        "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69", "AI_MEMORY": "b70", "NOTE": "b71", "FASTING": "b72" },
+        "LOG_EVENT_TYPE": { "SMOKING": "b55", "DRINKING_ALCOHOL": "b56", "PORN": "b57", "WATER": "b58", "FOOD": "b59", "BREATHING_EXERCISE": "b60", "WORKOUT": "b61", "MOTIVATION": "b62", "PLEDGE": "b63", "MEMORY": "b64", "SLEEP": "b65", "MOOD": "b66", "APPLE_HEALTH_SYMPTOMS": "b67", "CUSTOM_HEALTH_SYMPTOMS": "b68", "CUSTOM_MEDICINE": "b69" },
         "LOG_SMOKING_TYPE": { "SMOKED": "b55", "RESISTED": "b56" },
         "LOG_DRINKING_ALCOHOL_TYPE": { "DRANK": "b55", "RESISTED": "b56" },
         "LOG_PORN_TYPE": { "WATCHED": "b55", "RESISTED": "b56" },
@@ -531,12 +515,8 @@ export const WP = {
         "CRAVING_SMOKINGTRIGGER_CATEGORY": { "STRESS": "b55", "SOCIAL": "b56", "BOREDOM": "b57", "ALCOHOL": "b58", "COFFEE": "b59", "MEAL": "b60", "EMOTION": "b61", "HABIT": "b62", "OTHER": "b63" },
         "LOCATION_CATEGORY": { "HOME": "b55", "WORK": "b56", "BAR": "b57", "RESTAURANT": "b58", "CAR": "b59", "OUTDOOR": "b60" },
         "MEAL_TYPE": { "BREAKFAST": "b55", "LUNCH": "b56", "DINNER": "b57", "SNACK": "b58" },
-        "DOSE_EVENT_LOG_STATUS": { "NOT_INTERACTED": "b55", "NOT_LOGGED": "b56", "NOTIFICATION_NOT_SENT": "b57", "SKIPPED": "b58", "SNOOZED": "b59", "TAKEN": "b60" },
-        "SCHEDULE_TYPE": { "ASNEEDED": "b55", "SCHEDULE": "b56" },
         "CHECK_TYPE": { "TAKEN": "b55", "SKIPPED": "b56", "MISSED": "b57" },
         "CHECKED_BY_AI": { "YES": "b55", "NO": "b56" },
-        "AI_MEMORY_STATUS": { "DRAFT": "b55", "PENDING_APPROVAL": "b56", "ACTIVE": "b57", "ARCHIVED": "b58" },
-        "AI_MEMORY_SOURCE": { "USER_WRITTEN": "b55", "AI_SUGGESTED": "b56" },
       },
     },
     /** 177. User’s custom workout */
@@ -791,19 +771,15 @@ export const WP = {
         "CARED_ONE_S_INFORMATION_CARD_NAME": "a57",  // Text
         "STATUS": "a58",  // Radio
         "DISPLAYS_LOCATION": "a59",  // Radio
-        "PUBLIC_SHARE_STARTS_AT": "a60",  // Datetime
-        "PUBLIC_SHARE_EXPIRES_AT": "a61",  // Datetime
+        "SHARE_TOKEN": "a60",  // Text
+        "SHARE_EXPIRES_AT": "a61",  // Datetime
         "SHARE_VISIBILITY": "a62",  // Radio
-        "SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES": "a621",  // Radio
-        "PUBLIC_SHARE_EXPIRES": "a622",  // Radio
         "CARED_ONE_S_INFORMATION_CARD_DESCRIPTION": "a63",  // Text
       },
       opt: {
         "STATUS": { "DRAFT": "b55", "ACTIVE": "b56", "PAUSED": "b57" },
         "DISPLAYS_LOCATION": { "YES": "b55", "NO": "b56" },
         "SHARE_VISIBILITY": { "VISIBLE_TO_PUBLIC": "b55", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE": "b56", "VISIBLE_TO_CAREGIVERS_OF_THE_CARED_ONE": "b57", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE_AND_THE_CAREGIVERS_OF_THE_CARED_ONE": "b58" },
-        "SHARE_VISIBILITY_AFTER_PUBLIC_EXPIRES": { "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE": "b56", "VISIBLE_TO_CAREGIVERS_OF_THE_CARED_ONE": "b57", "VISIBLE_TO_THE_CARE_GROUP_OF_THE_CARED_ONE_AND_THE_CAREGIVERS_OF_THE_CARED_ONE": "b58" },
-        "PUBLIC_SHARE_EXPIRES": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 199. Care Group */
@@ -1168,8 +1144,8 @@ export const WP = {
     "150": { id: 150, parent: "149. Community post", child: "141. Comment", type: "One to Many" },
     /** 142. One comment can have many related comments — 141. Comment -> 141. Comment (Many to Many) */
     "142": { id: 142, parent: "141. Comment", child: "141. Comment", type: "Many to Many" },
-    /** 166. One 149. comment can have many related 30. Votes — 141. Community post -> 30. Votes (One to Many) */
-    "166": { id: 166, parent: "141. Community post", child: "30. Votes", type: "One to Many" },
+    /** 166. One 149. Afresh community post can have many related 30. votes — 149. Community post -> 30. Vote (One to Many) */
+    "166": { id: 166, parent: "149. Community post", child: "30. Vote", type: "One to Many" },
     /** 144. One product shop can have many related reviews — 2. Shop -> 31. Review (One to Many) */
     "144": { id: 144, parent: "2. Shop", child: "31. Review", type: "One to Many" },
     /** 264. One care provider can have many related 31. reviews — Users -> 31. Review (One to Many) */
@@ -1249,7 +1225,7 @@ export const WP = {
     /** 195. One user can have many related 193. User's ai credit — Users -> 193. User's ai credit (One to Many) */
     "195": { id: 195, parent: "Users", child: "193. User's ai credit", type: "One to Many" },
     /** 219. One user can have many related cared ones — Users -> Users (Many to Many) */
-    "219": { id: 219, parent: "Users", child: "Users", type: "Many to Many", f: { "CARED_ONE_INVITATION_STATUS": "a58" }, opt: { "CARED_ONE_INVITATION_STATUS": { "ACCEPTED": "b55", "PENDING": "b56", "DECLINED": "b57" } } },
+    "219": { id: 219, parent: "Users", child: "Users", type: "Many to Many" },
     /** 220. One cared one can have many related 198. cared one's information cards — Users -> 198. Cared one's information card (One to Many) */
     "220": { id: 220, parent: "Users", child: "198. Cared one's information card", type: "One to Many" },
     /** 221. One cared one's information card can have many related cared one's emergency contact persons — 198. Cared one's information card -> Users (One to Many) */
@@ -1294,10 +1270,10 @@ export const WP = {
     "253": { id: 253, parent: "204. Care Task", child: "204. Care Task", type: "Many to Many" },
     /** 238. One 187 cared one's medicine schedule can have many related care one's medicine logs — 187. Cared one’s medicine schedule -> 206. Care one's medicine log (One to Many) */
     "238": { id: 238, parent: "187. Cared one’s medicine schedule", child: "206. Care one's medicine log", type: "One to Many" },
-    /** 241. One check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) [verified live 2026-09-18] */
-    "241": { id: 241, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
-    /** 260. One 187. checkin schedule can have many related caregivers who will receive notification — 187. User's calendar event -> Users (One to Many) */
-    "260": { id: 260, parent: "187. User's calendar event", child: "Users", type: "One to Many" },
+    /** 241. One check in schedule can have many related asigned check-in persons — 187. Checkin schedule -> Users (One to Many) */
+    "241": { id: 241, parent: "187. Checkin schedule", child: "Users", type: "One to Many" },
+    /** 260. One 207. check in schedule can have many related asigned check-in persons — 207. Checkin schedule -> Users (One to Many) */
+    "260": { id: 260, parent: "207. Checkin schedule", child: "Users", type: "One to Many" },
     /** 242. One cared one can have many related 197. cared one's care notes — Users -> 197. Cared one's care note (One to Many) */
     "242": { id: 242, parent: "Users", child: "197. Cared one's care note", type: "One to Many" },
     /** 243. One cared one can have many related cared one's care tips — Users -> 209. Cared one's care tip (One to Many) */
@@ -1324,8 +1300,10 @@ export const WP = {
     "256": { id: 256, parent: "217. Challenged App Content", child: "218. User's study notes", type: "One to Many" },
     /** 257. One Challenged App Content can have many related cared one's care tips — 217. Challenged App Content -> 209. Cared one's care tip (One to Many) */
     "257": { id: 257, parent: "217. Challenged App Content", child: "209. Cared one's care tip", type: "One to Many" },
-    /** 240. RETIRED — live backend has it as 207. Checkin schedule -> 208. Checkin log (old dedicated tables). Use 191 for 187 -> 161. [verified live 2026-09-18] */
-    "240": { id: 240, parent: "207. Checkin schedule", child: "208. Checkin log", type: "One to Many" },
+    /** 167. One comment can have many related 30. votes — 141. Comment -> 30. Vote (One to Many) */
+    "167": { id: 167, parent: "141. Comment", child: "30. Vote", type: "One to Many" },
+    /** 240. One 187. cared one's checkin schedule can have many related 161. care one's checkin logs — 187. User's calendar event -> 161. user's log events (One to Many) */
+    "240": { id: 240, parent: "187. User's calendar event", child: "161. user's log events", type: "One to Many" },
   },
 } as const;
 
@@ -1461,7 +1439,7 @@ export const R = {
   communityPostComments: 150,
   /** 142. One comment can have many related comments */
   commentReplies: 142,
-  /** 166. One 149. comment can have many related 30. Votes */
+  /** 166. One 149. Afresh community post can have many related 30. votes */
   communityPostVotes: 166,
   /** 144. One product shop can have many related reviews */
   shopReviews: 144,
@@ -1585,20 +1563,11 @@ export const R = {
   careTaskComments: 236,
   /** 253. One 204 care task can have many related 204. care tasks */
   careTaskSubTasks: 253,
-  /**
-   * 240. One 187. cared one's medicine/checkin schedule can have many related
-   * 161. care one's logs — schedules live in CCT 187, logs in CCT 161, so
-   * medicine and check-in logs share the same relation. (Old CCT 206 + Relation
-   * 238 are retired.)
-   */
-  medicineScheduleLogs: 191,
-
-  /**
-   * Assigned check-in persons. Schedules moved to CCT 187, so the assignee link
-   * is Relation 262 (187 → Users). Relation 241 is retired with CCT 207.
-   */
-  checkinScheduleAssignees: 262,
-  /** 260. One 187. checkin schedule can have many related caregivers who will receive notification */
+  /** 238. One 187 cared one's medicine schedule can have many related care one's medicine logs */
+  medicineScheduleLogs: 238,
+  /** 241. One check in schedule can have many related asigned check-in persons */
+  checkinScheduleAssignees: 241,
+  /** 260. One 207. check in schedule can have many related asigned check-in persons */
   checkinNotificationReceivers: 260,
   /** 242. One cared one can have many related 197. cared one's care notes */
   caredOneCareNotes: 242,
@@ -1626,8 +1595,10 @@ export const R = {
   contentStudyNotes: 256,
   /** 257. One Challenged App Content can have many related cared one's care tips */
   contentCareTips: 257,
-  /** 191. One 187. user's calendar event can have many related 161. user's log events */
-  checkinScheduleLogs: 191,
+  /** 167. One comment can have many related 30. votes */
+  commentVotes: 167,
+  /** 240. One 187. cared one's checkin schedule can have many related 161. care one's checkin logs */
+  checkinScheduleLogs: 240,
 } as const;
 
 /** Dictionary CCT number -> live JetEngine REST slug. */

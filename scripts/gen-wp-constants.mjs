@@ -152,6 +152,7 @@ const REL_ALIASES = {
   264: 'providerReviews',
   265: 'careGroupChat',
   166: 'communityPostVotes',
+  167: 'commentVotes',
   276: 'productPriceHistoryShops',
   286: 'shopMembers',
   287: 'productMembers',
