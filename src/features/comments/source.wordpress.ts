@@ -107,6 +107,11 @@ export async function updateCommentWordPress(id: string, content: string): Promi
   await wordpressCCTFetch(SLUG, { id: strip(id), method: "PUT", body: { [F.CONTENT]: content } });
 }
 
+/** Deletes the comment and its REL 142 replies (the UI promises both). */
 export async function deleteCommentWordPress(id: string): Promise<void> {
+  const replies = await loadMap(R.commentReplies);
+  for (const r of replies.get(strip(id)) || []) {
+    await wordpressCCTFetch(SLUG, { id: r.childId, method: "DELETE" });
+  }
   await wordpressCCTFetch(SLUG, { id: strip(id), method: "DELETE" });
 }
