@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { Link, useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
@@ -51,7 +52,7 @@ export default function ArticlePost() {
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
   const toggleVote = useToggleVote();
-  const { data: voteState = { score: 0, upvotes: 0, downvotes: 0, userVote: 0 as -1 | 0 | 1 } } = useVoteCount("post", id || null);
+  const { data: voteState = { score: 0, upvotes: 0, downvotes: 0, userVote: 0 as -1 | 0 | 1 } } = useVoteCount(R.communityPostVotes, id || null);
   const isZh = i18n.language?.startsWith("zh");
   const dateLocale = isZh ? zhCN : enUS;
   const [editing, setEditing] = useState(false);
@@ -126,8 +127,8 @@ export default function ArticlePost() {
             {categorySummary.length > 0 ? <div className="space-y-2"><h2 className="text-sm font-semibold text-foreground">{isZh ? "分类" : "Categories"}</h2><div className="flex gap-2 flex-wrap">{categorySummary.map((item) => <Badge key={item.id} variant="secondary">{item.typeName}</Badge>)}</div></div> : null}
             {customFieldSummary.length > 0 ? <div className="space-y-2"><h2 className="text-sm font-semibold text-foreground">{isZh ? "自定义字段" : "Custom Fields"}</h2><div className="grid gap-2">{customFieldSummary.map((item) => <div key={item.id} className="text-sm text-muted-foreground"><span className="font-medium text-foreground mr-2">{item.fieldName}:</span>{item.value || "-"}</div>)}</div></div> : null}
             <div className="flex items-center gap-3 flex-wrap">
-              <Button variant="ghost" size="sm" className={`h-8 px-2 ${voteState.userVote === 1 ? "text-primary" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: 1 })}><ThumbsUp className="h-4 w-4 mr-1.5" />{voteState.upvotes}</Button>
-              <Button variant="ghost" size="sm" className={`h-8 px-2 ${voteState.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: -1 })}><ThumbsDown className="h-4 w-4 mr-1.5" />{voteState.downvotes}</Button>
+              <Button variant="ghost" size="sm" className={`h-8 px-2 ${voteState.userVote === 1 ? "text-primary" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: 1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}><ThumbsUp className="h-4 w-4 mr-1.5" />{voteState.upvotes}</Button>
+              <Button variant="ghost" size="sm" className={`h-8 px-2 ${voteState.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: -1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}><ThumbsDown className="h-4 w-4 mr-1.5" />{voteState.downvotes}</Button>
               <span className="text-sm font-medium text-muted-foreground">{isZh ? `总分 ${voteState.score}` : `Score ${voteState.score}`}</span>
             </div>
             <Separator />
@@ -136,7 +137,7 @@ export default function ArticlePost() {
                 <h2 className="text-lg font-semibold text-foreground">{isZh ? "评论" : "Comments"}</h2>
                 <p className="text-sm text-muted-foreground">{isZh ? "文章使用通用 comment/vote 结构。" : "Articles use the shared comment/vote structure."}</p>
               </div>
-              <CommentsSection entityType="post" entityId={post.id} />
+              <CommentsSection relationId={R.communityPostComments} parentId={post.id} />
             </div>
           </CardContent>
         </Card>

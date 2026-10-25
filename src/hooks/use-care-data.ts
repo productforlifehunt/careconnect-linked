@@ -70,7 +70,7 @@ import { setMyGroupDisplayNameWordPress } from "@/features/care-groups/source.wo
 import { fetchConversationsWordPress, fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress, getOrCreateGroupConversationWordPress } from "@/features/conversations/source.wordpress";
 import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
 import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
-import { fetchVotesWordPress, fetchEntityVoteWordPress, toggleVoteWordPress } from "@/features/votes/source.wordpress";
+import { fetchVoteSummaries, fetchVoteSummary, toggleVote } from "@/features/votes/source.wordpress";
 import { fetchLocationSharesWordPress } from "@/features/location/source.wordpress";
 
 
@@ -1420,18 +1420,19 @@ export function useDeleteCaredOneDocument() {
 }
 
 // ─── Dementia Stage ─────────────────────────────────────────
-export function useComments(entityType: string, entityId: string | null) {
+export function useComments(relationId: number, parentId: string | null) {
   return useQuery({
-    queryKey: ["comments", entityType, entityId],
-    queryFn: () => fetchCommentsWordPress(entityType, entityId!),
-    enabled: !!entityId,
+    queryKey: ["comments", relationId, parentId],
+    queryFn: () => fetchCommentsWordPress(relationId, parentId!),
+    enabled: !!parentId,
   });
 }
 
 export function useCreateComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ entityType, entityId, content, parentId }: { entityType: string; entityId: string; content: string; parentId?: string | undefined }) => createCommentWordPress({ entity_type: entityType, entity_id: entityId, content, parent_id: parentId }),
+    mutationFn: ({ relationId, parentId, content, replyToCommentId }: { relationId: number; parentId: string; content: string; replyToCommentId?: string | undefined }) =>
+      createCommentWordPress({ relationId, parentId, content, replyToCommentId }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["comments"] }); },
   });
 }
@@ -1447,43 +1448,33 @@ export function useUpdateComment() {
 export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteCommentWordPress(id),
+    mutationFn: ({ id }: { id: string }) => deleteCommentWordPress(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["comments"] }); },
   });
 }
 
-// ─── Unified Votes ──────────────────────────────────────────
-
-function normalizeVoteValue(value: string | null | undefined) {
-  if (value === "downvote") return -1;
-  if (value === "upvote") return 1;
-  return 0;
-}
-
-export function useVoteSummary(entityType: string, entityIds: string[]) {
+// ─── Votes (CCT 30 via REL 166 post→vote / REL 167 comment→vote) ──
+export function useVoteSummary(relationId: number, parentIds: string[]) {
   return useQuery({
-    queryKey: ["voteSummary", entityType, entityIds],
-    queryFn: () => fetchVotesWordPress(entityType, entityIds),
-    enabled: entityIds.length > 0,
+    queryKey: ["voteSummary", relationId, parentIds],
+    queryFn: () => fetchVoteSummaries(relationId, parentIds),
+    enabled: parentIds.length > 0,
   });
 }
 
-export function useVoteCount(entityType: string, entityId: string | null) {
+export function useVoteCount(relationId: number, parentId: string | null) {
   return useQuery({
-    queryKey: ["voteCount", entityType, entityId],
-    queryFn: async () => {
-      const vote = await fetchEntityVoteWordPress(entityType, entityId!);
-      return vote;
-    },
-    enabled: !!entityId,
+    queryKey: ["voteSummary", relationId, [parentId]],
+    queryFn: () => fetchVoteSummary(relationId, parentId!),
+    enabled: !!parentId,
   });
 }
 
 export function useToggleVote() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ entityType, entityId, value }: { entityType: string; entityId: string; value: -1 | 1 }) => toggleVoteWordPress(entityType, entityId, value),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["voteSummary"] }); qc.invalidateQueries({ queryKey: ["voteCount"] }); },
+    mutationFn: ({ relationId, parentId, value }: { relationId: number; parentId: string; value: -1 | 1 }) => toggleVote(relationId, parentId, value),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["voteSummary"] }); },
   });
 }
 

@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { Link, useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -72,7 +73,7 @@ export default function CommunityPost() {
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
   const toggleVote = useToggleVote();
-  const { data: voteState = { score: 0, upvotes: 0, downvotes: 0, userVote: 0 as -1 | 0 | 1 } } = useVoteCount("post", id || null);
+  const { data: voteState = { score: 0, upvotes: 0, downvotes: 0, userVote: 0 as -1 | 0 | 1 } } = useVoteCount(R.communityPostVotes, id || null);
   const isZh = i18n.language?.startsWith("zh");
   const dateLocale = isZh ? zhCN : enUS;
 
@@ -233,7 +234,7 @@ export default function CommunityPost() {
                 size="sm"
                 className={`h-8 px-2 ${voteState.userVote === 1 ? "text-primary" : "text-muted-foreground"}`}
                 disabled={!isAuthenticated || toggleVote.isPending}
-                onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: 1 })}
+                onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: 1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
               >
                 <ThumbsUp className="h-4 w-4 mr-1.5" />
                 {voteState.upvotes}
@@ -243,7 +244,7 @@ export default function CommunityPost() {
                 size="sm"
                 className={`h-8 px-2 ${voteState.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`}
                 disabled={!isAuthenticated || toggleVote.isPending}
-                onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: -1 })}
+                onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: -1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
               >
                 <ThumbsDown className="h-4 w-4 mr-1.5" />
                 {voteState.downvotes}
@@ -263,7 +264,7 @@ export default function CommunityPost() {
                 <h2 className="text-lg font-semibold text-foreground">{isZh ? "讨论" : "Discussion"}</h2>
                 <p className="text-sm text-muted-foreground">{isZh ? "支持回复、编辑、删除、赞成、反对和取消投票" : "Replies support create, edit, delete, upvote, downvote, and unvote."}</p>
               </div>
-              <CommentsSection entityType="community_post" entityId={post.id} />
+              <CommentsSection relationId={R.communityPostComments} parentId={post.id} />
             </div>
           </CardContent>
         </Card>

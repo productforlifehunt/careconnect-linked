@@ -134,7 +134,8 @@ export async function applyToSharedTaskWordPress(taskId: string, message?: strin
 
   if (message?.trim()) {
     const { createCommentWordPress } = await import("@/features/comments/source.wordpress");
-    await createCommentWordPress({ entity_type: "care_task", entity_id: String(tid), content: message.trim() });
+    const { R } = await import("@/integrations/wp-schema");
+    await createCommentWordPress({ relationId: R.careTaskComments, parentId: String(tid), content: message.trim() });
   }
 
   try {

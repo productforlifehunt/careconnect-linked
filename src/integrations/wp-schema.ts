@@ -1168,8 +1168,10 @@ export const WP = {
     "150": { id: 150, parent: "149. Community post", child: "141. Comment", type: "One to Many" },
     /** 142. One comment can have many related comments — 141. Comment -> 141. Comment (Many to Many) */
     "142": { id: 142, parent: "141. Comment", child: "141. Comment", type: "Many to Many" },
-    /** 166. One 149. comment can have many related 30. Votes — 141. Community post -> 30. Votes (One to Many) */
-    "166": { id: 166, parent: "141. Community post", child: "30. Votes", type: "One to Many" },
+    /** 166. One 149. Afresh community post can have many related 30. votes — 149. Community post -> 30. Vote (One to Many) [dictionary table typo fixed; verified in /afresh GUI 2026-10-26] */
+    "166": { id: 166, parent: "149. Community post", child: "30. Vote", type: "One to Many" },
+    /** 167. One comment can have many related 30. votes — 141. Comment -> 30. Vote (One to Many) [dictionary prose; table row repeats 142 by mistake; verified in /afresh GUI 2026-10-26] */
+    "167": { id: 167, parent: "141. Comment", child: "30. Vote", type: "One to Many" },
     /** 144. One product shop can have many related reviews — 2. Shop -> 31. Review (One to Many) */
     "144": { id: 144, parent: "2. Shop", child: "31. Review", type: "One to Many" },
     /** 264. One care provider can have many related 31. reviews — Users -> 31. Review (One to Many) */
@@ -1461,8 +1463,10 @@ export const R = {
   communityPostComments: 150,
   /** 142. One comment can have many related comments */
   commentReplies: 142,
-  /** 166. One 149. comment can have many related 30. Votes */
+  /** 166. One 149. Afresh community post can have many related 30. votes */
   communityPostVotes: 166,
+  /** 167. One comment can have many related 30. votes */
+  commentVotes: 167,
   /** 144. One product shop can have many related reviews */
   shopReviews: 144,
   /** 264. One care provider can have many related 31. reviews */

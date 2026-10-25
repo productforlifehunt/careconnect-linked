@@ -31,7 +31,9 @@ const ENTITY_REVIEW_REL: Record<string, number> = {
 };
 
 function relForEntity(entityType?: string | undefined): number {
-  return ENTITY_REVIEW_REL[entityType ?? "provider"] ?? R.providerReviews;
+  const rel = ENTITY_REVIEW_REL[entityType ?? "provider"];
+  if (!rel) throw new Error(`No review relation for "${entityType}"`);
+  return rel;
 }
 
 export interface EntityReview {

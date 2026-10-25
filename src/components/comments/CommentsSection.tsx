@@ -9,11 +9,16 @@ import { useComments, useCreateComment, useDeleteComment, useToggleVote, useUpda
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { formatDate } from "@/lib/locale";
+import { useQuery } from "@tanstack/react-query";
+import { fetchForumNames } from "@/features/shared/wp-users";
+import { R } from "@/integrations/wp-schema";
 
 interface CommentsSectionProps {
-  entityType: "post" | "community_post" | "review" | "gallery" | "task" | "comment";
-  entityId: string;
+  /** Dictionary number of the parent→comment JetEngine relation (from `R`, e.g. R.communityPostComments = 150). */
+  relationId: number;
+  /** Id of the parent row on that relation. */
+  parentId: string;
   /** Compact mode hides the header and shows fewer items initially */
   compact?: boolean | undefined;
   hideComposer?: boolean | undefined;
@@ -22,9 +27,10 @@ interface CommentsSectionProps {
 
 function CommentItem({
   comment,
-  entityType,
-  entityId,
+  relationId,
+  parentId,
   userId,
+  authorName,
   deleteComment,
   createComment,
   updateComment,
@@ -33,9 +39,10 @@ function CommentItem({
   depth,
 }: {
   comment: any;
-  entityType: string;
-  entityId: string;
+  relationId: number;
+  parentId: string;
   userId: string | undefined;
+  authorName: (authorId: any) => string;
   deleteComment: any;
   createComment: any;
   updateComment: any;
@@ -56,7 +63,7 @@ function CommentItem({
   const handleReply = () => {
     if (!replyText.trim()) return;
     createComment.mutate(
-      { entityType, entityId, content: replyText.trim(), parentId: comment.id },
+      { relationId, parentId, content: replyText.trim(), replyToCommentId: comment.id },
       {
         onSuccess: () => {
           setReplyText("");
@@ -70,7 +77,7 @@ function CommentItem({
   const handleUpdate = () => {
     if (!editText.trim()) return;
     updateComment.mutate(
-      { id: comment.id, entityType, entityId, content: editText.trim() },
+      { id: comment.id, content: editText.trim() },
       {
         onSuccess: () => {
           setEditing(false);
@@ -83,12 +90,13 @@ function CommentItem({
 
   const handleDelete = () => {
     deleteComment.mutate(
-      { id: comment.id, entityType, entityId },
+      { id: comment.id },
       {
         onSuccess: () => {
           setConfirmDeleteOpen(false);
           toast({ title: isZh ? "回复已删除" : "Comment deleted" });
         },
+        onError: (err: any) => toast({ title: isZh ? "删除失败" : "Failed to delete", description: err.message, variant: "destructive" }),
       }
     );
   };
@@ -99,11 +107,11 @@ function CommentItem({
         <div className="rounded-lg bg-muted/25 px-3 py-3 transition-colors group-hover:bg-muted/40">
           <div className="flex items-start gap-2">
             <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium text-primary shrink-0 mt-0.5">
-              {(comment.author?.full_name || "?")[0]}
+              {(authorName(comment.author_id) || "?")[0]}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-xs font-semibold text-foreground">{comment.author?.full_name || "User"}</span>
+                <span className="text-xs font-semibold text-foreground">{authorName(comment.author_id) || (isZh ? "未填姓名" : "No name")}</span>
                 <span className="text-[10px] text-muted-foreground">
                   {formatDate(comment.created_at, i18n.language, { month: "short", day: "numeric" })}
                 </span>
@@ -120,7 +128,7 @@ function CommentItem({
                   variant="ghost"
                   size="sm"
                   className={`h-7 px-2 text-[11px] ${voteState.userVote === 1 ? "text-primary" : "text-muted-foreground"}`}
-                  onClick={() => toggleVote.mutate({ entityType: "comment", entityId: comment.id, value: 1 })}
+                  onClick={() => toggleVote.mutate({ relationId: R.commentVotes, parentId: comment.id, value: 1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
                 >
                   <ThumbsUp className="h-3.5 w-3.5 mr-1" />
                   {voteState.upvotes}
@@ -129,7 +137,7 @@ function CommentItem({
                   variant="ghost"
                   size="sm"
                   className={`h-7 px-2 text-[11px] ${voteState.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`}
-                  onClick={() => toggleVote.mutate({ entityType: "comment", entityId: comment.id, value: -1 })}
+                  onClick={() => toggleVote.mutate({ relationId: R.commentVotes, parentId: comment.id, value: -1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
                 >
                   <ThumbsDown className="h-3.5 w-3.5 mr-1" />
                   {voteState.downvotes}
@@ -218,9 +226,10 @@ function CommentItem({
         <CommentItem
           key={reply.id}
           comment={reply}
-          entityType={entityType}
-          entityId={entityId}
+          relationId={relationId}
+          parentId={parentId}
           userId={userId}
+          authorName={authorName}
           deleteComment={deleteComment}
           createComment={createComment}
           updateComment={updateComment}
@@ -233,11 +242,11 @@ function CommentItem({
   );
 }
 
-export function CommentsSection({ entityType, entityId, compact, hideComposer, openPostHref }: CommentsSectionProps) {
+export function CommentsSection({ relationId, parentId, compact, hideComposer, openPostHref }: CommentsSectionProps) {
   const { user } = useAuth();
   const { i18n } = useTranslation();
   const { toast } = useToast();
-  const { data: comments, isLoading } = useComments(entityType, entityId);
+  const { data: comments, isLoading } = useComments(relationId, parentId);
   const createComment = useCreateComment();
   const deleteComment = useDeleteComment();
   const updateComment = useUpdateComment();
@@ -253,7 +262,22 @@ export function CommentsSection({ entityType, entityId, compact, hideComposer, o
     });
     return ids;
   }, [comments]);
-  const { data: voteSummary = {} } = useVoteSummary("comment", commentIds);
+  const { data: voteSummary = {} } = useVoteSummary(R.commentVotes, commentIds);
+  const authorIds = useMemo(() => {
+    const ids = new Set<string>();
+    (comments || []).forEach((c: any) => {
+      if (c.author_id) ids.add(String(c.author_id));
+      (c.replies || []).forEach((r: any) => r.author_id && ids.add(String(r.author_id)));
+    });
+    return Array.from(ids);
+  }, [comments]);
+  const { data: forumNames } = useQuery({
+    queryKey: ["forumNames", authorIds],
+    queryFn: () => fetchForumNames(authorIds),
+    enabled: authorIds.length > 0,
+  });
+  const authorName = (authorId: any) => forumNames?.get(Number(authorId)) || "";
+  const myWpId = user?.id ? String(user.id).replace(/^wp-/, "") : undefined;
 
   const handleSubmit = () => {
     if (!newComment.trim()) return;
@@ -262,7 +286,7 @@ export function CommentsSection({ entityType, entityId, compact, hideComposer, o
       return;
     }
     createComment.mutate(
-      { entityType, entityId, content: newComment.trim() },
+      { relationId, parentId, content: newComment.trim() },
       {
         onSuccess: () => {
           setNewComment("");
@@ -340,9 +364,10 @@ export function CommentsSection({ entityType, entityId, compact, hideComposer, o
                 <CommentItem
                   key={c.id}
                   comment={c}
-                  entityType={entityType}
-                  entityId={entityId}
-                  userId={user?.id}
+                  relationId={relationId}
+                  parentId={parentId}
+                  userId={myWpId}
+                  authorName={authorName}
                   deleteComment={deleteComment}
                   createComment={createComment}
                   updateComment={updateComment}

@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSite } from "@/contexts/SiteContext";
@@ -125,7 +126,7 @@ export function HomeTab({
               </div>
               {p.title && <p className="font-medium text-sm text-foreground mb-1">{p.title}</p>}
               <p className="text-sm text-muted-foreground">{p.content}</p>
-              <CommentsSection entityType="post" entityId={p.id} compact />
+              <CommentsSection relationId={R.careGroupPostComments} parentId={p.id} compact />
             </CardContent>
           </Card>
         ))}

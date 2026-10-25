@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useMemo, useState } from "react";
 import { Link } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
@@ -82,7 +83,7 @@ export default function Articles() {
 
   const filteredPosts = (posts || []).filter((p: any) => (articleScope === "mine" ? p.author_id === profile?.user_id : true));
   const postIds = useMemo(() => filteredPosts.map((p: any) => p.id), [filteredPosts]);
-  const { data: voteSummary = {} } = useVoteSummary("post", postIds);
+  const { data: voteSummary = {} } = useVoteSummary(R.communityPostVotes, postIds);
 
   const handleCreate = () => {
     if (!newTitle.trim() || !newContent.trim()) {
@@ -195,8 +196,8 @@ export default function Articles() {
                 <CardContent className="pt-0 space-y-4">
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed line-clamp-4">{post.content}</p>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <Button variant="ghost" size="sm" className={`h-8 rounded-full px-3 ${voteSummary[post.id]?.userVote === 1 ? "text-primary" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: 1 })}><ThumbsUp className="h-4 w-4 mr-1.5" />{voteSummary[post.id]?.upvotes || 0}</Button>
-                    <Button variant="ghost" size="sm" className={`h-8 rounded-full px-3 ${voteSummary[post.id]?.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: -1 })}><ThumbsDown className="h-4 w-4 mr-1.5" />{voteSummary[post.id]?.downvotes || 0}</Button>
+                    <Button variant="ghost" size="sm" className={`h-8 rounded-full px-3 ${voteSummary[post.id]?.userVote === 1 ? "text-primary" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: 1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}><ThumbsUp className="h-4 w-4 mr-1.5" />{voteSummary[post.id]?.upvotes || 0}</Button>
+                    <Button variant="ghost" size="sm" className={`h-8 rounded-full px-3 ${voteSummary[post.id]?.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`} disabled={!isAuthenticated || toggleVote.isPending} onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: -1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}><ThumbsDown className="h-4 w-4 mr-1.5" />{voteSummary[post.id]?.downvotes || 0}</Button>
                     <span className="text-xs font-medium text-muted-foreground">{isZh ? `总分 ${voteSummary[post.id]?.score || 0}` : `Score ${voteSummary[post.id]?.score || 0}`}</span>
                     <Link to={`/articles/${post.id}`} className="inline-flex h-8 items-center rounded-full border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20">{isZh ? "阅读全文" : "Read article"}</Link>
                   </div>

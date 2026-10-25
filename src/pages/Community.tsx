@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchForumNames } from "@/features/shared/wp-users";
@@ -126,7 +127,7 @@ export default function Community() {
     return true;
   });
   const postIds = useMemo(() => (filteredPosts || []).map((p: any) => p.id), [filteredPosts]);
-  const { data: voteSummary = {} } = useVoteSummary("post", postIds);
+  const { data: voteSummary = {} } = useVoteSummary(R.communityPostVotes, postIds);
 
   // Forum names are per app (CCT 151 a56) — never the shared account name.
   const authorIds = useMemo(
@@ -328,7 +329,7 @@ export default function Community() {
                     size="sm"
                     className={`h-8 rounded-full px-3 ${voteSummary[post.id]?.userVote === 1 ? "text-primary" : "text-muted-foreground"}`}
                     disabled={!isAuthenticated || toggleVote.isPending}
-                    onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: 1 })}
+                    onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: 1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
                   >
                     <ThumbsUp className="h-4 w-4 mr-1.5" />
                     {voteSummary[post.id]?.upvotes || 0}
@@ -338,7 +339,7 @@ export default function Community() {
                     size="sm"
                     className={`h-8 rounded-full px-3 ${voteSummary[post.id]?.userVote === -1 ? "text-destructive" : "text-muted-foreground"}`}
                     disabled={!isAuthenticated || toggleVote.isPending}
-                    onClick={() => toggleVote.mutate({ entityType: "post", entityId: post.id, value: -1 })}
+                    onClick={() => toggleVote.mutate({ relationId: R.communityPostVotes, parentId: post.id, value: -1 }, { onError: (err: any) => toast({ title: isZh ? "投票失败" : "Vote failed", description: err.message, variant: "destructive" }) })}
                   >
                     <ThumbsDown className="h-4 w-4 mr-1.5" />
                     {voteSummary[post.id]?.downvotes || 0}
@@ -353,7 +354,7 @@ export default function Community() {
                     <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
                     {isZh ? "进入帖子讨论" : "Open discussion"}
                   </Link>
-                  <CommentsSection entityType="community_post" entityId={post.id} compact hideComposer openPostHref={`/community/${post.id}`} />
+                  <CommentsSection relationId={R.communityPostComments} parentId={post.id} compact hideComposer openPostHref={`/community/${post.id}`} />
                 </div>
               </CardContent>
             </Card>
