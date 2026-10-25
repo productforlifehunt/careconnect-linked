@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
@@ -736,7 +737,7 @@ export default function CaregiverProfile() {
                         <span className="font-medium">{isZh ? "服务者回复：" : "Provider response:"}</span> {review.response_text}
                       </div>
                     )}
-                    <CommentsSection entityType="review" entityId={review.id} compact />
+                    <CommentsSection relationId={R.reviewComments} parentId={review.id} compact />
                   </div>
                 )) : (
                   <p className="text-sm text-muted-foreground text-center py-4">{isZh ? "暂无评价" : "No reviews yet"}</p>

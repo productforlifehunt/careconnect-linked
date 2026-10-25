@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchForumNames } from "@/features/shared/wp-users";
@@ -126,7 +127,7 @@ export default function Community() {
     return true;
   });
   const postIds = useMemo(() => (filteredPosts || []).map((p: any) => p.id), [filteredPosts]);
-  const { data: voteSummary = {} } = useVoteSummary("post", postIds);
+  const { data: voteSummary = {} } = useVoteSummary(R.communityPostVotes, postIds);
 
   // Forum names are per app (CCT 151 a56) — never the shared account name.
   const authorIds = useMemo(
@@ -353,7 +354,7 @@ export default function Community() {
                     <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
                     {isZh ? "进入帖子讨论" : "Open discussion"}
                   </Link>
-                  <CommentsSection entityType="community_post" entityId={post.id} compact hideComposer openPostHref={`/community/${post.id}`} />
+                  <CommentsSection relationId={R.communityPostComments} parentId={post.id} compact hideComposer openPostHref={`/community/${post.id}`} />
                 </div>
               </CardContent>
             </Card>

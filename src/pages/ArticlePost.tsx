@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { Link, useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
@@ -51,7 +52,7 @@ export default function ArticlePost() {
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
   const toggleVote = useToggleVote();
-  const { data: voteState = { score: 0, upvotes: 0, downvotes: 0, userVote: 0 as -1 | 0 | 1 } } = useVoteCount("post", id || null);
+  const { data: voteState = { score: 0, upvotes: 0, downvotes: 0, userVote: 0 as -1 | 0 | 1 } } = useVoteCount(R.communityPostVotes, id || null);
   const isZh = i18n.language?.startsWith("zh");
   const dateLocale = isZh ? zhCN : enUS;
   const [editing, setEditing] = useState(false);
@@ -136,7 +137,7 @@ export default function ArticlePost() {
                 <h2 className="text-lg font-semibold text-foreground">{isZh ? "评论" : "Comments"}</h2>
                 <p className="text-sm text-muted-foreground">{isZh ? "文章使用通用 comment/vote 结构。" : "Articles use the shared comment/vote structure."}</p>
               </div>
-              <CommentsSection entityType="post" entityId={post.id} />
+              <CommentsSection relationId={R.communityPostComments} parentId={post.id} />
             </div>
           </CardContent>
         </Card>

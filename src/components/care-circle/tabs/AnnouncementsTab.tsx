@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,7 @@ export function AnnouncementsTab({
               )}
               {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}
               <p className="text-sm text-muted-foreground">{a.content}</p>
-              <CommentsSection entityType="post" entityId={a.id} compact />
+              <CommentsSection relationId={R.careGroupPostComments} parentId={a.id} compact />
             </CardContent>
           </Card>
         ))}

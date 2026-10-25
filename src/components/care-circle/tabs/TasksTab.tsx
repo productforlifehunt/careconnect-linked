@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -472,7 +473,7 @@ export function TasksTab({
                     )}
                   </div>
                 </div>
-                <CommentsSection entityType="task" entityId={t.id} compact />
+                <CommentsSection relationId={R.careTaskComments} parentId={t.id} compact />
               </div>
             );
           })}

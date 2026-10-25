@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
@@ -379,7 +380,7 @@ export default function CareFacilityProfile() {
                     ))}
                   </div>
                   {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
-                  <CommentsSection entityType="review" entityId={review.id} compact />
+                  <CommentsSection relationId={R.reviewComments} parentId={review.id} compact />
                 </div>
               )) : (
                 <p className="text-sm text-muted-foreground text-center py-4">{isZh ? "还没有评价" : "No reviews yet"}</p>

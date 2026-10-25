@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useMemo, useState } from "react";
 import { Link } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
@@ -82,7 +83,7 @@ export default function Articles() {
 
   const filteredPosts = (posts || []).filter((p: any) => (articleScope === "mine" ? p.author_id === profile?.user_id : true));
   const postIds = useMemo(() => filteredPosts.map((p: any) => p.id), [filteredPosts]);
-  const { data: voteSummary = {} } = useVoteSummary("post", postIds);
+  const { data: voteSummary = {} } = useVoteSummary(R.communityPostVotes, postIds);
 
   const handleCreate = () => {
     if (!newTitle.trim() || !newContent.trim()) {

@@ -1,3 +1,4 @@
+import { R } from "@/integrations/wp-schema";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ export function WishesTab({ wishes, wishesLoading, activeGroupId, userId, isAdmi
                 <PostActions post={w} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
               </div>
               <p className="text-sm text-muted-foreground">{w.content}</p>
-              <CommentsSection entityType="post" entityId={w.id} compact />
+              <CommentsSection relationId={R.careGroupPostComments} parentId={w.id} compact />
             </CardContent>
           </Card>
         ))}
