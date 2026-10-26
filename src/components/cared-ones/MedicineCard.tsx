@@ -19,6 +19,7 @@ import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { findDoseLog, todayAtSlot } from "@/features/medicine/dose-slot";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -316,7 +317,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
 function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot }: {
   med: any;
   todayLogs: any[];
-  onLog: (med: any, status: "taken" | "skipped" | "missed") => void;
+  onLog: (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => void;
   onEdit: (med: any) => void;
   onDelete?: ((med: any) => Promise<unknown>) | undefined;
   onHistory: (med: any) => void;
@@ -324,7 +325,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
   slot?: string | undefined;
 }) {
   const isPRN = med.frequency_code === "as_needed" || med.frequency === "As needed" || med.frequency === "as_needed";
-  const logForThisDose = todayLogs.find((l: any) => l.medicine_id === med.id);
+  const logForThisDose = findDoseLog(todayLogs, med.id, isPRN ? undefined : slot);
   const isTaken = logForThisDose?.status === "taken";
   const isSkipped = logForThisDose?.status === "skipped";
   const isMissedLogged = logForThisDose?.status === "missed";
@@ -340,10 +341,12 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
     return nowMins > slotMins + 60;
   }, [slot, isDone, isPRN]);
 
+  const lowStock = typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold;
+
   return (
     <motion.div
       layout
-      className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
+      className={`min-w-0 rounded-xl border p-3 transition-all ${
         isTaken ? "bg-success/5 border-success/30" :
         isSkipped ? "bg-warning/5 border-warning/30" :
         isMissedLogged ? "bg-destructive/5 border-destructive/30" :
@@ -351,7 +354,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
         "bg-card border-border hover:border-primary/30"
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-start gap-3 min-w-0">
         <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
           isTaken ? "bg-success/15 text-success" :
           isSkipped ? "bg-warning/15 text-warning" :
@@ -360,25 +363,27 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
         }`}>
           {isTaken ? <Check className="h-4 w-4" /> : isSkipped ? <SkipForward className="h-4 w-4" /> : (isMissedLogged || isMissedAuto) ? <AlertCircle className="h-4 w-4" /> : <Pill className="h-4 w-4" />}
         </div>
-        <div className="min-w-0">
-          <p className={`font-medium text-sm truncate ${isDone ? "line-through opacity-60" : "text-foreground"}`}>
-            {med.name}
-            {isPRN && <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
-            {typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold && (
-              <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
-                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />{Z(`库存低:剩 ${med.stock_count}`, `Low: ${med.stock_count} left`)}
-              </Badge>
-            )}
-          </p>
-          <p className="text-xs text-muted-foreground">{[med.dosage, freqLabel(med)].filter(Boolean).join(" · ")}</p>
+        <div className="min-w-0 flex-1">
+          <p className={`font-medium text-sm break-words ${isDone ? "line-through opacity-60" : "text-foreground"}`}>{med.name}</p>
+          {(isPRN || lowStock) && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {isPRN && <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
+              {lowStock && (
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
+                  <AlertCircle className="h-2.5 w-2.5 mr-0.5" />{Z(`库存低:剩 ${med.stock_count}`, `Low: ${med.stock_count} left`)}
+                </Badge>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-0.5 break-words">{[med.dosage, freqLabel(med)].filter(Boolean).join(" · ")}</p>
           {logForThisDose?.note && (
-            <p className="text-xs text-muted-foreground/80 mt-0.5 italic flex items-center gap-1">
-              <StickyNote className="h-2.5 w-2.5" />{logForThisDose.note}
+            <p className="text-xs text-muted-foreground/80 mt-0.5 italic flex items-center gap-1 break-words">
+              <StickyNote className="h-2.5 w-2.5 shrink-0" />{logForThisDose.note}
             </p>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0 ml-2">
+      <div className="mt-2 flex flex-wrap items-center gap-1 pl-12">
         {isDone ? (
           <Badge variant="outline" className={`text-xs ${
             isTaken ? "border-success/40 text-success bg-success/10" :
@@ -389,30 +394,29 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
             {logForThisDose?.created_at && <span className="ml-1 opacity-70">{formatTime(logForThisDose.created_at)}</span>}
           </Badge>
         ) : isPRN ? (
-          <>
-            <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
-              onClick={() => onLog(med, "taken")}><Plus className="h-3 w-3 mr-1" /> {Z("立即记录","Log dose now")}</Button>
-          </>
+          <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
+            onClick={() => onLog(med, "taken", slot)}><Plus className="h-3 w-3 mr-1" /> {Z("立即记录","Log dose now")}</Button>
         ) : (
           <>
             <Button size="sm" className="h-8 text-xs bg-success/15 text-success hover:bg-success/25 border-0" variant="outline"
-              onClick={() => onLog(med, "taken")}><Check className="h-3 w-3 mr-1" /> {Z("已服用","Taken")}</Button>
+              onClick={() => onLog(med, "taken", slot)}><Check className="h-3 w-3 mr-1" /> {Z("已服用","Taken")}</Button>
             <Button size="sm" variant="ghost" className="h-8 text-xs text-warning hover:bg-warning/10"
-              onClick={() => onLog(med, "skipped")}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过","Skip")}</Button>
+              onClick={() => onLog(med, "skipped", slot)}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过","Skip")}</Button>
             {isMissedAuto && (
               <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:bg-destructive/10"
-                onClick={() => onLog(med, "missed")}><AlertCircle className="h-3 w-3 mr-1" /> {Z("漏服","Missed")}</Button>
+                onClick={() => onLog(med, "missed", slot)}><AlertCircle className="h-3 w-3 mr-1" /> {Z("漏服","Missed")}</Button>
             )}
           </>
         )}
-        <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
-          <History className="h-3.5 w-3.5" />
-        </Button>
-        <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
-          <Edit2 className="h-3.5 w-3.5" />
-        </Button>
-        {onDelete && <RowActions onDelete={() => onDelete(med)} />}
-
+        <div className="ml-auto flex items-center gap-0.5">
+          <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
+            <History className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          {onDelete && <RowActions onDelete={() => onDelete(med)} />}
+        </div>
       </div>
     </motion.div>
   );
@@ -513,16 +517,16 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const updateMed = useUpdateMedicine();
 
   // Dialogs
-  const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed" }>({ open: false, med: null, action: "taken" });
+  const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed"; slot?: string | undefined }>({ open: false, med: null, action: "taken" });
   const [historyMed, setHistoryMed] = useState<any>(null);
   const [editMed, setEditMed] = useState<any>(null);
 
-  const handleLog = (med: any, status: "taken" | "skipped" | "missed") => {
-    setLogDialog({ open: true, med, action: status });
+  const handleLog = (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => {
+    setLogDialog({ open: true, med, action: status, slot });
   };
 
   const confirmLog = (note: string) => {
-    const { med, action } = logDialog;
+    const { med, action, slot } = logDialog;
     logMed.mutate(
       {
         medicine_id: med.id,
@@ -533,6 +537,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         dose_quantity: med.dose_quantity ?? null,
         scheduled_dose_quantity: med.dose_quantity ?? null,
         dose_unit: med.dose_unit || null,
+        // a88 Scheduled date = the dose slot this log answers
+        scheduled_date: slot ? todayAtSlot(slot) : null,
         schedule_type: med.schedule_type || null,
         concept_identifier: med.medication_concept_identifier || null,
         concept_display_text: med.name || null,
@@ -580,7 +586,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   // Adherence summary
   const adherenceSummary = useMemo(() => {
     if (!meds || !todayLogs) return null;
-    const totalSlots = (meds as any[]).reduce((sum, m) => sum + Math.max((m.time_slot || []).length, 1), 0);
+    const totalSlots = (meds as any[]).reduce((sum, m) => sum + Math.max(new Set((m.time_slot || []).map((s: string) => String(s).substring(0, 5))).size, 1), 0);
     const logged = (todayLogs as any[]).length;
     const taken = (todayLogs as any[]).filter(l => l.status === "taken").length;
     const skipped = (todayLogs as any[]).filter(l => l.status === "skipped").length;
@@ -590,13 +596,18 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   }, [meds, todayLogs]);
 
   // Timeline grouping
+  // Keyed by the hour row ("08:00"); each entry keeps its exact slot ("08:30").
+  // Duplicate slots of one medicine are one dose, shown once.
   const timelineMeds = useMemo(() => {
     if (!meds) return {};
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, { med: any; slot: string }[]> = {};
     (meds as any[]).forEach((med) => {
-      const slots = med.time_slot || [];
-      if (slots.length === 0) { if (!grouped["08:00"]) grouped["08:00"] = []; grouped["08:00"].push(med); }
-      else { slots.forEach((slot: string) => { const t = slot.includes(":") ? slot.substring(0, 5) : "08:00"; if (!grouped[t]) grouped[t] = []; grouped[t].push(med); }); }
+      const raw: string[] = (med.time_slot || []).length ? med.time_slot : ["08:00"];
+      const slots = Array.from(new Set(raw.map((s) => (String(s).includes(":") ? String(s).substring(0, 5) : "08:00"))));
+      slots.forEach((slot) => {
+        const hourKey = `${slot.substring(0, 2)}:00`;
+        (grouped[hourKey] ||= []).push({ med, slot });
+      });
     });
     return grouped;
   }, [meds]);
@@ -605,12 +616,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     if (!user?.general_user_role?.includes("cared one") || !meds || !todayLogs) return;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const loggedMedicineIds = new Set((todayLogs as any[]).map((log) => String(log.medicine_id)));
     const due = (meds as any[]).flatMap((med) => {
       const slots: string[] = med.time_slot?.length ? med.time_slot : ["08:00"];
-      return slots.map((slot) => ({ med, slot }));
+      return slots.map((slot) => ({ med, slot: String(slot).substring(0, 5) }));
     }).find(({ med, slot }) => {
-      if (loggedMedicineIds.has(String(med.id)) || med.is_active === false) return false;
+      if (findDoseLog(todayLogs as any[], med.id, slot) || med.is_active === false) return false;
       const [hour = "0", minute = "0"] = String(slot).split(":");
       return nowMinutes >= Number(hour) * 60 + Number(minute);
     });
@@ -637,9 +647,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">{Z("用药追踪","Medicine Tracker")}</h2>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 className="min-w-0 text-lg font-bold text-foreground">{Z("用药追踪","Medicine Tracker")}</h2>
+        <div className="flex shrink-0 gap-2">
           <div className="flex border rounded-lg overflow-hidden">
             <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("时间线","Timeline")}</button>
             <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("列表","List")}</button>
@@ -777,16 +787,16 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             if (!medsAtTime && !isCurrentHour) return null; // Hide empty non-current hours for cleaner view
             return (
               <div key={hour} className={`flex border-b border-border/30 ${isCurrentHour ? "bg-primary/5" : ""}`}>
-                <div className={`w-20 shrink-0 py-3 px-2 text-xs font-medium ${isCurrentHour ? "text-primary font-semibold" : isPast ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
+                <div className={`w-14 sm:w-20 shrink-0 py-3 px-1 sm:px-2 text-xs font-medium ${isCurrentHour ? "text-primary font-semibold" : isPast ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
                   {isCurrentHour && <div className="w-2 h-2 rounded-full bg-primary inline-block mr-1 animate-pulse" />}
                   {formatHour(hour)}
                 </div>
-                <div className="flex-1 py-2 px-2">
+                <div className="min-w-0 flex-1 py-2 pr-1 sm:px-2">
                   {medsAtTime ? (
                     <div className="space-y-2">
-                      {medsAtTime.map((med: any) => (
+                      {medsAtTime.map(({ med, slot }) => (
                         <MedDoseCard
-                          key={med.id}
+                          key={`${med.id}-${slot}`}
                           med={med}
                           todayLogs={todayLogs || []}
                           onLog={handleLog}
@@ -794,7 +804,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                           onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
                           onHistory={setHistoryMed}
                           compact
-                          slot={hour}
+                          slot={slot}
                         />
                       ))}
                     </div>
