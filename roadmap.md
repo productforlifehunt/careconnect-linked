@@ -258,5 +258,5 @@
 
 ## Current request: Medicine schedule = dictionary calendar fields (one by one)
 - [x] Step 1: mobile medicine card no longer truncated; each dose slot checks in separately (CCT161 a88 = slot time, REL191 + REL173). Tested live on 393px with test1.
-- [ ] Step 2: write/read schedule only via CCT187 a57/a58/a66/a68/a69 (RFC 5545), stop using a90 for times/frequency; a70 untouched. Waits for user go-ahead (user asked to change one by one).
+- [x] Step 2: medicine + health check-in schedules read/write only a57/a58/a66/a68/a69; a90 no longer used; fields without a dictionary column removed from forms. Live create (3x daily) → edit (2x) → delete tested; 325 tests pass.
 - [ ] Test dose log #235 (CCT161) left from live test; no delete control in app.

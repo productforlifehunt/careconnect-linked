@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-react";
 import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/hooks/use-care-data";
 import { useMemo } from "react";
+import { findDoseLog } from "@/features/medicine/dose-slot";
 import { useTranslation } from "react-i18next";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { useNavigate } from "@/lib/router-compat";
@@ -46,9 +47,13 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
 
     // Add medicine time slots
     (medicines || []).forEach((med: any) => {
-      const medLog = (todayLogs || []).find((l: any) => l.medicine_id === med.id);
-      const medStatus = medLog?.status === "taken" ? "done" : medLog?.status === "skipped" ? "missed" : "pending";
-      const slots = med.time_slot || [];
+      const statusAt = (slot?: string) => {
+        const medLog = findDoseLog(todayLogs || [], med.id, slot);
+        return medLog?.status === "taken" ? "done" : medLog?.status === "skipped" ? "missed" : "pending";
+      };
+      const medStatus = statusAt();
+      const slots: string[] = med.frequency_code === "as_needed" ? [] : (med.today_slots || []);
+      if (med.frequency_code !== "as_needed" && slots.length === 0) return;
       if (slots.length === 0) {
         items.push({
           time: isZh ? "任意时间" : "Any time",
@@ -69,7 +74,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
             sortTime: hour * 100 + minute,
             label: `${med.name} ${med.dosage ? `(${med.dosage})` : ""}`,
             type: "medicine",
-            status: medStatus,
+            status: statusAt(slot),
             icon: Pill,
           });
         });

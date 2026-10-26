@@ -1,20 +1,16 @@
 /**
  * Calendar-backed schedules — CCT 187 "User's calendar event".
- *
- * The data bible (2026-09-04) removed CCT 205 (medicine schedule) and CCT 207
- * (checkin schedule). Both now live in the universal calendar event table:
  *   a60 event type  b55 = Medicine schedule, b56 = Health checkin
- *   a66 RRULE       RFC 5545 recurrence (frequency + times of day)
- *   a73 Reminders   RFC 5545 VALARM TRIGGER (the "remind X minutes before")
- *   a90 Custom data our own JSON blob column, for values the calendar has no
- *                   dedicated Apple/iCal column for (exact time slots, the UI
- *                   frequency code, instructions, side effects, missing window)
+ *   a57/a58 start/end, a66 RRULE, a68 EXDATES, a69 RDATES (RFC 5545)
+ *   a73 Reminders   RFC 5545 VALARM TRIGGER
+ * a90 Custom data is not used: every schedule value has a dictionary column.
  * Ownership: Relation 190 (Users → 187) — for care schedules the parent is the
  * cared one, not the author.
  */
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead } from "@/features/shared/rel-batch";
+import { FREQUENCY_CODES, type FrequencyCode } from "./recurrence";
 
 export const CAL = T.calendarEvent;
 export const FC = CAL.f;
@@ -51,12 +47,11 @@ export async function linkRel(relId: number, parentId: number, childId: number):
   });
 }
 
-// ─── Frequency ⇄ RRULE ───────────────────────────────────────
-export const FREQUENCY_CODES = [
-  "once_daily", "twice_daily", "three_daily", "four_daily",
-  "every_other_day", "weekly", "as_needed",
-] as const;
-export type FrequencyCode = (typeof FREQUENCY_CODES)[number];
+// ─── Frequency ⇄ RRULE (RFC 5545 columns only, see recurrence.ts) ───
+export {
+  FREQUENCY_CODES, type FrequencyCode, buildRRule, slotsFromRRule, frequencyFromRow,
+  frequencyForSlots, normalizeSlots, occurrencesOn, localDay, parseRRule, dateOf,
+} from "./recurrence";
 
 export const FREQ_EN: Record<FrequencyCode, string> = {
   once_daily: "Once daily",
@@ -76,20 +71,7 @@ export function toFrequencyCode(value?: string | undefined): FrequencyCode {
   return hit || "once_daily";
 }
 
-/** RFC 5545 RRULE for a frequency code + the times of day it runs at. */
-export function buildRRule(freq: FrequencyCode, slots: string[]): string {
-  if (freq === "as_needed") return "";
-  const hours = slots.map((s) => Number(String(s).slice(0, 2))).filter((n) => Number.isFinite(n));
-  const minutes = slots.map((s) => Number(String(s).slice(3, 5))).filter((n) => Number.isFinite(n));
-  const parts: string[] = [];
-  if (freq === "weekly") parts.push("FREQ=WEEKLY", "INTERVAL=1");
-  else parts.push("FREQ=DAILY", `INTERVAL=${freq === "every_other_day" ? 2 : 1}`);
-  if (hours.length) parts.push(`BYHOUR=${[...new Set(hours)].join(",")}`);
-  if (minutes.length) parts.push(`BYMINUTE=${[...new Set(minutes)].join(",")}`);
-  return parts.join(";");
-}
-
-/** Reminder minutes-before ⇄ VALARM TRIGGER. */
+/** Reminder minutes-before ⇄ VALARM TRIGGER (a73). */
 export function buildReminders(minutesBefore?: number | null | undefined): string {
   const m = Number(minutesBefore);
   if (!Number.isFinite(m) || m <= 0) return "";
@@ -102,32 +84,9 @@ export function readReminderMinutes(raw: any): number | null {
   return mins > 0 ? mins : null;
 }
 
-// ─── Time slots ──────────────────────────────────────────────
-export function decodeSlots(raw: any): string[] {
-  if (Array.isArray(raw)) return raw.map((s) => String(s).slice(0, 5)).filter(Boolean);
-  return String(raw ?? "")
-    .split(/[\n,]/)
-    .map((s) => s.trim())
-    .filter((s) => /^\d{1,2}:\d{2}$/.test(s))
-    .map((s) => (s.length === 4 ? `0${s}` : s));
-}
-
-// ─── a90 Custom data (our own JSON column) ───────────────────
-export type CustomData = Record<string, any>;
-export function readCustom(raw: any): CustomData {
-  if (!raw) return {};
-  try {
-    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch { return {}; }
-}
-export function writeCustom(data: CustomData): string {
-  const clean: CustomData = {};
-  Object.entries(data).forEach(([k, v]) => {
-    if (v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0)) return;
-    clean[k] = v;
-  });
-  return Object.keys(clean).length ? JSON.stringify(clean) : "";
+/** a57 (and a58, a dose being an instant) for a start date and the first time. */
+export function startAtFor(startDate: string, slots: readonly string[]): string {
+  return slots[0] ? `${startDate} ${slots[0]}:00` : `${startDate} 00:00:00`;
 }
 
 // ─── Reads ───────────────────────────────────────────────────
@@ -163,7 +122,7 @@ export async function deleteEvent(id: string): Promise<void> {
   await wordpressCCTFetch(CAL.slug, { id, method: "DELETE" });
 }
 
-/** Read one event so a partial update can merge into the a90 JSON blob. */
+/** Read one event so a partial update keeps its existing recurrence. */
 export async function readEvent(id: string): Promise<any> {
   return wordpressCCTFetch<any>(CAL.slug, { id });
 }
