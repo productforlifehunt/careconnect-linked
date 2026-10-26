@@ -340,10 +340,12 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
     return nowMins > slotMins + 60;
   }, [slot, isDone, isPRN]);
 
+  const lowStock = typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold;
+
   return (
     <motion.div
       layout
-      className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
+      className={`min-w-0 rounded-xl border p-3 transition-all ${
         isTaken ? "bg-success/5 border-success/30" :
         isSkipped ? "bg-warning/5 border-warning/30" :
         isMissedLogged ? "bg-destructive/5 border-destructive/30" :
@@ -351,7 +353,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
         "bg-card border-border hover:border-primary/30"
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-start gap-3 min-w-0">
         <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
           isTaken ? "bg-success/15 text-success" :
           isSkipped ? "bg-warning/15 text-warning" :
@@ -360,25 +362,27 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
         }`}>
           {isTaken ? <Check className="h-4 w-4" /> : isSkipped ? <SkipForward className="h-4 w-4" /> : (isMissedLogged || isMissedAuto) ? <AlertCircle className="h-4 w-4" /> : <Pill className="h-4 w-4" />}
         </div>
-        <div className="min-w-0">
-          <p className={`font-medium text-sm truncate ${isDone ? "line-through opacity-60" : "text-foreground"}`}>
-            {med.name}
-            {isPRN && <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
-            {typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold && (
-              <Badge variant="outline" className="ml-2 text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
-                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />{Z(`库存低:剩 ${med.stock_count}`, `Low: ${med.stock_count} left`)}
-              </Badge>
-            )}
-          </p>
-          <p className="text-xs text-muted-foreground">{[med.dosage, freqLabel(med)].filter(Boolean).join(" · ")}</p>
+        <div className="min-w-0 flex-1">
+          <p className={`font-medium text-sm break-words ${isDone ? "line-through opacity-60" : "text-foreground"}`}>{med.name}</p>
+          {(isPRN || lowStock) && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {isPRN && <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-primary/40 text-primary">PRN</Badge>}
+              {lowStock && (
+                <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-destructive/40 text-destructive bg-destructive/5">
+                  <AlertCircle className="h-2.5 w-2.5 mr-0.5" />{Z(`库存低:剩 ${med.stock_count}`, `Low: ${med.stock_count} left`)}
+                </Badge>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-0.5 break-words">{[med.dosage, freqLabel(med)].filter(Boolean).join(" · ")}</p>
           {logForThisDose?.note && (
-            <p className="text-xs text-muted-foreground/80 mt-0.5 italic flex items-center gap-1">
-              <StickyNote className="h-2.5 w-2.5" />{logForThisDose.note}
+            <p className="text-xs text-muted-foreground/80 mt-0.5 italic flex items-center gap-1 break-words">
+              <StickyNote className="h-2.5 w-2.5 shrink-0" />{logForThisDose.note}
             </p>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0 ml-2">
+      <div className="mt-2 flex flex-wrap items-center gap-1 pl-12">
         {isDone ? (
           <Badge variant="outline" className={`text-xs ${
             isTaken ? "border-success/40 text-success bg-success/10" :
@@ -389,30 +393,29 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
             {logForThisDose?.created_at && <span className="ml-1 opacity-70">{formatTime(logForThisDose.created_at)}</span>}
           </Badge>
         ) : isPRN ? (
-          <>
-            <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
-              onClick={() => onLog(med, "taken")}><Plus className="h-3 w-3 mr-1" /> {Z("立即记录","Log dose now")}</Button>
-          </>
+          <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
+            onClick={() => onLog(med, "taken", slot)}><Plus className="h-3 w-3 mr-1" /> {Z("立即记录","Log dose now")}</Button>
         ) : (
           <>
             <Button size="sm" className="h-8 text-xs bg-success/15 text-success hover:bg-success/25 border-0" variant="outline"
-              onClick={() => onLog(med, "taken")}><Check className="h-3 w-3 mr-1" /> {Z("已服用","Taken")}</Button>
+              onClick={() => onLog(med, "taken", slot)}><Check className="h-3 w-3 mr-1" /> {Z("已服用","Taken")}</Button>
             <Button size="sm" variant="ghost" className="h-8 text-xs text-warning hover:bg-warning/10"
-              onClick={() => onLog(med, "skipped")}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过","Skip")}</Button>
+              onClick={() => onLog(med, "skipped", slot)}><SkipForward className="h-3 w-3 mr-1" /> {Z("跳过","Skip")}</Button>
             {isMissedAuto && (
               <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:bg-destructive/10"
-                onClick={() => onLog(med, "missed")}><AlertCircle className="h-3 w-3 mr-1" /> {Z("漏服","Missed")}</Button>
+                onClick={() => onLog(med, "missed", slot)}><AlertCircle className="h-3 w-3 mr-1" /> {Z("漏服","Missed")}</Button>
             )}
           </>
         )}
-        <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
-          <History className="h-3.5 w-3.5" />
-        </Button>
-        <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
-          <Edit2 className="h-3.5 w-3.5" />
-        </Button>
-        {onDelete && <RowActions onDelete={() => onDelete(med)} />}
-
+        <div className="ml-auto flex items-center gap-0.5">
+          <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
+            <History className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          {onDelete && <RowActions onDelete={() => onDelete(med)} />}
+        </div>
       </div>
     </motion.div>
   );
