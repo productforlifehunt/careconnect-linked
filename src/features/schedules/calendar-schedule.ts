@@ -10,6 +10,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead } from "@/features/shared/rel-batch";
+import { FREQUENCY_CODES, type FrequencyCode } from "./recurrence";
 
 export const CAL = T.calendarEvent;
 export const FC = CAL.f;
@@ -47,7 +48,6 @@ export async function linkRel(relId: number, parentId: number, childId: number):
 }
 
 // ─── Frequency ⇄ RRULE (RFC 5545 columns only, see recurrence.ts) ───
-import { FREQUENCY_CODES, type FrequencyCode } from "./recurrence";
 export {
   FREQUENCY_CODES, type FrequencyCode, buildRRule, slotsFromRRule, frequencyFromRow,
   frequencyForSlots, normalizeSlots, occurrencesOn, localDay, parseRRule, dateOf,
