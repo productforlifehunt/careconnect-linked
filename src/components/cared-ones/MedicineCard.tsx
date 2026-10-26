@@ -19,6 +19,7 @@ import { rxnormSuggest, rxnormLookup, type RxSuggestion } from "@/lib/rxnorm";
 import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/lib/locale";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { findDoseLog, todayAtSlot } from "@/features/medicine/dose-slot";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -316,7 +317,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
 function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot }: {
   med: any;
   todayLogs: any[];
-  onLog: (med: any, status: "taken" | "skipped" | "missed") => void;
+  onLog: (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => void;
   onEdit: (med: any) => void;
   onDelete?: ((med: any) => Promise<unknown>) | undefined;
   onHistory: (med: any) => void;
@@ -324,7 +325,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
   slot?: string | undefined;
 }) {
   const isPRN = med.frequency_code === "as_needed" || med.frequency === "As needed" || med.frequency === "as_needed";
-  const logForThisDose = todayLogs.find((l: any) => l.medicine_id === med.id);
+  const logForThisDose = findDoseLog(todayLogs, med.id, isPRN ? undefined : slot);
   const isTaken = logForThisDose?.status === "taken";
   const isSkipped = logForThisDose?.status === "skipped";
   const isMissedLogged = logForThisDose?.status === "missed";
