@@ -8,7 +8,7 @@ import {
   FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
   LOG_TYPE_AI as CAL_LOG_TYPE_AI, LOG_TYPE_HUMAN as CAL_LOG_TYPE_HUMAN,
   buildRRule, buildReminders, readReminderMinutes, toFrequencyCode, FREQ_EN,
-  decodeSlots, readCustom, writeCustom, fetchEventsOfType,
+  slotsFromRRule, frequencyFromRow, frequencyForSlots, normalizeSlots, occurrencesOn, localDay, dateOf, parseRRule, startAtFor, fetchEventsOfType,
   createEvent, updateEvent, deleteEvent, readEvent,
 } from "@/features/schedules/calendar-schedule";
 
@@ -269,15 +269,15 @@ export async function createCaredOnesCardWordPress(card: { name: string; descrip
 }
 
 // ─── Check-in schedule — CCT 187 calendar event, a60 = b56 ────
-// Owned through Relation 190 (parent = cared one). Recurrence lives in the
-// RFC 5545 columns (a66 RRULE, a73 VALARM); the exact time slots, UI frequency
-// code, instructions and missing window live in the a90 Custom data JSON column.
+// Owned through Relation 190 (parent = cared one). Recurrence lives only in the
+// RFC 5545 columns (a57/a58, a66 RRULE, a68 EXDATES, a69 RDATES, a73 VALARM);
+// a90 Custom data is never read or written.
 export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const items = await fetchEventsOfType(caredOneId, EVENT_TYPE.CHECKIN);
     return items.map((i: any) => {
-      const custom = readCustom(i[FC.CUSTOM_DATA]);
-      const freqCode = toFrequencyCode(custom["frequency_code"]);
+      const slots = slotsFromRRule(i[FC.RRULE], i[FC.START_AT]);
+      const freqCode = frequencyFromRow(i[FC.RRULE], false, slots);
       return {
         id: String(i.id || i._ID),
         user_id: caredOneId,
@@ -285,14 +285,12 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
         detail: i[FC.DESCRIPTION] || null,
         frequency: FREQ_EN[freqCode],
         frequency_code: freqCode,
-        time_slot: decodeSlots(custom["time_slot"]),
-        instructions: custom["instructions"] || null,
-        start_date: i[FC.START_AT] ? String(i[FC.START_AT]).slice(0, 10) : null,
-        note: custom["note"] || null,
+        time_slot: slots,
+        today_slots: occurrencesOn(localDay(), { startAt: i[FC.START_AT], rrule: i[FC.RRULE], exdates: i[FC.EXDATES], rdates: i[FC.RDATES] }),
+        start_date: dateOf(i[FC.START_AT]),
         is_active: String(i[FC.STATUS] || STATUS_CONFIRMED) !== STATUS_CANCELLED,
         reminder_time_before: readReminderMinutes(i[FC.REMINDERS]),
         time_to_send_to_caregiver: numOrNull(i[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
-        time_to_be_considered_missing: numOrNull(custom["time_to_be_considered_missing"]),
         check_in_type: decodeCheckinLogType(i[FC.CHECKIN_LOG_TYPE]),
         checked_by_ai: String(i[FC.CHECKIN_LOG_TYPE] || "") === CAL_LOG_TYPE_AI,
         created_at: i.cct_created || i.created_at,
@@ -337,28 +335,22 @@ export function setCheckinReceiversWordPress(checkinId: string, userIds: Array<s
   return setCheckinUserRelation(R.checkinNotificationReceivers, checkinId, userIds);
 }
 
-export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; time_slot?: string[] | undefined; instructions?: string | undefined; start_date?: string | undefined; note?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; time_to_be_considered_missing?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined; receiver_ids?: Array<string | number> | undefined }): Promise<void> {
-  const freq = toFrequencyCode(checkin.frequency);
-  const slots = decodeSlots(checkin.time_slot || ["08:00"]);
-  const startDate = checkin.start_date || new Date().toISOString().slice(0, 10);
+export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; time_slot?: string[] | undefined; start_date?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined; receiver_ids?: Array<string | number> | undefined }): Promise<void> {
+  const slots = normalizeSlots(checkin.time_slot || ["08:00"]);
+  const freq = frequencyForSlots(toFrequencyCode(checkin.frequency), slots);
+  const startAt = startAtFor(checkin.start_date || localDay(), slots);
   const newId = await createEvent({
     [FC.TITLE]: checkin.name,
     [FC.DESCRIPTION]: checkin.detail || "",
     [FC.CUSTOM_EVENT_TYPE]: EVENT_TYPE.CHECKIN,
     [FC.APP]: APP_CHALLENGED,
-    [FC.START_AT]: slots[0] ? `${startDate} ${slots[0]}:00` : startDate,
+    [FC.START_AT]: startAt,
+    [FC.END_AT]: startAt,
     [FC.STATUS]: STATUS_CONFIRMED,
     [FC.RRULE]: buildRRule(freq, slots),
     [FC.REMINDERS]: buildReminders(checkin.reminder_time_before),
     [FC.CHECKIN_LOG_TYPE]: encodeCheckinLogType(checkin.check_in_type),
     [FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]: checkin.time_to_send_to_caregiver != null ? String(checkin.time_to_send_to_caregiver) : "",
-    [FC.CUSTOM_DATA]: writeCustom({
-      frequency_code: freq,
-      time_slot: slots,
-      instructions: checkin.instructions || "",
-      note: checkin.note || "",
-      time_to_be_considered_missing: checkin.time_to_be_considered_missing ?? "",
-    }),
   }, checkin.user_id);
   if (checkin.assignee_ids?.length) await setCheckinAssigneesWordPress(String(newId), checkin.assignee_ids);
   if (checkin.receiver_ids?.length) await setCheckinReceiversWordPress(String(newId), checkin.receiver_ids);
@@ -379,28 +371,17 @@ export async function updateCheckinWordPress(id: string, updates: Record<string,
     body[FC.CHECKIN_LOG_TYPE] = updates["checked_by_ai"] ? CAL_LOG_TYPE_AI : CAL_LOG_TYPE_HUMAN;
   }
 
-  const customTouched = ["frequency", "time_slot", "instructions", "note", "time_to_be_considered_missing"]
-    .some((k) => updates[k] !== undefined);
-  if (customTouched || updates["start_date"] !== undefined) {
+  if (["frequency", "time_slot", "start_date"].some((k) => updates[k] !== undefined)) {
     const row = await readEvent(id);
-    const custom = readCustom(row?.[FC.CUSTOM_DATA]);
-    const freq = updates["frequency"] !== undefined ? toFrequencyCode(updates["frequency"]) : toFrequencyCode(custom["frequency_code"]);
-    const slots = updates["time_slot"] !== undefined ? decodeSlots(updates["time_slot"]) : decodeSlots(custom["time_slot"]);
-    const startDate = updates["start_date"] !== undefined ? (updates["start_date"] || "") : String(row?.[FC.START_AT] || "").slice(0, 10);
-    if (updates["start_date"] !== undefined || updates["time_slot"] !== undefined) {
-      body[FC.START_AT] = startDate && slots[0] ? `${startDate} ${slots[0]}:00` : startDate;
-    }
-    if (updates["frequency"] !== undefined || updates["time_slot"] !== undefined) body[FC.RRULE] = buildRRule(freq, slots);
-    body[FC.CUSTOM_DATA] = writeCustom({
-      ...custom,
-      frequency_code: freq,
-      time_slot: slots,
-      instructions: updates["instructions"] !== undefined ? (updates["instructions"] || "") : (custom["instructions"] || ""),
-      note: updates["note"] !== undefined ? (updates["note"] || "") : (custom["note"] || ""),
-      time_to_be_considered_missing: updates["time_to_be_considered_missing"] !== undefined
-        ? (updates["time_to_be_considered_missing"] ?? "")
-        : (custom["time_to_be_considered_missing"] ?? ""),
-    });
+    const curSlots = slotsFromRRule(row?.[FC.RRULE], row?.[FC.START_AT]);
+    const slots = normalizeSlots(updates["time_slot"] !== undefined ? updates["time_slot"] : curSlots);
+    const freq = frequencyForSlots(
+      updates["frequency"] !== undefined ? toFrequencyCode(updates["frequency"]) : frequencyFromRow(row?.[FC.RRULE], false, curSlots),
+      slots);
+    const startAt = startAtFor(updates["start_date"] || dateOf(row?.[FC.START_AT]) || localDay(), slots);
+    body[FC.START_AT] = startAt;
+    body[FC.END_AT] = startAt;
+    body[FC.RRULE] = buildRRule(freq, slots, parseRRule(row?.[FC.RRULE])?.until ?? null);
   }
 
   await updateEvent(id, body);
