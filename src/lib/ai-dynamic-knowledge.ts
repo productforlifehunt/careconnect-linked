@@ -1213,6 +1213,8 @@ export interface WriteTarget {
   label?: string | undefined;
   /** Extra plain-language detail, e.g. "Aricept · 5mg · 08:00". */
   detail?: string | undefined;
+  /** Dose time "HH:MM" this medicine reminder answers (stored in CCT161 a88). */
+  slot?: string | undefined;
 }
 
 export interface WriteSkill {
@@ -1267,11 +1269,13 @@ export function resolveWriteSkill(
           : Z(isChinese, `${label} 已跳过`, `${label} skipped`),
       write: async ({ status, summary }) => {
         const { logMedicineWordPress } = await import("@/features/medicine/source.medicine");
+        const { todayAtSlot } = await import("@/features/medicine/dose-slot");
         await logMedicineWordPress({
           medicine_id: String(target.recordId),
           status: asStatus(statuses, status) === "taken" ? "taken" : "skipped",
           note: summary || undefined,
           user_id: target.caredOneId,
+          scheduled_date: target.slot ? todayAtSlot(target.slot) : null,
         } as any);
       },
       invalidateKeys: [["medicineLogs"], ["todayMedicineLogs"]],

@@ -656,6 +656,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         recordId: String(due.med.id),
         label: due.med.name,
         detail: dose,
+        slot: due.slot,
       },
     });
   }, [meds, todayLogs, caredOneId, user?.general_user_role]);
