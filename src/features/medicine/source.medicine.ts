@@ -24,7 +24,8 @@ import {
   LOG_TYPE_AI, LOG_TYPE_HUMAN, CAL,
   numId, wpStr, numOrNull, linkRel,
   toFrequencyCode, FREQ_EN, buildRRule, buildReminders, readReminderMinutes,
-  decodeSlots, readCustom, writeCustom,
+  slotsFromRRule, frequencyFromRow, frequencyForSlots, normalizeSlots, occurrencesOn,
+  localDay, parseRRule, dateOf, startAtFor,
   fetchEventsOfType, createEvent, updateEvent, deleteEvent, readEvent,
 } from "@/features/schedules/calendar-schedule";
 
@@ -77,11 +78,17 @@ export function joinDosage(quantity: number | null, unit: string): string {
 }
 
 // ─── Schedule reads ──────────────────────────────────────────
+const AS_NEEDED = OC["MEDICATION_SCHEDULE_TYPE"]!["ASNEEDED"]!;
+const SCHEDULED = OC["MEDICATION_SCHEDULE_TYPE"]!["SCHEDULE"]!;
+
 function mapSchedule(row: any, caredOneId: string): any {
-  const custom = readCustom(row[FC.CUSTOM_DATA]);
   const quantity = numOrNull(row[FC.MEDICATION_DOSE_QUANTITY]);
   const unit = row[FC.MEDICATION_DOSE_UNIT] || "";
-  const freqCode = toFrequencyCode(custom["frequency_code"]);
+  const asNeeded = String(row[FC.MEDICATION_SCHEDULE_TYPE] || "") === AS_NEEDED;
+  // Times of day and frequency come only from a57 + a66 (RFC 5545).
+  const slots = asNeeded ? [] : slotsFromRRule(row[FC.RRULE], row[FC.START_AT]);
+  const freqCode = frequencyFromRow(row[FC.RRULE], asNeeded, slots);
+  const calendar = { startAt: row[FC.START_AT], rrule: row[FC.RRULE], exdates: row[FC.EXDATES], rdates: row[FC.RDATES] };
   return {
     id: String(row.id || row._ID),
     user_id: caredOneId,
@@ -89,22 +96,23 @@ function mapSchedule(row: any, caredOneId: string): any {
     dosage: joinDosage(quantity, unit),
     dose_quantity: quantity,
     dose_unit: unit,
+    medication_concept_identifier: row[FC.MEDICATION_CONCEPT_IDENTIFIER] || null,
+    schedule_type: asNeeded ? AS_NEEDED : SCHEDULED,
     frequency_code: freqCode,
     frequency: FREQ_EN[freqCode],
-    time_slot: decodeSlots(custom["time_slot"]),
-    instructions: custom["instructions"] || null,
+    time_slot: slots,
+    /** Today's doses after a68 EXDATES / a69 RDATES. */
+    today_slots: asNeeded ? [] : occurrencesOn(localDay(), calendar),
     note: row[FC.DESCRIPTION] || null,
-    start_date: row[FC.START_AT] ? String(row[FC.START_AT]).slice(0, 10) : null,
-    end_date: row[FC.END_AT] ? String(row[FC.END_AT]).slice(0, 10) : null,
+    start_date: dateOf(row[FC.START_AT]),
+    end_date: parseRRule(row[FC.RRULE])?.until ?? null,
     is_active: String(row[FC.STATUS] || STATUS_CONFIRMED) !== STATUS_CANCELLED,
     reminder_time_before: readReminderMinutes(row[FC.REMINDERS]),
     stock_count: numOrNull(row[FC.MEDICINE_STOCK]),
     refill_threshold: numOrNull(row[FC.MEDICINE_REFILL]),
     time_to_send_to_caregiver: numOrNull(row[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
-    time_to_be_considered_missing: numOrNull(custom["time_to_be_considered_missing"]),
     prescribing_doctor: row[FC.MEDICINE_PRESCRIBER] || null,
     pharmacy: row[FC.MEDICINE_BOUGHT_PHARMACY] || null,
-    side_effects: custom["side_effects"] || null,
     check_in_type: decodeLogType(row[FC.MEDICINE_LOG_TYPE]),
     created_at: row.cct_created || row.created_at,
   };
@@ -126,9 +134,9 @@ export interface MedicineInput {
   dosage?: string | undefined;
   dose_quantity?: number | null | undefined;
   dose_unit?: string | undefined;
+  medication_concept_identifier?: string | undefined;
   frequency?: string | undefined;          // code or English label
   time_slot?: string[] | undefined;
-  instructions?: string | undefined;
   note?: string | undefined;
   start_date?: string | undefined;
   end_date?: string | undefined;
@@ -136,60 +144,57 @@ export interface MedicineInput {
   refill_threshold?: number | undefined;
   reminder_time_before?: number | undefined;
   time_to_send_to_caregiver?: number | undefined;
-  time_to_be_considered_missing?: number | undefined;
   prescribing_doctor?: string | undefined;
   pharmacy?: string | undefined;
-  side_effects?: string | undefined;
   check_in_type?: string[] | undefined;
 }
 
+/** a57, a58, a66, a95 for one plan — the whole recurrence, nothing in a90. */
+function recurrenceColumns(freqIn: string | undefined, slotsIn: readonly unknown[], startDate: string, endDate: string | null | undefined) {
+  const slots = normalizeSlots(slotsIn);
+  const freq = frequencyForSlots(toFrequencyCode(freqIn), slots);
+  const startAt = startAtFor(startDate, slots);
+  return {
+    [FC.START_AT]: startAt,
+    [FC.END_AT]: startAt,
+    [FC.RRULE]: buildRRule(freq, slots, endDate || null),
+    [FC.MEDICATION_SCHEDULE_TYPE]: freq === "as_needed" ? AS_NEEDED : SCHEDULED,
+  };
+}
+
 export async function createMedicineWordPress(med: MedicineInput): Promise<void> {
-  const freq = toFrequencyCode(med.frequency);
   const dose = med.dose_quantity != null || med.dose_unit
     ? { quantity: med.dose_quantity ?? null, unit: med.dose_unit || "" }
     : splitDosage(med.dosage);
-  const slots = decodeSlots(med.time_slot || []);
-  const startDate = med.start_date || new Date().toISOString().slice(0, 10);
+  const startDate = med.start_date || localDay();
 
   const body: Record<string, any> = {
     [FC.TITLE]: med.name,
     [FC.DESCRIPTION]: med.note || "",
     [FC.CUSTOM_EVENT_TYPE]: EVENT_TYPE.MEDICINE,
     [FC.APP]: APP_CHALLENGED,
-    [FC.START_AT]: slots[0] ? `${startDate} ${slots[0]}:00` : startDate,
-    [FC.END_AT]: med.end_date || "",
+    ...recurrenceColumns(med.frequency, med.time_slot || [], startDate, med.end_date),
     [FC.STATUS]: STATUS_CONFIRMED,
-    [FC.RRULE]: buildRRule(freq, slots),
     [FC.REMINDERS]: buildReminders(med.reminder_time_before),
+    [FC.MEDICATION_CONCEPT_IDENTIFIER]: med.medication_concept_identifier || "",
     [FC.MEDICATION_DOSE_QUANTITY]: wpStr(dose.quantity),
     [FC.MEDICATION_DOSE_UNIT]: dose.unit || "",
-    [FC.MEDICATION_SCHEDULE_TYPE]: freq === "as_needed"
-      ? OC["MEDICATION_SCHEDULE_TYPE"]!["ASNEEDED"]!
-      : OC["MEDICATION_SCHEDULE_TYPE"]!["SCHEDULE"]!,
     [FC.MEDICINE_LOG_TYPE]: encodeLogType(med.check_in_type),
     [FC.MEDICINE_STOCK]: wpStr(med.stock_count),
     [FC.MEDICINE_REFILL]: wpStr(med.refill_threshold),
     [FC.MEDICINE_PRESCRIBER]: med.prescribing_doctor || "",
     [FC.MEDICINE_BOUGHT_PHARMACY]: med.pharmacy || "",
     [FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]: wpStr(med.time_to_send_to_caregiver),
-    [FC.CUSTOM_DATA]: writeCustom({
-      frequency_code: freq,
-      time_slot: slots,
-      instructions: med.instructions || "",
-      side_effects: med.side_effects || "",
-      time_to_be_considered_missing: med.time_to_be_considered_missing ?? "",
-    }),
   };
   await createEvent(body, med.user_id);
 }
 
 export async function updateMedicineWordPress(id: string, updates: Record<string, any>): Promise<void> {
   const body: Record<string, any> = {};
-  const customKeys = ["frequency", "time_slot", "instructions", "side_effects", "time_to_be_considered_missing"];
-  const touchesCustom = customKeys.some((k) => updates[k] !== undefined);
 
   if (updates["name"] !== undefined) body[FC.TITLE] = updates["name"];
   if (updates["note"] !== undefined || updates["notes"] !== undefined) body[FC.DESCRIPTION] = updates["note"] ?? updates["notes"] ?? "";
+  if (updates["medication_concept_identifier"] !== undefined) body[FC.MEDICATION_CONCEPT_IDENTIFIER] = updates["medication_concept_identifier"] || "";
   if (updates["dosage"] !== undefined || updates["dose_quantity"] !== undefined || updates["dose_unit"] !== undefined) {
     const dose = updates["dose_quantity"] !== undefined || updates["dose_unit"] !== undefined
       ? { quantity: updates["dose_quantity"] ?? null, unit: updates["dose_unit"] || "" }
@@ -197,7 +202,6 @@ export async function updateMedicineWordPress(id: string, updates: Record<string
     body[FC.MEDICATION_DOSE_QUANTITY] = wpStr(dose.quantity);
     body[FC.MEDICATION_DOSE_UNIT] = dose.unit || "";
   }
-  if (updates["end_date"] !== undefined) body[FC.END_AT] = updates["end_date"] || "";
   if (updates["is_active"] !== undefined) body[FC.STATUS] = updates["is_active"] ? STATUS_CONFIRMED : STATUS_CANCELLED;
   if (updates["reminder_time_before"] !== undefined) body[FC.REMINDERS] = buildReminders(updates["reminder_time_before"]);
   if (updates["stock_count"] !== undefined) body[FC.MEDICINE_STOCK] = wpStr(updates["stock_count"]);
@@ -209,35 +213,14 @@ export async function updateMedicineWordPress(id: string, updates: Record<string
   }
   if (updates["check_in_type"] !== undefined) body[FC.MEDICINE_LOG_TYPE] = encodeLogType(updates["check_in_type"]);
 
-  if (touchesCustom || updates["start_date"] !== undefined) {
-    const row = await readEvent(id);
-    const custom = readCustom(row?.[FC.CUSTOM_DATA]);
-    const freq = updates["frequency"] !== undefined
-      ? toFrequencyCode(updates["frequency"])
-      : toFrequencyCode(custom["frequency_code"]);
-    const slots = updates["time_slot"] !== undefined ? decodeSlots(updates["time_slot"]) : decodeSlots(custom["time_slot"]);
-    const startDate = updates["start_date"] !== undefined
-      ? (updates["start_date"] || "")
-      : String(row?.[FC.START_AT] || "").slice(0, 10);
-    if (updates["start_date"] !== undefined || updates["time_slot"] !== undefined) {
-      body[FC.START_AT] = startDate && slots[0] ? `${startDate} ${slots[0]}:00` : startDate;
-    }
-    if (updates["frequency"] !== undefined || updates["time_slot"] !== undefined) {
-      body[FC.RRULE] = buildRRule(freq, slots);
-      body[FC.MEDICATION_SCHEDULE_TYPE] = freq === "as_needed"
-        ? OC["MEDICATION_SCHEDULE_TYPE"]!["ASNEEDED"]!
-        : OC["MEDICATION_SCHEDULE_TYPE"]!["SCHEDULE"]!;
-    }
-    body[FC.CUSTOM_DATA] = writeCustom({
-      ...custom,
-      frequency_code: freq,
-      time_slot: slots,
-      instructions: updates["instructions"] !== undefined ? (updates["instructions"] || "") : (custom["instructions"] || ""),
-      side_effects: updates["side_effects"] !== undefined ? (updates["side_effects"] || "") : (custom["side_effects"] || ""),
-      time_to_be_considered_missing: updates["time_to_be_considered_missing"] !== undefined
-        ? (updates["time_to_be_considered_missing"] ?? "")
-        : (custom["time_to_be_considered_missing"] ?? ""),
-    });
+  if (["frequency", "time_slot", "start_date", "end_date"].some((k) => updates[k] !== undefined)) {
+    const current = mapSchedule(await readEvent(id), "");
+    Object.assign(body, recurrenceColumns(
+      updates["frequency"] ?? current.frequency_code,
+      updates["time_slot"] ?? current.time_slot,
+      updates["start_date"] || current.start_date || localDay(),
+      updates["end_date"] !== undefined ? updates["end_date"] : current.end_date,
+    ));
   }
 
   await updateEvent(id, body);
@@ -318,7 +301,12 @@ export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promi
           return isMedicineLogRow(l) ? mapLog(l, mid, c.childId) : null;
         }))).filter(Boolean)
       : await fetchMedicineLogsWordPress(mid);
-    logs.forEach((l: any) => { if (l.created_at && new Date(l.created_at) >= today) out.push(l); });
+    // A log belongs to the day of the dose it answers (a88); a61 only when a88 is empty.
+    const day = localDay();
+    logs.forEach((l: any) => {
+      const doseDay = dateOf(l.scheduled_date);
+      if (doseDay ? doseDay === day : (l.created_at && new Date(l.created_at) >= today)) out.push(l);
+    });
   }));
   return out;
 }
