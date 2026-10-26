@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-react";
 import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/hooks/use-care-data";
 import { useMemo } from "react";
+import { findDoseLog } from "@/features/medicine/dose-slot";
 import { useTranslation } from "react-i18next";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { useNavigate } from "@/lib/router-compat";
@@ -73,7 +74,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
             sortTime: hour * 100 + minute,
             label: `${med.name} ${med.dosage ? `(${med.dosage})` : ""}`,
             type: "medicine",
-            status: medStatus,
+            status: statusAt(slot),
             icon: Pill,
           });
         });
