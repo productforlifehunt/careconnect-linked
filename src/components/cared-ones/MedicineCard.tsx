@@ -586,7 +586,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   // Adherence summary
   const adherenceSummary = useMemo(() => {
     if (!meds || !todayLogs) return null;
-    const totalSlots = (meds as any[]).reduce((sum, m) => sum + Math.max((m.time_slot || []).length, 1), 0);
+    const totalSlots = (meds as any[]).reduce((sum, m) => sum + Math.max(new Set((m.time_slot || []).map((s: string) => String(s).substring(0, 5))).size, 1), 0);
     const logged = (todayLogs as any[]).length;
     const taken = (todayLogs as any[]).filter(l => l.status === "taken").length;
     const skipped = (todayLogs as any[]).filter(l => l.status === "skipped").length;
