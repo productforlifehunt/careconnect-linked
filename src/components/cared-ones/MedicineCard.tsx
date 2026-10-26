@@ -787,16 +787,16 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             if (!medsAtTime && !isCurrentHour) return null; // Hide empty non-current hours for cleaner view
             return (
               <div key={hour} className={`flex border-b border-border/30 ${isCurrentHour ? "bg-primary/5" : ""}`}>
-                <div className={`w-20 shrink-0 py-3 px-2 text-xs font-medium ${isCurrentHour ? "text-primary font-semibold" : isPast ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
+                <div className={`w-14 sm:w-20 shrink-0 py-3 px-1 sm:px-2 text-xs font-medium ${isCurrentHour ? "text-primary font-semibold" : isPast ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
                   {isCurrentHour && <div className="w-2 h-2 rounded-full bg-primary inline-block mr-1 animate-pulse" />}
                   {formatHour(hour)}
                 </div>
-                <div className="flex-1 py-2 px-2">
+                <div className="min-w-0 flex-1 py-2 pr-1 sm:px-2">
                   {medsAtTime ? (
                     <div className="space-y-2">
-                      {medsAtTime.map((med: any) => (
+                      {medsAtTime.map(({ med, slot }) => (
                         <MedDoseCard
-                          key={med.id}
+                          key={`${med.id}-${slot}`}
                           med={med}
                           todayLogs={todayLogs || []}
                           onLog={handleLog}
@@ -804,7 +804,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                           onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
                           onHistory={setHistoryMed}
                           compact
-                          slot={hour}
+                          slot={slot}
                         />
                       ))}
                     </div>
