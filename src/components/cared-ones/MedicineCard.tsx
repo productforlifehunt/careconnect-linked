@@ -517,16 +517,16 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const updateMed = useUpdateMedicine();
 
   // Dialogs
-  const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed" }>({ open: false, med: null, action: "taken" });
+  const [logDialog, setLogDialog] = useState<{ open: boolean; med: any; action: "taken" | "skipped" | "missed"; slot?: string | undefined }>({ open: false, med: null, action: "taken" });
   const [historyMed, setHistoryMed] = useState<any>(null);
   const [editMed, setEditMed] = useState<any>(null);
 
-  const handleLog = (med: any, status: "taken" | "skipped" | "missed") => {
-    setLogDialog({ open: true, med, action: status });
+  const handleLog = (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => {
+    setLogDialog({ open: true, med, action: status, slot });
   };
 
   const confirmLog = (note: string) => {
-    const { med, action } = logDialog;
+    const { med, action, slot } = logDialog;
     logMed.mutate(
       {
         medicine_id: med.id,
@@ -537,6 +537,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         dose_quantity: med.dose_quantity ?? null,
         scheduled_dose_quantity: med.dose_quantity ?? null,
         dose_unit: med.dose_unit || null,
+        // a88 Scheduled date = the dose slot this log answers
+        scheduled_date: slot ? todayAtSlot(slot) : null,
         schedule_type: med.schedule_type || null,
         concept_identifier: med.medication_concept_identifier || null,
         concept_display_text: med.name || null,
@@ -594,13 +596,18 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   }, [meds, todayLogs]);
 
   // Timeline grouping
+  // Keyed by the hour row ("08:00"); each entry keeps its exact slot ("08:30").
+  // Duplicate slots of one medicine are one dose, shown once.
   const timelineMeds = useMemo(() => {
     if (!meds) return {};
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, { med: any; slot: string }[]> = {};
     (meds as any[]).forEach((med) => {
-      const slots = med.time_slot || [];
-      if (slots.length === 0) { if (!grouped["08:00"]) grouped["08:00"] = []; grouped["08:00"].push(med); }
-      else { slots.forEach((slot: string) => { const t = slot.includes(":") ? slot.substring(0, 5) : "08:00"; if (!grouped[t]) grouped[t] = []; grouped[t].push(med); }); }
+      const raw: string[] = (med.time_slot || []).length ? med.time_slot : ["08:00"];
+      const slots = Array.from(new Set(raw.map((s) => (String(s).includes(":") ? String(s).substring(0, 5) : "08:00"))));
+      slots.forEach((slot) => {
+        const hourKey = `${slot.substring(0, 2)}:00`;
+        (grouped[hourKey] ||= []).push({ med, slot });
+      });
     });
     return grouped;
   }, [meds]);
@@ -609,12 +616,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     if (!user?.general_user_role?.includes("cared one") || !meds || !todayLogs) return;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const loggedMedicineIds = new Set((todayLogs as any[]).map((log) => String(log.medicine_id)));
     const due = (meds as any[]).flatMap((med) => {
       const slots: string[] = med.time_slot?.length ? med.time_slot : ["08:00"];
-      return slots.map((slot) => ({ med, slot }));
+      return slots.map((slot) => ({ med, slot: String(slot).substring(0, 5) }));
     }).find(({ med, slot }) => {
-      if (loggedMedicineIds.has(String(med.id)) || med.is_active === false) return false;
+      if (findDoseLog(todayLogs as any[], med.id, slot) || med.is_active === false) return false;
       const [hour = "0", minute = "0"] = String(slot).split(":");
       return nowMinutes >= Number(hour) * 60 + Number(minute);
     });
@@ -641,9 +647,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">{Z("用药追踪","Medicine Tracker")}</h2>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 className="min-w-0 text-lg font-bold text-foreground">{Z("用药追踪","Medicine Tracker")}</h2>
+        <div className="flex shrink-0 gap-2">
           <div className="flex border rounded-lg overflow-hidden">
             <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("时间线","Timeline")}</button>
             <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("列表","List")}</button>
