@@ -81,7 +81,9 @@ const AS_NEEDED = OC["MEDICATION_SCHEDULE_TYPE"]!["ASNEEDED"]!;
 const SCHEDULED = OC["MEDICATION_SCHEDULE_TYPE"]!["SCHEDULE"]!;
 
 function mapSchedule(row: any, caredOneId: string): any {
-  const quantity = numOrNull(row[FC.MEDICATION_DOSE_QUANTITY]);
+  // An empty JetEngine Number column comes back as 0; a 0 dose means "not set".
+  const rawQuantity = numOrNull(row[FC.MEDICATION_DOSE_QUANTITY]);
+  const quantity = rawQuantity && rawQuantity > 0 ? rawQuantity : null;
   const unit = row[FC.MEDICATION_DOSE_UNIT] || "";
   const asNeeded = String(row[FC.MEDICATION_SCHEDULE_TYPE] || "") === AS_NEEDED;
   // Times of day and frequency come only from a57 + a66 (RFC 5545).
