@@ -11,10 +11,9 @@
  *             JetEngine Relation 191 (187 → 161) and to the cared one through
  *             Relation 173 (Users → 161). CCT 206 is retired.
  *
- * Recurrence uses the RFC 5545 columns of the calendar (a66 RRULE, a73 VALARM);
- * values the calendar has no Apple/iCal column for (exact time slots, UI
- * frequency code, instructions, side effects, missing window) live in the
- * dedicated a90 Custom data JSON column. No invented columns, no fallbacks.
+ * Recurrence uses only the calendar's RFC 5545 columns: a57/a58 start/end,
+ * a66 RRULE (times of day, frequency, UNTIL end date), a68 EXDATES, a69 RDATES,
+ * a73 VALARM. a90 Custom data is never read or written.
  */
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
