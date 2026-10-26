@@ -20,6 +20,7 @@ import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/li
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { findDoseLog, todayAtSlot } from "@/features/medicine/dose-slot";
+import { slotsNeeded, frequencyForSlots, type FrequencyCode } from "@/features/schedules/recurrence";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -54,6 +55,29 @@ const FREQUENCIES = [
   { value: "every_other_day", label: Z("隔日一次","Every other day") },{ value: "weekly", label: Z("每周一次","Weekly") },
   { value: "as_needed", label: Z("按需服用","As needed") },
 ];
+
+/** Daily frequencies need exactly that many distinct times (a66 BYHOUR/BYMINUTE). */
+function resizeSlots(freq: string, slots: string[]): string[] {
+  const unique = Array.from(new Set(slots));
+  const need = slotsNeeded(freq as FrequencyCode);
+  if (need === null || need === 0) return unique.length ? unique : ["08:00"];
+  const out = unique.slice(0, need);
+  while (out.length < need) out.push(nextFreeTime(out));
+  return out;
+}
+function nextFreeTime(used: string[]): string {
+  return ["08:00", "12:00", "18:00", "21:00", ...SCHEDULE_TIMES.map(t => t.value)].find(t => !used.includes(t)) || "08:00";
+}
+/** Adding/removing a time keeps the daily frequency equal to the number of times. */
+function withSlots<F extends { frequency: string; time_slots: string[] }>(form: F, slots: string[]): F {
+  return { ...form, time_slots: slots, frequency: frequencyForSlots(form.frequency as FrequencyCode, slots) };
+}
+/** Doses shown today: calendar occurrences (a66 − a68 + a69); as-needed shows once. */
+function doseSlotsToday(med: any): string[] {
+  const isPRN = med.frequency_code === "as_needed";
+  if (isPRN) return ["08:00"];
+  return med.today_slots || [];
+}
 
 /** Localized frequency label from the stored code (CCT 187 a66 RRULE + a95). */
 function freqLabel(med: any): string {
@@ -189,7 +213,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number });
 
   // Populate form on open
   useState(() => {
@@ -206,7 +230,6 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         refill_threshold: med.refill_threshold ?? "",
         reminder_time_before: med.reminder_time_before ?? "0",
         time_to_send_to_caregiver: med.time_to_send_to_caregiver ?? "",
-        time_to_be_considered_missing: med.time_to_be_considered_missing ?? "",
       });
     }
   });
@@ -226,7 +249,6 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         refill_threshold: med.refill_threshold ?? "",
         reminder_time_before: med.reminder_time_before ?? "0",
         time_to_send_to_caregiver: med.time_to_send_to_caregiver ?? "",
-        time_to_be_considered_missing: med.time_to_be_considered_missing ?? "",
       });
     }
   }, [med]);
@@ -238,14 +260,13 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
       name: form.name.trim(),
       dosage: form.dosage || undefined,
       medication_concept_identifier: form.rxcui || undefined,
-      frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
+      frequency: form.frequency,
       time_slot: form.time_slots,
       note: form.note || undefined,
       stock_count: form.stock_count === "" ? "" : Number(form.stock_count),
       refill_threshold: form.refill_threshold === "" ? "" : Number(form.refill_threshold),
       reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
       time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? null : Number(form.time_to_send_to_caregiver),
-      time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? null : Number(form.time_to_be_considered_missing),
     }, {
       onSuccess: () => { toast({ title: Z("药品已更新","Medicine updated") }); onClose(); },
       onError: (err) => toast({ title: Z("操作失败","Failed"), description: String(err.message), variant: "destructive" }),
@@ -264,7 +285,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{Z("剂量","Dosage")}</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder={Z("例如:10 毫克","e.g. 10mg")} className="mt-1" /></div>
             <div><Label>{Z("频率","Frequency")}</Label>
-              <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v }))}>
+              <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v, time_slots: resizeSlots(v, p.time_slots) }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
               </Select>
@@ -273,16 +294,16 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
           <div>
             <div className="flex items-center justify-between">
               <Label>{Z("服药时间","Scheduled Times")}</Label>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => withSlots(p, [...p.time_slots, nextFreeTime(p.time_slots)]))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button>
             </div>
             <div className="space-y-2 mt-1">
               {form.time_slots.map((slot, idx) => (
                 <div key={idx} className="flex items-center gap-2">
                   <Select value={slot} onValueChange={v => setForm(p => ({ ...p, time_slots: p.time_slots.map((t, i) => i === idx ? v : t) }))}>
                     <SelectTrigger><Clock className="h-4 w-4 mr-2 text-muted-foreground" /><SelectValue /></SelectTrigger>
-                    <SelectContent>{SCHEDULE_TIMES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{SCHEDULE_TIMES.filter(t => t.value === slot || !form.time_slots.includes(t.value)).map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
-                  {form.time_slots.length > 1 && <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setForm(p => ({ ...p, time_slots: p.time_slots.filter((_, i) => i !== idx) }))}><X className="h-3 w-3" /></Button>}
+                  {form.time_slots.length > 1 && <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setForm(p => withSlots(p, p.time_slots.filter((_, i) => i !== idx)))}><X className="h-3 w-3" /></Button>}
                 </div>
               ))}
             </div>
@@ -292,10 +313,9 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
             <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(剩余药片)","(pills left)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
             <div><Label>{Z("补药提醒","Refill alert")} <span className="text-muted-foreground text-xs">{Z("(阈值)","(threshold)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
               <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
-              <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
             </div>
 
           <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
@@ -513,7 +533,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number, time_to_be_considered_missing: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number });
   const updateMed = useUpdateMedicine();
 
   // Dialogs
@@ -569,16 +589,16 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         user_id: caredOneId,
         name: form.name.trim(),
         dosage: form.dosage || undefined,
-        frequency: FREQUENCIES.find(f => f.value === form.frequency)?.label || form.frequency,
+        medication_concept_identifier: form.rxcui || undefined,
+        frequency: form.frequency,
         time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"],
         note: form.note || undefined,
         stock_count: form.stock_count === "" ? undefined : Number(form.stock_count),
         refill_threshold: form.refill_threshold === "" ? undefined : Number(form.refill_threshold),
         reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
         time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? undefined : Number(form.time_to_send_to_caregiver),
-        time_to_be_considered_missing: form.time_to_be_considered_missing === "" ? undefined : Number(form.time_to_be_considered_missing),
       },
-      { onSuccess: () => { setForm({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", time_to_send_to_caregiver: "", time_to_be_considered_missing: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
+      { onSuccess: () => { setForm({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", time_to_send_to_caregiver: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
         onError: (err) => toast({ title: Z("添加失败","Failed to add"), description: String(err.message), variant: "destructive" }) }
     );
   };
@@ -586,7 +606,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   // Adherence summary
   const adherenceSummary = useMemo(() => {
     if (!meds || !todayLogs) return null;
-    const totalSlots = (meds as any[]).reduce((sum, m) => sum + Math.max(new Set((m.time_slot || []).map((s: string) => String(s).substring(0, 5))).size, 1), 0);
+    const totalSlots = (meds as any[]).reduce((sum, m) => sum + doseSlotsToday(m).length, 0);
     const logged = (todayLogs as any[]).length;
     const taken = (todayLogs as any[]).filter(l => l.status === "taken").length;
     const skipped = (todayLogs as any[]).filter(l => l.status === "skipped").length;
@@ -602,9 +622,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     if (!meds) return {};
     const grouped: Record<string, { med: any; slot: string }[]> = {};
     (meds as any[]).forEach((med) => {
-      const raw: string[] = (med.time_slot || []).length ? med.time_slot : ["08:00"];
-      const slots = Array.from(new Set(raw.map((s) => (String(s).includes(":") ? String(s).substring(0, 5) : "08:00"))));
-      slots.forEach((slot) => {
+      doseSlotsToday(med).forEach((slot) => {
         const hourKey = `${slot.substring(0, 2)}:00`;
         (grouped[hourKey] ||= []).push({ med, slot });
       });
@@ -617,8 +635,8 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const due = (meds as any[]).flatMap((med) => {
-      const slots: string[] = med.time_slot?.length ? med.time_slot : ["08:00"];
-      return slots.map((slot) => ({ med, slot: String(slot).substring(0, 5) }));
+      if (med.frequency_code === "as_needed") return [];
+      return doseSlotsToday(med).map((slot) => ({ med, slot }));
     }).find(({ med, slot }) => {
       if (findDoseLog(todayLogs as any[], med.id, slot) || med.is_active === false) return false;
       const [hour = "0", minute = "0"] = String(slot).split(":");
@@ -703,22 +721,22 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{Z("剂量","Dosage")}</Label><Input value={form.dosage} onChange={e => setForm(p => ({ ...p, dosage: e.target.value }))} placeholder={Z("例如:10 毫克","e.g. 10mg")} className="mt-1" /></div>
               <div><Label>{Z("频率","Frequency")}</Label>
-                <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v }))}>
+                <Select value={form.frequency} onValueChange={v => setForm(p => ({ ...p, frequency: v, time_slots: resizeSlots(v, p.time_slots) }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>{FREQUENCIES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <div className="flex items-center justify-between"><Label>{Z("服药时间","Scheduled Times")}</Label><Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => ({ ...p, time_slots: [...p.time_slots, "12:00"] }))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button></div>
+              <div className="flex items-center justify-between"><Label>{Z("服药时间","Scheduled Times")}</Label><Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => withSlots(p, [...p.time_slots, nextFreeTime(p.time_slots)]))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button></div>
               <div className="space-y-2 mt-1">
                 {form.time_slots.map((slot, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <Select value={slot} onValueChange={v => setForm(p => ({ ...p, time_slots: p.time_slots.map((t, i) => i === idx ? v : t) }))}>
                       <SelectTrigger><Clock className="h-4 w-4 mr-2 text-muted-foreground" /><SelectValue /></SelectTrigger>
-                      <SelectContent>{SCHEDULE_TIMES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{SCHEDULE_TIMES.filter(t => t.value === slot || !form.time_slots.includes(t.value)).map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                     </Select>
-                    {form.time_slots.length > 1 && <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setForm(p => ({ ...p, time_slots: p.time_slots.filter((_, i) => i !== idx) }))}><X className="h-3 w-3" /></Button>}
+                    {form.time_slots.length > 1 && <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => setForm(p => withSlots(p, p.time_slots.filter((_, i) => i !== idx)))}><X className="h-3 w-3" /></Button>}
                   </div>
                 ))}
               </div>
@@ -728,10 +746,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
               <div><Label>{Z("补药提醒阈值","Refill alert at")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
               <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
-              <div><Label>{Z("多久算漏服(分钟)","Count as missed after (min)")}</Label><Input type="number" min="0" value={form.time_to_be_considered_missing} onChange={e => setForm(p => ({ ...p, time_to_be_considered_missing: e.target.value }))} className="mt-1" /></div>
             </div>
             <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
               <Button variant="outline" onClick={() => setAddOpen(false)}>{Z("取消","Cancel")}</Button>
