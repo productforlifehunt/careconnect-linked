@@ -1,3 +1,7 @@
+## Current request: Stable medicine and check-in toolbar
+- [x] Keep three fixed view tabs and an independent right-side Add button in every view; use matching constrained dimensions for both pages.
+- [ ] Verify tab switching, stable dimensions, and Add dialog access on both real signed-in pages at mobile and current preview widths.
+
 ## Current request: Check-in and medicine time-write parity
 - [x] Both create/update paths use scheduleTimeColumns for CCT187 a57/a58/a66; ordinary edits preserve a68/a69, and a90/a70 are never written. Check-in cutoff handling matches medicine.
 - [x] 12/12 focused tests pass, including actual create/update payload parity, UNTIL and exception preservation; latest build OK.

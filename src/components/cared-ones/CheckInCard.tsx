@@ -240,13 +240,13 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h2 className="min-w-0 text-lg font-bold text-foreground">{Z("签到", "Check-In")}</h2>
-        <div className="flex shrink-0 gap-2">
-          <div className="flex border rounded-lg overflow-hidden">
-            <button onClick={() => setView("today")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "today" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("今日", "Today")}</button>
-            <button onClick={() => setView("records")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "records" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("记录", "Records")}</button>
-            <button onClick={() => setView("manage")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "manage" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("管理", "Manage")}</button>
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto" aria-label={Z("签到视图与添加", "Check-in views and add")}>
+          <div className="grid h-9 min-w-0 flex-1 grid-cols-[1fr_0.85fr_1.2fr] overflow-hidden rounded-lg border sm:w-[228px] sm:flex-none" role="tablist" aria-label={Z("签到视图", "Check-in views")}>
+            <Button role="tab" aria-selected={view === "today"} variant="ghost" onClick={() => setView("today")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "today" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("时间线", "Timeline")}</Button>
+            <Button role="tab" aria-selected={view === "records"} variant="ghost" onClick={() => setView("records")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "records" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("记录", "Records")}</Button>
+            <Button role="tab" aria-selected={view === "manage"} variant="ghost" onClick={() => setView("manage")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "manage" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("签到管理", "Manage")}</Button>
           </div>
-          {view === "manage" && <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>}
+          <Button size="sm" className="h-9 w-20 shrink-0" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" /> {Z("添加", "Add")}</Button>
         </div>
       </div>
 
