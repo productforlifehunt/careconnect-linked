@@ -534,6 +534,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: meds, isLoading } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
+  const { data: allLogs, isLoading: allLogsLoading } = useAllMedicineLogs(caredOneId);
   const createMed = useCreateMedicine();
   const deleteMed = useDeleteMedicine();
   const logMed = useLogMedicine();
@@ -845,6 +846,38 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             );
           })}
         </div>
+      ) : view === "records" ? (
+        <div className="space-y-2">
+          {allLogsLoading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
+          ) : (allLogs || []).length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">{Z("暂无服药记录","No dose records yet") as any}</p>
+          ) : (
+            (allLogs || []).map((log: any) => (
+              <div key={log.id} className="flex items-start gap-3 rounded-xl border border-border/50 bg-card p-3">
+                <div className={`mt-0.5 shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${log.status === "taken" ? "bg-success/15 text-success" : log.status === "skipped" ? "bg-warning/15 text-warning" : "bg-destructive/15 text-destructive"}`}>
+                  {log.status === "taken" ? <Check className="h-3.5 w-3.5" /> : log.status === "skipped" ? <SkipForward className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium break-words">{log.med_name || log.concept_display_text || Z("药品","Medicine")}</span>
+                    <Badge variant="outline" className={`text-xs ${log.status === "taken" ? "border-success/40 text-success" : log.status === "skipped" ? "border-warning/40 text-warning" : "border-destructive/40 text-destructive"}`}>
+                      {log.status === "taken" ? Z("已服用","Taken") : log.status === "skipped" ? Z("已跳过","Skipped") : Z("漏服","Missed")}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {log.scheduled_date ? `${Z("计划","Scheduled")} ${formatDateTime(log.scheduled_date, i18n.language)} · ` : ""}{formatDate(log.created_at)} · {formatTime(log.created_at)}
+                  </p>
+                  {log.note && (
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-start gap-1 break-words">
+                      <StickyNote className="h-3 w-3 mt-0.5 shrink-0" />{log.note}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           {(meds || []).map((med: any) => (
@@ -854,8 +887,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               todayLogs={todayLogs || []}
               onLog={handleLog}
               onEdit={setEditMed}
-                          onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
+              onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
               onHistory={setHistoryMed}
+              manage
               slot={(med.time_slot && med.time_slot[0]) || undefined}
             />
           ))}
