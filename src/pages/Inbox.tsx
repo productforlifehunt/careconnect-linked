@@ -53,6 +53,8 @@ export default function Inbox() {
   const markAllRead = useMarkAllNotificationsRead();
   const markMessagesRead = useMarkMessagesRead();
   const counts = useInboxCounts();
+  const selectedTotal = tab === "notifications" ? (notifications || []).length : tab === "messages" ? (conversations || []).length : counts.total;
+  const selectedUnread = tab === "notifications" ? counts.unreadNotifications : tab === "messages" ? counts.unreadMessages : counts.unread;
   const [markingAll, setMarkingAll] = useState(false);
   const [markError, setMarkError] = useState("");
   const markEverythingRead = async () => {
@@ -199,7 +201,7 @@ export default function Inbox() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {label} <span className="ml-1">{counts.isLoading || counts.error ? "—" : key === "all" ? counts.total : key === "unread" ? counts.unread : counts.read}</span>
+                {label} <span className="ml-1">{counts.isLoading || counts.error ? "—" : key === "all" ? selectedTotal : key === "unread" ? selectedUnread : selectedTotal - selectedUnread}</span>
               </Button>
             ))}
           </div>
