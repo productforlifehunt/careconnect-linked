@@ -487,7 +487,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string | undefine
 // Relation 190 links the cared one to the schedule; Relation 191 links logs.
 export {
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress,
-  deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress,
+  deleteMedicineWordPress, fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, fetchAllMedicineLogsWordPress,
   logMedicineWordPress,
 } from "@/features/medicine/source.medicine";
 
