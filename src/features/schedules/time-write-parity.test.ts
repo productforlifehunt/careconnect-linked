@@ -33,7 +33,7 @@ describe("medicine and check-in share CCT187 time writes", () => {
     const bodies = writes("POST");
     expect(bodies).toHaveLength(2);
     for (const body of bodies) expect(body).toMatchObject(expected);
-    expect(bodies.map((body) => body.a60)).toEqual(["b55", "b56"]);
+    expect(bodies.map((body) => body["a60"])).toEqual(["b55", "b56"]);
     expect(m.cct.mock.calls.every(([slug]) => slug === T.calendarEvent.slug)).toBe(true);
   });
   it("both time edits preserve UNTIL and do not overwrite a68/a69 or write a90/a70", async () => {
@@ -53,8 +53,8 @@ describe("medicine and check-in share CCT187 time writes", () => {
     const bodies = writes("PUT");
     expect(bodies).toHaveLength(2);
     for (const body of bodies) {
-      expect(body.a58).toBe("2026-10-27 08:00:00");
-      expect(body.a66).toBe(expected.a66.replace("20261130", "20261215"));
+      expect(body["a58"]).toBe("2026-10-27 08:00:00");
+      expect(body["a66"]).toBe(expected.a66.replace("20261130", "20261215"));
     }
   });
   it("neither create stores a90 or an ordinary-plan recurrence ID", async () => {
