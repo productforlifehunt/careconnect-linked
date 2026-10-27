@@ -1,3 +1,10 @@
+## Current request: Community, documents and unread consistency
+- [ ] Remove Score without changing separate up/down counts or About/Demo; remove duplicate discussion entry.
+- [ ] Fix My Posts ownership and identify the saved author-name source without renaming accounts.
+- [ ] Keep one independent document Add entry while preserving attachment upload.
+- [ ] Unify Inbox/header/mobile/dashboard unread calculations and refresh behavior; distinguish total/read/unread.
+- [ ] Run focused tests and approved-account live mobile flows with screenshots; report every result.
+
 ## Current request: Stable medicine and check-in toolbar
 - [x] Keep three fixed view tabs and an independent right-side Add button in every view; use matching constrained dimensions for both pages.
 - [x] Real test1 session: both pages × three tabs × 794px/393px widths (12/12) retain identical Add/tab positions and dimensions on switching; all 12 Add dialogs open, screenshots checked, no horizontal overflow or runtime errors. No records changed.
