@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote, Search } from "lucide-react";
-import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs } from "@/hooks/use-care-data";
+import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs, useAllMedicineLogs } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
 const isCN = () => (i18n.language || "").startsWith("zh");
@@ -334,7 +334,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
 }
 
 // ─── Inline Med Card (used in timeline & list) ──────────────
-function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot }: {
+function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot, manage }: {
   med: any;
   todayLogs: any[];
   onLog: (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => void;
@@ -343,6 +343,8 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
   onHistory: (med: any) => void;
   compact?: boolean | undefined;
   slot?: string | undefined;
+  /** Manage view: plan editing only, no dose check-in buttons. */
+  manage?: boolean | undefined;
 }) {
   const isPRN = med.frequency_code === "as_needed" || med.frequency === "As needed" || med.frequency === "as_needed";
   const logForThisDose = findDoseLog(todayLogs, med.id, isPRN ? undefined : slot);
