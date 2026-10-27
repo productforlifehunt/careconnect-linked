@@ -109,14 +109,12 @@ export async function markNotificationReadWordPress(id: string): Promise<void> {
 }
 
 export async function markAllNotificationsReadWordPress(): Promise<void> {
-  try {
     const list = await fetchNotificationsWordPress();
     await Promise.all(
       list
         .filter((n) => !n.is_read)
         .map((n) => markNotificationReadWordPress(n.id)),
     );
-  } catch {}
 }
 
 /**
