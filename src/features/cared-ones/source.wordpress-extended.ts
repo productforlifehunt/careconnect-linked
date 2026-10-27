@@ -7,8 +7,8 @@ import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import {
   FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
   LOG_TYPE_AI as CAL_LOG_TYPE_AI, LOG_TYPE_HUMAN as CAL_LOG_TYPE_HUMAN,
-  buildRRule, buildReminders, readReminderMinutes, toFrequencyCode, FREQ_EN,
-  slotsFromRRule, frequencyFromRow, frequencyForSlots, normalizeSlots, occurrencesOn, localDay, dateOf, parseRRule, startAtFor, fetchEventsOfType,
+  scheduleTimeColumns, buildReminders, readReminderMinutes, toFrequencyCode, FREQ_EN,
+  slotsFromRRule, frequencyFromRow, frequencyForSlots, normalizeSlots, occurrencesOn, localDay, dateOf, parseRRule, fetchEventsOfType,
   createEvent, updateEvent, deleteEvent, readEvent,
 } from "@/features/schedules/calendar-schedule";
 
@@ -288,6 +288,7 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
         time_slot: slots,
         today_slots: occurrencesOn(localDay(), { startAt: i[FC.START_AT], rrule: i[FC.RRULE], exdates: i[FC.EXDATES], rdates: i[FC.RDATES] }),
         start_date: dateOf(i[FC.START_AT]),
+        end_date: parseRRule(i[FC.RRULE])?.until ?? null,
         is_active: String(i[FC.STATUS] || STATUS_CONFIRMED) !== STATUS_CANCELLED,
         reminder_time_before: readReminderMinutes(i[FC.REMINDERS]),
         time_to_send_to_caregiver: numOrNull(i[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
@@ -335,19 +336,16 @@ export function setCheckinReceiversWordPress(checkinId: string, userIds: Array<s
   return setCheckinUserRelation(R.checkinNotificationReceivers, checkinId, userIds);
 }
 
-export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; time_slot?: string[] | undefined; start_date?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined; receiver_ids?: Array<string | number> | undefined }): Promise<void> {
+export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; time_slot?: string[] | undefined; start_date?: string | undefined; end_date?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined; receiver_ids?: Array<string | number> | undefined }): Promise<void> {
   const slots = normalizeSlots(checkin.time_slot || ["08:00"]);
   const freq = frequencyForSlots(toFrequencyCode(checkin.frequency), slots);
-  const startAt = startAtFor(checkin.start_date || localDay(), slots);
   const newId = await createEvent({
     [FC.TITLE]: checkin.name,
     [FC.DESCRIPTION]: checkin.detail || "",
     [FC.CUSTOM_EVENT_TYPE]: EVENT_TYPE.CHECKIN,
     [FC.APP]: APP_CHALLENGED,
-    [FC.START_AT]: startAt,
-    [FC.END_AT]: startAt,
+    ...scheduleTimeColumns(freq, slots, checkin.start_date || localDay(), checkin.end_date),
     [FC.STATUS]: STATUS_CONFIRMED,
-    [FC.RRULE]: buildRRule(freq, slots),
     [FC.REMINDERS]: buildReminders(checkin.reminder_time_before),
     [FC.CHECKIN_LOG_TYPE]: encodeCheckinLogType(checkin.check_in_type),
     [FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]: checkin.time_to_send_to_caregiver != null ? String(checkin.time_to_send_to_caregiver) : "",
@@ -371,17 +369,16 @@ export async function updateCheckinWordPress(id: string, updates: Record<string,
     body[FC.CHECKIN_LOG_TYPE] = updates["checked_by_ai"] ? CAL_LOG_TYPE_AI : CAL_LOG_TYPE_HUMAN;
   }
 
-  if (["frequency", "time_slot", "start_date"].some((k) => updates[k] !== undefined)) {
+  if (["frequency", "time_slot", "start_date", "end_date"].some((k) => updates[k] !== undefined)) {
     const row = await readEvent(id);
     const curSlots = slotsFromRRule(row?.[FC.RRULE], row?.[FC.START_AT]);
     const slots = normalizeSlots(updates["time_slot"] !== undefined ? updates["time_slot"] : curSlots);
     const freq = frequencyForSlots(
       updates["frequency"] !== undefined ? toFrequencyCode(updates["frequency"]) : frequencyFromRow(row?.[FC.RRULE], false, curSlots),
       slots);
-    const startAt = startAtFor(updates["start_date"] || dateOf(row?.[FC.START_AT]) || localDay(), slots);
-    body[FC.START_AT] = startAt;
-    body[FC.END_AT] = startAt;
-    body[FC.RRULE] = buildRRule(freq, slots, parseRRule(row?.[FC.RRULE])?.until ?? null);
+    Object.assign(body, scheduleTimeColumns(freq, slots,
+      updates["start_date"] || dateOf(row?.[FC.START_AT]) || localDay(),
+      updates["end_date"] !== undefined ? updates["end_date"] : parseRRule(row?.[FC.RRULE])?.until ?? null));
   }
 
   await updateEvent(id, body);

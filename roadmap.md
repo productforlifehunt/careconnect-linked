@@ -1,3 +1,7 @@
+## Current request: Check-in and medicine time-write parity
+- [ ] Use one shared CCT187 time-column writer for both create/update paths; preserve exception dates and avoid a90.
+- [ ] Run concrete create/update parity tests and verify the available live signal.
+
 ## Current request: One-picture sick-leave notice
 - [x] Add a standalone `sick` micro site at `/?__site=sick`: one picture, no words, no app shell, no brand; user's photo stored as a stripped-metadata CDN asset.
 - [x] Real browser (clean session): page renders only the picture (0 body characters, no nav/header/footer), right-click over the picture is cancelled, drag/selection disabled, `noindex` applied, zero page errors; homepage and consent page unaffected in clean sessions. 8/8 tests pass, build OK.
