@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
 import { readLastGood, withLastGood } from "@/lib/last-good";
+import { inboxCounts } from "@/features/inbox/counts";
+import { currentAppId } from "@/features/shared/app-profile";
 
 // ─── Feature source modules (backend-specific) ─────────────
 import { fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
@@ -361,6 +363,7 @@ export function useConversations() {
     queryKey: ["conversations", myId],
     queryFn: () => fetchConversationsWordPress(myId),
     enabled: !!myId,
+    refetchInterval: 30000,
   });
 }
 
@@ -599,11 +602,23 @@ export function useUpdateTaskStatus() {
 
 // ─── Notifications ──────────────────────────────────────────
 export function useNotifications() {
+  const me = getStoredWPUser();
   return useQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", me?.user_id, currentAppId()],
     queryFn: () => runNotificationSkill("list-notifications"),
     enabled: hasWPSession(),
+    refetchInterval: 30000,
   });
+}
+
+export function useInboxCounts() {
+  const notifications = useNotifications();
+  const conversations = useConversations();
+  return {
+    ...inboxCounts(notifications.data || [], conversations.data || []),
+    isLoading: notifications.isLoading || conversations.isLoading,
+    error: notifications.error || conversations.error,
+  };
 }
 
 export function useMarkNotificationRead() {

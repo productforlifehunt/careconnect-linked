@@ -3,7 +3,7 @@ import { NavLink } from "@/components/NavLink";
 import { Link, useLocation } from "@/lib/router-compat";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNotifications } from "@/hooks/use-care-data";
+import { useInboxCounts } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
 import {
   Heart as HeartIcon,
@@ -80,8 +80,7 @@ export function MobileBottomBar() {
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
-  const { data: notifications } = useNotifications();
-  const unreadCount = (notifications || []).filter((n) => !n.is_read).length;
+  const { unread: unreadCount } = useInboxCounts();
   const [open, setOpen] = useState(false);
   const { openAssistant } = useAIAssistant();
   const [customizeOpen, setCustomizeOpen] = useState(false);
