@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyProfile, usePost, useDeletePost, useUpdatePost, useToggleVote, useVoteCount } from "@/hooks/use-care-data";
+import { usePost, useDeletePost, useUpdatePost, useToggleVote, useVoteCount } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { ArrowLeft, Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
@@ -20,6 +20,7 @@ import { enUS, zhCN } from "date-fns/locale";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchForumNames } from "@/features/shared/wp-users";
+import { isPostAuthor } from "@/features/posts/ownership";
 
 function PostEditorDialog({
   open,
@@ -65,9 +66,8 @@ export default function CommunityPost() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
-  const { data: profile } = useMyProfile();
   const communityPostType = "care_community_post";
   const { data: post, isLoading } = usePost(id || null, communityPostType);
   const deletePost = useDeletePost();
@@ -85,7 +85,7 @@ export default function CommunityPost() {
   // Forum name for this app only (CCT 151 a56).
   const { data: forumNames } = useQuery({
     queryKey: ["forumNames", [post?.author_id]],
-    queryFn: () => fetchForumNames([post!.author_id]),
+    queryFn: () => fetchForumNames(post?.author_id ? [post.author_id] : []),
     enabled: !!post?.author_id,
     staleTime: 10 * 60 * 1000,
   });
@@ -204,7 +204,7 @@ export default function CommunityPost() {
                 </div>
                 <h1 className="text-2xl font-semibold mt-2 text-foreground">{post.title}</h1>
               </div>
-              {profile?.user_id === post.author_id ? (
+              {isPostAuthor(post.author_id, user?.user_id) ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label={isZh ? "帖子操作" : "Post actions"}>
@@ -249,12 +249,6 @@ export default function CommunityPost() {
                 <ThumbsDown className="h-4 w-4 mr-1.5" />
                 {voteState.downvotes}
               </Button>
-              <span className="text-sm font-medium text-muted-foreground">
-                {isZh ? `总分 ${voteState.score}` : `Score ${voteState.score}`}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {isZh ? "像传统论坛一样进入帖子页讨论" : "Full discussion page, like a classic forum"}
-              </span>
             </div>
 
             <Separator />
@@ -262,7 +256,6 @@ export default function CommunityPost() {
             <div className="space-y-3">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">{isZh ? "讨论" : "Discussion"}</h2>
-                <p className="text-sm text-muted-foreground">{isZh ? "支持回复、编辑、删除、赞成、反对和取消投票" : "Replies support create, edit, delete, upvote, downvote, and unvote."}</p>
               </div>
               <CommentsSection relationId={R.communityPostComments} parentId={post.id} />
             </div>

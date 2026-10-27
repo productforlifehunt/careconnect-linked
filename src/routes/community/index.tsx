@@ -7,5 +7,13 @@ function RouteCommunityPage() {
 }
 
 export const Route = createFileRoute("/community/")({
+  head: () => ({ meta: [
+    { title: "Community · Family Care" },
+    { name: "description", content: "Care community posts and family discussions." },
+    { property: "og:title", content: "Community · Family Care" },
+    { property: "og:description", content: "Care community posts and family discussions." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: RouteCommunityPage,
 });

@@ -92,6 +92,14 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
 
   useEffect(() => {
     const navState = location.state as any;
+    if (navState?.conversationId && !navHandledRef.current && conversations) {
+      const conversation = conversations.find((c: any) => String(c.id) === String(navState.conversationId));
+      if (!conversation) return;
+      navHandledRef.current = true;
+      setSelectedConvoId(conversation.id);
+      setSelectedOtherUser(getOtherUser(conversation));
+      return;
+    }
     if (navState?.targetUserId && !navHandledRef.current) {
       navHandledRef.current = true;
       setHandledNavState(true);
@@ -112,7 +120,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
         },
       });
     }
-  }, [location.state]);
+  }, [location.state, conversations]);
 
   // On phones the list IS the screen: never auto-open a chat, otherwise the
   // user lands inside a conversation they never picked and back feels broken.
@@ -131,6 +139,13 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
   const otherUserId = selectedOtherUser?.id || null;
   // Messages are fetched by conversationId, not by otherUserId.
   const { data: messages, isLoading: msgsLoading } = useDirectMessages(selectedConvoId);
+
+  // Mark only after the selected conversation's actual messages have loaded.
+  useEffect(() => {
+    if (!selectedConvoId || !messages || msgsLoading) return;
+    const conversation = conversations?.find((c: any) => String(c.id) === String(selectedConvoId));
+    if (Number(conversation?.unread_count) > 0 && !markRead.isPending) markRead.mutate(selectedConvoId);
+  }, [selectedConvoId, messages, msgsLoading, conversations]);
 
   // Backwards-compat: keep a no-op reference to silence linter on unused.
   void otherUserId;
@@ -259,7 +274,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
               <div
                 key={c.id}
                 className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
-                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); if (c.unread_count > 0) markRead.mutate(c.id); }}
+                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); }}
               >
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">

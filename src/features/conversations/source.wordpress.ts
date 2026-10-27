@@ -5,6 +5,7 @@ import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/
 import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import { setReadMark, unreadFlag } from "@/features/conversations/read-state";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 /**
  * Chat lives in CCTs shared by every app on the backend, so reads filter and
@@ -408,7 +409,8 @@ export async function sendMessageWordPress(
 export async function markMessagesReadWordPress(conversationId: string): Promise<void> {
   // No per-member read column exists on the conversation relation, so the mark
   // is stored on the device (see read-state.ts). Opening a chat clears its badge.
-  setReadMark(conversationId);
+  const me = getStoredWPUser();
+  setReadMark(conversationId, undefined, me ? `wp-${me.user_id}` : null);
 }
 
 export async function startConversationWordPress(

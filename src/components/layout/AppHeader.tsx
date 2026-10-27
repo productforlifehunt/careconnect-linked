@@ -19,7 +19,7 @@ import { NavLink } from "@/components/NavLink";
 import { Menu, LogOut, LayoutDashboard, Bell, Heart, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { useNotifications } from "@/hooks/use-care-data";
+import { useInboxCounts } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { BrandMark } from "@/components/BrandMark";
@@ -32,8 +32,7 @@ export function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { data: notifications } = useNotifications();
-  const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+  const { unread: unreadCount } = useInboxCounts();
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
@@ -195,14 +194,14 @@ export function AppHeader() {
               variant="ghost"
               size="icon"
               className="relative min-h-11 min-w-11 shrink-0"
-              onClick={() => navigate("/inbox?tab=notifications")}
-              title={t("nav.notifications")}
-              aria-label={t("nav.notifications")}
+              onClick={() => navigate("/inbox")}
+              title={isChinese ? "收件箱" : "Inbox"}
+              aria-label={isChinese ? "收件箱" : "Inbox"}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs border-2 border-card">
-                  {unreadCount > 9 ? "9+" : unreadCount}
+                  {unreadCount > 99 ? "99+" : unreadCount}
                 </Badge>
               )}
             </Button>

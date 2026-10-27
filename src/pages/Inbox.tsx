@@ -16,6 +16,8 @@ import {
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
   useMyProfile,
+  useInboxCounts,
+  useMarkMessagesRead,
 } from "@/hooks/use-care-data";
 
 /**
@@ -49,10 +51,27 @@ export default function Inbox() {
   const { data: profile } = useMyProfile();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
-
-  const unreadNotif = (notifications || []).filter((n: any) => !n.is_read).length;
-  const unreadMsgs = (conversations || []).reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0);
-  const unreadAll = unreadNotif + unreadMsgs;
+  const markMessagesRead = useMarkMessagesRead();
+  const counts = useInboxCounts();
+  const selectedTotal = tab === "notifications" ? (notifications || []).length : tab === "messages" ? (conversations || []).length : counts.total;
+  const selectedUnread = tab === "notifications" ? counts.unreadNotifications : tab === "messages" ? counts.unreadMessages : counts.unread;
+  const [markingAll, setMarkingAll] = useState(false);
+  const [markError, setMarkError] = useState("");
+  const markEverythingRead = async () => {
+    setMarkingAll(true);
+    setMarkError("");
+    try {
+      await Promise.all([
+        markAllRead.mutateAsync(),
+        ...(conversations || []).filter((c: any) => Number(c.unread_count) > 0)
+          .map((c: any) => markMessagesRead.mutateAsync(c.id)),
+      ]);
+    } catch (error) {
+      setMarkError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setMarkingAll(false);
+    }
+  };
 
   const switchTab = (v: string, state?: any | undefined) => {
     setTab(v);
@@ -115,7 +134,7 @@ export default function Inbox() {
       if (url) navigate(url);
       return;
     }
-    switchTab("messages", row.raw.other_user_id ? { targetUserId: row.raw.other_user_id, targetUserName: row.title } : undefined);
+    switchTab("messages", { conversationId: row.raw.id });
   };
 
   return (
@@ -138,11 +157,9 @@ export default function Inbox() {
             >
               <InboxIcon className="h-4 w-4 shrink-0" />
               <span>{Z("全部", "All")}</span>
-              {/* This tab holds everything, so the badge is the total, not the
-                  unread count — unread lives on its own filter. */}
-              {feed.length > 0 && (
+              {counts.unread > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
-                  {feed.length}
+                  {counts.unread > 99 ? "99+" : counts.unread}
                 </Badge>
               )}
             </TabsTrigger>
@@ -152,6 +169,7 @@ export default function Inbox() {
             >
               <Bell className="h-4 w-4 shrink-0" />
               <span>{Z("通知", "Notifications")}</span>
+              {counts.unreadNotifications > 0 && <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">{counts.unreadNotifications}</Badge>}
             </TabsTrigger>
             <TabsTrigger
               value="messages"
@@ -159,6 +177,7 @@ export default function Inbox() {
             >
               <MessageSquare className="h-4 w-4 shrink-0" />
               <span>{Z("消息", "Messages")}</span>
+              {counts.unreadMessages > 0 && <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">{counts.unreadMessages}</Badge>}
             </TabsTrigger>
           </TabsList>
 
@@ -169,9 +188,11 @@ export default function Inbox() {
               ["unread", Z("未读", "Unread")],
               ["read", Z("已读", "Read")],
             ] as const).map(([key, label]) => (
-              <button
+              <Button
                 key={key}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setReadFilter(key)}
                 aria-pressed={readFilter === key}
                 className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
@@ -180,8 +201,8 @@ export default function Inbox() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {label}
-              </button>
+                {label} <span className="ml-1">{counts.isLoading || counts.error ? "—" : key === "all" ? selectedTotal : key === "unread" ? selectedUnread : selectedTotal - selectedUnread}</span>
+              </Button>
             ))}
           </div>
         </div>
@@ -189,7 +210,9 @@ export default function Inbox() {
 
         <TabsContent value="all" className="mt-0 focus-visible:outline-hidden">
           <div className="max-w-3xl mx-auto px-4 py-4">
-            {notifsLoading || convosLoading ? (
+            {counts.error ? (
+              <p role="alert" className="py-4 text-destructive">{Z("未能读取收件箱，请刷新重试。", "Couldn't load your inbox. Please refresh to retry.")}</p>
+            ) : notifsLoading || convosLoading ? (
               <div className="space-y-3 py-2">
                 {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
               </div>
@@ -200,13 +223,14 @@ export default function Inbox() {
               </div>
             ) : (
               <>
-                {unreadNotif > 0 && (
+                {counts.unread > 0 && (
                   <div className="flex justify-end mb-2">
-                    <Button variant="ghost" size="sm" onClick={() => markAllRead.mutate()}>
+                    <Button variant="ghost" size="sm" disabled={markingAll} onClick={markEverythingRead}>
                       {Z("全部标为已读", "Mark all as read")}
                     </Button>
                   </div>
                 )}
+                {markError && <p role="alert" className="text-sm text-destructive">{markError}</p>}
                 <div className="space-y-2">
                   {feed.map((row) => (
                     <Card

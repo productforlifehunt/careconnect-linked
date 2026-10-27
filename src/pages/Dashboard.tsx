@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import {
-  useBookings, useCareTasks, useUserCaredOnes, usePosts, useCareGroups, useConversations,
+  useBookings, useCareTasks, useUserCaredOnes, usePosts, useCareGroups, useInboxCounts,
 } from "@/hooks/use-care-data";
 
 import {
@@ -36,7 +36,7 @@ export default function Dashboard() {
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
   const { data: tasks, isLoading: tasksLoading } = useCareTasks();
   const { data: myCareGroups } = useCareGroups();
-  const { data: conversations } = useConversations();
+  const { unread: unreadInbox, isLoading: inboxLoading, error: inboxError } = useInboxCounts();
   const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes();
   const { data: communityPosts, isLoading: postsLoading } = usePosts("care_community_post");
 
@@ -109,8 +109,6 @@ export default function Dashboard() {
   const pendingTasks = myPendingTasks.slice(0, 5);
   // Care teams the user actually belongs to, and unread messages sent to them.
   const myCareGroupCount = (myCareGroups || []).length;
-  const myUnreadMessages = (conversations || []).reduce(
-    (sum: number, c: any) => sum + (Number(c.unread_count) || 0), 0);
   const firstCaredOne = caredOnes?.[0];
   const recentPosts = (communityPosts || []).slice(0, 3);
 
@@ -188,7 +186,7 @@ export default function Dashboard() {
           ...(paidCare ? [{ label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
           { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
           { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/cared-ones" },
-          { label: t("dashboard.unreadMessages"), value: myUnreadMessages, icon: MessageSquare, color: "text-coral", to: "/inbox?tab=messages" },
+          { label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
             className="text-left rounded-lg border border-transparent card-elevated p-3 hover:border-primary/30 transition-colors">

@@ -33,14 +33,14 @@ function save(marks: Marks) {
 }
 
 /** Timestamp of the newest message the user has seen in this conversation. */
-export function getReadMark(conversationId: string | number): string {
-  return load()[String(conversationId)] || "";
+export function getReadMark(conversationId: string | number, userId?: string | null): string {
+  return load()[`${String(userId ?? "").replace(/^wp-/, "")}:${conversationId}`] || "";
 }
 
 /** Remember that everything up to `at` (default: now) has been seen. */
-export function setReadMark(conversationId: string | number, at?: string | null | undefined) {
+export function setReadMark(conversationId: string | number, at?: string | null | undefined, userId?: string | null) {
   const marks = load();
-  marks[String(conversationId)] = at || new Date().toISOString();
+  marks[`${String(userId ?? "").replace(/^wp-/, "")}:${conversationId}`] = at || new Date().toISOString();
   save(marks);
 }
 
@@ -55,7 +55,11 @@ export function unreadFlag(
   myId: string | null | undefined,
 ): number {
   if (!lastMessage?.created_at) return 0;
-  if (myId && lastMessage.sender_id && String(lastMessage.sender_id) === String(myId)) return 0;
-  const mark = getReadMark(conversationId);
-  return String(lastMessage.created_at).localeCompare(mark) > 0 ? 1 : 0;
+  const normalize = (id: string) => id.replace(/^wp-/, "");
+  if (myId && lastMessage.sender_id && normalize(lastMessage.sender_id) === normalize(myId)) return 0;
+  const mark = getReadMark(conversationId, myId);
+  const messageTime = Date.parse(lastMessage.created_at);
+  if (!Number.isFinite(messageTime)) return 0;
+  const readTime = Date.parse(mark);
+  return !Number.isFinite(readTime) || messageTime > readTime ? 1 : 0;
 }

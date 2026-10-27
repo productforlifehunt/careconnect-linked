@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { X, Check, Plus, FileText, Loader2, ChevronRight, Paperclip, Upload } from "lucide-react";
+import { X, Check, Plus, FileText, Loader2, ChevronRight, Paperclip } from "lucide-react";
 import { useCaredOneDocuments, useCreateCaredOneDocument, useUpdateCaredOneDocument, useDeleteCaredOneDocument } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -66,7 +66,6 @@ export function DocumentsCard({ caredOneId }: { caredOneId: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-foreground">{Z("文件资料", "Documents")}</h2>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}><Upload className="h-4 w-4 mr-1" /> {Z("上传", "Upload")}</Button>
           <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加", "Add")}</Button>
         </div>
       </div>

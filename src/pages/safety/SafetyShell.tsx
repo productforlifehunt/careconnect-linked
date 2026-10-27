@@ -2,12 +2,11 @@ import { ReactNode } from "react";
 import { useLocation, useNavigate } from "@/lib/router-compat";
 import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
+import { useInboxCounts } from "@/hooks/use-care-data";
 
 /**
  * NotchSafety app shell — one persistent header on every screen and one
@@ -22,15 +21,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const { data: unread = 0 } = useQuery({
-    queryKey: ["nn-unread"],
-    enabled: isAuthenticated,
-    refetchInterval: 60_000,
-    queryFn: async () => {
-      const all = await runNotificationSkill("list-notifications");
-      return (Array.isArray(all) ? all : []).filter((n: any) => !n.is_read).length;
-    },
-  });
+  const { unread } = useInboxCounts();
 
   const tabs = [
     { url: "/map", label: L("地图", "Map"), icon: MapPin },
@@ -80,13 +71,13 @@ export function SafetyShell({ children }: { children: ReactNode }) {
                 variant="ghost"
                 size="icon"
                 className="relative"
-                onClick={() => navigate("/inbox?tab=notifications")}
-                aria-label={L("提醒", "Alerts")}
+                onClick={() => navigate("/inbox")}
+                aria-label={L("收件箱", "Inbox")}
               >
                 <Bell className="h-5 w-5" />
                 {unread > 0 && (
                   <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {unread > 9 ? "9+" : unread}
+                    {unread > 99 ? "99+" : unread}
                   </span>
                 )}
               </Button>

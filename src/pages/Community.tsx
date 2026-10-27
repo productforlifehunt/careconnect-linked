@@ -5,7 +5,7 @@ import { fetchForumNames } from "@/features/shared/wp-users";
 import { Link } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePosts, useCreatePost, useDeletePost, useMyProfile, useToggleVote, useUpdatePost, useVoteSummary } from "@/hooks/use-care-data";
+import { usePosts, useCreatePost, useDeletePost, useToggleVote, useUpdatePost, useVoteSummary } from "@/hooks/use-care-data";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MessageSquare, Loader2, Newspaper, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { Plus, Loader2, Newspaper, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN, enUS } from "date-fns/locale";
+import { isPostAuthor } from "@/features/posts/ownership";
 
 function PostEditorDialog({
   open,
@@ -71,9 +72,8 @@ function PostEditorDialog({
 
 export default function Community() {
   const { i18n } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
-  const { data: profile } = useMyProfile();
   const isZh = i18n.language?.startsWith("zh");
   const area = isZh ? "china" : "global";
   const communityPostType = "care_community_post";
@@ -123,7 +123,7 @@ export default function Community() {
   };
 
   const filteredPosts = (posts || []).filter((p: any) => {
-    if (postScope === "mine") return p.author_id === profile?.user_id;
+    if (postScope === "mine") return isPostAuthor(p.author_id, user?.user_id);
     return true;
   });
   const postIds = useMemo(() => (filteredPosts || []).map((p: any) => p.id), [filteredPosts]);
@@ -298,7 +298,7 @@ export default function Community() {
                       <h3 className="text-base font-semibold mt-1 text-foreground">{post.title}</h3>
                     </Link>
                   </div>
-                  {profile?.user_id === post.author_id ? (
+                  {isPostAuthor(post.author_id, user?.user_id) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="min-h-11 min-w-11 shrink-0" aria-label={isZh ? "帖子操作" : "Post actions"}>
@@ -344,16 +344,6 @@ export default function Community() {
                     <ThumbsDown className="h-4 w-4 mr-1.5" />
                     {voteSummary[post.id]?.downvotes || 0}
                   </Button>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {isZh ? `总分 ${voteSummary[post.id]?.score || 0}` : `Score ${voteSummary[post.id]?.score || 0}`}
-                  </span>
-                  <Link
-                    to={`/community/${post.id}`}
-                    className="inline-flex h-8 items-center rounded-full border px-3 text-xs text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/20"
-                  >
-                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-                    {isZh ? "进入帖子讨论" : "Open discussion"}
-                  </Link>
                   <CommentsSection relationId={R.communityPostComments} parentId={post.id} compact hideComposer openPostHref={`/community/${post.id}`} />
                 </div>
               </CardContent>
