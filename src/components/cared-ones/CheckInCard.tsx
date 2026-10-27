@@ -50,6 +50,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const logCheckin = useLogCheckin();
 
   const [addOpen, setAddOpen] = useState(false);
+  const [view, setView] = useState<"today" | "records" | "manage">("today");
   const [editOpen, setEditOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
@@ -237,9 +238,16 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">{Z("签到", "Check-In")}</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 className="min-w-0 text-lg font-bold text-foreground">{Z("签到", "Check-In")}</h2>
+        <div className="flex shrink-0 gap-2">
+          <div className="flex border rounded-lg overflow-hidden">
+            <button onClick={() => setView("today")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "today" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("今日", "Today")}</button>
+            <button onClick={() => setView("records")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "records" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("记录", "Records")}</button>
+            <button onClick={() => setView("manage")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "manage" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("管理", "Manage")}</button>
+          </div>
+          {view === "manage" && <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>}
+        </div>
       </div>
 
       {/* Add schedule */}
@@ -424,6 +432,55 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
           <p className="text-muted-foreground mb-3">{Z("暂无签到日程", "No check-in schedules yet")}</p>
           <Button variant="coral" size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("创建第一个签到日程", "First Check-In Schedule")}</Button>
         </div>
+      ) : view === "records" ? (
+        <div className="space-y-2">
+          {(logs || []).map((log: any) => (
+            <Card key={log.id} className="border-transparent card-elevated">
+              <CardContent className="p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
+                  {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
+                  {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">{formatDate(log.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+              </CardContent>
+            </Card>
+          ))}
+          {(logs || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">{Z("暂无历史", "No history yet")}</p>}
+        </div>
+      ) : view === "manage" ? (
+        <div className="space-y-3">
+          {(checkins || []).map((checkin: any) => {
+            const slots = Array.isArray(checkin.time_slot) && checkin.time_slot.length > 0 ? checkin.time_slot : ["08:00"];
+            return (
+              <Card key={checkin.id} className="border-transparent card-elevated">
+                <CardContent className="p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <ClipboardCheck className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-foreground">{checkin.name}</span>
+                        {!checkin.is_active && <Badge variant="outline" className="text-xs">{Z("已暂停", "Paused")}</Badge>}
+                      </div>
+                      {checkin.detail && <p className="text-xs text-muted-foreground mt-1">{checkin.detail}</p>}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {checkin.frequency || Z("每日一次", "Once daily")} · {slots.map((s: string) => formatSlot(s, isCN)).join(", ")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("历史", "History")} onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? Z("暂停", "Pause") : Z("恢复", "Resume")} onClick={() => togglePause(checkin)} disabled={update.isPending}>
+                        {checkin.is_active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("编辑", "Edit")} onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title={Z("删除", "Delete")} onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       ) : (
         <div className="space-y-3">
           {(checkins || []).map((checkin: any) => {
@@ -464,39 +521,12 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
                           <Button size="sm" onClick={() => openLog(checkin, "checked")} disabled={logCheckin.isPending}><Check className="h-3 w-3 mr-1" /> {Z("签到", "Check")}</Button>
                         </div>
                       )}
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("历史", "History")} onClick={() => setHistoryOpen({ open: true, checkin })}><History className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title={checkin.is_active ? Z("暂停", "Pause") : Z("恢复", "Resume")} onClick={() => togglePause(checkin)} disabled={update.isPending}>
-                          {checkin.is_active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title={Z("编辑", "Edit")} onClick={() => openEdit(checkin)}><Edit2 className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title={Z("删除", "Delete")} onClick={() => setDeleteConfirm({ open: true, checkin })}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             );
           })}
-
-          <div className="pt-2">
-            <h3 className="text-sm font-semibold text-foreground mb-2">{Z("最近签到记录", "Recent check-in history")}</h3>
-            <div className="space-y-2">
-              {(logs || []).slice(0, 5).map((log: any) => (
-                <Card key={log.id} className="border-transparent card-elevated">
-                  <CardContent className="p-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Badge variant="outline" className={STATUS_STYLE[log.status] || ""}>{STATUS_LABEL[log.status] || log.status}</Badge>
-                      {log.checked_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="h-3 w-3 mr-1" />AI</Badge>}
-                      {log.note && <p className="text-xs text-muted-foreground truncate">{log.note}</p>}
-                    </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatDate(log.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-                  </CardContent>
-                </Card>
-              ))}
-              {(logs || []).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">{Z("暂无历史", "No history yet")}</p>}
-            </div>
-          </div>
         </div>
       )}
 

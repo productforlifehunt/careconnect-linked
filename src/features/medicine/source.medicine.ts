@@ -283,6 +283,28 @@ export async function fetchMedicineLogsWordPress(medicineId: string): Promise<an
   return rows.filter(Boolean).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
+/** All dose logs for every medicine schedule of this cared one, newest first. */
+export async function fetchAllMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
+  const [rows, logMap] = await Promise.all([
+    fetchScheduleRows(caredOneId),
+    fetchRelChildrenMap(REL_SCHEDULE_LOG),
+  ]);
+  if (rows.length === 0) return [];
+  const out: any[] = [];
+  await Promise.all(rows.map(async (row: any) => {
+    const mid = String(row.id || row._ID);
+    const medName = row[FC.TITLE] || "";
+    const logs = logMap.loaded
+      ? (await Promise.all((logMap.get(mid) || []).map(async (c) => {
+          const l = await wordpressCCTFetch<any>(LOG.slug, { id: c.childId });
+          return isMedicineLogRow(l) ? mapLog(l, mid, c.childId) : null;
+        }))).filter(Boolean)
+      : await fetchMedicineLogsWordPress(mid);
+    logs.forEach((l: any) => out.push({ ...l, med_name: medName }));
+  }));
+  return out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
   const [rows, logMap] = await Promise.all([
     fetchScheduleRows(caredOneId),

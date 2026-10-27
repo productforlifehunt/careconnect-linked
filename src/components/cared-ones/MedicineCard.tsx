@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote, Search } from "lucide-react";
-import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs } from "@/hooks/use-care-data";
+import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs, useAllMedicineLogs } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
 const isCN = () => (i18n.language || "").startsWith("zh");
@@ -334,7 +334,7 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
 }
 
 // ─── Inline Med Card (used in timeline & list) ──────────────
-function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot }: {
+function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compact, slot, manage }: {
   med: any;
   todayLogs: any[];
   onLog: (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => void;
@@ -343,6 +343,8 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
   onHistory: (med: any) => void;
   compact?: boolean | undefined;
   slot?: string | undefined;
+  /** Manage view: plan editing only, no dose check-in buttons. */
+  manage?: boolean | undefined;
 }) {
   const isPRN = med.frequency_code === "as_needed" || med.frequency === "As needed" || med.frequency === "as_needed";
   const logForThisDose = findDoseLog(todayLogs, med.id, isPRN ? undefined : slot);
@@ -404,7 +406,24 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1 pl-12">
-        {isDone ? (
+        {manage ? (
+          <>
+            <span className="text-xs text-muted-foreground">
+              {isPRN
+                ? Z("按需服用","As needed")
+                : (med.time_slot || []).map((s: string) => formatHour(s)).join(" · ")}
+            </span>
+            <div className="ml-auto flex items-center gap-0.5">
+              <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
+                <History className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
+                <Edit2 className="h-3.5 w-3.5" />
+              </Button>
+              {onDelete && <RowActions onDelete={() => onDelete(med)} />}
+            </div>
+          </>
+        ) : isDone ? (
           <Badge variant="outline" className={`text-xs ${
             isTaken ? "border-success/40 text-success bg-success/10" :
             isSkipped ? "border-warning/40 text-warning bg-warning/10" :
@@ -428,15 +447,6 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
             )}
           </>
         )}
-        <div className="ml-auto flex items-center gap-0.5">
-          <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
-            <History className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
-            <Edit2 className="h-3.5 w-3.5" />
-          </Button>
-          {onDelete && <RowActions onDelete={() => onDelete(med)} />}
-        </div>
       </div>
     </motion.div>
   );
@@ -524,6 +534,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: meds, isLoading } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
+  const { data: allLogs, isLoading: allLogsLoading } = useAllMedicineLogs(caredOneId);
   const createMed = useCreateMedicine();
   const deleteMed = useDeleteMedicine();
   const logMed = useLogMedicine();
@@ -532,7 +543,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const autoOpenedDoseRef = useRef<string | null>(null);
 
   const [addOpen, setAddOpen] = useState(false);
-  const [view, setView] = useState<"timeline" | "list">("timeline");
+  const [view, setView] = useState<"timeline" | "records" | "manage">("timeline");
   const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number });
   const updateMed = useUpdateMedicine();
 
@@ -671,9 +682,10 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         <div className="flex shrink-0 gap-2">
           <div className="flex border rounded-lg overflow-hidden">
             <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("时间线","Timeline")}</button>
-            <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("列表","List")}</button>
+            <button onClick={() => setView("records")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "records" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("记录","Records")}</button>
+            <button onClick={() => setView("manage")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "manage" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("用药管理","Manage")}</button>
           </div>
-          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加","Add")}</Button>
+          {view === "manage" && <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加","Add")}</Button>}
         </div>
       </div>
 
@@ -834,6 +846,38 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             );
           })}
         </div>
+      ) : view === "records" ? (
+        <div className="space-y-2">
+          {allLogsLoading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto my-8" />
+          ) : (allLogs || []).length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">{Z("暂无服药记录","No dose records yet") as any}</p>
+          ) : (
+            (allLogs || []).map((log: any) => (
+              <div key={log.id} className="flex items-start gap-3 rounded-xl border border-border/50 bg-card p-3">
+                <div className={`mt-0.5 shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${log.status === "taken" ? "bg-success/15 text-success" : log.status === "skipped" ? "bg-warning/15 text-warning" : "bg-destructive/15 text-destructive"}`}>
+                  {log.status === "taken" ? <Check className="h-3.5 w-3.5" /> : log.status === "skipped" ? <SkipForward className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium break-words">{log.med_name || log.concept_display_text || Z("药品","Medicine")}</span>
+                    <Badge variant="outline" className={`text-xs ${log.status === "taken" ? "border-success/40 text-success" : log.status === "skipped" ? "border-warning/40 text-warning" : "border-destructive/40 text-destructive"}`}>
+                      {log.status === "taken" ? Z("已服用","Taken") : log.status === "skipped" ? Z("已跳过","Skipped") : Z("漏服","Missed")}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {log.scheduled_date ? `${Z("计划","Scheduled")} ${formatDateTime(log.scheduled_date, i18n.language)} · ` : ""}{formatDate(log.created_at)} · {formatTime(log.created_at)}
+                  </p>
+                  {log.note && (
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-start gap-1 break-words">
+                      <StickyNote className="h-3 w-3 mt-0.5 shrink-0" />{log.note}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           {(meds || []).map((med: any) => (
@@ -843,8 +887,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
               todayLogs={todayLogs || []}
               onLog={handleLog}
               onEdit={setEditMed}
-                          onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
+              onDelete={(m: any) => deleteMed.mutateAsync(m.id)}
               onHistory={setHistoryMed}
+              manage
               slot={(med.time_slot && med.time_slot[0]) || undefined}
             />
           ))}

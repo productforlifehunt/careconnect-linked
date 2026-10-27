@@ -78,7 +78,7 @@ import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
   fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
   fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
-  fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, logMedicineWordPress,
+  fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, fetchAllMedicineLogsWordPress, logMedicineWordPress,
   fetchCareTipsWordPress, createCareTipWordPress, updateCareTipWordPress, deleteCareTipWordPress,
   fetchCarePlansWordPress, createCarePlanWordPress, updateCarePlanWordPress, deleteCarePlanWordPress,
   fetchCareNotesWordPress, createCareNoteWordPress, updateCareNoteWordPress, deleteCareNoteWordPress,
@@ -1202,6 +1202,14 @@ export function useMedicineLogs(medicineId: string | null) {
   });
 }
 
+export function useAllMedicineLogs(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["allMedicineLogs", caredOneId],
+    queryFn: () => fetchAllMedicineLogsWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
 export function useTodayMedicineLogs(caredOneId: string | null) {
   const today = new Date().toISOString().split('T')[0];
   return useQuery({
@@ -1215,7 +1223,7 @@ export function useLogMedicine() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (log: Parameters<typeof logMedicineWordPress>[0]) => logMedicineWordPress(log),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicineLogs"] }); qc.invalidateQueries({ queryKey: ["todayMedicineLogs"] }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medicineLogs"] }); qc.invalidateQueries({ queryKey: ["todayMedicineLogs"] }); qc.invalidateQueries({ queryKey: ["allMedicineLogs"] }); },
   });
 }
 
