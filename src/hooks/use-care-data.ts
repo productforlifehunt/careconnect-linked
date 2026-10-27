@@ -1202,6 +1202,14 @@ export function useMedicineLogs(medicineId: string | null) {
   });
 }
 
+export function useAllMedicineLogs(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["allMedicineLogs", caredOneId],
+    queryFn: () => fetchAllMedicineLogsWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
 export function useTodayMedicineLogs(caredOneId: string | null) {
   const today = new Date().toISOString().split('T')[0];
   return useQuery({
