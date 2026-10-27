@@ -10,7 +10,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead } from "@/features/shared/rel-batch";
-import { FREQUENCY_CODES, type FrequencyCode } from "./recurrence";
+import { FREQUENCY_CODES, type FrequencyCode, normalizeSlots, frequencyForSlots, buildRRule } from "./recurrence";
 
 export const CAL = T.calendarEvent;
 export const FC = CAL.f;
@@ -87,6 +87,21 @@ export function readReminderMinutes(raw: any): number | null {
 /** a57 (and a58, a dose being an instant) for a start date and the first time. */
 export function startAtFor(startDate: string, slots: readonly string[]): string {
   return slots[0] ? `${startDate} ${slots[0]}:00` : `${startDate} 00:00:00`;
+}
+
+/** Both care schedule types use exactly the same dictionary time columns.
+ * Exception dates a68/a69 are untouched by an ordinary time edit; a70 is not
+ * an ordinary plan field. Never write a90 or a duplicate recurrence payload.
+ */
+export function scheduleTimeColumns(frequency: string | undefined, times: readonly unknown[], startDate: string, endDate?: string | null) {
+  const slots = normalizeSlots(times);
+  const freq = frequencyForSlots(toFrequencyCode(frequency), slots);
+  const startAt = startAtFor(startDate, slots);
+  return {
+    [FC.START_AT]: startAt,
+    [FC.END_AT]: startAt,
+    [FC.RRULE]: buildRRule(freq, slots, endDate),
+  };
 }
 
 // ─── Reads ───────────────────────────────────────────────────

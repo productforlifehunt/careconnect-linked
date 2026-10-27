@@ -1,3 +1,8 @@
+## Current request: Check-in and medicine time-write parity
+- [x] Both create/update paths use scheduleTimeColumns for CCT187 a57/a58/a66; ordinary edits preserve a68/a69, and a90/a70 are never written. Check-in cutoff handling matches medicine.
+- [x] 12/12 focused tests pass, including actual create/update payload parity, UNTIL and exception preservation; latest build OK.
+- [ ] Real create/save/readback not verified: test1 signs in but /cared-ones/54/checkin remains on the loading spinner after 15 seconds, with no page errors. No live records changed.
+
 ## Current request: One-picture sick-leave notice
 - [x] Add a standalone `sick` micro site at `/?__site=sick`: one picture, no words, no app shell, no brand; user's photo stored as a stripped-metadata CDN asset.
 - [x] Real browser (clean session): page renders only the picture (0 body characters, no nav/header/footer), right-click over the picture is cancelled, drag/selection disabled, `noindex` applied, zero page errors; homepage and consent page unaffected in clean sessions. 8/8 tests pass, build OK.

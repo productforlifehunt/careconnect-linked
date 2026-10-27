@@ -22,9 +22,9 @@ import {
   FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
   LOG_TYPE_AI, LOG_TYPE_HUMAN, CAL,
   numId, wpStr, numOrNull, linkRel,
-  toFrequencyCode, FREQ_EN, buildRRule, buildReminders, readReminderMinutes,
+  toFrequencyCode, FREQ_EN, scheduleTimeColumns, buildReminders, readReminderMinutes,
   slotsFromRRule, frequencyFromRow, frequencyForSlots, normalizeSlots, occurrencesOn,
-  localDay, parseRRule, dateOf, startAtFor,
+  localDay, parseRRule, dateOf,
   fetchEventsOfType, createEvent, updateEvent, deleteEvent, readEvent,
 } from "@/features/schedules/calendar-schedule";
 
@@ -154,11 +154,8 @@ export interface MedicineInput {
 function recurrenceColumns(freqIn: string | undefined, slotsIn: readonly unknown[], startDate: string, endDate: string | null | undefined) {
   const slots = normalizeSlots(slotsIn);
   const freq = frequencyForSlots(toFrequencyCode(freqIn), slots);
-  const startAt = startAtFor(startDate, slots);
   return {
-    [FC.START_AT]: startAt,
-    [FC.END_AT]: startAt,
-    [FC.RRULE]: buildRRule(freq, slots, endDate || null),
+    ...scheduleTimeColumns(freq, slots, startDate, endDate),
     [FC.MEDICATION_SCHEDULE_TYPE]: freq === "as_needed" ? AS_NEEDED : SCHEDULED,
   };
 }
