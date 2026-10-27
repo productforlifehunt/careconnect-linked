@@ -542,7 +542,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const autoOpenedDoseRef = useRef<string | null>(null);
 
   const [addOpen, setAddOpen] = useState(false);
-  const [view, setView] = useState<"timeline" | "list">("timeline");
+  const [view, setView] = useState<"timeline" | "records" | "manage">("timeline");
   const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number });
   const updateMed = useUpdateMedicine();
 
@@ -681,9 +681,10 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         <div className="flex shrink-0 gap-2">
           <div className="flex border rounded-lg overflow-hidden">
             <button onClick={() => setView("timeline")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "timeline" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("时间线","Timeline")}</button>
-            <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("列表","List")}</button>
+            <button onClick={() => setView("records")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "records" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("记录","Records")}</button>
+            <button onClick={() => setView("manage")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "manage" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("用药管理","Manage")}</button>
           </div>
-          <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加","Add")}</Button>
+          {view === "manage" && <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("添加","Add")}</Button>}
         </div>
       </div>
 
