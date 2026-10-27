@@ -50,6 +50,7 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
   const logCheckin = useLogCheckin();
 
   const [addOpen, setAddOpen] = useState(false);
+  const [view, setView] = useState<"today" | "records" | "manage">("today");
   const [editOpen, setEditOpen] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; checkin: any }>({ open: false, checkin: null });
   const [logDialog, setLogDialog] = useState<{ open: boolean; checkin: any; status: "checked" | "skipped" | "missed" }>({ open: false, checkin: null, status: "checked" });
@@ -237,9 +238,16 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">{Z("签到", "Check-In")}</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 className="min-w-0 text-lg font-bold text-foreground">{Z("签到", "Check-In")}</h2>
+        <div className="flex shrink-0 gap-2">
+          <div className="flex border rounded-lg overflow-hidden">
+            <button onClick={() => setView("today")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "today" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("今日", "Today")}</button>
+            <button onClick={() => setView("records")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "records" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("记录", "Records")}</button>
+            <button onClick={() => setView("manage")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${view === "manage" ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>{Z("管理", "Manage")}</button>
+          </div>
+          {view === "manage" && <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> {Z("新增签到", "Add Check-In")}</Button>}
+        </div>
       </div>
 
       {/* Add schedule */}
