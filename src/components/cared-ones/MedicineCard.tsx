@@ -406,7 +406,24 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1 pl-12">
-        {isDone ? (
+        {manage ? (
+          <>
+            <span className="text-xs text-muted-foreground">
+              {isPRN
+                ? Z("按需服用","As needed")
+                : (med.time_slot || []).map((s: string) => formatHour(s)).join(" · ")}
+            </span>
+            <div className="ml-auto flex items-center gap-0.5">
+              <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
+                <History className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
+                <Edit2 className="h-3.5 w-3.5" />
+              </Button>
+              {onDelete && <RowActions onDelete={() => onDelete(med)} />}
+            </div>
+          </>
+        ) : isDone ? (
           <Badge variant="outline" className={`text-xs ${
             isTaken ? "border-success/40 text-success bg-success/10" :
             isSkipped ? "border-warning/40 text-warning bg-warning/10" :
@@ -430,15 +447,6 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
             )}
           </>
         )}
-        <div className="ml-auto flex items-center gap-0.5">
-          <Button size="icon" variant="ghost" aria-label={Z(`${med.name} 用药记录`, `${med.name} history`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onHistory(med)}>
-            <History className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="icon" variant="ghost" aria-label={Z(`编辑 ${med.name}`, `Edit ${med.name}`) as string} className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(med)}>
-            <Edit2 className="h-3.5 w-3.5" />
-          </Button>
-          {onDelete && <RowActions onDelete={() => onDelete(med)} />}
-        </div>
       </div>
     </motion.div>
   );
