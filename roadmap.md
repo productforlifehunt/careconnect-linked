@@ -1,9 +1,11 @@
 ## Current request: Community, documents and unread consistency
-- [ ] Remove Score without changing separate up/down counts or About/Demo; remove duplicate discussion entry.
-- [ ] Fix My Posts ownership and identify the saved author-name source without renaming accounts.
-- [ ] Keep one independent document Add entry while preserving attachment upload.
-- [ ] Unify Inbox/header/mobile/dashboard unread calculations and refresh behavior; distinguish total/read/unread.
-- [ ] Run focused tests and approved-account live mobile flows with screenshots; report every result.
+- [x] Remove Score from community list/detail and leave one Open discussion link; separate up/down counts retained. Live list/detail checked.
+- [x] My Posts compares existing author/session WordPress IDs without wp-prefix/type mismatch or waiting for full profile. test1 created a temporary post, found it under My Posts before/after refresh, opened detail and deleted it. Original screenshot post is not test1's; challenged login did not establish a session, so original-account readback is not verified.
+- [x] Identify 阿甘照护 in live CCT151 row84 a56, a01=challenged, a55 empty. No hardcoded name found; who originally entered this saved value is not established. No account/profile renamed.
+- [x] Documents has one right-side Add opening the same form with Upload files retained; actual dialog and screenshots checked, existing files not edited.
+- [x] Inbox/header/mobile/dashboard share unread notifications + unread conversation flags. Live test1: 23+2=25 at every surface, All40/Unread25/Read15; open chat decrements and survives same-context refresh; Mark all as read eventually reads back All40/Unread0/Read40 and dashboard0. Notification writes were delayed on first check; final readback succeeded. Test1's old notifications were marked read for verification; messages are account-scoped device-local, so a fresh browser still has two unread conversations.
+- [x] 25/25 focused tests pass, latest build OK; EN1280 and ZH393 screenshots have no horizontal overflow or runtime errors. SafetyShell shares hook but its signed-in view not separately exercised.
+- [ ] About/Demo preservation visual verification: none of the six supplied screenshots shows these entries, and no matching combined header was located; existing About/Demo content was not changed. Needs identifiable target before claiming that part checked.
 
 ## Current request: Stable medicine and check-in toolbar
 - [x] Keep three fixed view tabs and an independent right-side Add button in every view; use matching constrained dimensions for both pages.
