@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyProfile, usePost, useDeletePost, useUpdatePost, useToggleVote, useVoteCount } from "@/hooks/use-care-data";
+import { usePost, useDeletePost, useUpdatePost, useToggleVote, useVoteCount } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { ArrowLeft, Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
@@ -68,7 +68,6 @@ export default function CommunityPost() {
   const { i18n } = useTranslation();
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
-  const { data: profile } = useMyProfile();
   const communityPostType = "care_community_post";
   const { data: post, isLoading } = usePost(id || null, communityPostType);
   const deletePost = useDeletePost();

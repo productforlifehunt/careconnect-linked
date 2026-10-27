@@ -5,6 +5,7 @@ import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/
 import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import { setReadMark, unreadFlag } from "@/features/conversations/read-state";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 /**
  * Chat lives in CCTs shared by every app on the backend, so reads filter and
