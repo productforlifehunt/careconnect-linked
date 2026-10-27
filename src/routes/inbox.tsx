@@ -7,5 +7,13 @@ function RouteInboxPage() {
 }
 
 export const Route = createFileRoute("/inbox")({
+  head: () => ({ meta: [
+    { title: "Inbox · Family Care" },
+    { name: "description", content: "Your care messages, notifications and unread items." },
+    { property: "og:title", content: "Inbox · Family Care" },
+    { property: "og:description", content: "Your care messages, notifications and unread items." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: RouteInboxPage,
 });
