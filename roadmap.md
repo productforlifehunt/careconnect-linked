@@ -1,3 +1,8 @@
+## Current request: Alibaba family voice model comparison
+- [ ] Verify current Qwen/CosyVoice versions, prices, recording requirements and documented lifecycle; exclude MiniMax.
+- [ ] Add price-sorted per-model enrollment and text preview; preserve existing voices and correct model binding in AI calls.
+- [ ] Run focused rule tests and real signed-in UI/provider checks; report model-by-model gaps honestly.
+
 ## Current request: Family voice text preview and rename
 - [x] Add bottom text preview using the selected existing cloned voice, with playback/error states. Existing provider/model unchanged.
 - [x] Rename saved voices without changing their provider IDs; synchronize AI-call voice labels through the existing shared change event.
