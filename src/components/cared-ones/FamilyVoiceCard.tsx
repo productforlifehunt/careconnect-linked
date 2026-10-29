@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, Mic, Square, Trash2, Play } from "lucide-react";
+import { Loader2, Mic, Square, Trash2, Play, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VoiceRecorder } from "@/lib/ai";
 import { createClonedVoice, deleteClonedVoice, speakClonedVoice } from "@/lib/voice-clone.functions";
-import { addFamilyVoice, blobToBase64, listFamilyVoices, onFamilyVoicesChanged, playBase64Mp3, removeFamilyVoice, type FamilyVoice } from "@/lib/family-voices";
+import { addFamilyVoice, blobToBase64, listFamilyVoices, onFamilyVoicesChanged, renameFamilyVoice, removeFamilyVoice, type FamilyVoice } from "@/lib/family-voices";
 
 const SAMPLE_ZH = "今天天气不错，我刚吃完饭。家里一切都好，你别担心。等会儿有人来帮忙，你跟他好好说话。我晚点再给你打电话。";
 const SAMPLE_EN = "The weather is nice today and I just had lunch. Everything at home is fine, don't worry. Someone is coming to help soon, please be kind to them. I'll call you again later.";
@@ -20,6 +22,12 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [previewVoiceId, setPreviewVoiceId] = useState("");
+  const [previewText, setPreviewText] = useState("");
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
   const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | null>(null);
   const secs = useRef(0);
@@ -29,6 +37,12 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     load();
     return onFamilyVoicesChanged(load);
   }, [id]);
+
+  useEffect(() => {
+    setPreviewVoiceId((current) => voices.some((v) => v.id === current) ? current : voices[0]?.id || "");
+  }, [voices]);
+
+  useEffect(() => () => { audio.current?.pause(); }, []);
 
   const start = async () => {
     setError(null);
@@ -61,16 +75,29 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     } finally { setBusy(null); }
   };
 
-  const test = async (v: FamilyVoice) => {
+  const test = async (v: FamilyVoice, text?: string) => {
+    audio.current?.pause(); setPlayingId(null);
     setBusy(v.id); setError(null);
     try {
-      const { audioBase64 } = await speakClonedVoice({ data: { voiceId: v.voiceId, text: zh ? `你好，我是${v.label}。` : `Hi, it's ${v.label}.` } });
-      playBase64Mp3(audioBase64);
-    } catch (e: any) { setError((zh ? "试听失败：" : "Preview failed: ") + (e?.message || "")); }
+      const { audioBase64 } = await speakClonedVoice({ data: { voiceId: v.voiceId, text: text?.trim() || (zh ? `你好，我是${v.label}。` : `Hi, it's ${v.label}.`) } });
+      const player = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
+      audio.current = player;
+      player.onended = () => setPlayingId(null);
+      player.onerror = () => { setPlayingId(null); setError(zh ? "音频播放失败，请重新试听。" : "Audio playback failed. Please try again."); };
+      await player.play();
+      setPlayingId(v.id);
+    } catch (e: any) { setPlayingId(null); setError((zh ? "试听失败：" : "Preview failed: ") + (e?.message || "")); }
     finally { setBusy(null); }
   };
 
+  const saveName = (v: FamilyVoice) => {
+    if (!draftName.trim()) return;
+    try { renameFamilyVoice(v.id, draftName); setEditingId(null); }
+    catch { setError(zh ? "改名未保存，请重试。" : "Name was not saved. Please try again."); }
+  };
+
   const remove = async (v: FamilyVoice) => {
+    if (playingId === v.id) { audio.current?.pause(); setPlayingId(null); }
     setBusy(v.id);
     try { await deleteClonedVoice({ data: { voiceId: v.voiceId } }); } catch { /* still remove locally */ }
     removeFamilyVoice(v.id);
@@ -102,26 +129,47 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
             {busy === "new" ? (zh ? "正在复刻声音…" : "Cloning voice…") : (zh ? "开始录音" : "Start recording")}
           </Button>
         )}
-        {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
 
       <div className="space-y-2">
         {voices.length === 0 && <p className="text-sm text-muted-foreground">{zh ? "还没有录制的声音。" : "No voices yet."}</p>}
         {voices.map((v) => (
-          <div key={v.id} className="flex items-center gap-2 rounded-xl border p-3">
+          <div key={v.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-foreground truncate">{v.label}</p>
+              {editingId === v.id ? (
+                <div className="flex items-center gap-1">
+                  <Input autoFocus aria-label={zh ? "声音名称" : "Voice name"} value={draftName} onChange={(e) => setDraftName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveName(v); if (e.key === "Escape") setEditingId(null); }} />
+                  <Button size="icon" variant="ghost" disabled={!draftName.trim()} onClick={() => saveName(v)} aria-label={zh ? "保存名称" : "Save name"} title={zh ? "保存名称" : "Save name"}><Check className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setEditingId(null)} aria-label={zh ? "取消改名" : "Cancel rename"} title={zh ? "取消改名" : "Cancel rename"}><X className="h-4 w-4" /></Button>
+                </div>
+              ) : <p className="font-medium text-foreground break-words">{v.label}</p>}
               <p className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleString()}</p>
             </div>
-            <Button size="sm" variant="outline" onClick={() => void test(v)} disabled={busy === v.id} aria-label={zh ? "试听" : "Preview"}>
+            {editingId !== v.id && <Button size="sm" variant="ghost" onClick={() => { setEditingId(v.id); setDraftName(v.label); }} aria-label={zh ? `改名：${v.label}` : `Rename: ${v.label}`} title={zh ? "改名" : "Rename"}><Pencil className="h-4 w-4" /></Button>}
+            <Button size="sm" variant="outline" onClick={() => void test(v)} disabled={busy !== null || recording} aria-label={zh ? "试听" : "Preview"} title={zh ? "试听" : "Preview"}>
               {busy === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => void remove(v)} disabled={busy === v.id} aria-label={zh ? "删除" : "Delete"}>
+            <Button size="sm" variant="ghost" onClick={() => void remove(v)} disabled={busy !== null || recording} aria-label={zh ? "删除" : "Delete"}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ))}
       </div>
+      <section className="space-y-3 border-t pt-4">
+        <h3 className="font-semibold text-foreground">{zh ? "文字试听" : "Text preview"}</h3>
+        <Select value={previewVoiceId} onValueChange={setPreviewVoiceId} disabled={!voices.length || busy !== null}>
+          <SelectTrigger aria-label={zh ? "试听声音" : "Preview voice"}><SelectValue placeholder={zh ? "选择亲友声音" : "Choose a family voice"} /></SelectTrigger>
+          <SelectContent>{voices.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+        </Select>
+        <Textarea aria-label={zh ? "试听文字" : "Preview text"} value={previewText} onChange={(e) => setPreviewText(e.target.value)} maxLength={2000} placeholder={zh ? "输入想让亲友声音说的话…" : "Enter the words for this voice…"} className="min-h-24" />
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={!previewText.trim() || !previewVoiceId || busy !== null || recording} onClick={() => { const voice = voices.find((v) => v.id === previewVoiceId); if (voice) void test(voice, previewText); }}>
+            {busy === previewVoiceId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}{busy === previewVoiceId ? (zh ? "正在合成…" : "Synthesizing…") : (zh ? "合成并播放" : "Synthesize & play")}
+          </Button>
+          {playingId && <Button variant="outline" onClick={() => { audio.current?.pause(); setPlayingId(null); }}><Square className="mr-2 h-4 w-4" />{zh ? "停止播放" : "Stop playback"}</Button>}
+        </div>
+      </section>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

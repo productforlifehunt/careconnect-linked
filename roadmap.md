@@ -1,3 +1,8 @@
+## Current request: Family voice text preview and rename
+- [x] Add bottom text preview using the selected existing cloned voice, with playback/error states. Existing provider/model unchanged.
+- [x] Rename saved voices without changing their provider IDs; synchronize AI-call voice labels through the existing shared change event.
+- [ ] Verification: 2/2 focused tests pass (rename persistence/event and exact entered text + original voice ID + playback, mocked synthesis), latest build OK. Real test1 login opens /cared-ones/46/family-voice, bottom text preview visibly renders, zero page errors. Actual cloned-voice playback is unverified because this fresh browser has no device-local saved voices; the user's existing recording is on their own device. No real recordings changed or fake voice IDs submitted.
+
 ## Current request: Community, documents and unread consistency
 - [x] Remove Score from community list/detail and leave one Open discussion link; separate up/down counts retained. Live list/detail checked.
 - [x] My Posts compares existing author/session WordPress IDs without wp-prefix/type mismatch or waiting for full profile. test1 created a temporary post, found it under My Posts before/after refresh, opened detail and deleted it. Original screenshot post is not test1's; challenged login did not establish a session, so original-account readback is not verified.

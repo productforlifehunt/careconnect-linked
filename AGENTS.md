@@ -30,3 +30,4 @@
 - A CCT 161 dose log names the dose it answers in a88 Scheduled date and links to its plan only through REL191, so per-dose status is derived, never written onto the plan.
 - Inbox, care navigation and dashboard derive unread totals through useInboxCounts (unread notifications plus unread conversations); read marks are account-scoped device state, and total/read counters are explicitly separated so badges cannot drift or misrepresent message volume.
 - Community ownership compares normalized existing WordPress author/session identities; profile loading cannot determine ownership, and no new relationship or account name is created by this comparison.
+- Family voice renames update only the existing device-local label and emit the shared change event; text previews reuse the existing cloned-voice synthesis function and provider voice ID so AI-call selection stays synchronized without re-enrollment.
