@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { addFamilyVoice, listFamilyVoices, renameFamilyVoice } from "@/lib/family-voices";
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
@@ -52,6 +52,20 @@ it("orders character prices and separates token billing without inventing a pric
 it("allows recording until the official 60-second maximum", () => {
   expect(VOICE_MIN_RECORDING_SECONDS).toBe(10);
   expect(VOICE_RECORDING_SECONDS).toBe(60);
+});
+
+it("does not cut off at 20 seconds and stops recording at 60 seconds", async () => {
+  vi.useFakeTimers();
+  api.start.mockResolvedValue(undefined);
+  api.stop.mockResolvedValue(null);
+  try {
+    render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "开始录音" })); });
+    await act(async () => { vi.advanceTimersByTime(20000); });
+    expect(api.stop).not.toHaveBeenCalled();
+    await act(async () => { vi.advanceTimersByTime(40000); });
+    expect(api.stop).toHaveBeenCalledTimes(1);
+  } finally { vi.useRealTimers(); }
 });
 
 it("transcribes speech into editable preview text without enrolling or synthesizing automatically", async () => {
