@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { VoiceRecorder } from "@/lib/ai";
+import { VoiceRecorder, transcribeAudio } from "@/lib/ai";
 import { createClonedVoice, deleteClonedVoice, speakClonedVoice } from "@/lib/voice-clone.functions";
 import { addFamilyVoice, blobToBase64, listFamilyVoices, onFamilyVoicesChanged, renameFamilyVoice, removeFamilyVoice, type FamilyVoice } from "@/lib/family-voices";
 import { FAMILY_VOICE_MODELS, DEFAULT_FAMILY_VOICE_MODEL, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS, familyVoiceModelName, FAMILY_VOICE_PRICE_SOURCE, FAMILY_VOICE_CLONE_SOURCE, type FamilyVoiceModel } from "@/lib/family-voice-models";
@@ -33,6 +33,9 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | null>(null);
   const secs = useRef(0);
+  const dictationRec = useRef<VoiceRecorder | null>(null);
+  const [dictating, setDictating] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
 
   useEffect(() => {
     const load = () => setVoices(listFamilyVoices(id));
@@ -44,7 +47,38 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     setPreviewVoiceId((current) => voices.some((v) => v.id === current) ? current : voices[0]?.id || "");
   }, [voices]);
 
-  useEffect(() => () => { audio.current?.pause(); if (timer.current) clearInterval(timer.current); rec.current?.cancel(); }, []);
+  useEffect(() => () => { audio.current?.pause(); if (timer.current) clearInterval(timer.current); rec.current?.cancel(); dictationRec.current?.cancel(); }, []);
+
+  const startDictation = async () => {
+    if (recording || busy || dictating || transcribing) return;
+    setError(null);
+    audio.current?.pause(); setPlayingId(null);
+    const recorder = new VoiceRecorder();
+    dictationRec.current = recorder;
+    try {
+      await recorder.start();
+      setDictating(true);
+    } catch {
+      recorder.cancel(); dictationRec.current = null;
+      setError(zh ? "无法使用麦克风，请允许麦克风权限。" : "Microphone unavailable — please allow access.");
+    }
+  };
+
+  const stopDictation = async () => {
+    const recorder = dictationRec.current; dictationRec.current = null;
+    setDictating(false);
+    if (!recorder) return;
+    setTranscribing(true); setError(null);
+    try {
+      const blob = await recorder.stop();
+      if (!blob) throw new Error(zh ? "没有录到声音，请再说一次。" : "Nothing was recorded — please try again.");
+      const text = await transcribeAudio(blob, zh ? "zh" : "en");
+      if (!text) throw new Error(zh ? "没听清，请再说一次。" : "Didn't catch that — please try again.");
+      setPreviewText((current) => [current.trim(), text].filter(Boolean).join(" ").slice(0, 2000));
+    } catch (e) {
+      setError((zh ? "语音输入失败：" : "Voice input failed: ") + (e instanceof Error ? e.message : String(e)));
+    } finally { setTranscribing(false); }
+  };
 
   const start = async () => {
     setError(null);
@@ -145,7 +179,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
         </Select>
         <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={zh ? "这是谁的声音，例如：女儿小红" : "Whose voice, e.g. daughter Amy"} />
         <div className="rounded-lg bg-muted/50 p-3 text-sm text-foreground">
-          <p className="mb-1 text-xs text-muted-foreground">{zh ? "在安静的地方，用平常的语气朗读（10–20 秒，20 秒自动停止）：" : "In a quiet place, read naturally (10–20 seconds, stops automatically at 20):"}</p>
+          <p className="mb-1 text-xs text-muted-foreground">{zh ? "在安静的地方，用平常的语气朗读（建议 10–20 秒；读完可手动停止，最长 60 秒）：" : "In a quiet place, read naturally (10–20 seconds recommended; stop when finished, up to 60 seconds):"}</p>
           {zh ? SAMPLE_ZH : SAMPLE_EN}
         </div>
         {recording ? (
@@ -153,7 +187,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
             <Square className="h-4 w-4 mr-1" /> {zh ? `停止并复刻（${seconds} 秒）` : `Stop & clone (${seconds}s)`}
           </Button>
         ) : (
-          <Button onClick={() => void start()} disabled={busy !== null} className="w-full">
+          <Button onClick={() => void start()} disabled={busy !== null || dictating || transcribing} className="w-full">
             {busy === "new" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Mic className="h-4 w-4 mr-1" />}
             {busy === "new" ? (zh ? "正在复刻声音…" : "Cloning voice…") : (zh ? "开始录音" : "Start recording")}
           </Button>
@@ -193,7 +227,11 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
         </Select>
         <Textarea aria-label={zh ? "试听文字" : "Preview text"} value={previewText} onChange={(e) => setPreviewText(e.target.value)} maxLength={2000} placeholder={zh ? "输入想让亲友声音说的话…" : "Enter the words for this voice…"} className="min-h-24" />
         <div className="flex flex-wrap gap-2">
-          <Button disabled={!previewText.trim() || !previewVoiceId || busy !== null || recording} onClick={() => { const voice = voices.find((v) => v.id === previewVoiceId); if (voice) void test(voice, previewText); }}>
+          <Button variant={dictating ? "destructive" : "outline"} disabled={recording || busy !== null || transcribing} onClick={() => void (dictating ? stopDictation() : startDictation())}>
+            {transcribing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : dictating ? <Square className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
+            {transcribing ? (zh ? "正在转成文字…" : "Transcribing…") : dictating ? (zh ? "停止并转文字" : "Stop & transcribe") : (zh ? "语音输入" : "Voice input")}
+          </Button>
+          <Button disabled={!previewText.trim() || !previewVoiceId || busy !== null || recording || dictating || transcribing} onClick={() => { const voice = voices.find((v) => v.id === previewVoiceId); if (voice) void test(voice, previewText); }}>
             {busy === previewVoiceId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}{busy === previewVoiceId ? (zh ? "正在合成…" : "Synthesizing…") : (zh ? "合成并播放" : "Synthesize & play")}
           </Button>
           {playingId && <Button variant="outline" onClick={() => { audio.current?.pause(); setPlayingId(null); }}><Square className="mr-2 h-4 w-4" />{zh ? "停止播放" : "Stop playback"}</Button>}

@@ -20,7 +20,7 @@ export function resolveFamilyVoiceModel(model?: string): FamilyVoiceModel {
 export function familyVoiceModelName(model?: string) {
   return FAMILY_VOICE_MODELS.find((item) => item.id === resolveFamilyVoiceModel(model))?.name || "";
 }
-export const VOICE_RECORDING_SECONDS = 20;
+export const VOICE_RECORDING_SECONDS = 60;
 export const VOICE_MIN_RECORDING_SECONDS = 10;
 export const FAMILY_VOICE_PRICE_SOURCE = "https://help.aliyun.com/zh/model-studio/model-pricing";
 export const FAMILY_VOICE_CLONE_SOURCE = "https://help.aliyun.com/zh/model-studio/voice-cloning-user-guide";
