@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import {
-  MapPin, Navigation, RefreshCw, X, Plus, Trash2, Edit2,
+  MapPin, ChevronDown, Navigation, RefreshCw, X, Plus, Trash2, Edit2,
   Bell, Clock, Shield, AlertTriangle, CheckCircle2,
   Target, Ban,
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
@@ -1491,8 +1491,8 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           {(locationHistory || []).length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <Clock className="h-10 w-10 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No location history</p>
-              <p className="text-xs mt-1">Location history appears after {caredOneName} shares their location</p>
+              <p className="text-sm">{isZh ? "还没有位置记录" : "No location history"}</p>
+              <p className="text-xs mt-1">{isZh ? `${caredOneName}分享位置后，这里会出现记录` : `Location history appears after ${caredOneName} shares their location`}</p>
             </div>
           ) : (locationHistory || []).map((entry: any, idx: number) => {
             const lat = parseFloat(entry.latitude), lng = parseFloat(entry.longitude);
