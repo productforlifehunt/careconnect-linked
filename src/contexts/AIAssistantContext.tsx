@@ -51,11 +51,15 @@ export type WriteRequest = {
   onWritten?: ((result: AssistantResult) => void) | undefined;
 };
 
-const AIAssistantContext = createContext<{
+type AIAssistantValue = {
   openAssistant: (request?: AssistantRequest | undefined) => void;
   openWriteAssistant: (request: WriteRequest) => void;
   closeAssistant: () => void;
-} | null>(null);
+} | null;
+// Reuse one context object across hot reloads; a re-evaluated module would otherwise
+// create a second context that the already-mounted provider does not supply.
+const ctxStore = globalThis as typeof globalThis & { __aiAssistantContext?: React.Context<AIAssistantValue> };
+const AIAssistantContext = (ctxStore.__aiAssistantContext ??= createContext<AIAssistantValue>(null));
 
 export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
