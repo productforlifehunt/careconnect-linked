@@ -1,7 +1,8 @@
 ## Current request: Alibaba family voice model comparison
-- [ ] Verify current Qwen/CosyVoice versions, prices, recording requirements and documented lifecycle; exclude MiniMax.
-- [ ] Add price-sorted per-model enrollment and text preview; preserve existing voices and correct model binding in AI calls.
-- [ ] Run focused rule tests and real signed-in UI/provider checks; report model-by-model gaps honestly.
+- [x] Verify current Qwen/CosyVoice versions, Beijing prices, shared 10–20-second recording recommendation, default long-lived voices and parallel product lines; exclude MiniMax. Token-priced Qwen 3.1 Flash is separate from character-price ranking.
+- [x] Add nine price-listed per-model enrollment choices and shared-text preview buttons; persist exact model, keep historical Qwen default, route AI calls through saved model, preserve rename behavior. Recording stops at 20 seconds; failed remote deletes retain references.
+- [x] 8/8 focused tests pass; latest build OK. Real test1 browser records Alibaba's official 18.87-second WAV through the microphone flow: all 9 models enroll successfully, 7 synthesize Chinese and invoke actual playback, with temporary voices deleted. EN desktop and ZH desktop/393px inspected; nine rows, no page overflow or runtime errors; final local voice list empty.
+- [ ] CosyVoice 3.5 Flash/Plus synthesis blocked by Alibaba 403 “Free quota exhausted…add funds or disable use free tier only”; no account billing setting changed. All nine enrollment/deletion paths work; these two playback paths remain blocked. No listening-quality judgement or native-device microphone check performed; new-model AI-call output routing checked in source, not end-to-end conversation. No unsupported claim of future model survival.
 
 ## Current request: Family voice text preview and rename
 - [x] Add bottom text preview using the selected existing cloned voice, with playback/error states. Existing provider/model unchanged.
