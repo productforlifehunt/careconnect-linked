@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { listFamilyVoices, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
+import { speakClonedVoice } from "@/lib/voice-clone.functions";
 import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
 import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -174,7 +176,7 @@ const MODE_KEY = "ai-reply-mode";
 export type ReplyMode = "text" | "read" | "live" | "call";
 /** Simulated family call setup (who to play + what to say). Saved in this browser. */
 const CALL_KEY = "ai-family-call";
-type CallConfig = { name: string; prompt: string };
+type CallConfig = { name: string; prompt: string; voiceId?: string | undefined };
 /**
  * Live mode instruction. Kept here (not in the shared persona prompt) so the
  * few extra words are only paid for while the user is actually talking.
@@ -272,6 +274,27 @@ export function AICompanionChat({
       : `This is a simulated family phone call: you play "${who}" calling them, speaking in that family member's voice and terms of address, without mentioning being an AI assistant. ${prompt.trim() ? `The family member's setup and what to say: ${prompt.trim()}` : ""}`;
     return `${base}\n${role}`;
   };
+  const [familyVoices, setFamilyVoices] = useState<FamilyVoice[]>([]);
+  useEffect(() => { const load = () => setFamilyVoices(listFamilyVoices()); load(); return onFamilyVoicesChanged(load); }, []);
+  const clonedAudioRef = useRef<HTMLAudioElement | null>(null);
+  /** Speaks a call reply in the chosen cloned family voice. */
+  const speakCloned = async (text: string, index: number, voiceId: string) => {
+    const clean = text.replace(/^✅\s*/, "").trim().slice(0, 1900);
+    if (!clean) return;
+    setSpeakingIndex(index);
+    try {
+      const { audioBase64 } = await speakClonedVoice({ data: { voiceId, text: clean } });
+      clonedAudioRef.current?.pause();
+      const a = playBase64Mp3(audioBase64);
+      clonedAudioRef.current = a;
+      a.onended = () => setSpeakingIndex(null);
+      a.onerror = () => setSpeakingIndex(null);
+    } catch (e) {
+      console.error("Cloned voice failed:", e);
+      setMicError(isZh ? "亲友声音合成失败，请稍后再试。" : "Family voice failed — try again.");
+      setSpeakingIndex(null);
+    }
+  };
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const voiceRef = useRef<StreamControls | null>(null);
   const readAloudRef = useRef(readAloud);
@@ -280,6 +303,8 @@ export function AICompanionChat({
 
 
   const stopSpeaking = () => {
+    clonedAudioRef.current?.pause();
+    clonedAudioRef.current = null;
     voiceRef.current?.stop();
     voiceRef.current = null;
     setSpeakingIndex(null);
@@ -486,7 +511,19 @@ export function AICompanionChat({
         });
 
       let reply = "";
-      if (liveRef.current) {
+      const clonedVoice = modeRef.current === "call" ? callRef.current.voiceId : undefined;
+      if (clonedVoice) {
+        stopSpeaking();
+        const { abort, result } = streamChatTextOnly(history, {
+          language: isZh ? "zh" : "en",
+          contextPrompt,
+          onTextDelta: (_d, full) => onDelta(full),
+          onError: (e) => console.error("AI call chat error:", e),
+        });
+        abortRef.current = { abort };
+        reply = await result;
+        if (reply.trim()) void speakCloned(reply, next.length - 1, clonedVoice);
+      } else if (liveRef.current) {
         // Live talk: each finished sentence is spoken while the rest still
         // streams, so the answer starts coming back almost immediately.
         stopSpeaking();
@@ -659,9 +696,23 @@ export function AICompanionChat({
           <div className="space-y-1.5 rounded-xl border p-2">
             <p className="text-xs text-muted-foreground">
               {isZh
-                ? "模拟家属来电（不是真实来电）。写下扮演谁、怎么说话、要说的话；按住麦克风对话。声音克隆以后再加。"
-                : "Simulated family call (not a real call). Describe who to play, how they talk and what to say; hold the mic to talk. Voice cloning comes later."}
+                ? "模拟家属来电（不是真实来电）。写下扮演谁、怎么说话、要说的话；按住麦克风对话。可以选一个已录制的亲友声音。"
+                : "Simulated family call (not a real call). Describe who to play, how they talk and what to say; hold the mic to talk. You can pick a recorded family voice."}
             </p>
+            <select
+              value={callCfg.voiceId || ""}
+              onChange={(e) => saveCall({ ...callCfg, voiceId: e.target.value || undefined })}
+              className="w-full rounded-md border bg-background px-2 py-1 text-xs"
+              aria-label={isZh ? "用谁的声音" : "Which voice"}
+            >
+              <option value="">{isZh ? "默认 AI 声音" : "Default AI voice"}</option>
+              {familyVoices.map((v) => (
+                <option key={v.id} value={v.voiceId}>{v.label} · {v.caredOneName}</option>
+              ))}
+            </select>
+            {familyVoices.length === 0 && (
+              <p className="text-[11px] text-muted-foreground">{isZh ? "在“被护理人 → 录制亲友声音”里录一段，就能在这里选。" : "Record one under Cared Ones → Family Voices to pick it here."}</p>
+            )}
             <input
               value={callCfg.name}
               onChange={(e) => saveCall({ ...callCfg, name: e.target.value })}
