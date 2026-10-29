@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import {
-  MapPin, Navigation, RefreshCw, X, Plus, Trash2, Edit2,
+  MapPin, ChevronDown, Navigation, RefreshCw, X, Plus, Trash2, Edit2,
   Bell, Clock, Shield, AlertTriangle, CheckCircle2,
   Target, Ban,
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
@@ -317,6 +317,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   const [emergencyConfirm, setEmergencyConfirm] = useState(false);
   const [sendingRequest, setSendingRequest] = useState(false);
   const [sharingMyLocation, setSharingMyLocation] = useState(false);
+  const [openHistoryId, setOpenHistoryId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const unreadAlerts = (alerts || []).filter((a: any) => !a.is_read).length;
@@ -1490,32 +1491,69 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           {(locationHistory || []).length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <Clock className="h-10 w-10 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No location history</p>
-              <p className="text-xs mt-1">Location history appears after {caredOneName} shares their location</p>
+              <p className="text-sm">{isZh ? "还没有位置记录" : "No location history"}</p>
+              <p className="text-xs mt-1">{isZh ? `${caredOneName}分享位置后，这里会出现记录` : `Location history appears after ${caredOneName} shares their location`}</p>
             </div>
-          ) : (locationHistory || []).map((entry: any, idx: number) => (
+          ) : (locationHistory || []).map((entry: any, idx: number) => {
+            const lat = parseFloat(entry.latitude), lng = parseFloat(entry.longitude);
+            const validPos = Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+            const open = openHistoryId === entry.id;
+            const unknown = isZh ? "未知" : "Unknown";
+            const yesNo = (v: string | null) => v === "Yes" ? (isZh ? "是" : "Yes") : v === "No" ? (isZh ? "否" : "No") : unknown;
+            const moving: Record<string, [string, string]> = { stationary: ["静止", "Stationary"], walking: ["步行", "Walking"], running: ["跑步", "Running"], cycling: ["骑行", "Cycling"], automotive: ["乘车", "In a vehicle"], unknown: ["未知", "Unknown"] };
+            return (
             <Card key={entry.id} className="border-transparent card-elevated">
-              <CardContent className="p-3">
-                <div className="flex items-start gap-3">
+              <CardContent className="p-0">
+                <button type="button" className="w-full text-left p-3 flex items-start gap-3" onClick={() => setOpenHistoryId(open ? null : entry.id)} aria-expanded={open}>
                   <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${idx === 0 ? "bg-success" : "bg-muted-foreground/40"}`} />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-xs font-medium ${idx === 0 ? "text-success" : "text-muted-foreground"}`}>
-                        {idx === 0 ? "Current" : "Previous"}
+                        {idx === 0 ? (isZh ? "最新" : "Latest") : (isZh ? "之前" : "Earlier")}
                       </span>
                       <span className="text-xs text-muted-foreground">{formatDateTime(entry.created_at)}</span>
+                      {entry.is_emergency && <Badge variant="destructive" className="text-[10px]">{isZh ? "紧急定位" : "Emergency"}</Badge>}
                     </div>
-                    {entry.address && <p className="text-sm mt-0.5">{entry.address}</p>}
-                    {entry.location_name && !entry.address && <p className="text-sm">{entry.location_name}</p>}
                     <p className="text-xs text-muted-foreground font-mono">
-                      {parseFloat(entry.latitude).toFixed(4)}, {parseFloat(entry.longitude).toFixed(4)}
+                      {validPos ? `${lat.toFixed(4)}, ${lng.toFixed(4)}` : (isZh ? "没有有效位置" : "No valid position")}
                     </p>
-                    {entry.battery_level != null && <p className="text-xs text-muted-foreground">🔋 {entry.battery_level}%</p>}
                   </div>
-                </div>
+                  <ChevronDown className={`h-4 w-4 mt-1 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+                </button>
+                {open && (
+                  <div className="px-3 pb-3 pl-8 space-y-2">
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                      <dt className="text-muted-foreground">{isZh ? "位置" : "Location"}</dt>
+                      <dd className="break-all">{entry.address_text || (validPos ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : unknown)}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "精度" : "Accuracy"}</dt>
+                      <dd>{entry.accuracy_meters ? `±${Math.round(entry.accuracy_meters)} ${isZh ? "米" : "m"}` : unknown}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "记录时间" : "Recorded"}</dt>
+                      <dd>{formatDateTime(entry.created_at)}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "使用设备" : "Device"}</dt>
+                      <dd>{entry.platform || unknown}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "移动状态" : "Movement"}</dt>
+                      <dd>{entry.moving_type ? (moving[entry.moving_type]?.[isZh ? 0 : 1] ?? unknown) : unknown}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "电量" : "Battery"}</dt>
+                      <dd>{entry.battery_level != null ? `${entry.battery_level}%` : (isZh ? "手机未提供" : "Not reported by phone")}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "是否在充电" : "Charging"}</dt>
+                      <dd>{yesNo(entry.phone_is_charging)}</dd>
+                      <dt className="text-muted-foreground">{isZh ? "记录方式" : "Type"}</dt>
+                      <dd>{entry.is_emergency ? (isZh ? "紧急定位（未开实时分享时）" : "Emergency (live sharing off)") : (isZh ? "实时位置分享" : "Live sharing")}</dd>
+                    </dl>
+                    {validPos && (
+                      <Button size="sm" variant="outline" onClick={() => {
+                        const map = leafletMapRef.current;
+                        if (map) { map.setView([lat, lng], 16); map.getContainer().scrollIntoView({ behavior: "smooth", block: "center" }); }
+                      }}>
+                        <MapPin className="h-4 w-4 mr-1" />{isZh ? "在地图上查看" : "Show on map"}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
