@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { listFamilyVoices, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
 import { speakClonedVoice } from "@/lib/voice-clone.functions";
+import { familyVoiceModelName } from "@/lib/family-voice-models";
 import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
 import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -283,7 +284,8 @@ export function AICompanionChat({
     if (!clean) return;
     setSpeakingIndex(index);
     try {
-      const { audioBase64 } = await speakClonedVoice({ data: { voiceId, text: clean } });
+      const voice = familyVoices.find((v) => v.voiceId === voiceId);
+      const { audioBase64 } = await speakClonedVoice({ data: { voiceId, text: clean, ...(voice?.model ? { model: voice.model } : {}) } });
       clonedAudioRef.current?.pause();
       const a = playBase64Mp3(audioBase64);
       clonedAudioRef.current = a;
@@ -707,7 +709,7 @@ export function AICompanionChat({
             >
               <option value="">{isZh ? "默认 AI 声音" : "Default AI voice"}</option>
               {familyVoices.map((v) => (
-                <option key={v.id} value={v.voiceId}>{v.label} · {v.caredOneName}</option>
+                <option key={v.id} value={v.voiceId}>{v.label} · {v.caredOneName} · {familyVoiceModelName(v.model)}</option>
               ))}
             </select>
             {familyVoices.length === 0 && (

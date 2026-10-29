@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VoiceRecorder } from "@/lib/ai";
 import { createClonedVoice, deleteClonedVoice, speakClonedVoice } from "@/lib/voice-clone.functions";
 import { addFamilyVoice, blobToBase64, listFamilyVoices, onFamilyVoicesChanged, renameFamilyVoice, removeFamilyVoice, type FamilyVoice } from "@/lib/family-voices";
+import { FAMILY_VOICE_MODELS, DEFAULT_FAMILY_VOICE_MODEL, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS, familyVoiceModelName, FAMILY_VOICE_PRICE_SOURCE, FAMILY_VOICE_CLONE_SOURCE, type FamilyVoiceModel } from "@/lib/family-voice-models";
 
 const SAMPLE_ZH = "今天天气不错，我刚吃完饭。家里一切都好，你别担心。等会儿有人来帮忙，你跟他好好说话。我晚点再给你打电话。";
 const SAMPLE_EN = "The weather is nice today and I just had lunch. Everything at home is fine, don't worry. Someone is coming to help soon, please be kind to them. I'll call you again later.";
@@ -18,6 +19,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const id = String(caredOneId).replace(/^wp-/, "");
   const [voices, setVoices] = useState<FamilyVoice[]>([]);
   const [label, setLabel] = useState("");
+  const [model, setModel] = useState<FamilyVoiceModel>(DEFAULT_FAMILY_VOICE_MODEL);
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     setPreviewVoiceId((current) => voices.some((v) => v.id === current) ? current : voices[0]?.id || "");
   }, [voices]);
 
-  useEffect(() => () => { audio.current?.pause(); }, []);
+  useEffect(() => () => { audio.current?.pause(); if (timer.current) clearInterval(timer.current); rec.current?.cancel(); }, []);
 
   const start = async () => {
     setError(null);
@@ -53,7 +55,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
       setSeconds(0); secs.current = 0;
       timer.current = window.setInterval(() => {
         secs.current += 1; setSeconds(secs.current);
-        if (secs.current >= 30) void stop();
+        if (secs.current >= VOICE_RECORDING_SECONDS) void stop();
       }, 1000);
     } catch { setError(zh ? "无法使用麦克风，请允许麦克风权限。" : "Microphone unavailable — please allow access."); }
   };
@@ -64,11 +66,11 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     setRecording(false);
     if (!r) return;
     const blob = await r.stop();
-    if (!blob || secs.current < 6) { setError(zh ? "录音太短，请连续朗读 10–20 秒。" : "Too short — read for 10–20 seconds."); return; }
+    if (!blob || secs.current < VOICE_MIN_RECORDING_SECONDS) { setError(zh ? "录音太短，请连续朗读 10–20 秒。" : "Too short — read for 10–20 seconds."); return; }
     setBusy("new");
     try {
-      const { voiceId } = await createClonedVoice({ data: { audioBase64: await blobToBase64(blob), mime: "audio/wav" } });
-      addFamilyVoice({ id: crypto.randomUUID(), voiceId, label: label.trim() || (zh ? "亲友声音" : "Family voice"), caredOneId: id, caredOneName, createdAt: new Date().toISOString() });
+      const { voiceId } = await createClonedVoice({ data: { audioBase64: await blobToBase64(blob), mime: "audio/wav", model } });
+      addFamilyVoice({ id: crypto.randomUUID(), voiceId, model, label: label.trim() || (zh ? "亲友声音" : "Family voice"), caredOneId: id, caredOneName, createdAt: new Date().toISOString() });
       setLabel("");
     } catch (e: any) {
       setError((zh ? "声音复刻失败：" : "Voice cloning failed: ") + (e?.message || ""));
@@ -79,7 +81,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     audio.current?.pause(); setPlayingId(null);
     setBusy(v.id); setError(null);
     try {
-      const { audioBase64 } = await speakClonedVoice({ data: { voiceId: v.voiceId, text: text?.trim() || (zh ? `你好，我是${v.label}。` : `Hi, it's ${v.label}.`) } });
+      const { audioBase64 } = await speakClonedVoice({ data: { voiceId: v.voiceId, text: text?.trim() || (zh ? `你好，我是${v.label}。` : `Hi, it's ${v.label}.`), ...(v.model ? { model: v.model } : {}) } });
       const player = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
       audio.current = player;
       player.onended = () => setPlayingId(null);
@@ -99,9 +101,9 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const remove = async (v: FamilyVoice) => {
     if (playingId === v.id) { audio.current?.pause(); setPlayingId(null); }
     setBusy(v.id);
-    try { await deleteClonedVoice({ data: { voiceId: v.voiceId } }); } catch { /* still remove locally */ }
-    removeFamilyVoice(v.id);
-    setBusy(null);
+    try { await deleteClonedVoice({ data: { voiceId: v.voiceId } }); removeFamilyVoice(v.id); }
+    catch { setError(zh ? "云端声音未删除，已保留记录，请重试。" : "Cloud voice was not deleted. The record is retained; please retry."); }
+    finally { setBusy(null); }
   };
 
   return (
@@ -113,10 +115,37 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
         </p>
       </div>
 
-      <div className="rounded-xl border p-3 space-y-3">
+      <section className="space-y-3 border-t pt-4">
+        <h3 className="font-semibold text-foreground">{zh ? "模型比较" : "Model comparison"}</h3>
+        <p className="text-xs text-muted-foreground">{zh ? "北京原价 · 2026-10-29；以下复刻均免费，合成按量收费。一个汉字计 2 个字符。Token 计费型号单独列出，不假定最便宜。" : "Beijing list prices · 2026-10-29. Enrollment is free; synthesis is metered. One Han character counts as 2 billable characters. Token billing is listed separately, not ranked as cheapest."}</p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px] text-sm text-left">
+            <thead><tr className="border-b text-muted-foreground"><th className="py-2 pr-3">{zh ? "型号" : "Model"}</th><th className="py-2 pr-3">{zh ? "合成价格" : "Synthesis price"}</th><th className="py-2 pr-3">{zh ? "建议录音" : "Recording"}</th><th className="py-2">{zh ? "复刻 / 试听" : "Clone / preview"}</th></tr></thead>
+            <tbody>{FAMILY_VOICE_MODELS.map((item) => {
+              const saved = voices.filter((v) => (v.model || DEFAULT_FAMILY_VOICE_MODEL) === item.id);
+              return <tr key={item.id} className="border-b align-top">
+                <td className="py-3 pr-3 font-medium">{item.name}</td>
+                <td className="py-3 pr-3">{item.price === null ? (zh ? "输入 ¥1.5 + 输出 ¥12 / 百万 Token" : "Input ¥1.5 + output ¥12 / million tokens") : `¥${item.price} / ${zh ? "万字符" : "10k characters"}`}</td>
+                <td className="py-3 pr-3">10–20 {zh ? "秒" : "s"}</td>
+                <td className="py-3 space-y-2">
+                  <Button size="sm" variant={model === item.id ? "secondary" : "outline"} disabled={recording || busy !== null} onClick={() => setModel(item.id)} aria-label={`${zh ? "选择复刻" : "Select cloning"} ${item.name}`}><Mic className="mr-1 h-4 w-4" />{model === item.id ? (zh ? "已选择" : "Selected") : (zh ? "选择复刻" : "Select")}</Button>
+                  {saved.map((v) => <Button key={v.id} size="sm" variant="ghost" className="flex max-w-full" disabled={!previewText.trim() || recording || busy !== null} onClick={() => void test(v, previewText)} aria-label={`${zh ? "比较试听" : "Compare preview"} ${item.name} ${v.label}`}><Play className="mr-1 h-4 w-4 shrink-0" /><span className="break-words whitespace-normal">{v.label}</span></Button>)}
+                </td>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>
+        <div className="flex gap-4 text-xs text-primary"><a href={FAMILY_VOICE_PRICE_SOURCE} target="_blank" rel="noreferrer">{zh ? "官方价格" : "Official prices"}</a><a href={FAMILY_VOICE_CLONE_SOURCE} target="_blank" rel="noreferrer">{zh ? "官方复刻要求" : "Recording requirements"}</a></div>
+      </section>
+
+      <div className="border-t pt-4 space-y-3">
+        <Select value={model} onValueChange={(value) => setModel(value as FamilyVoiceModel)} disabled={recording || busy !== null}>
+          <SelectTrigger aria-label={zh ? "复刻模型" : "Cloning model"}><SelectValue /></SelectTrigger>
+          <SelectContent>{FAMILY_VOICE_MODELS.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
+        </Select>
         <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={zh ? "这是谁的声音，例如：女儿小红" : "Whose voice, e.g. daughter Amy"} />
         <div className="rounded-lg bg-muted/50 p-3 text-sm text-foreground">
-          <p className="mb-1 text-xs text-muted-foreground">{zh ? "在安静的地方，用平常的语气朗读（10–20 秒）：" : "In a quiet place, read naturally (10–20 seconds):"}</p>
+          <p className="mb-1 text-xs text-muted-foreground">{zh ? "在安静的地方，用平常的语气朗读（10–20 秒，20 秒自动停止）：" : "In a quiet place, read naturally (10–20 seconds, stops automatically at 20):"}</p>
           {zh ? SAMPLE_ZH : SAMPLE_EN}
         </div>
         {recording ? (
@@ -124,7 +153,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
             <Square className="h-4 w-4 mr-1" /> {zh ? `停止并复刻（${seconds} 秒）` : `Stop & clone (${seconds}s)`}
           </Button>
         ) : (
-          <Button onClick={() => void start()} disabled={busy === "new"} className="w-full">
+          <Button onClick={() => void start()} disabled={busy !== null} className="w-full">
             {busy === "new" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Mic className="h-4 w-4 mr-1" />}
             {busy === "new" ? (zh ? "正在复刻声音…" : "Cloning voice…") : (zh ? "开始录音" : "Start recording")}
           </Button>
@@ -144,6 +173,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
                 </div>
               ) : <p className="font-medium text-foreground break-words">{v.label}</p>}
               <p className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{familyVoiceModelName(v.model)}</p>
             </div>
             {editingId !== v.id && <Button size="sm" variant="ghost" onClick={() => { setEditingId(v.id); setDraftName(v.label); }} aria-label={zh ? `改名：${v.label}` : `Rename: ${v.label}`} title={zh ? "改名" : "Rename"}><Pencil className="h-4 w-4" /></Button>}
             <Button size="sm" variant="outline" onClick={() => void test(v)} disabled={busy !== null || recording} aria-label={zh ? "试听" : "Preview"} title={zh ? "试听" : "Preview"}>
@@ -159,7 +189,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
         <h3 className="font-semibold text-foreground">{zh ? "文字试听" : "Text preview"}</h3>
         <Select value={previewVoiceId} onValueChange={setPreviewVoiceId} disabled={!voices.length || busy !== null}>
           <SelectTrigger aria-label={zh ? "试听声音" : "Preview voice"}><SelectValue placeholder={zh ? "选择亲友声音" : "Choose a family voice"} /></SelectTrigger>
-          <SelectContent>{voices.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+          <SelectContent>{voices.map((v) => <SelectItem key={v.id} value={v.id}>{v.label} · {familyVoiceModelName(v.model)}</SelectItem>)}</SelectContent>
         </Select>
         <Textarea aria-label={zh ? "试听文字" : "Preview text"} value={previewText} onChange={(e) => setPreviewText(e.target.value)} maxLength={2000} placeholder={zh ? "输入想让亲友声音说的话…" : "Enter the words for this voice…"} className="min-h-24" />
         <div className="flex flex-wrap gap-2">
