@@ -1,7 +1,7 @@
 ## Current request: Family voice text preview and rename
-- [ ] Add bottom text preview using the selected existing cloned voice, with playback/error states.
-- [ ] Rename saved voices without changing their provider IDs; synchronize AI-call voice labels.
-- [ ] Run focused tests and verify authenticated UI; distinguish real synthesis from mocked checks.
+- [x] Add bottom text preview using the selected existing cloned voice, with playback/error states. Existing provider/model unchanged.
+- [x] Rename saved voices without changing their provider IDs; synchronize AI-call voice labels through the existing shared change event.
+- [ ] Verification: 2/2 focused tests pass (rename persistence/event and exact entered text + original voice ID + playback, mocked synthesis), latest build OK. Real test1 login opens /cared-ones/46/family-voice, bottom text preview visibly renders, zero page errors. Actual cloned-voice playback is unverified because this fresh browser has no device-local saved voices; the user's existing recording is on their own device. No real recordings changed or fake voice IDs submitted.
 
 ## Current request: Community, documents and unread consistency
 - [x] Remove Score from community list/detail and leave one Open discussion link; separate up/down counts retained. Live list/detail checked.
