@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
   Phone, MapPin, FolderOpen, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
-  Search, UserPlus, IdCard, Info, ListChecks,
+  Search, UserPlus, IdCard, Info, ListChecks, AudioLines,
 
 } from "lucide-react";
 import {
@@ -43,6 +43,7 @@ import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
 import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
 import { EmergencyShareSetting } from "@/components/cared-ones/EmergencyShareSetting";
 import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
+import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
@@ -59,6 +60,7 @@ function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string;
     case "location": return <LocationCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "documents": return <DocumentsCard caredOneId={caredOneId} />;
     case "info-card": return <InformationCardCard caredOneId={caredOneId} caredOneName={caredOneName} />;
+    case "family-voice": return <FamilyVoiceCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     default: return null;
   }
 }
@@ -119,6 +121,7 @@ export default function CaredOnes() {
     { key: "location", title: t("caredOnes.locationSafeZones"), icon: MapPin, subtitle: t("caredOnes.gpsSafeZones") },
     { key: "documents", title: t("caredOnes.documents"), icon: FolderOpen, subtitle: t("caredOnes.medicalDocs") },
     { key: "info-card", title: t("caredOnes.careInfoSheets", { defaultValue: "Cared One Information Cards" }), icon: IdCard, subtitle: t("caredOnes.careInfoSheetsSubtitle", { defaultValue: "Share what a helper or finder needs to know" }) },
+    { key: "family-voice", title: (i18n.language?.startsWith("zh") ? "录制亲友声音" : "Family Voices"), icon: AudioLines, subtitle: "" },
   ];
 
   const handleAddCaredOne = () => {

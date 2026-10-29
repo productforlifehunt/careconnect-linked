@@ -22,6 +22,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const [error, setError] = useState<string | null>(null);
   const rec = useRef<VoiceRecorder | null>(null);
   const timer = useRef<number | null>(null);
+  const secs = useRef(0);
 
   useEffect(() => {
     const load = () => setVoices(listFamilyVoices(id));
@@ -35,11 +36,11 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
       rec.current = new VoiceRecorder();
       await rec.current.start();
       setRecording(true);
-      setSeconds(0);
-      timer.current = window.setInterval(() => setSeconds((s) => {
-        if (s + 1 >= 30) void stop();
-        return s + 1;
-      }), 1000);
+      setSeconds(0); secs.current = 0;
+      timer.current = window.setInterval(() => {
+        secs.current += 1; setSeconds(secs.current);
+        if (secs.current >= 30) void stop();
+      }, 1000);
     } catch { setError(zh ? "无法使用麦克风，请允许麦克风权限。" : "Microphone unavailable — please allow access."); }
   };
 
@@ -49,7 +50,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     setRecording(false);
     if (!r) return;
     const blob = await r.stop();
-    if (!blob || seconds < 6) { setError(zh ? "录音太短，请连续朗读 10–20 秒。" : "Too short — read for 10–20 seconds."); return; }
+    if (!blob || secs.current < 6) { setError(zh ? "录音太短，请连续朗读 10–20 秒。" : "Too short — read for 10–20 seconds."); return; }
     setBusy("new");
     try {
       const { voiceId } = await createClonedVoice({ data: { audioBase64: await blobToBase64(blob), mime: "audio/wav" } });
