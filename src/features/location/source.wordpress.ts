@@ -92,7 +92,9 @@ function mapSnapshot(raw: any): LocationSnapshot {
     // a62 "stationary" is the only stillness signal — the old a61 "Is moving" is retired.
     is_stationary: movingCode ? movingCode === O.MOVING_TYPE.STATIONARY : null,
     platform: platformCode ? PLATFORM_LABEL[platformCode] ?? null : null,
-    battery_level: parseNum(raw[F.BATTERY_LEVEL]),
+    // a64 is a Number column: a blank write is stored as 0, and a running phone never reports 0%,
+    // so 0 means "the device did not report its battery" (e.g. iPhone browsers have no battery reading).
+    battery_level: (() => { const b = parseNum(raw[F.BATTERY_LEVEL]); return b ? b : null; })(),
     phone_is_charging: chargingCode ? YES_NO_LABEL[chargingCode] ?? null : null,
     address_text: raw[F.ADDRESS_TEXT] || null,
     captured_at: raw[F.CAPTURED_AT] || null,
@@ -132,6 +134,7 @@ export async function writeLocationSnapshot(
   if (!userId) throw new Error("Invalid user for location snapshot");
 
   const charging = opts?.phone_is_charging ?? (await detectCharging());
+  const battery = opts?.battery_level ?? (await import("@/lib/locationService").then(m => m.getBatteryLevel()).catch(() => null));
 
   // Create a new CCT row (append-only — never update)
   const created = await wordpressCCTFetch<any>(CCT_SLUG, {
@@ -145,7 +148,7 @@ export async function writeLocationSnapshot(
       [F.SPEED]: opts?.speed != null ? String(opts.speed) : "",
       [F.MOVING_TYPE]: movingTypeCode(opts?.moving_type, opts?.speed),
       [F.PLATFORM]: detectPlatformCode(),
-      [F.BATTERY_LEVEL]: opts?.battery_level != null ? String(opts.battery_level) : "",
+      [F.BATTERY_LEVEL]: battery != null ? String(battery) : "",
       [F.PHONE_IS_CHARING]: charging == null ? "" : charging ? O.PHONE_IS_CHARING.YES : O.PHONE_IS_CHARING.NO,
       [F.ADDRESS_TEXT]: opts?.address_text || "",
       [F.CAPTURED_AT]: new Date().toISOString(),
