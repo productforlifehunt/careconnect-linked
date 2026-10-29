@@ -20,6 +20,11 @@ function save(all: FamilyVoice[]) {
 
 export function addFamilyVoice(v: FamilyVoice) { save([...listFamilyVoices(), v]); }
 export function removeFamilyVoice(id: string) { save(listFamilyVoices().filter((v) => v.id !== id)); }
+export function renameFamilyVoice(id: string, label: string) {
+  const name = label.trim();
+  if (!name) return;
+  save(listFamilyVoices().map((v) => v.id === id ? { ...v, label: name } : v));
+}
 export function onFamilyVoicesChanged(cb: () => void) {
   window.addEventListener(EVT, cb);
   window.addEventListener("storage", cb);

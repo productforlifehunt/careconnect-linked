@@ -1,3 +1,8 @@
+## Current request: Family voice text preview and rename
+- [ ] Add bottom text preview using the selected existing cloned voice, with playback/error states.
+- [ ] Rename saved voices without changing their provider IDs; synchronize AI-call voice labels.
+- [ ] Run focused tests and verify authenticated UI; distinguish real synthesis from mocked checks.
+
 ## Current request: Community, documents and unread consistency
 - [x] Remove Score from community list/detail and leave one Open discussion link; separate up/down counts retained. Live list/detail checked.
 - [x] My Posts compares existing author/session WordPress IDs without wp-prefix/type mismatch or waiting for full profile. test1 created a temporary post, found it under My Posts before/after refresh, opened detail and deleted it. Original screenshot post is not test1's; challenged login did not establish a session, so original-account readback is not verified.
