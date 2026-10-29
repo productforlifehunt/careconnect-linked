@@ -4,9 +4,9 @@ import { addFamilyVoice, listFamilyVoices, renameFamilyVoice } from "@/lib/famil
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
 
-const api = vi.hoisted(() => ({ createClonedVoice: vi.fn(), deleteClonedVoice: vi.fn(), speakClonedVoice: vi.fn() }));
+const api = vi.hoisted(() => ({ createClonedVoice: vi.fn(), deleteClonedVoice: vi.fn(), speakClonedVoice: vi.fn(), transcribeAudio: vi.fn(), start: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
 vi.mock("@/lib/voice-clone.functions", () => api);
-vi.mock("@/lib/ai", () => ({ VoiceRecorder: vi.fn() }));
+vi.mock("@/lib/ai", () => ({ VoiceRecorder: class { start = api.start; stop = api.stop; cancel = api.cancel; }, transcribeAudio: api.transcribeAudio }));
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ i18n: { language: "zh" } }) }));
 const voice = { id: "saved-voice", voiceId: "existing-provider-voice", label: "亲友声音", caredOneId: "46", caredOneName: "家人", createdAt: "2026-10-29T15:00:00Z" };
 beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); addFamilyVoice(voice); });
@@ -49,9 +49,24 @@ it("orders character prices and separates token billing without inventing a pric
   expect(FAMILY_VOICE_MODELS.at(-1)?.id).toBe(DEFAULT_FAMILY_VOICE_MODEL);
 });
 
-it("uses a 20-second recording target within the official 10–20-second recommendation", () => {
+it("allows recording until the official 60-second maximum", () => {
   expect(VOICE_MIN_RECORDING_SECONDS).toBe(10);
-  expect(VOICE_RECORDING_SECONDS).toBe(20);
+  expect(VOICE_RECORDING_SECONDS).toBe(60);
+});
+
+it("transcribes speech into editable preview text without enrolling or synthesizing automatically", async () => {
+  const blob = new Blob(["complete recorded speech"], { type: "audio/wav" });
+  api.start.mockResolvedValue(undefined); api.stop.mockResolvedValue(blob);
+  api.transcribeAudio.mockResolvedValue("妈妈，我晚点给你打电话。");
+  render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+  fireEvent.change(screen.getByLabelText("试听文字"), { target: { value: "你好。" } });
+  fireEvent.click(screen.getByRole("button", { name: "语音输入" }));
+  await screen.findByRole("button", { name: "停止并转文字" });
+  fireEvent.click(screen.getByRole("button", { name: "停止并转文字" }));
+  await waitFor(() => expect(screen.getByLabelText("试听文字")).toHaveValue("你好。 妈妈，我晚点给你打电话。"));
+  expect(api.transcribeAudio).toHaveBeenCalledWith(blob, "zh");
+  expect(api.createClonedVoice).not.toHaveBeenCalled();
+  expect(api.speakClonedVoice).not.toHaveBeenCalled();
 });
 
 it("sends the saved CosyVoice model and exact entered words without re-enrollment", async () => {

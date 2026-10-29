@@ -1,3 +1,8 @@
+## Current request: Recording duration and preview dictation
+- [x] Verify official Qwen-Audio-TTS/CosyVoice recommendation of 10–20 seconds and maximum 60 seconds; extend UI auto-stop to 60 seconds, retaining manual stop.
+- [x] Add preview dictation through the existing transcription client, with editable text and explicit synthesis.
+- [ ] Run focused tests and verify authenticated browser dictation; explain 3.1 Plus positioning and prices without claiming subjective superiority.
+
 ## Current request: Alibaba family voice model comparison
 - [x] Verify current Qwen/CosyVoice versions, Beijing prices, shared 10–20-second recording recommendation, default long-lived voices and parallel product lines; exclude MiniMax. Token-priced Qwen 3.1 Flash is separate from character-price ranking.
 - [x] Add nine price-listed per-model enrollment choices and shared-text preview buttons; persist exact model, keep historical Qwen default, route AI calls through saved model, preserve rename behavior. Recording stops at 20 seconds; failed remote deletes retain references.
