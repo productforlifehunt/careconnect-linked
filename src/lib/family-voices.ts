@@ -1,7 +1,8 @@
 /**
  * Cloned family voices, kept on this device only (for now), each belonging to a cared one.
  */
-export type FamilyVoice = { id: string; voiceId: string; label: string; caredOneId: string; caredOneName: string; createdAt: string };
+import type { FamilyVoiceModel } from "@/lib/family-voice-models";
+export type FamilyVoice = { id: string; voiceId: string; model?: FamilyVoiceModel; label: string; caredOneId: string; caredOneName: string; createdAt: string };
 
 const KEY = "family-voices-v1";
 const EVT = "family-voices-changed";

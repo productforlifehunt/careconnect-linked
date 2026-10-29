@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { DEFAULT_FAMILY_VOICE_MODEL, resolveFamilyVoiceModel } from "@/lib/family-voice-models";
 
-/** Aliyun Bailian (DashScope) voice cloning + synthesis. One cheap model for both. */
+/** Alibaba voices are bound to the exact model chosen at enrollment. */
 const BASE = "https://dashscope.aliyuncs.com/api/v1";
-export const VOICE_CLONE_MODEL = "qwen-audio-3.1-tts-flash";
+export const VOICE_CLONE_MODEL = DEFAULT_FAMILY_VOICE_MODEL;
 
 function key() {
   const k = process.env["DASHSCOPE_API_KEY"];
@@ -23,11 +24,12 @@ async function enroll(input: Record<string, unknown>) {
 }
 
 export const createClonedVoice = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ audioBase64: z.string().min(1000).max(14_000_000), mime: z.string().max(40) }).parse(d))
+  .inputValidator((d) => z.object({ audioBase64: z.string().min(1000).max(14_000_000), mime: z.enum(["audio/wav", "audio/mpeg", "audio/mp4"]), model: z.string().transform(resolveFamilyVoiceModel).optional() }).parse(d))
   .handler(async ({ data }) => {
+    const model = resolveFamilyVoiceModel(data.model);
     const out = await enroll({
       action: "create_voice",
-      target_model: VOICE_CLONE_MODEL,
+      target_model: model,
       prefix: "family",
       audio: `data:${data.mime || "audio/wav"};base64,${data.audioBase64}`,
     });
@@ -35,11 +37,11 @@ export const createClonedVoice = createServerFn({ method: "POST" })
     if (!voiceId) throw new Error("No voice was created");
     for (let i = 0; i < 20; i++) {
       const q = await enroll({ action: "query_voice", voice_id: voiceId });
-      if (q.status === "OK") return { voiceId };
+      if (q.status === "OK") return { voiceId, model };
       if (q.status && q.status !== "DEPLOYING") throw new Error(`Voice status: ${q.status}`);
       await new Promise((r) => setTimeout(r, 1000));
     }
-    return { voiceId };
+    throw new Error("Voice is still deploying. Please retry later.");
   });
 
 export const deleteClonedVoice = createServerFn({ method: "POST" })
@@ -51,12 +53,12 @@ export const deleteClonedVoice = createServerFn({ method: "POST" })
 
 /** Speaks text in a cloned voice; returns MP3 as base64 (Aliyun's result URL is plain http). */
 export const speakClonedVoice = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ voiceId: z.string().min(5).max(200), text: z.string().min(1).max(2000) }).parse(d))
+  .inputValidator((d) => z.object({ voiceId: z.string().min(5).max(200), text: z.string().min(1).max(2000), model: z.string().transform(resolveFamilyVoiceModel).optional() }).parse(d))
   .handler(async ({ data }) => {
     const res = await fetch(`${BASE}/services/audio/tts/SpeechSynthesizer`, {
       method: "POST",
       headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: VOICE_CLONE_MODEL, input: { text: data.text, voice: data.voiceId, format: "mp3" } }),
+      body: JSON.stringify({ model: resolveFamilyVoiceModel(data.model), input: { text: data.text, voice: data.voiceId, format: "mp3" } }),
     });
     const json: any = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(`[${res.status}] ${json.message || json.code || "speech failed"}`);
