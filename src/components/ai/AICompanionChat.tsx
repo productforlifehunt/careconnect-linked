@@ -176,7 +176,7 @@ const MODE_KEY = "ai-reply-mode";
 export type ReplyMode = "text" | "read" | "live" | "call";
 /** Simulated family call setup (who to play + what to say). Saved in this browser. */
 const CALL_KEY = "ai-family-call";
-type CallConfig = { name: string; prompt: string };
+type CallConfig = { name: string; prompt: string; voiceId?: string | undefined };
 /**
  * Live mode instruction. Kept here (not in the shared persona prompt) so the
  * few extra words are only paid for while the user is actually talking.
