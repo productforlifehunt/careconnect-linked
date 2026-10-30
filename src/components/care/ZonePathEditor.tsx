@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Layer } from "leaflet";
-import { MousePointer2, PenLine, Pencil, Undo2, Redo2, Spline, CornerDownRight, Plus, Trash2, Scan, Check, Link2, Unlink2, BoxSelect, SquareDashed, Wand2, ArrowLeftRight, Eraser, HelpCircle, ChevronDown } from "lucide-react";
+import { MousePointer2, PenLine, Pencil, Undo2, Redo2, Spline, CornerDownRight, Plus, Trash2, Scan, Check, Link2, Unlink2, BoxSelect, SquareDashed, Wand2, ArrowLeftRight, Eraser, HelpCircle, ChevronDown, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { nodeAt, sampleBoundary, smoothNode, moveNode, moveHandle, insertNode, segment, removeNodes, curveNodes, reverseNodes, simplifyNodes, type PathNode, type ZonePoint } from "@/features/location/zone-path";
 
@@ -13,6 +13,8 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const [sel, setSel] = useState<number[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [multi, setMulti] = useState(false);
+  const multiRef = useRef(multi); multiRef.current = multi;
   const [linked, setLinked] = useState(true);
   const [history, setHistory] = useState<{ past: PathNode[][]; future: PathNode[][] }>({ past: [], future: [] });
   const layers = useRef<Layer[]>([]);
@@ -73,7 +75,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
           if (mode === "draw" && index === 0 && nodes.length >= 3) { setMode("edit"); setSel([0]); }
           else {
             if (selectionTimer.current) clearTimeout(selectionTimer.current);
-            const additive = e.originalEvent.shiftKey || e.originalEvent.metaKey || e.originalEvent.ctrlKey;
+            const additive = multiRef.current || e.originalEvent.shiftKey || e.originalEvent.metaKey || e.originalEvent.ctrlKey;
             selectionTimer.current = setTimeout(() => setSel(cur => additive ? (cur.includes(index) ? cur.filter(i => i !== index) : [...cur, index]) : [index]), 260);
           }
         });
@@ -184,6 +186,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const groups: { title: string; tools: Tool[] }[] = [
     { title: t("点", "Points"), tools: [
       { id: "all", Icon: BoxSelect, label: t("全选", "Select all"), help: t("选中全部点（Ctrl/⌘+A），之后可一起删除、加弧度或拉直。", "Select every point (Ctrl/⌘+A) to delete, curve or straighten them together."), disabled: !editing || !nodes.length, run: () => setSel(nodes.map((_, i) => i)) },
+      { id: "multi", Icon: ListChecks, label: t("多选", "Multi-select"), help: t("打开后，每点一个点就加入选择，再点一次取消；电脑上也可按住 Shift 点击。", "When on, each tap adds a point to the selection (tap again to remove); on a computer you can also Shift-click."), active: multi, disabled: !editing, run: () => setMulti(v => !v) },
       { id: "none", Icon: SquareDashed, label: t("取消选择", "Deselect"), help: t("取消当前选中（Esc）。", "Clear the selection (Esc)."), disabled: !many, run: () => setSel([]) },
       { id: "add", Icon: Plus, label: t("加点", "Add point"), help: t("在选中点和下一个点之间加一个点，形状不变。也可直接点边上的小圆点。", "Adds a point after the selected one without changing the shape. You can also tap the small dot on an edge."), disabled: !editing || sel.length !== 1, run: () => { const i = sel[0]!; commit(insertNode(nodes, i)); setSel([i + 1]); } },
       { id: "del", Icon: Trash2, label: t("删点", "Delete"), help: t("删除选中的点（Delete 键）。区域至少要保留 3 个点；全选后删除会清空重画。", "Delete selected points (Delete key). A zone keeps at least 3 points; select all then delete to start over."), disabled: !many, run: remove },
@@ -204,7 +207,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const hint = mode === "draw" ? t("点击放点 · 点第一个点闭合", "Tap to place · Tap first point to close")
     : mode === "freehand" ? t("按住拖动描出轮廓", "Press and drag to trace")
     : sel.length > 1 ? t("已多选 · 可一起删除、加弧度或拉直", "Several selected · Delete, curve or straighten together")
-    : t("双击点调弧度 · Shift 点击多选", "Double-click for curves · Shift-click to multi-select");
+    : multi ? t("多选中 · 点点加入或取消", "Multi-select on · Tap points to add or remove") : t("双击点调弧度 · ？看每个工具说明", "Double-click for curves · ? explains every tool");
   return <>
     <div className="absolute left-2 right-2 top-2 z-[1100] max-h-[calc(100%-4.5rem)] overflow-y-auto rounded-xl border border-border bg-background/95 p-1 shadow-sm backdrop-blur-sm sm:left-auto sm:w-[400px]">
       <div role="toolbar" aria-label={t("区域绘制", "Zone drawing")} className="flex items-center gap-0.5">
@@ -216,12 +219,12 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
         <Button type="button" variant={showHelp ? "secondary" : "ghost"} size="icon" className="h-8 w-8" aria-label={t("工具说明", "Tool help")} aria-pressed={showHelp} onClick={() => setShowHelp(v => !v)}><HelpCircle className="h-4 w-4" /></Button>
         <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label={expanded ? t("收起工具", "Collapse tools") : t("展开工具", "Expand tools")} aria-expanded={expanded} onClick={() => setExpanded(v => !v)}><ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} /></Button>
       </div>
-      {expanded && <div className="mt-1 space-y-1 border-t border-border pt-1">
-        {groups.map(g => <div key={g.title}>
-          <p className="px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{g.title}</p>
-          <div className="grid grid-cols-4 gap-0.5">
-            {g.tools.map(({ id, Icon, label, active, disabled, run }) => <Button key={id} type="button" variant={active ? "secondary" : "ghost"} aria-pressed={active} disabled={disabled} onClick={run} className="h-auto min-w-0 flex-col gap-0.5 px-1 py-1.5 text-[11px] font-normal">
-              <Icon className="h-4 w-4 shrink-0" /><span className="w-full truncate">{label}</span>
+      {expanded && <div className="mt-1 flex flex-wrap gap-x-1 border-t border-border pt-1 sm:block sm:space-y-1">
+        {groups.map((g, gi) => <div key={g.title} className={gi ? "border-l border-border pl-1 sm:border-l-0 sm:pl-0" : ""}>
+          <p className="hidden px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:block">{g.title}</p>
+          <div className="flex flex-wrap gap-0.5 sm:grid sm:grid-cols-5">
+            {g.tools.map(({ id, Icon, label, active, disabled, run }) => <Button key={id} type="button" variant={active ? "secondary" : "ghost"} aria-pressed={active} disabled={disabled} onClick={run} title={label} aria-label={label} className="h-8 w-8 min-w-0 flex-col gap-0.5 p-0 text-[11px] font-normal sm:h-auto sm:w-auto sm:px-1 sm:py-1.5">
+              <Icon className="h-4 w-4 shrink-0" /><span className="hidden w-full truncate sm:block">{label}</span>
             </Button>)}
           </div>
         </div>)}
