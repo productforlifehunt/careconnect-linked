@@ -3,7 +3,7 @@ import { WP, R } from "@/integrations/wp-schema";
 import { decodeRel219Status } from "@/features/cared-ones/rel219-meta";
 
 const BASE = "https://app.challenged-dementia.com/afresh/wp-json";
-type Row = Record<string, unknown>;
+type Row = Record<string, unknown> & { child_object_id?: unknown; parent_object_id?: unknown; meta?: unknown; _ID?: unknown; item_id?: unknown; cct_created?: unknown };
 export async function verifiedActor(token: string) {
   if (!token) throw new Error("Please sign in. / 请先登录。");
   const res = await fetch(`${BASE}/wp/v2/users/me?context=edit`, { headers: { Authorization: `Bearer ${token}` } });
@@ -48,7 +48,7 @@ export function wordpressStore(user: string, password: string) {
       let name = "";
       const profileLinks = await relations(152, "children", p);
       const profileId = String(profileLinks[0]?.child_object_id || "");
-      if (profileId) { const profile = await request(`jet-cct/${WP.cct["151"].slug}/${profileId}`) as Row; name = String(profile.a55 || ""); }
+      if (profileId) { const profile = await request(`jet-cct/${WP.cct["151"].slug}/${profileId}`) as Row; name = String(profile[WP.cct["151"].f["USER_NAME_FOR_CHALLENGED"] || ""] || ""); }
       return Promise.all(links.map(async (r) => map(await get(String(r.child_object_id)), p, name)));
     }))).flat();
   };
