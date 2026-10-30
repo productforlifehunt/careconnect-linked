@@ -115,7 +115,9 @@ it("rejects unlisted providers and models", () => {
 
 it("enrolls every new recording with the default flash model and keeps stored models resolvable", async () => {
   api.familyVoiceAction.mockResolvedValue({ voice: { ...voice, id: "8", model: DEFAULT_FAMILY_VOICE_MODEL } });
-  const blob = new Blob([new Int16Array(16000).fill(1000)], { type: "audio/wav" });
+  const pcm = new Int16Array(16000).fill(1000);
+  const blob = new Blob([pcm.buffer as ArrayBuffer], { type: "audio/wav" });
+  (blob as any).arrayBuffer = async () => pcm.buffer;
   const saved = await saveFamilyVoiceRecording("46", "儿子", blob);
   expect(api.familyVoiceAction).toHaveBeenCalledWith({ data: expect.objectContaining({ action: "create", model: DEFAULT_FAMILY_VOICE_MODEL }) });
   expect(saved.model).toBe(DEFAULT_FAMILY_VOICE_MODEL);
