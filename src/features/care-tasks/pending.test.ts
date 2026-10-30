@@ -18,7 +18,7 @@ describe("traceable pending care tasks", () => {
     expect(pendingCareTaskTarget(pendingCareTasks(tasks, [70, 71]), 71)).toBe("/cared-ones/70/tasks");
   });
   it("finished dictionary status wins over a stale legacy pending label", () => {
-    expect(isPendingCareTask(tasks[1])).toBe(false);
+    expect(isPendingCareTask({ finish_status: "b56", status: "pending" })).toBe(false);
   });
   it("unknown status is not invented as pending", () => {
     expect(isPendingCareTask({ cared_one_id: "70" })).toBe(false);
