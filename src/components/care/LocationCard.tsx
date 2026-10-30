@@ -82,25 +82,6 @@ function pointInPolygon(lat: number, lng: number, polygon: [number, number][]): 
   return inside;
 }
 
-function douglasPeucker(points: [number, number][], tolerance: number): [number, number][] {
-  if (points.length <= 2) return points;
-  let maxDist = 0; let maxIdx = 0;
-  const [x1, y1] = points[0]!; const [x2, y2] = points[points.length - 1]!;
-  const len = Math.hypot(x2 - x1, y2 - y1);
-  for (let i = 1; i < points.length - 1; i++) {
-    const [px, py] = points[i]!;
-    const dist = len === 0 ? Math.hypot(px - x1, py - y1)
-      : Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) / len;
-    if (dist > maxDist) { maxDist = dist; maxIdx = i; }
-  }
-  if (maxDist > tolerance) {
-    const l = douglasPeucker(points.slice(0, maxIdx + 1), tolerance);
-    const r = douglasPeucker(points.slice(maxIdx), tolerance);
-    return [...l.slice(0, -1), ...r];
-  }
-  return [points[0]!, points[points.length - 1]!];
-}
-
 function chaikinPerVertex(points: [number, number][], radii: number[]): [number, number][] {
   if (points.length < 3) return points;
   const maxRadius = Math.max(...radii, 0);
@@ -167,9 +148,6 @@ function zoneIcon(code: string) {
   if (isSafeZone(code)) return Shield;
   return Target;
 }
-
-// CCT 214 has no column for corner rounding, so the control stays hidden.
-const SHOW_CORNER_ROUNDING: boolean = Boolean(0);
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -302,16 +280,8 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
 
   // ─── Polygon drawing state
-  const [drawMode, setDrawMode] = useState<"idle" | "drawing" | "editing">("idle");
   const [drawnPoints, setDrawnPoints] = useState<[number, number][]>([]);
   const initialPathRef = useRef<[number, number][]>([]);
-  const [cornerRadii, setCornerRadii] = useState<number[]>([]);
-  const [selectedVertex, setSelectedVertex] = useState<number | null>(null);
-  const [flashRed, setFlashRed] = useState(false);
-  const drawingRef = useRef(false);
-  const freehandRef = useRef<[number, number][]>([]);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const debounceTimerRef = useRef<any>(null);
 
   // ─── Request/Sharing state
   const [requestMessage, setRequestMessage] = useState("");
@@ -457,7 +427,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
       drawLayersRef.current.forEach(l => { try { l.remove(); } catch (_) {} });
       drawLayersRef.current = [];
     } else renderRadiusPreview();
-  }, [renderRadiusPreview, showZoneForm, zoneForm.shape_type, zoneForm.latitude, zoneForm.longitude, zoneForm.radius, drawMode]);
+  }, [renderRadiusPreview, showZoneForm, zoneForm.shape_type, zoneForm.latitude, zoneForm.longitude, zoneForm.radius]);
 
   useEffect(() => () => {
     if (leafletMapRef.current) {
@@ -483,15 +453,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
     map.getContainer().style.cursor = "";
     return undefined;
-  }, [pickingOnMap, drawMode, showZoneForm, drawnPoints.length, zoneForm.shape_type]);
-
-  function finishDrawing() {
-    if (drawnPoints.length < 3) { toast({ title: isZh ? "至少需要3个点" : "Need at least 3 points", variant: "destructive" }); return; }
-    const c = centroid(drawnPoints);
-    setZoneForm(p => ({ ...p, latitude: c[0].toFixed(6), longitude: c[1].toFixed(6) }));
-    setDrawMode("editing");
-    setSelectedVertex(null);
-  }
+  }, [pickingOnMap, showZoneForm, drawnPoints.length, zoneForm.shape_type]);
 
   const openZoneForm = (zone?: any | undefined) => {
     initialPathRef.current = zone?.polygon_points || [];
@@ -513,18 +475,15 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
       });
       if (String(zone.shape_type || "").toLowerCase() === "polygon" && zone.polygon_points?.length >= 3) {
         setDrawnPoints(zone.polygon_points);
-        setCornerRadii(zone.corner_radius || Array(zone.polygon_points.length).fill(0));
-        setDrawMode("editing");
       } else {
-        setDrawnPoints([]); setCornerRadii([]); setDrawMode("idle");
+        setDrawnPoints([]); 
       }
     } else {
       setEditingZone(null);
       setZoneForm(defaultForm());
-      setDrawnPoints([]); setCornerRadii([]); setDrawMode("idle");
+      setDrawnPoints([]); 
     }
     setCustomNameDraft(isCustomZone(zone?.zone_type || ZONE_TYPE.SAFE) ? String(zone?.zone_name || "") : "");
-    setSelectedVertex(null);
     setShowZoneForm(true);
     setActiveTab("safezones");
 
@@ -569,12 +528,12 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
     if (editingZone) {
       updateZone.mutate({ id: editingZone.id, ...payload }, {
-        onSuccess: () => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); toast({ title: isZh ? "区域已更新 ✓" : "Zone updated ✓" }); },
+        onSuccess: () => { setShowZoneForm(false); setEditingZone(null); toast({ title: isZh ? "区域已更新 ✓" : "Zone updated ✓" }); },
         onError: (e: any) => toast({ title: isZh ? "更新失败" : "Failed to update", description: e.message, variant: "destructive" }),
       });
     } else {
       createZone.mutate(payload, {
-        onSuccess: () => { setShowZoneForm(false); setDrawMode("idle"); toast({ title: isZh ? "区域已创建 ✓" : "Zone created ✓" }); },
+        onSuccess: () => { setShowZoneForm(false); toast({ title: isZh ? "区域已创建 ✓" : "Zone created ✓" }); },
         onError: (e: any) => toast({ title: isZh ? "创建失败" : "Failed to create", description: e.message, variant: "destructive" }),
       });
     }
@@ -1001,7 +960,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{editingZone ? (isZh ? "编辑区域" : "Edit zone") : (isZh ? "新建区域" : "New zone")}</h3>
                   <Button variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
+                    onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawnPoints([]); }}>
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -1071,7 +1030,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
                     {(["radius", "polygon"] as const).map(st => (
                       <button key={st} onClick={() => {
                         setZoneForm(p => ({ ...p, shape_type: st }));
-                        if (st === "radius") { setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }
+                        if (st === "radius") { setDrawnPoints([]); }
                       }}
                         className={`flex-1 py-1.5 text-sm font-medium transition-colors
                           ${zoneForm.shape_type === st ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground hover:bg-accent"}`}>
@@ -1181,7 +1140,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
                 <div className="flex gap-2 pt-1">
                   <Button variant="outline" className="flex-1"
-                    onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawMode("idle"); setDrawnPoints([]); setCornerRadii([]); }}>
+                    onClick={() => { setShowZoneForm(false); setEditingZone(null); setDrawnPoints([]); }}>
                     {isZh ? "取消" : "Cancel"}
                   </Button>
                   <Button className="flex-1 text-white"
