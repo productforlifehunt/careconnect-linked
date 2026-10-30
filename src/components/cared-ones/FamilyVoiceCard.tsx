@@ -241,7 +241,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
               {v.error && <p className="text-xs text-destructive">{v.error}</p>}
             </div>
             {editingId !== v.id && <Button size="sm" variant="ghost" onClick={() => { setEditingId(v.id); setDraftName(v.label); }} aria-label={zh ? `改名：${v.label}` : `Rename: ${v.label}`} title={zh ? "改名" : "Rename"}><Pencil className="h-4 w-4" /></Button>}
-            {v.audioSaved && <Button size="sm" variant="ghost" onClick={() => void original(v)} disabled={busy !== null || recording} aria-label={zh ? "听原始录音" : "Play original recording"} title={zh ? "听原始录音" : "Play original recording"}><Mic className="h-4 w-4" /></Button>}
+            {v.audioSaved && <Button size="sm" variant="ghost" onClick={() => void original(v)} disabled={busy !== null || recording} aria-label={zh ? "听原始录音" : "Play original recording"} title={zh ? "听原始录音" : "Play original recording"}><Mic className="h-4 w-4 mr-1" />{zh ? "原音" : "Original"}</Button>}
             {v.audioSaved && <Button size="sm" variant="ghost" onClick={() => void retry(v)} disabled={busy !== null || recording} aria-label={zh ? "从原始录音重新复刻" : "Reclone original recording"} title={zh ? "从原始录音重新复刻" : "Reclone original recording"}><RefreshCw className="h-4 w-4" /></Button>}
             <Button size="sm" variant="outline" onClick={() => void test(v)} disabled={busy !== null || recording || v.state !== FAMILY_VOICE_STATE.ready} aria-label={zh ? "试听" : "Preview"} title={zh ? "试听" : "Preview"}>
               {busy === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}

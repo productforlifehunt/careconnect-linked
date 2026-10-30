@@ -1,5 +1,5 @@
 /**
- * Cloned family voices, kept on this device only (for now), each belonging to a cared one.
+ * Server-persisted family voices plus untouched legacy device-local imports.
  */
 import type { FamilyVoiceModel } from "@/lib/family-voice-models";
 import { familyVoiceAction } from "@/lib/family-voice.functions";

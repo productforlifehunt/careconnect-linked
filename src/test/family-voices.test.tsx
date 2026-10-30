@@ -67,7 +67,7 @@ it("does not cut off at 20 seconds and stops recording at 60 seconds", async () 
   api.start.mockResolvedValue(undefined);
   api.stop.mockResolvedValue(null);
   try {
-    render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+    await act(async () => { render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "开始录音" })); });
     await act(async () => { vi.advanceTimersByTime(20000); });
     expect(api.stop).not.toHaveBeenCalled();
