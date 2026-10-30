@@ -25,7 +25,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 it("switches to QA Bravo's family voice tool without opening a popup", () => {
   render(<CaredOnes />);
-  fireEvent.click(screen.getByRole("button", { name: "QA Bravo", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: /^QA Bravo$/ }));
   expect(navigate).toHaveBeenCalledWith("/cared-ones/71/family-voice");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
