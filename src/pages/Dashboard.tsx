@@ -25,6 +25,7 @@ import {
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
 import { AISmartBriefing } from "@/components/dashboard/AISmartBriefing";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { pendingCareTasks, pendingCareTaskTarget } from "@/features/care-tasks/pending";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function Dashboard() {
   const site = useSite();
   const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "护理群组" }) : site.navLabels.careGroups;
   const { data: bookings, isLoading: bookingsLoading } = useBookings();
-  const { data: tasks, isLoading: tasksLoading } = useCareTasks();
+  const { data: tasks, isLoading: tasksLoading, error: tasksError } = useCareTasks();
   const { data: myCareGroups } = useCareGroups();
   const { unread: unreadInbox, isLoading: inboxLoading, error: inboxError } = useInboxCounts();
   const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes();
@@ -105,7 +106,8 @@ export default function Dashboard() {
     const co = String(tk.cared_one_id ?? "").replace(/^wp-/, "");
     return !!co && myCaredOneIds.has(co);
   });
-  const myPendingTasks = myTasks.filter((t: any) => t.status !== "completed");
+  const myPendingTasks = pendingCareTasks(myTasks, [...myCaredOneIds]);
+  const pendingTasksTarget = pendingCareTaskTarget(myPendingTasks, caredOnes?.[0]?.user_id);
   const pendingTasks = myPendingTasks.slice(0, 5);
   // Care teams the user actually belongs to, and unread messages sent to them.
   const myCareGroupCount = (myCareGroups || []).length;
@@ -185,7 +187,7 @@ export default function Dashboard() {
         {[
           ...(paidCare ? [{ label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
           { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
-          { label: t("dashboard.pendingTasks"), value: myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: "/cared-ones" },
+          { label: t("dashboard.pendingTasks"), value: tasksLoading || caredOnesLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
           { label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
         ].map((s) => (
           <button key={s.label} onClick={() => navigate(s.to)}
@@ -251,7 +253,7 @@ export default function Dashboard() {
         </h2>
         <Card className="border-transparent card-elevated">
           <CardContent className="p-3 space-y-2">
-            {tasksLoading ? (
+            {tasksError ? <p role="alert" className="text-sm text-destructive">{isChinese ? "任务读取失败，请刷新重试。" : "Tasks could not be loaded. Please refresh and try again."}</p> : tasksLoading || caredOnesLoading ? (
               [1,2,3].map(i => (
                 <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
                   <Skeleton className="h-4 w-4 rounded-full" />
@@ -285,7 +287,7 @@ export default function Dashboard() {
             }) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noPendingTasks")}</p>
             )}
-            <Button variant="ghost" size="sm" className="w-full h-8 text-xs" onClick={() => navigate("/cared-ones")}>
+            <Button variant="ghost" size="sm" className="w-full h-8 text-xs" onClick={() => navigate(pendingTasksTarget)}>
               {t("common.viewAll")}
             </Button>
           </CardContent>

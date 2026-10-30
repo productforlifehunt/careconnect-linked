@@ -18,6 +18,7 @@ vi.mock("@/hooks/use-care-data", () => ({
     { id: "existing-relation-b", user_id: "wp-71", cared_one: { full_name: "QA Bravo" } },
   ], isLoading: false }),
   useCreateUserCaredOne: () => ({}), useDeleteUserCaredOne: () => ({}), useSearchProfiles: () => ({ data: [] }),
+  useCareTasks: () => ({ data: [], isLoading: false }),
 }));
 vi.mock("@/components/cared-ones/FamilyVoiceCard", () => ({ FamilyVoiceCard: () => null }));
 vi.mock("@/components/cared-ones/EmergencyShareSetting", () => ({ EmergencyShareSetting: () => null }));

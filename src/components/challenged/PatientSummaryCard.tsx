@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pill, ClipboardCheck, MapPin, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { useCheckins, useTodayCheckinLogs, useMedicines, useCaredOneLocation, useCareTasks } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
+import { pendingCareTasks } from "@/features/care-tasks/pending";
 
 interface PatientSummaryCardProps {
   caredOneId: string;
@@ -29,10 +30,7 @@ export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, 
   const locationAge = location?.updated_at
     ? Math.round((Date.now() - new Date(location.updated_at).getTime()) / 60000)
     : null;
-  const bareId = (value: unknown) => String(value ?? "").replace(/^wp-/, "");
-  const caredOneTasks = (tasks || []).filter(
-    (task: any) => bareId(task.cared_one_id) === bareId(caredOneId) && task.status !== "completed",
-  );
+  const caredOneTasks = pendingCareTasks(tasks, [caredOneId]);
 
   return (
     <Card className="border-transparent card-elevated cursor-pointer hover:border-primary/30 transition-all" onClick={onClick}>
