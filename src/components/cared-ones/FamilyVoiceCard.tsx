@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VoiceRecorder, transcribeAudio } from "@/lib/ai";
 import { loadSavedFamilyVoices, saveFamilyVoiceRecording, updateSavedFamilyVoice, savedVoiceAudio, importLocalFamilyVoices, listFamilyVoices, onFamilyVoicesChanged, type FamilyVoice } from "@/lib/family-voices";
 import { FAMILY_VOICE_STATE } from "@/features/family-voices/schema";
-import { DEFAULT_FAMILY_VOICE_MODEL, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
+import { VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
 
 const SAMPLE_ZH = "今天天气不错，我刚吃完饭。家里一切都好，你别担心。等会儿有人来帮忙，你跟他好好说话。我晚点再给你打电话。";
 const SAMPLE_EN = "The weather is nice today and I just had lunch. Everything at home is fine, don't worry. Someone is coming to help soon, please be kind to them. I'll call you again later.";
