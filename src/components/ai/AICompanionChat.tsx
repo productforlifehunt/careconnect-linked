@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { listFamilyVoices, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
-import { speakClonedVoice } from "@/lib/voice-clone.functions";
+import { loadSavedFamilyVoices, savedVoiceAudio, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
+import { FAMILY_VOICE_STATE } from "@/features/family-voices/schema";
 import { familyVoiceModelName } from "@/lib/family-voice-models";
 import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
 import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
@@ -276,7 +276,13 @@ export function AICompanionChat({
     return `${base}\n${role}`;
   };
   const [familyVoices, setFamilyVoices] = useState<FamilyVoice[]>([]);
-  useEffect(() => { const load = () => setFamilyVoices(listFamilyVoices()); load(); return onFamilyVoicesChanged(load); }, []);
+  useEffect(() => {
+    if (!active) return;
+    let alive = true;
+    setFamilyVoices([]);
+    const load = () => { void loadSavedFamilyVoices(request.contextScope?.caredOneId?.replace(/^wp-/, "")).then((rows) => { if (alive) setFamilyVoices(rows.filter((v) => v.state === FAMILY_VOICE_STATE.ready)); }).catch(() => { if (alive) setFamilyVoices([]); }); };
+    load(); const off = onFamilyVoicesChanged(load); return () => { alive = false; off(); };
+  }, [active, request.contextScope?.caredOneId]);
   const clonedAudioRef = useRef<HTMLAudioElement | null>(null);
   /** Speaks a call reply in the chosen cloned family voice. */
   const speakCloned = async (text: string, index: number, voiceId: string) => {
@@ -285,7 +291,8 @@ export function AICompanionChat({
     setSpeakingIndex(index);
     try {
       const voice = familyVoices.find((v) => v.voiceId === voiceId);
-      const { audioBase64 } = await speakClonedVoice({ data: { voiceId, text: clean, ...(voice?.model ? { model: voice.model } : {}) } });
+      if (!voice) throw new Error("Selected family voice is unavailable");
+      const { audioBase64 } = await savedVoiceAudio(voice, clean);
       clonedAudioRef.current?.pause();
       const a = playBase64Mp3(audioBase64);
       clonedAudioRef.current = a;
