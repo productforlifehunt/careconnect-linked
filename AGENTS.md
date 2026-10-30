@@ -36,3 +36,4 @@
 - Family voice previews, original playback and AI-call playback explicitly use constant full HTML audio volume without gain ramps or sentence-level replays, preserving the provider's complete returned audio.
 - Cared-one tool views remount when the selected person or tool changes, because in-progress recordings and transient playback state must not carry across people.
 - Dashboard, person badges, summaries and care-task lists share the dictionary-backed pending-task selector; count links open the first matching person's task tool so totals remain traceable without new relations.
+- Zone path editing uses a browser-only Leaflet overlay and sampled curve boundaries in the existing polygon field; no new CCT/REL or hidden control-point storage is introduced, so saved containment checks follow the visible boundary.

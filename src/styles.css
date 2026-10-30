@@ -506,3 +506,10 @@ body > div:not(#root) > [data-state="closed"],
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Accessible map path controls; colours inherit the current site's theme. */
+.zone-editor-marker { background: transparent; border: 0; display: grid; place-items: center; }
+.zone-editor-dot { display: block; width: 12px; height: 12px; background: hsl(var(--background)); border: 2px solid hsl(var(--primary)); border-radius: 2px; box-shadow: var(--card-shadow); cursor: grab; }
+.zone-editor-dot.is-selected { background: hsl(var(--primary)); border-color: hsl(var(--foreground)); }
+.zone-editor-mid .zone-editor-dot { width: 8px; height: 8px; border-radius: 50%; opacity: .8; cursor: copy; }
+.zone-editor-handle .zone-editor-dot { width: 11px; height: 11px; border-radius: 50%; background: hsl(var(--background)); border-color: hsl(var(--foreground)); }
