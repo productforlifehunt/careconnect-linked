@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { useJoinGroupByCode, useGroupInvitePreview } from "@/hooks/use-care-data";
+import { useJoinGroupByAnyCode, useGroupInvitePreview } from "@/hooks/use-care-data";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +14,7 @@ export default function JoinGroup() {
   const { code = "" } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const joinGroupByCode = useJoinGroupByCode();
+  const joinGroupByAnyCode = useJoinGroupByAnyCode();
   const { i18n } = useTranslation();
   const zh = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (zh ? cn : en);
@@ -52,7 +52,7 @@ export default function JoinGroup() {
 
   const handleJoin = () => {
     setStatus("joining");
-    joinGroupByCode.mutate({ token: code, displayName: displayName.trim() || appName }, {
+    joinGroupByAnyCode.mutate({ code, displayName: displayName.trim() || appName }, {
       onSuccess: (res: any) => {
         setStatus("success");
         const groupName = res?.group_name || Z("该护理小组", "the care group");

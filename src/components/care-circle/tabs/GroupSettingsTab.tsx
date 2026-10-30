@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Settings, Trash2, Shuffle, Copy } from "lucide-react";
+import { Settings, Trash2, Shuffle, Copy, Link2 } from "lucide-react";
+import { careGroupJoinLink } from "@/features/care-groups/join-link";
 
 function randomJoinCode() {
   const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -44,6 +45,9 @@ export function GroupSettingsTab({
   const [isPrivate, setIsPrivate] = useState(!!activeGroup?.is_private);
   const [joinCode, setJoinCode] = useState(activeGroup?.join_code || "");
   const [isActive, setIsActive] = useState(activeGroup?.is_active !== false);
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const groupLink = careGroupJoinLink(origin, joinCode);
   const [myName, setMyName] = useState(myDisplayName);
   const updateMyName = useUpdateMyGroupDisplayName();
 
@@ -104,7 +108,15 @@ export function GroupSettingsTab({
           <div className="flex gap-2">
             <Input value={joinCode} maxLength={32} onChange={e => setJoinCode(e.target.value.replace(/\s/g, ""))} placeholder={Z("例如 ABC123", "e.g. ABC123")} />
             <Button type="button" variant="outline" onClick={() => setJoinCode(randomJoinCode())}><Shuffle className="h-4 w-4 mr-1" />{Z("自动生成", "Generate")}</Button>
-            <Button type="button" variant="outline" size="icon" aria-label={Z("复制", "Copy")} disabled={!joinCode} onClick={() => { navigator.clipboard?.writeText(joinCode); toast({ title: Z("已复制", "Copied") }); }}><Copy className="h-4 w-4" /></Button>
+            <Button type="button" variant="outline" size="icon" aria-label={Z("复制加入码", "Copy join code")} disabled={!joinCode} onClick={() => { navigator.clipboard?.writeText(joinCode); toast({ title: Z("已复制", "Copied") }); }}><Copy className="h-4 w-4" /></Button>
+          </div>
+        </div>
+        <div>
+          <Label>{Z("群组链接", "Group link")}</Label>
+          <p className="text-xs text-muted-foreground mb-2">{Z("复制后发给别人，点开就能加入本群组。加入码保存后链接才生效。", "Copy and send this link — opening it joins this group. It works once the join code is saved.")}</p>
+          <div className="flex gap-2">
+            <Input readOnly value={groupLink} placeholder={joinCode.trim() ? "" : Z("先填写或生成加入码", "Enter or generate a join code first")} onFocus={e => e.currentTarget.select()} />
+            <Button type="button" variant="outline" size="icon" aria-label={Z("复制群组链接", "Copy group link")} disabled={!groupLink} onClick={() => { navigator.clipboard?.writeText(groupLink); toast({ title: Z("群组链接已复制", "Group link copied") }); }}><Link2 className="h-4 w-4" /></Button>
           </div>
         </div>
         <div className="flex items-center justify-between">
