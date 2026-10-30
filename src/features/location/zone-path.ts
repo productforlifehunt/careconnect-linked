@@ -44,7 +44,8 @@ export function insertNode(nodes: PathNode[], i: number): PathNode[] {
   const { left, right } = segment(a, b).split(0.5);
   const l = left.points, r = right.points;
   if (!l[1] || !l[2] || !l[3] || !r[1] || !r[2]) return nodes;
-  const copy = nodes.map((n, j) => j === i ? { ...n, outgoing: pair(l[1]) } : j === (i + 1) % nodes.length ? { ...n, incoming: pair(r[2]) } : n);
+  const leftOut = pair(l[1]), rightIn = pair(r[2]);
+  const copy = nodes.map((n, j) => j === i ? { ...n, outgoing: leftOut } : j === (i + 1) % nodes.length ? { ...n, incoming: rightIn } : n);
   copy.splice(i + 1, 0, { point: pair(l[3]), incoming: pair(l[2]), outgoing: pair(r[1]) });
   return copy;
 }

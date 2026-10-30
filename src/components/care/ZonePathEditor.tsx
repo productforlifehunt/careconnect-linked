@@ -45,7 +45,6 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
       const add = <T extends Layer,>(layer: T): T => { layer.addTo(map); layers.current.push(layer); return layer; };
       const tokens = getComputedStyle(map.getContainer());
       const color = `hsl(${tokens.getPropertyValue("--primary")})`;
-      const surface = `hsl(${tokens.getPropertyValue("--background")})`;
       const selectedColor = `hsl(${tokens.getPropertyValue("--foreground")})`;
       const boundary = sampleBoundary(nodes);
       const outline = nodes.length >= 3 && mode === "edit"
@@ -165,7 +164,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
     { Icon: Plus, label: isZh ? "添加点" : "Add point", disabled: selected === null || mode !== "edit", run: () => { if (selected !== null) commit(insertNode(nodes, selected)); } },
     { Icon: Trash2, label: isZh ? "删除点" : "Delete point", disabled: selected === null || nodes.length <= 3, run: remove },
     { Icon: linked ? Link2 : Unlink2, label: isZh ? "联动手柄" : "Link handles", active: linked, run: () => setLinked(v => !v) },
-    { Icon: Scan, label: isZh ? "查看全貌" : "Fit boundary", disabled: !nodes.length, run: () => map.fitBounds(sampleBoundary(nodes), { padding: [45, 60], maxZoom: 19 }) },
+    { Icon: Scan, label: isZh ? "查看全貌" : "Fit boundary", disabled: !nodes.length, run: () => map.fitBounds(sampleBoundary(nodes), { padding: [65, 90], maxZoom: 19 }) },
   ];
   return <>
     <div role="toolbar" aria-label={isZh ? "区域绘制" : "Zone drawing"} className="absolute left-2 right-2 top-2 z-[1100] flex flex-wrap gap-0.5 rounded-md border border-border bg-background/95 p-1 shadow-sm backdrop-blur-sm sm:left-auto sm:right-2 sm:max-w-[470px]">
