@@ -68,7 +68,7 @@ export function GroupSettingsTab({
 
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
-    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, join_code: joinCode.trim(), is_active: isActive }, {
+    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, join_code: joinCode.trim(), ...(isActive !== (activeGroup?.is_active !== false) ? { is_active: isActive } : {}) }, {
       onSuccess: () => toast({ title: Z("群组已更新！", "Group updated!") }),
       onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
     });
