@@ -1,3 +1,8 @@
+## Current request: Server-persisted cared-one family voices
+- [ ] Create one CCT and one cared-one → voices one-to-many JetEngine relation through the /afresh GUI; verify actual IDs and fields.
+- [ ] Persist original private audio, clone/model/status metadata, shared caregiver access, rename/delete/reclone and existing local-reference migration without deleting local originals.
+- [ ] Test real authorized creation, refresh/new-browser readback, relation isolation and synthesis/playback; report each result and blockers.
+
 ## Current request: Cared-one switching and voice attribution
 - [x] Clicking a cared-one name switches the current care tool; a separate pencil + Edit button opens the existing popup.
 - [x] 12/12 tests pass, build OK. Real test1 UI: name navigates to /cared-ones/1 with no dialog; Edit opens the existing dialog. Screenshots checked. This session exposes only one cared one, so switching between two real people is covered by tests, not live verification.
