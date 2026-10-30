@@ -210,7 +210,6 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
                 </div>
               ) : <p className="font-medium text-foreground break-words">{v.label}</p>}
               <p className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">{familyVoiceModelName(v.model)}</p>
               <p className="text-xs text-muted-foreground">{v.audioSaved ? (zh ? "原始录音已保存" : "Original recording saved") : (zh ? "旧声音，无原始录音" : "Older voice, no original recording")}{v.state !== FAMILY_VOICE_STATE.ready ? (zh ? " · 复刻未完成" : " · Cloning incomplete") : ""}</p>
               {v.error && <p className="text-xs text-destructive">{v.error}</p>}
             </div>
@@ -230,7 +229,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
         <h3 className="font-semibold text-foreground">{zh ? "文字试听" : "Text preview"}</h3>
         <Select value={previewVoiceId} onValueChange={setPreviewVoiceId} disabled={!voices.length || busy !== null}>
           <SelectTrigger aria-label={zh ? "试听声音" : "Preview voice"}><SelectValue placeholder={zh ? "选择亲友声音" : "Choose a family voice"} /></SelectTrigger>
-          <SelectContent>{voices.map((v) => <SelectItem key={v.id} value={v.id}>{v.label} · {familyVoiceModelName(v.model)}</SelectItem>)}</SelectContent>
+          <SelectContent>{voices.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
         </Select>
         <Textarea aria-label={zh ? "试听文字" : "Preview text"} value={previewText} onChange={(e) => setPreviewText(e.target.value)} maxLength={2000} placeholder={zh ? "输入想让亲友声音说的话…" : "Enter the words for this voice…"} className="min-h-24" />
         <div className="flex flex-wrap gap-2">
