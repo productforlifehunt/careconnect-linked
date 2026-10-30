@@ -1,7 +1,8 @@
 ## Current request: Professional zone drawing
-- [ ] Add working anchor/curve handles, add/delete points, straight/smooth corners, undo/redo and map-fit controls with plain bilingual labels.
-- [ ] Keep existing CCT/REL unchanged; store the rendered sampled boundary through the existing polygon field so zone checks follow the visible shape.
-- [ ] Test geometry and real signed-in drawing on desktop/mobile; verify errors and document any limitations.
+- [x] Add anchor/curve handles, add/delete points, straight/smooth corners, undo/redo and map-fit controls with plain bilingual labels; freehand tool implemented.
+- [x] Existing CCT/REL unchanged; rendered sampled boundary feeds the existing polygon save field; no unsupported corner_radius save. Reload retains boundary samples, not original handles.
+- [x] Geometry tests 6/6 pass; live test1 draws five points, closes, double-clicks into two handles, drags a handle, adds/deletes a point, undoes/redoes, restores a straight point and fits boundary. Desktop/393px screenshots inspected; no horizontal overflow or page errors; latest build OK.
+- [ ] Remaining verification: freehand and touch dragging, Chinese live labels, actual save/reload. No existing zone or WordPress record changed; no publishing. Saved original editable handles cannot be reconstructed from the current polygon-only schema.
 
 ## Current request: Plain storage labels and traceable pending tasks
 - [x] Remove server/cloud wording from family voice storage labels; older-voice import button reads Save/储存. Family-voice leaf metadata no longer advertises model comparison.
