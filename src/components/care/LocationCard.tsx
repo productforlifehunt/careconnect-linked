@@ -658,7 +658,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
       {/* ─── Map (always visible on map tabs) ─── */}
       <div style={{ display: isMapTab ? "block" : "none" }} className="relative">
-        <div ref={mapRef} className={`${readOnly ? "h-56" : "h-[460px]"} w-full rounded-md overflow-hidden bg-muted`} />
+        <div ref={mapRef} className={`leaflet-container ${readOnly ? "h-56" : "h-[350px]"} w-full rounded-md overflow-hidden bg-muted`} />
         {activeTab === "location" && currentLocation?.latitude && (
           <Button variant="outline" size="sm" className="absolute top-2 right-2 z-[1000] shadow-md bg-background/90 backdrop-blur-sm" asChild>
             <a href={`https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`} target="_blank" rel="noopener noreferrer">
