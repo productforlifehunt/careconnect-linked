@@ -1,3 +1,8 @@
+## Current request: Professional zone drawing
+- [ ] Add working anchor/curve handles, add/delete points, straight/smooth corners, undo/redo and map-fit controls with plain bilingual labels.
+- [ ] Keep existing CCT/REL unchanged; store the rendered sampled boundary through the existing polygon field so zone checks follow the visible shape.
+- [ ] Test geometry and real signed-in drawing on desktop/mobile; verify errors and document any limitations.
+
 ## Current request: Plain storage labels and traceable pending tasks
 - [x] Remove server/cloud wording from family voice storage labels; older-voice import button reads Save/储存. Family-voice leaf metadata no longer advertises model comparison.
 - [x] Share dictionary-backed pending selection across dashboard, summaries, person badges and task tool; dashboard count opens the first matching person's task tool. Errors/loading use a dash, not a false zero.
