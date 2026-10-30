@@ -799,8 +799,11 @@ export class VoiceRecorder {
   private source: MediaStreamAudioSourceNode | null = null;
   private chunks: Float32Array[] = [];
 
+  /** raw=true turns off echo cancellation/noise suppression/auto gain (needed for voice cloning, e.g. recording audio played from the same device). */
+  constructor(private raw = false) {}
+
   async start(): Promise<void> {
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: this.raw ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false } : true });
     const Ctor: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
     this.ctx = new Ctor();
     this.chunks = [];
