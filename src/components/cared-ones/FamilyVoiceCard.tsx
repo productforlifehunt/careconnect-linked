@@ -132,6 +132,8 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     try {
       const { audioBase64 } = await savedVoiceAudio(v, text?.trim() || (zh ? `你好，我是${v.label}。` : `Hi, it's ${v.label}.`));
       const player = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
+      // Constant full player gain; never fade or split the returned recording.
+      player.volume = 1;
       audio.current = player;
       player.onended = () => setPlayingId(null);
       player.onerror = () => { setPlayingId(null); setError(zh ? "音频播放失败，请重新试听。" : "Audio playback failed. Please try again."); };
@@ -157,7 +159,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
 
   const original = async (v: FamilyVoice) => {
     setBusy(v.id); setError(null); audio.current?.pause();
-    try { const result = await savedVoiceAudio(v); const player = new Audio(`data:${result.mime};base64,${result.audioBase64}`); audio.current = player; await player.play(); setPlayingId(v.id); player.onended = () => setPlayingId(null); }
+    try { const result = await savedVoiceAudio(v); const player = new Audio(`data:${result.mime};base64,${result.audioBase64}`); player.volume = 1; audio.current = player; await player.play(); setPlayingId(v.id); player.onended = () => setPlayingId(null); }
     catch (e) { setError(e instanceof Error ? e.message : "Original recording unavailable"); }
     finally { setBusy(null); }
   };

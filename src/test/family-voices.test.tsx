@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { addFamilyVoice, listFamilyVoices, renameFamilyVoice } from "@/lib/family-voices";
+import { addFamilyVoice, listFamilyVoices, renameFamilyVoice, playBase64Mp3 } from "@/lib/family-voices";
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
 
@@ -45,6 +45,67 @@ it("saves a manual rename and synthesizes the entered words with the original vo
 
 it("retains the old Qwen binding for previously saved voices", () => {
   expect(resolveFamilyVoiceModel(listFamilyVoices("46")[0]?.model)).toBe("qwen-audio-3.1-tts-flash");
+});
+
+it("plays a multi-sentence preview once at constant 100% volume without sentence splitting", async () => {
+  api.speakClonedVoice.mockResolvedValue({ audioBase64: "test-audio" });
+  const players: HTMLAudioElement[] = [];
+  vi.stubGlobal("Audio", function (src: string) {
+    const player = document.createElement("audio");
+    player.src = src;
+    player.volume = 0.25;
+    players.push(player);
+    return player;
+  });
+  const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  try {
+    render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+    await screen.findByRole("button", { name: "改名：亲友声音" });
+    const text = "你好。今天我来陪你。我们慢慢聊，不着急。";
+    fireEvent.change(screen.getByLabelText("试听文字"), { target: { value: text } });
+    fireEvent.click(screen.getByRole("button", { name: "合成并播放" }));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+    expect(api.speakClonedVoice).toHaveBeenCalledTimes(1);
+    expect(api.speakClonedVoice).toHaveBeenCalledWith({ data: { voiceId: voice.voiceId, text } });
+    expect(players).toHaveLength(1);
+    expect(players[0]?.volume).toBe(1);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(players[0]?.volume).toBe(1);
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it("plays the preserved original recording at 100% volume", async () => {
+  api.familyVoiceAction.mockImplementation(async ({ data }: { data: any }) => data.action === "list" ? { voices: [voice] } : { audioBase64: "test-audio", mime: "audio/wav" });
+  const players: HTMLAudioElement[] = [];
+  vi.stubGlobal("Audio", function (src: string) {
+    const player = document.createElement("audio");
+    player.src = src; player.volume = 0.25; players.push(player);
+    return player;
+  });
+  const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  try {
+    render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+    fireEvent.click(await screen.findByRole("button", { name: "听原始录音" }));
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+    expect(players[0]?.volume).toBe(1);
+    expect(api.familyVoiceAction).toHaveBeenCalledWith({ data: { action: "original", id: "7", caredOneId: "46" } });
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it("plays AI-call family voice output at 100% volume", () => {
+  vi.stubGlobal("Audio", function (src: string) {
+    const player = document.createElement("audio");
+    player.src = src; player.volume = 0.25;
+    return player;
+  });
+  const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  try {
+    const player = playBase64Mp3("test-audio");
+    expect(player.volume).toBe(1);
+    expect(play).toHaveBeenCalledTimes(1);
+  } finally { vi.unstubAllGlobals(); }
 });
 
 it("rejects unlisted providers and models", () => {
