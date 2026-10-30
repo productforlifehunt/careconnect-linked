@@ -1,3 +1,8 @@
+## Current request: Cared-one switching and voice attribution
+- [x] Clicking a cared-one name switches the current care tool; a separate pencil + Edit button opens the existing popup.
+- [ ] Verify real signed-in switching and popup behavior.
+- [ ] Identify which cared one owns 董卿/金星/高晓松 voices from existing evidence; do not invent access to the user's device-local storage.
+
 ## Current request: Recording duration and preview dictation
 - [x] Verify official Qwen-Audio-TTS/CosyVoice recommendation of 10–20 seconds and maximum 60 seconds; extend UI auto-stop to 60 seconds, retaining manual stop.
 - [x] Add preview dictation through the existing transcription client, with editable text and explicit synthesis.
