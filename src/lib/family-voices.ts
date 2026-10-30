@@ -2,6 +2,7 @@
  * Server-persisted family voices plus untouched legacy device-local imports.
  */
 import type { FamilyVoiceModel } from "@/lib/family-voice-models";
+import { DEFAULT_FAMILY_VOICE_MODEL } from "@/lib/family-voice-models";
 import { familyVoiceAction } from "@/lib/family-voice.functions";
 export type FamilyVoice = { id: string; voiceId: string; model?: FamilyVoiceModel; label: string; caredOneId: string; caredOneName: string; createdAt: string; audioSaved?: boolean; state?: string; error?: string };
 
