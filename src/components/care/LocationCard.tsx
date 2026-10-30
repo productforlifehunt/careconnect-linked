@@ -14,6 +14,7 @@ import {
   Target, Ban,
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
   ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
@@ -555,7 +556,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
     sendRequest.mutate({ caredOneId, message: requestMessage, isEmergency }, {
       onSuccess: () => {
         setSendingRequest(false); setRequestMessage(""); setIsEmergency(false); setEmergencyConfirm(false);
-        toast({ title: isZh ? (isEmergency ? "紧急请求已发送 🚨" : "位置请求已发送 ✓") : (isEmergency ? "Emergency request sent 🚨" : "Location request sent ✓"), description: isEmergency ? (isZh ? "对方应用开着时位置会立即到达。" : "The location arrives as soon as their app is open.") : (isZh ? "对方允许后，位置会出现在「实时位置」。" : "Once they allow it, the location appears under Live location.") });
+        toast({ title: isZh ? (isEmergency ? "紧急请求已发送" : "位置请求已发送 ✓") : (isEmergency ? "Emergency request sent" : "Location request sent ✓"), description: isEmergency ? (isZh ? "对方应用开着时位置会立即到达。" : "The location arrives as soon as their app is open.") : (isZh ? "对方允许后，位置会出现在「实时位置」。" : "Once they allow it, the location appears under Live location.") });
         refetchFlags();
         refetchRequests();
       },
@@ -620,7 +621,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
               {flags?.shareOn ? (isZh ? "📍 已开启实时位置分享" : "📍 Live sharing on") : (isZh ? "未开启实时位置分享" : "Live sharing off")}
             </Badge>}
             {!readOnly && <Badge variant="outline" className="text-xs">
-              {flags?.emergencyAllowed ? (isZh ? "🚨 允许紧急请求" : "🚨 Emergency requests allowed") : (isZh ? "未允许紧急请求" : "Emergency requests not allowed")}
+              {flags?.emergencyAllowed ? (isZh ? "允许紧急请求" : "Emergency requests allowed") : (isZh ? "未允许紧急请求" : "Emergency requests not allowed")}
             </Badge>}
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -797,7 +798,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
                 {isZh ? "发送位置请求" : "Send location request"}
               </Button>
               <div className="flex flex-col gap-2 p-3 rounded-lg border bg-destructive/5 border-destructive/30">
-                <p className="text-sm font-medium">{isZh ? "🚨 紧急请求" : "🚨 Emergency request"}</p>
+                <p className="flex items-center gap-1.5 text-sm font-medium"><ShieldAlert className="h-4 w-4 text-destructive" />{isZh ? "紧急请求" : "Emergency request"}</p>
                 {flags?.emergencyAllowed ? (
                   <>
                     <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}已允许紧急请求：不需要对方确认，只要对方的应用开着，位置会立即发过来，并记为紧急模式。` : `${caredOneName} allows emergency requests: no confirmation needed. As long as their app is open, the location arrives at once and is marked as emergency mode.`}</p>
@@ -857,7 +858,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
                 {(locationRequests || []).filter((r: any) => r.status !== "pending").map((req: any) => {
                   const sc: Record<string, { icon: string; label: string; color: string }> = {
                     accepted:           { icon: "✓",  label: isZh ? "已分享位置" : "Location shared",               color: "text-success" },
-                    emergency_approved: { icon: "🚨", label: "Emergency — Auto-shared", color: "text-destructive" },
+                    emergency_approved: { icon: "!", label: isZh ? "紧急请求·已自动分享" : "Emergency — auto-shared", color: "text-destructive" },
                     declined:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
                     rejected:           { icon: "✗",  label: "Declined",               color: "text-destructive" },
                     cancelled:          { icon: "—",  label: "Cancelled",              color: "text-muted-foreground" },
