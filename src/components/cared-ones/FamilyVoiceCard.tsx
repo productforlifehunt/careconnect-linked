@@ -101,6 +101,9 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     if (!r) return;
     const blob = await r.stop();
     if (!blob || secs.current < VOICE_MIN_RECORDING_SECONDS) { setError(zh ? "录音太短，请连续朗读 10–20 秒。" : "Too short — read for 10–20 seconds."); return; }
+    const pcm = new Int16Array(await blob.slice(44).arrayBuffer());
+    let peak = 0; for (let i = 0; i < pcm.length; i++) { const a = Math.abs(pcm[i]); if (a > peak) peak = a; }
+    if (peak < 300) { setError(zh ? "没有录到声音：麦克风收到的是静音。请检查浏览器麦克风权限、系统输入设备是否选对、是否静音，然后靠近麦克风重新录。" : "No sound was captured — the microphone recorded silence. Check mic permission, the selected input device and mute, then record again closer to the mic."); return; }
     setBusy("new");
     try {
       const { voiceId } = await createClonedVoice({ data: { audioBase64: await blobToBase64(blob), mime: "audio/wav", model } });
