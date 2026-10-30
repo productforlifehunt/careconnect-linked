@@ -1,7 +1,8 @@
 ## Current request: Family voice STS, steady playback and schema disclosure
-- [ ] Check official Alibaba Qwen/CosyVoice true STS availability; distinguish audio-to-audio conversion from ASR + TTS.
-- [ ] Enforce full constant preview/original playback volume, test actual player settings and uninterrupted single-text request; disclose source-audio limitations.
-- [ ] Provide all existing CCT322 fields, state codes, REL323 and private audio storage/access facts without changing WordPress schema.
+- [x] Official Qwen/CosyVoice documentation checked: realtime audio conversation exists, but no publicly documented timing/prosody-preserving target-voice conversion API found; no STS feature added or paid probe made.
+- [x] Preview, original and AI-call players explicitly use volume=1; 18/18 focused tests pass, including multi-sentence single synthesis/playback and three full-volume paths. Build OK. No existing app fade/ramp was present; provider audio is preserved unchanged.
+- [ ] Live audible outcome remains unverified: test1 signs in and opens /cared-ones/1/family-voice, but the real voice list remains loading after an additional 45 seconds; no playable voice, alert or page error. User-native microphone and provider-produced loudness are not verified. No stored recordings changed.
+- [x] Actual CCT322 a55–a61, b55/b56/b57 states, REL323 cared-one parent/voice child, private original storage and accepted REL219/self checks inspected; disclose below without modifying WordPress schema.
 
 ## Current request: Server-persisted cared-one family voices
 - [x] Created CCT322 cared_one_relatives_voice and REL323 Users → voices one-to-many through /afresh GUI; reopened and verified a55–a61, separate relation table, manage_options direct access and screenshots.
