@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap, Layer } from "leaflet";
-import { MousePointer2, PenLine, Pencil, Undo2, Redo2, Spline, CornerDownRight, Plus, Trash2, Scan, Check, Link2, Unlink2 } from "lucide-react";
+import { MousePointer2, PenLine, Pencil, Undo2, Redo2, Spline, CornerDownRight, Plus, Trash2, Scan, Check, Link2, Unlink2, BoxSelect, SquareDashed, Wand2, ArrowLeftRight, Eraser, HelpCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { nodeAt, sampleBoundary, smoothNode, moveNode, moveHandle, insertNode, segment, type PathNode, type ZonePoint } from "@/features/location/zone-path";
+import { nodeAt, sampleBoundary, smoothNode, moveNode, moveHandle, insertNode, segment, removeNodes, curveNodes, reverseNodes, simplifyNodes, type PathNode, type ZonePoint } from "@/features/location/zone-path";
 
 type Mode = "draw" | "freehand" | "edit";
 type Props = { map: LeafletMap; initial: ZonePoint[]; isZh: boolean; onChange: (boundary: ZonePoint[]) => void };
@@ -10,7 +10,9 @@ type Props = { map: LeafletMap; initial: ZonePoint[]; isZh: boolean; onChange: (
 export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const [nodes, setNodes] = useState<PathNode[]>(() => initial.map(nodeAt));
   const [mode, setMode] = useState<Mode>(initial.length >= 3 ? "edit" : "draw");
-  const [selected, setSelected] = useState<number | null>(null);
+  const [sel, setSel] = useState<number[]>([]);
+  const [expanded, setExpanded] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
   const [linked, setLinked] = useState(true);
   const [history, setHistory] = useState<{ past: PathNode[][]; future: PathNode[][] }>({ past: [], future: [] });
   const layers = useRef<Layer[]>([]);
@@ -31,12 +33,17 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
     setHistory(direction === "undo"
       ? { past: history.past.slice(0, -1), future: [...history.future, live.current] }
       : { past: [...history.past, live.current], future: history.future.slice(0, -1) });
-    live.current = target; setNodes(target); setSelected(null);
+    live.current = target; setNodes(target); setSel([]);
     if (target.length < 3) setMode("draw");
   };
+  const [warn, setWarn] = useState(false);
+  const toastFew = () => { setWarn(true); setTimeout(() => setWarn(false), 2200); };
   const remove = () => {
-    if (selected === null || (mode === "edit" && nodes.length <= 3)) return;
-    commit(nodes.filter((_, i) => i !== selected)); setSelected(null);
+    if (!sel.length) return;
+    const next = removeNodes(nodes, sel);
+    if (next === nodes) { toastFew(); return; }
+    commit(next); setSel([]);
+    if (next.length < 3) setMode("draw");
   };
   useEffect(() => {
     let active = true;
@@ -54,7 +61,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
         : add(L.polyline(boundary, { color, weight: 2.5, interactive: false }));
       const icon = (kind: "anchor" | "mid" | "handle", index: number, side?: string) => L.divIcon({
         className: `zone-editor-marker zone-editor-${kind}`,
-        html: `<span class="zone-editor-dot${selected === index ? " is-selected" : ""}" data-zone-kind="${kind}" data-zone-index="${index}" ${side ? `data-zone-side="${side}"` : ""}></span>`,
+        html: `<span class="zone-editor-dot${sel.includes(index) ? " is-selected" : ""}" data-zone-kind="${kind}" data-zone-index="${index}" ${side ? `data-zone-side="${side}"` : ""}></span>`,
         iconSize: [28, 28], iconAnchor: [14, 14],
       });
       const paint = (next: PathNode[]) => outline.setLatLngs(sampleBoundary(next));
@@ -63,16 +70,17 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
           title: isZh ? `点 ${index + 1}` : `Point ${index + 1}`, zIndexOffset: 1000, bubblingMouseEvents: false }));
         marker.on("click", e => {
           L.DomEvent.stopPropagation(e.originalEvent);
-          if (mode === "draw" && index === 0 && nodes.length >= 3) { setMode("edit"); setSelected(0); }
+          if (mode === "draw" && index === 0 && nodes.length >= 3) { setMode("edit"); setSel([0]); }
           else {
             if (selectionTimer.current) clearTimeout(selectionTimer.current);
-            selectionTimer.current = setTimeout(() => setSelected(index), 260);
+            const additive = e.originalEvent.shiftKey || e.originalEvent.metaKey || e.originalEvent.ctrlKey;
+            selectionTimer.current = setTimeout(() => setSel(cur => additive ? (cur.includes(index) ? cur.filter(i => i !== index) : [...cur, index]) : [index]), 260);
           }
         });
         marker.on("dblclick", e => {
           L.DomEvent.stopPropagation(e.originalEvent);
           if (selectionTimer.current) clearTimeout(selectionTimer.current);
-          if (mode === "edit") { commit(smoothNode(live.current, index)); setSelected(index); }
+          if (mode === "edit") { commit(smoothNode(live.current, index)); setSel([index]); }
         });
         marker.on("drag", () => {
           const p = marker.getLatLng();
@@ -82,15 +90,15 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
         });
         marker.on("dragend", () => {
           const p = marker.getLatLng();
-          commit(nodes.map((n, i) => i === index ? moveNode(n, [p.lat, p.lng]) : n)); setSelected(index);
+          commit(nodes.map((n, i) => i === index ? moveNode(n, [p.lat, p.lng]) : n)); setSel([index]);
         });
         const next = nodes[(index + 1) % nodes.length];
         if (mode === "edit" && next) {
           const p = segment(node, next).get(.5);
           const mid = add(L.marker([p.x, p.y], { icon: icon("mid", index), title: isZh ? "添加点" : "Add point", zIndexOffset: 500, bubblingMouseEvents: false }));
-          mid.on("click", e => { L.DomEvent.stopPropagation(e.originalEvent); commit(insertNode(live.current, index)); setSelected(index + 1); });
+          mid.on("click", e => { L.DomEvent.stopPropagation(e.originalEvent); commit(insertNode(live.current, index)); setSel([index + 1]); });
         }
-        if (mode !== "edit" || selected !== index) return;
+        if (mode !== "edit" || sel.length !== 1 || sel[0] !== index) return;
         for (const side of ["incoming", "outgoing"] as const) {
           const point = node[side];
           if (!point) continue;
@@ -111,7 +119,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
     };
     render();
     return () => { active = false; layers.current.forEach(l => l.remove()); layers.current = []; };
-  }, [nodes, mode, selected, linked, map, isZh, commit]);
+  }, [nodes, mode, sel, linked, map, isZh, commit]);
 
   useEffect(() => {
     map.doubleClickZoom.disable();
@@ -139,7 +147,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
       if (pointerId !== e.pointerId) return;
       pointerId = null;
       if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-      if (trail.length >= 3) { commit(trail.map(nodeAt)); setMode("edit"); setSelected(null); }
+      if (trail.length >= 3) { commit(trail.map(nodeAt)); setMode("edit"); setSel([]); }
       trail = [];
     };
     map.on("click", click);
@@ -154,7 +162,8 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
       if ((e.target as HTMLElement).closest("input,textarea,[contenteditable=true]")) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") { e.preventDefault(); restore(e.shiftKey ? "redo" : "undo"); }
       if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); remove(); }
-      if (e.key === "Escape") setSelected(null);
+      if (e.key === "Escape") setSel([]);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a" && mode === "edit") { e.preventDefault(); setSel(nodes.map((_, i) => i)); }
       if (e.key === "Enter" && nodes.length >= 3) setMode("edit");
     };
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
@@ -225,7 +234,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
       </dl>}
     </div>
     <div className="absolute bottom-2 left-2 right-2 z-[1100] flex flex-wrap items-center justify-between gap-1 rounded-md border border-border bg-background/95 px-2 py-1.5 text-xs text-foreground shadow-sm">
-      <span>{hint}</span>
+      <span className={warn ? "font-medium text-destructive" : ""}>{warn ? t("区域至少要 3 个点；想重画请全选后删除", "A zone needs at least 3 points; select all and delete to redraw") : hint}</span>
       <span className="font-mono text-muted-foreground">{nodes.length} {t("点", "pts")}{many ? ` · ${t("选中", "Selected")} ${sel.length}` : ""}</span>
     </div>
   </>;
