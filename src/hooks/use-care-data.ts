@@ -758,7 +758,7 @@ export function useDeleteGroupPost() {
 export function useUpdateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; name?: string | undefined; description?: string | undefined; is_private?: boolean | undefined }) => updateCareGroupWordPress(id, updates),
+    mutationFn: ({ id, ...updates }: { id: string; name?: string | undefined; description?: string | undefined; is_private?: boolean | undefined; join_code?: string | undefined; is_active?: boolean | undefined }) => updateCareGroupWordPress(id, updates),
     // Patch the cached list first so a rename shows instantly, then refetch.
     onSuccess: (_d, vars: any) => {
       qc.setQueryData(["careGroups"], (prev: any) =>

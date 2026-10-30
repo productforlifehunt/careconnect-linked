@@ -6,7 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Settings, Trash2 } from "lucide-react";
+import { Settings, Trash2, Shuffle, Copy } from "lucide-react";
+
+function randomJoinCode() {
+  const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const b = new Uint32Array(6); crypto.getRandomValues(b);
+  return Array.from(b, (n) => a[n % a.length]).join("");
+}
 import { useUpdateMyGroupDisplayName } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -36,6 +42,8 @@ export function GroupSettingsTab({
   const [name, setName] = useState(activeGroup?.name || "");
   const [desc, setDesc] = useState(activeGroup?.description || "");
   const [isPrivate, setIsPrivate] = useState(!!activeGroup?.is_private);
+  const [joinCode, setJoinCode] = useState(activeGroup?.join_code || "");
+  const [isActive, setIsActive] = useState(activeGroup?.is_active !== false);
   const [myName, setMyName] = useState(myDisplayName);
   const updateMyName = useUpdateMyGroupDisplayName();
 
@@ -44,7 +52,9 @@ export function GroupSettingsTab({
     setName(activeGroup?.name || "");
     setDesc(activeGroup?.description || "");
     setIsPrivate(!!activeGroup?.is_private);
-  }, [activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private]);
+    setJoinCode(activeGroup?.join_code || "");
+    setIsActive(activeGroup?.is_active !== false);
+  }, [activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private, activeGroup?.join_code, activeGroup?.is_active]);
 
   useEffect(() => { setMyName(myDisplayName); }, [myDisplayName, activeGroup?.id]);
 
@@ -58,7 +68,7 @@ export function GroupSettingsTab({
 
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
-    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate }, {
+    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, join_code: joinCode.trim(), ...(isActive !== (activeGroup?.is_active !== false) ? { is_active: isActive } : {}) }, {
       onSuccess: () => toast({ title: Z("群组已更新！", "Group updated!") }),
       onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
     });
@@ -87,6 +97,22 @@ export function GroupSettingsTab({
             <p className="text-xs text-muted-foreground">{Z("私密群组将被隐藏，仅限受邀加入", "Private groups are hidden and invite-only")}</p>
           </div>
           <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
+        </div>
+        <div>
+          <Label>{Z("加入码", "Join code")}</Label>
+          <p className="text-xs text-muted-foreground mb-2">{Z("不是成员的人输入这个加入码就能直接加入。留空则只能通过邀请加入。", "People who are not members can join directly by entering this code. Leave empty to allow invites only.")}</p>
+          <div className="flex gap-2">
+            <Input value={joinCode} maxLength={32} onChange={e => setJoinCode(e.target.value.replace(/\s/g, ""))} placeholder={Z("例如 ABC123", "e.g. ABC123")} />
+            <Button type="button" variant="outline" onClick={() => setJoinCode(randomJoinCode())}><Shuffle className="h-4 w-4 mr-1" />{Z("自动生成", "Generate")}</Button>
+            <Button type="button" variant="outline" size="icon" aria-label={Z("复制", "Copy")} disabled={!joinCode} onClick={() => { navigator.clipboard?.writeText(joinCode); toast({ title: Z("已复制", "Copied") }); }}><Copy className="h-4 w-4" /></Button>
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>{Z("群组启用", "Group active")}</Label>
+            <p className="text-xs text-muted-foreground">{Z("关闭后群组首页显示\u201c此群组已停用\u201d。", "When off, the group shows as no longer active.")}</p>
+          </div>
+          <Switch checked={isActive} onCheckedChange={setIsActive} />
         </div>
         <Button variant="coral" className="w-full" onClick={handleSave} disabled={updateGroup.isPending || !name.trim()}>{Z("保存修改", "Save Changes")}</Button>
 
