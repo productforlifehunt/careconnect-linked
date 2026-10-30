@@ -40,7 +40,7 @@ export async function loadSavedFamilyVoices(caredOneId?: string): Promise<Family
   return result.voices as FamilyVoice[];
 }
 export function notifyFamilyVoicesChanged() { window.dispatchEvent(new Event(EVT)); }
-export async function saveFamilyVoiceRecording(caredOneId: string, label: string, blob: Blob, model: FamilyVoiceModel) {
+export async function saveFamilyVoiceRecording(caredOneId: string, label: string, blob: Blob, model: FamilyVoiceModel = DEFAULT_FAMILY_VOICE_MODEL) {
   const result = await familyVoiceAction({ data: { action: "create", caredOneId, label, audioBase64: await blobToBase64(blob), mime: "audio/wav", model } });
   notifyFamilyVoicesChanged();
   if (!("voice" in result) || !result.voice) throw new Error("Voice record was not returned");
