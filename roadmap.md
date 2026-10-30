@@ -1,3 +1,9 @@
+## Current request: Server-persisted cared-one family voices
+- [x] Created CCT322 cared_one_relatives_voice and REL323 Users → voices one-to-many through /afresh GUI; reopened and verified a55–a61, separate relation table, manage_options direct access and screenshots.
+- [x] Server persistence retains private original audio, provider ID/model/state/error; verified WordPress session and accepted REL219 (or self) gates every action. Added server rename/delete/reclone, explicit legacy reference import preserving local originals, and server-fed AI-call selection.
+- [x] Real test1 recorded official sample into CCT322/REL323, Qwen 3.1 Plus cloned successfully; fresh browser had no family-voices-v1 yet read it, refresh retained it, original and synthetic playback reached Stop playback; server rename read back, zero page errors. Original re-cloning succeeded; temporary voice deleted and empty server list read back. 17/17 tests passed. No user recording changed. Failed pre-record-creation attempts left private unlinked sample files, not user audio.
+- [ ] Remaining verification: second-caregiver live account sharing, old user-device imports, full AI call, and other model billing remain unverified; two-caregiver access is covered by explicit relationship tests, not a real shared-caregiver session.
+
 ## Current request: Cared-one switching and voice attribution
 - [x] Clicking a cared-one name switches the current care tool; a separate pencil + Edit button opens the existing popup.
 - [x] 12/12 tests pass, build OK. Real test1 UI: name navigates to /cared-ones/1 with no dialog; Edit opens the existing dialog. Screenshots checked. This session exposes only one cared one, so switching between two real people is covered by tests, not live verification.

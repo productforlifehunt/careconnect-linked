@@ -4,12 +4,18 @@ import { addFamilyVoice, listFamilyVoices, renameFamilyVoice } from "@/lib/famil
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
 
-const api = vi.hoisted(() => ({ createClonedVoice: vi.fn(), deleteClonedVoice: vi.fn(), speakClonedVoice: vi.fn(), transcribeAudio: vi.fn(), start: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
-vi.mock("@/lib/voice-clone.functions", () => api);
+const api = vi.hoisted(() => ({ familyVoiceAction: vi.fn(), createClonedVoice: vi.fn(), deleteClonedVoice: vi.fn(), speakClonedVoice: vi.fn(), transcribeAudio: vi.fn(), start: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
+vi.mock("@/lib/family-voice.functions", () => ({ familyVoiceAction: api.familyVoiceAction }));
 vi.mock("@/lib/ai", () => ({ VoiceRecorder: class { start = api.start; stop = api.stop; cancel = api.cancel; }, transcribeAudio: api.transcribeAudio }));
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ i18n: { language: "zh" } }) }));
-const voice = { id: "saved-voice", voiceId: "existing-provider-voice", label: "亲友声音", caredOneId: "46", caredOneName: "家人", createdAt: "2026-10-29T15:00:00Z" };
-beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); addFamilyVoice(voice); });
+const voice = { id: "7", voiceId: "existing-provider-voice", label: "亲友声音", caredOneId: "46", caredOneName: "家人", state: "b56", audioSaved: true, createdAt: "2026-10-29T15:00:00Z" };
+beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); addFamilyVoice(voice); api.familyVoiceAction.mockImplementation(async ({ data }: { data: any }) => {
+  if (data.action === "list") return { voices: listFamilyVoices(data.caredOneId) };
+  if (data.action === "rename") { renameFamilyVoice(data.id, data.label); return { voice: listFamilyVoices(data.caredOneId)[0] }; }
+  if (data.action === "speak") return api.speakClonedVoice({ data: { voiceId: voice.voiceId, text: data.text, ...(listFamilyVoices(data.caredOneId)[0]?.model ? { model: listFamilyVoices(data.caredOneId)[0]?.model } : {}) } });
+  if (data.action === "delete") return api.deleteClonedVoice({ data: { voiceId: voice.voiceId } });
+  return {};
+}); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 it("renames to 儿子 without changing the cloned voice identity and notifies consumers", () => {
@@ -25,10 +31,11 @@ it("saves a manual rename and synthesizes the entered words with the original vo
   const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
-  fireEvent.click(screen.getByRole("button", { name: "改名：亲友声音" }));
+  fireEvent.click(await screen.findByRole("button", { name: "改名：亲友声音" }));
   fireEvent.change(screen.getByLabelText("声音名称"), { target: { value: "儿子" } });
   fireEvent.click(screen.getByRole("button", { name: "保存名称" }));
-  expect(listFamilyVoices("46")[0]).toEqual({ ...voice, label: "儿子" });
+  await waitFor(() => expect(listFamilyVoices("46")[0]).toEqual({ ...voice, label: "儿子" }));
+  await screen.findByRole("button", { name: "改名：亲友声音" }).catch(() => screen.findByRole("button", { name: "改名：儿子" }));
   fireEvent.change(screen.getByLabelText("试听文字"), { target: { value: "妈妈，这个人是来帮忙的。" } });
   fireEvent.click(screen.getByRole("button", { name: "合成并播放" }));
   await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
@@ -55,11 +62,12 @@ it("allows recording until the official 60-second maximum", () => {
 });
 
 it("does not cut off at 20 seconds and stops recording at 60 seconds", async () => {
+  await act(async () => {});
   vi.useFakeTimers();
   api.start.mockResolvedValue(undefined);
   api.stop.mockResolvedValue(null);
   try {
-    render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+    await act(async () => { render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "开始录音" })); });
     await act(async () => { vi.advanceTimersByTime(20000); });
     expect(api.stop).not.toHaveBeenCalled();
@@ -90,6 +98,7 @@ it("sends the saved CosyVoice model and exact entered words without re-enrollmen
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+  await screen.findByRole("button", { name: "改名：亲友声音" }).catch(() => screen.findByRole("button", { name: "改名：儿子" }));
   fireEvent.change(screen.getByLabelText("试听文字"), { target: { value: "妈妈，这个人是来帮忙的。" } });
   fireEvent.click(screen.getByRole("button", { name: "合成并播放" }));
   await waitFor(() => expect(api.speakClonedVoice).toHaveBeenCalledWith({ data: { voiceId: voice.voiceId, model: "cosyvoice-v3.5-flash", text: "妈妈，这个人是来帮忙的。" } }));
@@ -99,7 +108,7 @@ it("sends the saved CosyVoice model and exact entered words without re-enrollmen
 it("preserves a voice record when remote deletion fails", async () => {
   api.deleteClonedVoice.mockRejectedValue(new Error("unavailable"));
   render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
-  fireEvent.click(screen.getByRole("button", { name: "删除" }));
+  fireEvent.click(await screen.findByRole("button", { name: "删除" }));
   await waitFor(() => expect(api.deleteClonedVoice).toHaveBeenCalled());
   expect(listFamilyVoices("46")).toEqual([voice]);
 });

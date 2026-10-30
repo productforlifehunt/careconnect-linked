@@ -1,8 +1,9 @@
 /**
- * Cloned family voices, kept on this device only (for now), each belonging to a cared one.
+ * Server-persisted family voices plus untouched legacy device-local imports.
  */
 import type { FamilyVoiceModel } from "@/lib/family-voice-models";
-export type FamilyVoice = { id: string; voiceId: string; model?: FamilyVoiceModel; label: string; caredOneId: string; caredOneName: string; createdAt: string };
+import { familyVoiceAction } from "@/lib/family-voice.functions";
+export type FamilyVoice = { id: string; voiceId: string; model?: FamilyVoiceModel; label: string; caredOneId: string; caredOneName: string; createdAt: string; audioSaved?: boolean; state?: string; error?: string };
 
 const KEY = "family-voices-v1";
 const EVT = "family-voices-changed";
@@ -30,6 +31,33 @@ export function onFamilyVoicesChanged(cb: () => void) {
   window.addEventListener(EVT, cb);
   window.addEventListener("storage", cb);
   return () => { window.removeEventListener(EVT, cb); window.removeEventListener("storage", cb); };
+}
+
+/** Local records remain untouched until an explicit import; server lists never fall back to them. */
+export async function loadSavedFamilyVoices(caredOneId?: string): Promise<FamilyVoice[]> {
+  const result = await familyVoiceAction({ data: { action: "list", ...(caredOneId ? { caredOneId } : {}) } });
+  if (!("voices" in result) || !result.voices) throw new Error("Voices could not be loaded");
+  return result.voices as FamilyVoice[];
+}
+export function notifyFamilyVoicesChanged() { window.dispatchEvent(new Event(EVT)); }
+export async function saveFamilyVoiceRecording(caredOneId: string, label: string, blob: Blob, model: FamilyVoiceModel) {
+  const result = await familyVoiceAction({ data: { action: "create", caredOneId, label, audioBase64: await blobToBase64(blob), mime: "audio/wav", model } });
+  notifyFamilyVoicesChanged();
+  if (!("voice" in result) || !result.voice) throw new Error("Voice record was not returned");
+  return result.voice;
+}
+export async function updateSavedFamilyVoice(action: "rename" | "delete" | "retry", v: FamilyVoice, label?: string) {
+  const result = await familyVoiceAction({ data: { action, id: v.id, caredOneId: v.caredOneId, ...(label ? { label } : {}) } });
+  notifyFamilyVoicesChanged(); return result;
+}
+export async function importLocalFamilyVoices(caredOneId: string) {
+  for (const v of listFamilyVoices(caredOneId)) await familyVoiceAction({ data: { action: "import", caredOneId, label: v.label, voiceId: v.voiceId, ...(v.model ? { model: v.model } : {}) } });
+  notifyFamilyVoicesChanged();
+}
+export async function savedVoiceAudio(v: FamilyVoice, text?: string) {
+  const result = await familyVoiceAction({ data: { action: text === undefined ? "original" : "speak", caredOneId: v.caredOneId, id: v.id, ...(text === undefined ? {} : { text }) } });
+  if (!("audioBase64" in result) || !result.audioBase64) throw new Error("No audio returned");
+  return { audioBase64: result.audioBase64, mime: "mime" in result ? result.mime : "audio/mpeg" };
 }
 
 export async function blobToBase64(blob: Blob): Promise<string> {
