@@ -17,7 +17,10 @@ export function wordpressStore(user: string, password: string) {
   const auth = `Basic ${btoa(`${user}:${password}`)}`;
   const request = async (path: string, method = "GET", body?: unknown): Promise<unknown> => {
     const res = await fetch(`${BASE}/${path}`, { method, headers: { Authorization: auth, "Content-Type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
-    if (!res.ok) throw new Error(`Voice storage failed [${res.status}]`);
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({})) as { code?: string; message?: string };
+      throw new Error(`Voice storage failed [${res.status}] ${detail.message || detail.code || ""}`);
+    }
     return res.json();
   };
   const relations = async (relation: number, side: "children" | "parents", id: string): Promise<Row[]> => {

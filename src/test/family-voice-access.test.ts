@@ -7,7 +7,7 @@ it("denies a voice to a caregiver with no accepted cared-one relation", async ()
   await expect(wordpressStore("test", "test").access("1", "46")).rejects.toThrow("No access");
 });
 it("allows two existing caregivers linked to the same cared one", async () => {
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json([{ child_object_id: 46, meta: { a58: "b55" } }])));
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => Response.json([{ child_object_id: 46, meta: { a58: "b55" } }])));
   const store = wordpressStore("test", "test");
   await expect(store.access("1", "46")).resolves.toBeUndefined();
   await expect(store.access("54", "46")).resolves.toBeUndefined();
