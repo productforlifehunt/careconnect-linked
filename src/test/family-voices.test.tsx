@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { addFamilyVoice, listFamilyVoices, renameFamilyVoice } from "@/lib/family-voices";
+import { addFamilyVoice, listFamilyVoices, renameFamilyVoice, playBase64Mp3 } from "@/lib/family-voices";
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
 
@@ -91,6 +91,20 @@ it("plays the preserved original recording at 100% volume", async () => {
     await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
     expect(players[0]?.volume).toBe(1);
     expect(api.familyVoiceAction).toHaveBeenCalledWith({ data: { action: "original", id: "7", caredOneId: "46" } });
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it("plays AI-call family voice output at 100% volume", () => {
+  vi.stubGlobal("Audio", function (src: string) {
+    const player = document.createElement("audio");
+    player.src = src; player.volume = 0.25;
+    return player;
+  });
+  const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  try {
+    const player = playBase64Mp3("test-audio");
+    expect(player.volume).toBe(1);
+    expect(play).toHaveBeenCalledTimes(1);
   } finally { vi.unstubAllGlobals(); }
 });
 

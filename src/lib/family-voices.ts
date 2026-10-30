@@ -69,6 +69,7 @@ export async function blobToBase64(blob: Blob): Promise<string> {
 
 export function playBase64Mp3(b64: string): HTMLAudioElement {
   const a = new Audio(`data:audio/mpeg;base64,${b64}`);
+  a.volume = 1;
   void a.play();
   return a;
 }
