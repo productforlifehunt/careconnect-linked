@@ -35,3 +35,4 @@
 - Family voice preview dictation reuses the shared complete-WAV recorder and transcription client, populating editable text without automatically synthesizing or enrolling a voice.
 - Family voice previews, original playback and AI-call playback explicitly use constant full HTML audio volume without gain ramps or sentence-level replays, preserving the provider's complete returned audio.
 - Cared-one tool views remount when the selected person or tool changes, because in-progress recordings and transient playback state must not carry across people.
+- Dashboard, person badges, summaries and care-task lists share the dictionary-backed pending-task selector; count links open the first matching person's task tool so totals remain traceable without new relations.

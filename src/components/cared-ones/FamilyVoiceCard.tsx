@@ -152,7 +152,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     if (playingId === v.id) { audio.current?.pause(); setPlayingId(null); }
     setBusy(v.id);
     try { await updateSavedFamilyVoice("delete", v); }
-    catch { setError(zh ? "云端声音未删除，已保留记录，请重试。" : "Cloud voice was not deleted. The record is retained; please retry."); }
+    catch { setError(zh ? "声音未删除，已保留，请重试。" : "Voice was not deleted. It has been kept; please retry."); }
     finally { setBusy(null); }
   };
 
@@ -172,7 +172,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
       <div>
         <h2 className="text-lg font-semibold text-foreground">{zh ? "亲友声音" : "Family Voices"}</h2>
         <p className="text-sm text-muted-foreground">
-          {zh ? `${caredOneName}的亲友声音 · 服务器保存` : `${caredOneName}'s family voices · Saved on server`}
+          {zh ? `${caredOneName}的亲友声音` : `${caredOneName}'s family voices`}
         </p>
       </div>
 
@@ -197,7 +197,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
       <div className="space-y-2">
         {loading && <Loader2 className="h-5 w-5 animate-spin" aria-label={zh ? "正在读取声音" : "Loading voices"} />}
         {loadFailed && <Button variant="outline" onClick={() => { window.dispatchEvent(new Event("family-voices-changed")); }}><RefreshCw className="h-4 w-4 mr-1" />{zh ? "重新读取" : "Retry loading"}</Button>}
-        {localCount > 0 && <div className="space-y-2"><p className="text-sm text-muted-foreground">{zh ? `本机另有 ${localCount} 个旧声音；旧录音样本未保存。` : `${localCount} older voices on this device; original recordings unavailable.`}</p><Button variant="outline" disabled={loading || loadFailed || busy !== null} onClick={async () => { setBusy("import"); try { await importLocalFamilyVoices(id); } catch (e) { setError(e instanceof Error ? e.message : "Import failed"); } finally { setBusy(null); } }}><CloudUpload className="h-4 w-4 mr-1" />{zh ? "保存旧声音到服务器" : "Save older voices to server"}</Button></div>}
+        {localCount > 0 && <div className="space-y-2"><p className="text-sm text-muted-foreground">{zh ? `另有 ${localCount} 个旧声音尚未储存；没有原始录音。` : `${localCount} older voices not yet saved; original recordings unavailable.`}</p><Button variant="outline" disabled={loading || loadFailed || busy !== null} onClick={async () => { setBusy("import"); try { await importLocalFamilyVoices(id); } catch (e) { setError(e instanceof Error ? e.message : "Import failed"); } finally { setBusy(null); } }}><CloudUpload className="h-4 w-4 mr-1" />{zh ? "储存" : "Save"}</Button></div>}
         {!loading && !loadFailed && voices.length === 0 && <p className="text-sm text-muted-foreground">{zh ? "还没有录制的声音。" : "No voices yet."}</p>}
         {voices.map((v) => (
           <div key={v.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">

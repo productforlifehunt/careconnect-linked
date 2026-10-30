@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { formatDate } from "@/lib/locale";
 import { RowActions } from "./RowActions";
 import { RecordDetailDialog } from "./RecordDetailDialog";
+import { isPendingCareTask, pendingCareTasks } from "@/features/care-tasks/pending";
 
 const numId = (v: any) => String(v ?? "").replace(/^wp-/, "");
 
@@ -22,7 +23,7 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const { data: allTasks, isLoading } = useCareTasks();
+  const { data: allTasks, isLoading, error, refetch } = useCareTasks();
   const createTask = useCreateTask();
   const updateTask = useUpdateTaskStatus();
   const del = useDeleteTask();
@@ -37,7 +38,7 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
     () => (allTasks || []).filter((t: any) => numId(t.cared_one_id) && numId(t.cared_one_id) === numId(caredOneId)),
     [allTasks, caredOneId],
   );
-  const pending = tasks.filter((t: any) => String(t.finish_status) !== "b56");
+  const pending = pendingCareTasks(tasks, [caredOneId]);
   const done = tasks.filter((t: any) => String(t.finish_status) === "b56");
   const open = tasks.find((t: any) => String(t.id) === String(openId));
 
@@ -154,20 +155,20 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-foreground">{Z("护理任务", "Care Tasks")}</h2>
+        <h2 className="text-lg font-bold text-foreground">{Z("护理任务", "Care Tasks")} <Badge variant="secondary">{isLoading || error ? "—" : pending.length}</Badge></h2>
         {tab === "add"
           ? <Button size="sm" variant="ghost" onClick={() => setTab("view")}>{Z("取消", "Cancel")}</Button>
           : <Button size="sm" onClick={() => setTab("add")}><Plus className="h-4 w-4 mr-1" /> {Z("添加", "Add")}</Button>}
       </div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsContent value="view">
-          {isLoading ? (
+          {error ? <div role="alert" className="space-y-2 py-8 text-center"><p className="text-destructive">{Z("任务读取失败", "Tasks could not be loaded")}</p><Button variant="outline" onClick={() => void refetch()}>{Z("重试", "Retry")}</Button></div> : isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : tasks.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">{Z("还没有为这位被护理者安排任务。从「新增」标签添加一个。", 'No tasks for this person yet. Add one from the "Add New" tab.')}</p>
+            <p className="text-center py-8 text-muted-foreground">{Z("没有待处理任务", "No pending tasks")}</p>
           ) : (
             <div className="space-y-4">
-              <div className="space-y-2">{pending.map(row)}</div>
+              <div className="space-y-2"><p className="text-xs font-medium text-muted-foreground">{Z(`待处理（${pending.length}）`, `Pending (${pending.length})`)}</p>{pending.length > 0 ? pending.map(row) : <p className="text-sm text-muted-foreground">{Z("没有待处理任务", "No pending tasks")}</p>}</div>
               {done.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">{Z(`已完成（${done.length}）`, `Completed (${done.length})`)}</p>

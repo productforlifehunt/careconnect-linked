@@ -25,7 +25,7 @@ import {
   useCareNotes, useCreateCareNote, useDeleteCareNote,
   useEmergencyContacts, useCreateEmergencyContact, useDeleteEmergencyContact,
   useCaredOneDocuments, useCreateCaredOneDocument, useDeleteCaredOneDocument,
-  useDeleteUserCaredOne,
+  useDeleteUserCaredOne, useCareTasks,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
@@ -44,6 +44,7 @@ import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
 import { EmergencyShareSetting } from "@/components/cared-ones/EmergencyShareSetting";
 import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
+import { pendingCareTasks } from "@/features/care-tasks/pending";
 
 function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
@@ -70,6 +71,7 @@ export default function CaredOnes() {
   const { toast } = useToast();
   const site = useSite();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
+  const { data: careTasks, isLoading: tasksLoading, error: tasksError } = useCareTasks();
   const createUserCaredOne = useCreateUserCaredOne();
   const deleteUserCaredOne = useDeleteUserCaredOne();
   // Notification rows link straight here, e.g. /cared-ones?person=12&card=medicine
@@ -109,6 +111,7 @@ export default function CaredOnes() {
   const selectedId = linked?.user_id || activeTab || (caredOnes && caredOnes.length > 0 ? caredOnes[0].user_id : null);
   const selectedCaredOne = caredOnes?.find((c: any) => bare(c.user_id) === bare(selectedId));
   const caredOneName = selectedCaredOne?.cared_one?.full_name || site.caredOneSingular;
+  const selectedPendingCount = pendingCareTasks(careTasks, [selectedId]).length;
 
   const featureCards = [
     { key: "medicine", title: t("caredOnes.medicineTracker"), icon: Pill, subtitle: t("caredOnes.trackMedications") },
@@ -201,6 +204,11 @@ export default function CaredOnes() {
                 <div key={co.user_id} className={`flex shrink-0 items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-xs" : "bg-transparent border-border hover:bg-accent/50"}`}>
                   <Button variant="ghost" type="button" aria-pressed={isActive} onClick={() => setActiveTab(co.user_id)} className="min-h-11 h-auto px-4 py-2 text-sm font-medium flex items-center gap-2">
                     {name}
+                    {!tasksLoading && !tasksError && pendingCareTasks(careTasks, [co.user_id]).length > 0 && (
+                      <Badge variant="secondary" className="shrink-0" aria-label={i18n.language?.startsWith("zh") ? `${pendingCareTasks(careTasks, [co.user_id]).length} 项待处理任务` : `${pendingCareTasks(careTasks, [co.user_id]).length} pending tasks`}>
+                        {pendingCareTasks(careTasks, [co.user_id]).length}
+                      </Badge>
+                    )}
                     {co.invitation_status === "pending" && (
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
                         {t("caredOnes.awaitingConsent", { defaultValue: "Waiting for consent" })}
@@ -283,15 +291,15 @@ export default function CaredOnes() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {featureCards.map((card) => (
-                <button key={card.key}
+                <Button variant="ghost" key={card.key}
                   onClick={() => setOpenCard(card.key)}
-                  className="text-left rounded-xl border border-transparent card-elevated p-3.5 hover:border-primary/30 transition-colors">
+                  className="h-auto block whitespace-normal text-left rounded-xl border border-transparent card-elevated p-3.5 hover:border-primary/30 transition-colors">
                   <div className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center text-primary mb-2">
                     <card.icon className="h-4 w-4" />
                   </div>
-                  <h3 className="font-semibold text-foreground text-[13px] leading-tight">{card.title}</h3>
+                  <h3 className="font-semibold text-foreground text-[13px] leading-tight flex items-center gap-2">{card.title}{card.key === "tasks" && <Badge variant="secondary" className="shrink-0">{tasksLoading || tasksError ? "—" : selectedPendingCount}</Badge>}</h3>
                   
-                </button>
+                </Button>
               ))}
             </div>
           )}
