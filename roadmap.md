@@ -1,3 +1,8 @@
+## Current request: Plain storage labels and traceable pending tasks
+- [ ] Remove server/cloud wording from family voice storage labels.
+- [ ] Align dashboard pending count with cared-one task lists and show per-person/tool counts; open the actual pending tasks.
+- [ ] Run focused tests and verify signed-in task navigation and storage labels.
+
 ## Current request: Single hidden model for family voices
 - [x] New recordings enroll only with the default Qwen 3.1 Flash model; stored legacy models stay resolvable so existing cloned voices keep their exact model.
 - [x] Removed the model comparison table, price column, official price/requirement links, model picker and every displayed model name from the voice card and AI-call voice select. 14/14 focused tests pass, including a UI test asserting no model names or prices are rendered.
