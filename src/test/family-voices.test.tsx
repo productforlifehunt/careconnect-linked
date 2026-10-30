@@ -2,7 +2,7 @@ import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { addFamilyVoice, listFamilyVoices, renameFamilyVoice, playBase64Mp3 } from "@/lib/family-voices";
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
-import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
+import { DEFAULT_FAMILY_VOICE_MODEL, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
 import { saveFamilyVoiceRecording } from "@/lib/family-voices";
 
 const api = vi.hoisted(() => ({ familyVoiceAction: vi.fn(), createClonedVoice: vi.fn(), deleteClonedVoice: vi.fn(), speakClonedVoice: vi.fn(), transcribeAudio: vi.fn(), start: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
