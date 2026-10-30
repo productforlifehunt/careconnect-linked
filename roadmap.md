@@ -1,3 +1,8 @@
+## Current request: Cared-one switching and voice attribution
+- [x] Clicking a cared-one name switches the current care tool; a separate pencil + Edit button opens the existing popup.
+- [x] 12/12 tests pass, build OK. Real test1 UI: name navigates to /cared-ones/1 with no dialog; Edit opens the existing dialog. Screenshots checked. This session exposes only one cared one, so switching between two real people is covered by tests, not live verification.
+- [ ] Identify which cared one owns 董卿/金星/高晓松: blocked by device-local family-voices-v1 data unavailable in this browser; source, history and available logs provide no verified mapping. No saved voice was changed.
+
 ## Current request: Recording duration and preview dictation
 - [x] Verify official Qwen-Audio-TTS/CosyVoice recommendation of 10–20 seconds and maximum 60 seconds; extend UI auto-stop to 60 seconds, retaining manual stop.
 - [x] Add preview dictation through the existing transcription client, with editable text and explicit synthesis.

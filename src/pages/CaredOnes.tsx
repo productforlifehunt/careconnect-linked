@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
   Phone, MapPin, FolderOpen, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
-  Search, UserPlus, IdCard, Info, ListChecks, AudioLines,
+  Search, UserPlus, IdCard, Pencil, ListChecks, AudioLines,
 
 } from "lucide-react";
 import {
@@ -196,25 +196,27 @@ export default function CaredOnes() {
           <div className="flex gap-2 mb-5 overflow-x-auto items-center -mx-4 px-4 pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {caredOnes.map((co: any) => {
               const name = co.cared_one?.full_name || site.caredOneSingular;
-              const isActive = selectedId === co.user_id;
+              const isActive = bare(selectedId) === bare(co.user_id);
               return (
-                <div key={co.user_id} className={`flex items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-xs" : "bg-transparent border-border hover:bg-accent/50"}`}>
-                  <button type="button" onClick={() => setDetailCaredOne(co)} className="min-h-11 px-4 py-2 text-sm font-medium flex items-center gap-2">
+                <div key={co.user_id} className={`flex shrink-0 items-center rounded-lg border transition-colors ${isActive ? "bg-card border-primary shadow-xs" : "bg-transparent border-border hover:bg-accent/50"}`}>
+                  <Button variant="ghost" type="button" aria-pressed={isActive} onClick={() => setActiveTab(co.user_id)} className="min-h-11 h-auto px-4 py-2 text-sm font-medium flex items-center gap-2">
                     {name}
                     {co.invitation_status === "pending" && (
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
                         {t("caredOnes.awaitingConsent", { defaultValue: "Waiting for consent" })}
                       </span>
                     )}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
                     type="button"
-                    aria-label={`${name} — ${t("common.details", { defaultValue: "Details" })}`}
+                    aria-label={`${name} — ${t("common.edit", { defaultValue: "Edit" })}`}
                     onClick={() => setDetailCaredOne(co)}
-                    className="min-h-11 min-w-11 px-2 text-muted-foreground hover:text-foreground"
+                    className="min-h-11 h-auto px-3 text-muted-foreground hover:text-foreground"
                   >
-                    <Info className="h-4 w-4" />
-                  </button>
+                    <Pencil className="h-4 w-4" />
+                    {t("common.edit", { defaultValue: "Edit" })}
+                  </Button>
                 </div>
               );
             })}
@@ -276,7 +278,7 @@ export default function CaredOnes() {
           {openCard ? (
             <div>
               <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}><ArrowLeft className="h-4 w-4 mr-1" /> {t("caredOnes.backToCards")}</Button>
-              <FeatureDetail cardKey={openCard} caredOneId={selectedId!} caredOneName={caredOneName} />
+              {selectedId && <FeatureDetail key={`${bare(selectedId)}:${openCard}`} cardKey={openCard} caredOneId={selectedId} caredOneName={caredOneName} />}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">

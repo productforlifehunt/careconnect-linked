@@ -33,3 +33,4 @@
 - Family voice renames update only the existing device-local label and emit the shared change event; text previews reuse the existing cloned-voice synthesis function and provider voice ID so AI-call selection stays synchronized without re-enrollment.
 - Family voice enrollment, comparison previews and AI calls share an exact-model allowlist and persist each enrollment's model; absent model fields retain the historical default because provider voice IDs cannot cross models.
 - Family voice preview dictation reuses the shared complete-WAV recorder and transcription client, populating editable text without automatically synthesizing or enrolling a voice.
+- Cared-one tool views remount when the selected person or tool changes, because in-progress recordings and transient playback state must not carry across people.
