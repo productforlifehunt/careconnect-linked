@@ -8,7 +8,7 @@ vi.mock("@/lib/router-compat", () => ({
   useParams: () => ({ personId: "70", card: "family-voice" }),
   useNavigate: () => navigate,
 }));
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ i18n: { language: "zh" }, t: (key: string, options?: any) => key === "common.edit" ? "编辑" : typeof options === "string" ? options : options?.defaultValue || key }) }));
+vi.mock("react-i18next", async (importOriginal) => ({ ...await importOriginal<typeof import("react-i18next")>(), useTranslation: () => ({ i18n: { language: "zh" }, t: (key: string, options?: any) => key === "common.edit" ? "编辑" : typeof options === "string" ? options : options?.defaultValue || key }) }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock("@/contexts/SiteContext", () => ({ useSite: () => ({ caredOneSingular: "被护理者", navLabels: { caredOnes: "被护理者" } }) }));
 vi.mock("@/services/wp-auth", () => ({ getStoredWPUser: () => ({ user_id: 1 }) }));
