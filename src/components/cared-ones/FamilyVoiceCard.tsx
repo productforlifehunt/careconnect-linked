@@ -22,7 +22,6 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const [loadFailed, setLoadFailed] = useState(false);
   const [localCount, setLocalCount] = useState(0);
   const [label, setLabel] = useState("");
-  const [model, setModel] = useState<FamilyVoiceModel>(DEFAULT_FAMILY_VOICE_MODEL);
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
@@ -118,7 +117,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
     if (peak < 300) { setError(zh ? "没有录到声音：麦克风收到的是静音。请检查浏览器麦克风权限、系统输入设备是否选对、是否静音，然后靠近麦克风重新录。" : "No sound was captured — the microphone recorded silence. Check mic permission, the selected input device and mute, then record again closer to the mic."); return; }
     setBusy("new");
     try {
-      const voice = await saveFamilyVoiceRecording(id, label.trim() || (zh ? "亲友声音" : "Family voice"), blob, model);
+      const voice = await saveFamilyVoiceRecording(id, label.trim() || (zh ? "亲友声音" : "Family voice"), blob);
       if (voice.state !== FAMILY_VOICE_STATE.ready) setError((zh ? "原始录音已保存，复刻未完成：" : "Original saved; cloning incomplete: ") + voice.error);
       setLabel("");
     } catch (e: any) {
