@@ -1,3 +1,8 @@
+## Current request: Family voice STS, steady playback and schema disclosure
+- [ ] Check official Alibaba Qwen/CosyVoice true STS availability; distinguish audio-to-audio conversion from ASR + TTS.
+- [ ] Enforce full constant preview/original playback volume, test actual player settings and uninterrupted single-text request; disclose source-audio limitations.
+- [ ] Provide all existing CCT322 fields, state codes, REL323 and private audio storage/access facts without changing WordPress schema.
+
 ## Current request: Server-persisted cared-one family voices
 - [x] Created CCT322 cared_one_relatives_voice and REL323 Users → voices one-to-many through /afresh GUI; reopened and verified a55–a61, separate relation table, manage_options direct access and screenshots.
 - [x] Server persistence retains private original audio, provider ID/model/state/error; verified WordPress session and accepted REL219 (or self) gates every action. Added server rename/delete/reclone, explicit legacy reference import preserving local originals, and server-fed AI-call selection.
