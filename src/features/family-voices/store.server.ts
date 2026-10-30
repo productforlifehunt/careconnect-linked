@@ -58,7 +58,7 @@ export function wordpressStore(user: string, password: string) {
   const update = (id: string, body: Row) => request(`jet-cct/${C.slug}/${id}`, "POST", body);
   const create = async (actor: string, person: string, body: Row) => {
     await access(actor, person);
-    const result = await request(`jet-cct/${C.slug}`, "POST", { ...body, cct_author_id: Number(actor), cct_status: "publish" });
+    const result = await request(`jet-cct/${C.slug}`, "POST", { ...body, cct_author_id: actor, cct_status: "publish" });
     const id = String(typeof result === "number" || typeof result === "string" ? result : (result as Row)?._ID || (result as Row)?.item_id || "");
     if (!/^\d+$/.test(id)) throw new Error("Voice record ID was not returned");
     await request(`jet-rel/${REL}`, "POST", { parent_id: Number(person), child_id: Number(id), context: "child", store_items_type: "update" });
