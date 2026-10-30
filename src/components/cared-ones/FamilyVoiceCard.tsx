@@ -176,34 +176,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
         </p>
       </div>
 
-      <section className="space-y-3 border-t pt-4">
-        <h3 className="font-semibold text-foreground">{zh ? "模型比较" : "Model comparison"}</h3>
-        <p className="text-xs text-muted-foreground">{zh ? "北京原价 · 2026-10-29；以下复刻均免费，合成按量收费。一个汉字计 2 个字符。Token 计费型号单独列出，不假定最便宜。" : "Beijing list prices · 2026-10-29. Enrollment is free; synthesis is metered. One Han character counts as 2 billable characters. Token billing is listed separately, not ranked as cheapest."}</p>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] text-sm text-left">
-            <thead><tr className="border-b text-muted-foreground"><th className="py-2 pr-3">{zh ? "型号" : "Model"}</th><th className="py-2 pr-3">{zh ? "合成价格" : "Synthesis price"}</th><th className="py-2 pr-3">{zh ? "建议录音" : "Recording"}</th><th className="py-2">{zh ? "复刻 / 试听" : "Clone / preview"}</th></tr></thead>
-            <tbody>{FAMILY_VOICE_MODELS.map((item) => {
-              const saved = voices.filter((v) => (v.model || DEFAULT_FAMILY_VOICE_MODEL) === item.id);
-              return <tr key={item.id} className="border-b align-top">
-                <td className="py-3 pr-3 font-medium">{item.name}</td>
-                <td className="py-3 pr-3">{item.price === null ? (zh ? "输入 ¥1.5 + 输出 ¥12 / 百万 Token" : "Input ¥1.5 + output ¥12 / million tokens") : `¥${item.price} / ${zh ? "万字符" : "10k characters"}`}</td>
-                <td className="py-3 pr-3">10–20 {zh ? "秒" : "s"}</td>
-                <td className="py-3 space-y-2">
-                  <Button size="sm" variant={model === item.id ? "secondary" : "outline"} disabled={recording || busy !== null} onClick={() => setModel(item.id)} aria-label={`${zh ? "选择复刻" : "Select cloning"} ${item.name}`}><Mic className="mr-1 h-4 w-4" />{model === item.id ? (zh ? "已选择" : "Selected") : (zh ? "选择复刻" : "Select")}</Button>
-                  {saved.map((v) => <Button key={v.id} size="sm" variant="ghost" className="flex max-w-full" disabled={!previewText.trim() || recording || busy !== null} onClick={() => void test(v, previewText)} aria-label={`${zh ? "比较试听" : "Compare preview"} ${item.name} ${v.label}`}><Play className="mr-1 h-4 w-4 shrink-0" /><span className="break-words whitespace-normal">{v.label}</span></Button>)}
-                </td>
-              </tr>;
-            })}</tbody>
-          </table>
-        </div>
-        <div className="flex gap-4 text-xs text-primary"><a href={FAMILY_VOICE_PRICE_SOURCE} target="_blank" rel="noreferrer">{zh ? "官方价格" : "Official prices"}</a><a href={FAMILY_VOICE_CLONE_SOURCE} target="_blank" rel="noreferrer">{zh ? "官方复刻要求" : "Recording requirements"}</a></div>
-      </section>
-
       <div className="border-t pt-4 space-y-3">
-        <Select value={model} onValueChange={(value) => setModel(value as FamilyVoiceModel)} disabled={recording || busy !== null}>
-          <SelectTrigger aria-label={zh ? "复刻模型" : "Cloning model"}><SelectValue /></SelectTrigger>
-          <SelectContent>{FAMILY_VOICE_MODELS.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
-        </Select>
         <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={zh ? "这是谁的声音，例如：女儿小红" : "Whose voice, e.g. daughter Amy"} />
         <div className="rounded-lg bg-muted/50 p-3 text-sm text-foreground">
           <p className="mb-1 text-xs text-muted-foreground">{zh ? "在安静的地方，用平常的语气朗读（建议 10–20 秒；读完可手动停止，最长 60 秒）：" : "In a quiet place, read naturally (10–20 seconds recommended; stop when finished, up to 60 seconds):"}</p>
