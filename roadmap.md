@@ -2,6 +2,8 @@
 - [x] New recordings enroll only with the default Qwen 3.1 Flash model; stored legacy models stay resolvable so existing cloned voices keep their exact model.
 - [x] Removed the model comparison table, price column, official price/requirement links, model picker and every displayed model name from the voice card and AI-call voice select. 14/14 focused tests pass, including a UI test asserting no model names or prices are rendered.
 - [ ] Real audible verification after this change not performed (no new recording or synthesis was run against the provider); nothing else about the enrollment flow changed.
+
+## Current request: Family voice STS, steady playback and schema disclosure
 - [x] Official Qwen/CosyVoice documentation checked: realtime audio conversation exists, but no publicly documented timing/prosody-preserving target-voice conversion API found; no STS feature added or paid probe made.
 - [x] Preview, original and AI-call players explicitly use volume=1; 18/18 focused tests pass, including multi-sentence single synthesis/playback and three full-volume paths. Build OK. No existing app fade/ramp was present; provider audio is preserved unchanged.
 - [ ] Live audible outcome remains unverified: test1 signs in and opens /cared-ones/1/family-voice, but the real voice list remains loading after an additional 45 seconds; no playable voice, alert or page error. User-native microphone and provider-produced loudness are not verified. No stored recordings changed.
