@@ -48,4 +48,32 @@ export function insertNode(nodes: PathNode[], i: number): PathNode[] {
   const copy = nodes.map((n, j) => j === i ? { ...n, outgoing: leftOut } : j === (i + 1) % nodes.length ? { ...n, incoming: rightIn } : n);
   copy.splice(i + 1, 0, { point: pair(l[3]), incoming: pair(l[2]), outgoing: pair(r[1]) });
   return copy;
+}/** Remove many anchors at once. A zone needs at least 3 points, so a removal that would leave fewer is refused. */
+export function removeNodes(nodes: PathNode[], indices: number[]): PathNode[] {
+  const drop = new Set(indices);
+  const next = nodes.filter((_, i) => !drop.has(i));
+  return next.length >= 3 || next.length === 0 ? next : nodes;
+}
+/** Curve or straighten several anchors at once. */
+export function curveNodes(nodes: PathNode[], indices: number[], curved: boolean): PathNode[] {
+  let next = nodes;
+  for (const i of indices) next = curved ? smoothNode(next, i) : next.map((n, j) => j === i ? { ...n, incoming: null, outgoing: null } : n);
+  return next;
+}
+/** Reverse drawing direction while keeping the exact same shape. */
+export function reverseNodes(nodes: PathNode[]): PathNode[] {
+  return [...nodes].reverse().map(n => ({ point: n.point, incoming: n.outgoing, outgoing: n.incoming }));
+}
+/** Drop anchors that sit almost on the straight line between their neighbours (cleans up freehand tracing). */
+export function simplifyNodes(nodes: PathNode[], tolerance = 0.08): PathNode[] {
+  if (nodes.length <= 3) return nodes;
+  const keep = nodes.filter((n, i) => {
+    if (n.incoming || n.outgoing) return true;
+    const a = nodes[(i - 1 + nodes.length) % nodes.length]!.point, b = nodes[(i + 1) % nodes.length]!.point, p = n.point;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (!len) return false;
+    const dist = Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / len;
+    return dist / len > tolerance;
+  });
+  return keep.length >= 3 ? keep : nodes;
 }
