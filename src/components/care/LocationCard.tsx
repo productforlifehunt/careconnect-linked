@@ -14,6 +14,7 @@ import {
   Target, Ban,
   Loader2, Send, Radio, Pencil, RotateCcw, Layers,
   ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
