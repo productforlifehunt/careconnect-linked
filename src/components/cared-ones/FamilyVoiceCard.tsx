@@ -83,7 +83,7 @@ export function FamilyVoiceCard({ caredOneId, caredOneName }: { caredOneId: stri
   const start = async () => {
     setError(null);
     try {
-      rec.current = new VoiceRecorder();
+      rec.current = new VoiceRecorder(true);
       await rec.current.start();
       setRecording(true);
       setSeconds(0); secs.current = 0;
