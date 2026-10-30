@@ -15,10 +15,12 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const [history, setHistory] = useState<{ past: PathNode[][]; future: PathNode[][] }>({ past: [], future: [] });
   const layers = useRef<Layer[]>([]);
   const live = useRef(nodes);
+  const selectionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const changeRef = useRef(onChange);
   changeRef.current = onChange;
   const commit = useCallback((next: PathNode[]) => {
-    setHistory(h => ({ past: [...h.past.slice(-49), live.current], future: [] }));
+    const previous = live.current;
+    setHistory(h => ({ past: [...h.past.slice(-49), previous], future: [] }));
     live.current = next; setNodes(next);
   }, []);
   useEffect(() => { changeRef.current(sampleBoundary(nodes)); }, [nodes]);
@@ -62,10 +64,14 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
         marker.on("click", e => {
           L.DomEvent.stopPropagation(e.originalEvent);
           if (mode === "draw" && index === 0 && nodes.length >= 3) { setMode("edit"); setSelected(0); }
-          else setSelected(index);
+          else {
+            if (selectionTimer.current) clearTimeout(selectionTimer.current);
+            selectionTimer.current = setTimeout(() => setSelected(index), 260);
+          }
         });
         marker.on("dblclick", e => {
           L.DomEvent.stopPropagation(e.originalEvent);
+          if (selectionTimer.current) clearTimeout(selectionTimer.current);
           if (mode === "edit") { commit(smoothNode(live.current, index)); setSelected(index); }
         });
         marker.on("drag", () => {
