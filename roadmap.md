@@ -1,7 +1,7 @@
 ## Current request: Plain storage labels and traceable pending tasks
-- [ ] Remove server/cloud wording from family voice storage labels.
-- [ ] Align dashboard pending count with cared-one task lists and show per-person/tool counts; open the actual pending tasks.
-- [ ] Run focused tests and verify signed-in task navigation and storage labels.
+- [x] Remove server/cloud wording from family voice storage labels; older-voice import button reads Save/储存. Family-voice leaf metadata no longer advertises model comparison.
+- [x] Share dictionary-backed pending selection across dashboard, summaries, person badges and task tool; dashboard count opens the first matching person's task tool. Errors/loading use a dash, not a false zero.
+- [x] 27/27 focused tests pass; build OK. Live challenged dashboard1 → /cared-ones/54/tasks → QA Bravo badge1 / Pending1 → ceshi test detail Not done, date2026-10-27 time15:03. Live test1 dashboard0 → /cared-ones/1/tasks → zero/No pending tasks. Mobile screenshots checked, zero page errors. Voice page has no server wording. No task/audio/WordPress record changed; no publishing requested.
 
 ## Current request: Single hidden model for family voices
 - [x] New recordings enroll only with the default Qwen 3.1 Flash model; stored legacy models stay resolvable so existing cloned voices keep their exact model.
