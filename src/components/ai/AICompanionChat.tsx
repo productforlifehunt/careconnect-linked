@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { loadSavedFamilyVoices, savedVoiceAudio, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
 import { FAMILY_VOICE_STATE } from "@/features/family-voices/schema";
-import { familyVoiceModelName } from "@/lib/family-voice-models";
 import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
 import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -716,7 +715,7 @@ export function AICompanionChat({
             >
               <option value="">{isZh ? "默认 AI 声音" : "Default AI voice"}</option>
               {familyVoices.map((v) => (
-                <option key={v.id} value={v.voiceId}>{v.label} · {v.caredOneName} · {familyVoiceModelName(v.model)}</option>
+                <option key={v.id} value={v.voiceId}>{v.label} · {v.caredOneName}</option>
               ))}
             </select>
             {familyVoices.length === 0 && (

@@ -2,7 +2,8 @@ import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { addFamilyVoice, listFamilyVoices, renameFamilyVoice, playBase64Mp3 } from "@/lib/family-voices";
 import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
-import { DEFAULT_FAMILY_VOICE_MODEL, FAMILY_VOICE_MODELS, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
+import { DEFAULT_FAMILY_VOICE_MODEL, resolveFamilyVoiceModel, VOICE_RECORDING_SECONDS, VOICE_MIN_RECORDING_SECONDS } from "@/lib/family-voice-models";
+import { saveFamilyVoiceRecording } from "@/lib/family-voices";
 
 const api = vi.hoisted(() => ({ familyVoiceAction: vi.fn(), createClonedVoice: vi.fn(), deleteClonedVoice: vi.fn(), speakClonedVoice: vi.fn(), transcribeAudio: vi.fn(), start: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
 vi.mock("@/lib/family-voice.functions", () => ({ familyVoiceAction: api.familyVoiceAction }));
@@ -112,9 +113,25 @@ it("rejects unlisted providers and models", () => {
   expect(() => resolveFamilyVoiceModel("minimax")).toThrow("Unsupported family voice model");
 });
 
-it("orders character prices and separates token billing without inventing a price", () => {
-  expect(FAMILY_VOICE_MODELS.map((v) => v.price)).toEqual([0.8, 1, 1, 1.4, 1.4, 1.5, 2, 2, null]);
-  expect(FAMILY_VOICE_MODELS.at(-1)?.id).toBe(DEFAULT_FAMILY_VOICE_MODEL);
+it("enrolls every new recording with the default flash model and keeps stored models resolvable", async () => {
+  api.familyVoiceAction.mockResolvedValue({ voice: { ...voice, id: "8", model: DEFAULT_FAMILY_VOICE_MODEL } });
+  const pcm = new Int16Array(16000).fill(1000);
+  const blob = new Blob([pcm.buffer as ArrayBuffer], { type: "audio/wav" });
+  (blob as any).arrayBuffer = async () => pcm.buffer;
+  const saved = await saveFamilyVoiceRecording("46", "儿子", blob);
+  expect(api.familyVoiceAction).toHaveBeenCalledWith({ data: expect.objectContaining({ action: "create", model: DEFAULT_FAMILY_VOICE_MODEL }) });
+  expect(saved.model).toBe(DEFAULT_FAMILY_VOICE_MODEL);
+  expect(resolveFamilyVoiceModel("qwen-audio-3.1-tts-plus")).toBe("qwen-audio-3.1-tts-plus");
+});
+
+it("never shows model names, prices or a model picker to users", async () => {
+  localStorage.clear();
+  addFamilyVoice({ ...voice, model: "qwen-audio-3.1-tts-plus" });
+  render(<FamilyVoiceCard caredOneId="46" caredOneName="家人" />);
+  await screen.findByRole("button", { name: "开始录音" });
+  const text = document.body.textContent || "";
+  expect(text).not.toMatch(/Qwen|CosyVoice|千问|¥|万字符|模型/);
+  expect(screen.queryByLabelText("复刻模型")).toBeNull();
 });
 
 it("allows recording until the official 60-second maximum", () => {
