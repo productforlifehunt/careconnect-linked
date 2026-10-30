@@ -11,7 +11,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const [nodes, setNodes] = useState<PathNode[]>(() => initial.map(nodeAt));
   const [mode, setMode] = useState<Mode>(initial.length >= 3 ? "edit" : "draw");
   const [sel, setSel] = useState<number[]>([]);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [linked, setLinked] = useState(true);
   const [history, setHistory] = useState<{ past: PathNode[][]; future: PathNode[][] }>({ past: [], future: [] });
@@ -40,7 +40,7 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   const toastFew = () => { setWarn(true); setTimeout(() => setWarn(false), 2200); };
   const remove = () => {
     if (!sel.length) return;
-    const next = removeNodes(nodes, sel);
+    const next = mode === "edit" ? removeNodes(nodes, sel) : nodes.filter((_, i) => !sel.includes(i));
     if (next === nodes) { toastFew(); return; }
     commit(next); setSel([]);
     if (next.length < 3) setMode("draw");
