@@ -35,7 +35,8 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
 
   const myGroupIds = Array.from(new Set(
     rels
-      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus !== "declined")
+      // Only accepted rows are memberships; a pending row is an invitation.
+      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "accepted")
       .map((r: any) => String(r.parent_object_id || ""))
       .filter(Boolean)
   ));
@@ -128,8 +129,8 @@ export async function fetchCareGroupMembersWordPress(groupId: string): Promise<a
         }
       })
     );
-    // Declined invitations are not members — hide them from the roster.
-    return members.filter((m: any) => m && m.invitation_status !== "declined");
+    // Pending invitations and declined ones are not members — hide them.
+    return members.filter((m: any) => m && m.invitation_status === "accepted");
   } catch (e) {
     // Never turn a failed read into "this group has no members" — that hides
     // owner/admin controls and wrongly offers "Join" to the owner.
@@ -144,6 +145,8 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
       a55: group.name,
       a56: group.description || "",
       a57: group.is_private ? "b56" : "b55",
+      // Every new group starts with a six-digit join code (a58).
+      a58: randomJoinCode(),
       a59: "b55",
     },
   });
