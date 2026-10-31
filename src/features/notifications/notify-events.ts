@@ -210,6 +210,39 @@ export function notifyInviteResponse(
   }));
 }
 
+/** Someone opened the group link and asked to join → notify owners and admins. */
+export function notifyJoinRequest(
+  adminIds: Array<string | number | null | undefined>,
+  groupName: string,
+  requestPath: string,
+) {
+  return withActor((who) => notifyUsers(adminIds, {
+    type: "system",
+    title: Z("有人申请加入护理小组", "Someone asked to join your care group"),
+    message: who
+      ? Z(`${who} 申请加入「${clip(groupName, 80)}」，点开即可同意或拒绝。`, `${who} asked to join ${clip(groupName, 80)}. Open to accept or decline.`)
+      : Z(`有人申请加入「${clip(groupName, 80)}」，点开即可同意或拒绝。`, `Someone asked to join ${clip(groupName, 80)}. Open to accept or decline.`),
+    action_url: requestPath,
+  }));
+}
+
+/** An admin answered a join request → notify the person who asked. */
+export function notifyJoinRequestAnswered(
+  requesterId: string | number | null | undefined,
+  groupName: string,
+  approved: boolean,
+  groupPath: string,
+) {
+  return notifyUsers([requesterId], {
+    type: "system",
+    title: approved ? Z("你已加入护理小组", "You joined the care group") : Z("加入申请未通过", "Join request declined"),
+    message: approved
+      ? Z(`管理员同意了你加入「${clip(groupName, 80)}」的申请。`, `An admin let you into ${clip(groupName, 80)}.`)
+      : Z(`管理员没有同意你加入「${clip(groupName, 80)}」的申请。`, `An admin declined your request to join ${clip(groupName, 80)}.`),
+    action_url: groupPath,
+  });
+}
+
 /** Member role changed → notify that member. */
 export function notifyMemberRoleChanged(
   memberId: string | number | null | undefined,

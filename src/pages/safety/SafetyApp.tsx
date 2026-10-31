@@ -6,6 +6,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
 import Auth from "@/pages/Auth";
 import JoinGroup from "@/pages/JoinGroup";
+import GroupLink from "@/pages/GroupLink";
 import NotFound from "@/pages/NotFound";
 import { GPSTracking } from "@/components/routing/BrowserOnlyPages";
 import CareCircle from "@/pages/CareCircle";
@@ -57,6 +58,7 @@ export default function SafetyApp() {
           <Route path="/me" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/join/:code" element={<JoinGroup />} />
+          <Route path="/group/:groupId" element={<GroupLink />} />
           {/* Aliases — shared pages navigate to the care app's paths. */}
           <Route path="/dashboard" element={<Navigate to="/map" replace />} />
           <Route path="/find" element={<Navigate to="/map" replace />} />

@@ -34,6 +34,7 @@ import {
   fetchSubgroupMembersWordPress, fetchSubgroupMemberRecordsWordPress,
   addMemberToSubgroupWordPress, removeMemberFromSubgroupWordPress,
   updateSubgroupMemberRoleWordPress, joinGroupByJoinCodeWordPress, joinGroupByAnyCodeWordPress, previewGroupInviteWordPress,
+  fetchGroupLinkStateWordPress, requestToJoinGroupWordPress, fetchJoinRequesterWordPress, answerJoinRequestWordPress,
   type InvitedAs,
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
   fetchGroupInvitesWordPress, createGroupInviteWordPress, updateGroupInviteWordPress, deleteGroupInviteWordPress,
@@ -500,6 +501,7 @@ export function useInviteToGroup() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
       qc.invalidateQueries({ queryKey: ["groupInvites"] });
+      qc.invalidateQueries({ queryKey: ["groupInvitations"] });
     },
   });
 }
@@ -890,8 +892,14 @@ export function useMyPendingInvitations() {
 export function useAcceptInvitation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (invitationId: string) => acceptInvitationWordPress(invitationId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); qc.invalidateQueries({ queryKey: ["careGroups"] }); },
+    mutationFn: (input: string | { id: string; displayName?: string | undefined }) =>
+      typeof input === "string" ? acceptInvitationWordPress(input) : acceptInvitationWordPress(input.id, input.displayName),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["myPendingInvitations"] });
+      qc.invalidateQueries({ queryKey: ["careGroups"] });
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["groupLinkState"] });
+    },
   });
 }
 
@@ -899,7 +907,7 @@ export function useDeclineInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (invitationId: string) => declineInvitationWordPress(invitationId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); qc.invalidateQueries({ queryKey: ["groupLinkState"] }); },
   });
 }
 
@@ -1019,6 +1027,42 @@ export function useJoinGroupByJoinCode() {
       joinGroupByJoinCodeWordPress(groupId, code, displayName),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["careGroups"] });
+      qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
+      qc.invalidateQueries({ queryKey: ["groupLinkState"] });
+    },
+  });
+}
+
+/** The one group page (/group/<id>): the group plus the viewer's place in it. */
+export function useGroupLinkState(groupId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["groupLinkState", groupId],
+    queryFn: () => fetchGroupLinkStateWordPress(groupId!),
+    enabled: !!groupId && enabled,
+    retry: false,
+  });
+}
+
+export function useRequestToJoinGroup() {
+  return useMutation({ mutationFn: (groupId: string) => requestToJoinGroupWordPress(groupId) });
+}
+
+export function useJoinRequester(groupId: string | null, requesterId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["joinRequester", groupId, requesterId],
+    queryFn: () => fetchJoinRequesterWordPress(groupId!, requesterId!),
+    enabled: !!groupId && !!requesterId && enabled,
+    retry: false,
+  });
+}
+
+export function useAnswerJoinRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ groupId, requesterId, approve }: { groupId: string; requesterId: string; approve: boolean }) =>
+      answerJoinRequestWordPress(groupId, requesterId, approve),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["joinRequester"] });
       qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
     },
   });

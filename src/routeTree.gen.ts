@@ -72,6 +72,7 @@ import { Route as CopedIndexRouteImport } from './routes/coped/index'
 import { Route as CopedIdRouteImport } from './routes/coped/$id'
 import { Route as FacilitiesNewRouteImport } from './routes/facilities/new'
 import { Route as FacilityIdRouteImport } from './routes/facility/$id'
+import { Route as GroupGroupIdRouteImport } from './routes/group/$groupId'
 import { Route as JoinCodeRouteImport } from './routes/join/$code'
 import { Route as SafedIndexRouteImport } from './routes/safed/index'
 import { Route as SafedIdRouteImport } from './routes/safed/$id'
@@ -396,6 +397,11 @@ const FacilityIdRoute = FacilityIdRouteImport.update({
   path: '/facility/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupGroupIdRoute = GroupGroupIdRouteImport.update({
+  id: '/group/$groupId',
+  path: '/group/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
   id: '/join/$code',
   path: '/join/$code',
@@ -494,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/coped/$id': typeof CopedIdRoute
   '/facilities/new': typeof FacilitiesNewRoute
   '/facility/$id': typeof FacilityIdRoute
+  '/group/$groupId': typeof GroupGroupIdRoute
   '/join/$code': typeof JoinCodeRoute
   '/safed/$id': typeof SafedIdRoute
   '/share/note': typeof ShareNoteRoute
@@ -567,6 +574,7 @@ export interface FileRoutesByTo {
   '/coped/$id': typeof CopedIdRoute
   '/facilities/new': typeof FacilitiesNewRoute
   '/facility/$id': typeof FacilityIdRoute
+  '/group/$groupId': typeof GroupGroupIdRoute
   '/join/$code': typeof JoinCodeRoute
   '/safed/$id': typeof SafedIdRoute
   '/share/note': typeof ShareNoteRoute
@@ -641,6 +649,7 @@ export interface FileRoutesById {
   '/coped/$id': typeof CopedIdRoute
   '/facilities/new': typeof FacilitiesNewRoute
   '/facility/$id': typeof FacilityIdRoute
+  '/group/$groupId': typeof GroupGroupIdRoute
   '/join/$code': typeof JoinCodeRoute
   '/safed/$id': typeof SafedIdRoute
   '/share/note': typeof ShareNoteRoute
@@ -716,6 +725,7 @@ export interface FileRouteTypes {
     | '/coped/$id'
     | '/facilities/new'
     | '/facility/$id'
+    | '/group/$groupId'
     | '/join/$code'
     | '/safed/$id'
     | '/share/note'
@@ -789,6 +799,7 @@ export interface FileRouteTypes {
     | '/coped/$id'
     | '/facilities/new'
     | '/facility/$id'
+    | '/group/$groupId'
     | '/join/$code'
     | '/safed/$id'
     | '/share/note'
@@ -862,6 +873,7 @@ export interface FileRouteTypes {
     | '/coped/$id'
     | '/facilities/new'
     | '/facility/$id'
+    | '/group/$groupId'
     | '/join/$code'
     | '/safed/$id'
     | '/share/note'
@@ -936,6 +948,7 @@ export interface RootRouteChildren {
   CopedIdRoute: typeof CopedIdRoute
   FacilitiesNewRoute: typeof FacilitiesNewRoute
   FacilityIdRoute: typeof FacilityIdRoute
+  GroupGroupIdRoute: typeof GroupGroupIdRoute
   JoinCodeRoute: typeof JoinCodeRoute
   SafedIdRoute: typeof SafedIdRoute
   ShareNoteRoute: typeof ShareNoteRoute
@@ -1396,6 +1409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FacilityIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/group/$groupId': {
+      id: '/group/$groupId'
+      path: '/group/$groupId'
+      fullPath: '/group/$groupId'
+      preLoaderRoute: typeof GroupGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$code': {
       id: '/join/$code'
       path: '/join/$code'
@@ -1512,6 +1532,7 @@ const rootRouteChildren: RootRouteChildren = {
   CopedIdRoute: CopedIdRoute,
   FacilitiesNewRoute: FacilitiesNewRoute,
   FacilityIdRoute: FacilityIdRoute,
+  GroupGroupIdRoute: GroupGroupIdRoute,
   JoinCodeRoute: JoinCodeRoute,
   SafedIdRoute: SafedIdRoute,
   ShareNoteRoute: ShareNoteRoute,

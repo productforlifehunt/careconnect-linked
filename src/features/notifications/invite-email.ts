@@ -17,11 +17,17 @@ export async function sendGroupInviteEmail(
   email: string,
   groupName: string,
   inviteUrl: string,
+  joinCode?: string | undefined,
 ): Promise<boolean> {
   const address = (email || "").trim();
   if (!address.includes("@")) return false;
   const fn = currentAppScope() === "carecnc" ? "carecnc-notify" : "challenged-notify";
   const name = groupName || "";
+  // The join code is written in the email text, never inside the link.
+  const code = String(joinCode || "").trim();
+  const codeLine = code
+    ? ` After opening it, enter the join code: ${code}`
+    : " After opening it, tap \u201cAsk to join\u201d and an admin will let you in.";
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
       method: "POST",
@@ -34,9 +40,9 @@ export async function sendGroupInviteEmail(
         user_id: 0,
         type: "system",
         title: name ? `Invitation to join ${name}` : "Care group invitation",
-        message: name
-          ? `You have been invited to join the care group "${name}". Open this link to join: ${inviteUrl}`
-          : `You have been invited to join a care group. Open this link to join: ${inviteUrl}`,
+        message: (name
+          ? `You have been invited to join the care group "${name}". Open this link: ${inviteUrl}.`
+          : `You have been invited to join a care group. Open this link: ${inviteUrl}.`) + codeLine,
         action_url: inviteUrl,
         email: address,
         channels: { inbox: false, push: false, email: true },

@@ -7,13 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Settings, Trash2, Shuffle, Copy, Link2 } from "lucide-react";
-import { careGroupJoinLink } from "@/features/care-groups/join-link";
-
-function randomJoinCode() {
-  const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const b = new Uint32Array(6); crypto.getRandomValues(b);
-  return Array.from(b, (n) => a[n % a.length]).join("");
-}
+import { careGroupLink, randomJoinCode, cleanJoinCodeInput, JOIN_CODE_MAX_LENGTH } from "@/features/care-groups/join-link";
 import { useUpdateMyGroupDisplayName } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -47,7 +41,7 @@ export function GroupSettingsTab({
   const [isActive, setIsActive] = useState(activeGroup?.is_active !== false);
   const [origin, setOrigin] = useState("");
   useEffect(() => { setOrigin(window.location.origin); }, []);
-  const groupLink = careGroupJoinLink(origin, joinCode);
+  const groupLink = careGroupLink(origin, activeGroupId);
   const [myName, setMyName] = useState(myDisplayName);
   const updateMyName = useUpdateMyGroupDisplayName();
 
@@ -98,24 +92,24 @@ export function GroupSettingsTab({
         <div className="flex items-center justify-between">
           <div>
             <Label>{Z("私密群组", "Private Group")}</Label>
-            <p className="text-xs text-muted-foreground">{Z("私密群组将被隐藏，仅限受邀加入", "Private groups are hidden and invite-only")}</p>
+            <p className="text-xs text-muted-foreground">{Z("只是一个标记。没有搜群功能，外人只能通过群组链接加入。", "A label only. There is no group search; outsiders can only join through the group link.")}</p>
           </div>
           <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
         </div>
         <div>
           <Label>{Z("加入码", "Join code")}</Label>
-          <p className="text-xs text-muted-foreground mb-2">{Z("不是成员的人输入这个加入码就能直接加入。留空则只能通过邀请加入。", "People who are not members can join directly by entering this code. Leave empty to allow invites only.")}</p>
+          <p className="text-xs text-muted-foreground mb-2">{Z("默认是 6 位数字，可以改成别的，最多 6 位。不是成员的人打开群组链接后，输入加入码就能加入。留空则只能申请或被邀请。", "Six digits by default; you can change it, up to 6 characters. People who open the group link can join by typing this code. Leave empty so people can only ask to join or be invited.")}</p>
           <div className="flex gap-2">
-            <Input value={joinCode} maxLength={32} onChange={e => setJoinCode(e.target.value.replace(/\s/g, ""))} placeholder={Z("例如 ABC123", "e.g. ABC123")} />
+            <Input value={joinCode} maxLength={JOIN_CODE_MAX_LENGTH} aria-label={Z("加入码", "Join code")} onChange={e => setJoinCode(cleanJoinCodeInput(e.target.value))} placeholder={Z("例如 382915", "e.g. 382915")} />
             <Button type="button" variant="outline" onClick={() => setJoinCode(randomJoinCode())}><Shuffle className="h-4 w-4 mr-1" />{Z("自动生成", "Generate")}</Button>
             <Button type="button" variant="outline" size="icon" aria-label={Z("复制加入码", "Copy join code")} disabled={!joinCode} onClick={() => { navigator.clipboard?.writeText(joinCode); toast({ title: Z("已复制", "Copied") }); }}><Copy className="h-4 w-4" /></Button>
           </div>
         </div>
         <div>
           <Label>{Z("群组链接", "Group link")}</Label>
-          <p className="text-xs text-muted-foreground mb-2">{Z("复制后发给别人，点开就能加入本群组。加入码保存后链接才生效。", "Copy and send this link — opening it joins this group. It works once the join code is saved.")}</p>
+          <p className="text-xs text-muted-foreground mb-2">{Z("每个群组只有这一个链接，里面不含加入码。对方打开后输入加入码，或者申请加入。", "This group's one link. It never contains the join code: people who open it type the code or ask to join.")}</p>
           <div className="flex gap-2">
-            <Input readOnly value={groupLink} placeholder={joinCode.trim() ? "" : Z("先填写或生成加入码", "Enter or generate a join code first")} onFocus={e => e.currentTarget.select()} />
+            <Input readOnly value={groupLink} aria-label={Z("群组链接", "Group link")} onFocus={e => e.currentTarget.select()} />
             <Button type="button" variant="outline" size="icon" aria-label={Z("复制群组链接", "Copy group link")} disabled={!groupLink} onClick={() => { navigator.clipboard?.writeText(groupLink); toast({ title: Z("群组链接已复制", "Group link copied") }); }}><Link2 className="h-4 w-4" /></Button>
           </div>
         </div>
