@@ -11,12 +11,15 @@ import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { wpRequestPasswordReset } from "@/services/wp-auth";
+import { safeNextPath, withNext } from "@/lib/return-path";
 import { BrandMark } from "@/components/BrandMark";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
+  // A page that sent the visitor here to sign in (e.g. a group link) — return to it.
+  const nextPath = safeNextPath(searchParams.get("next"));
   const navigate = useNavigate();
   const { login, signup } = useAuth();
   const site = useSite();
@@ -60,7 +63,7 @@ export default function Auth() {
     try {
       await login(loginEmail, loginPassword);
       toast({ title: t("auth.welcomeBack") });
-      navigate("/dashboard");
+      navigate(nextPath || "/dashboard");
     } catch (err: any) {
       toast({ title: t("auth.loginFailed"), description: err.message, variant: "destructive" });
     } finally {
@@ -100,7 +103,7 @@ export default function Auth() {
       });
       // Signing up already signed you in, so land on the setup screen instead
       // of leaving the sign-up form on screen.
-      navigate("/onboarding");
+      navigate(withNext("/onboarding", nextPath));
     } catch (err: any) {
       toast({ title: t("auth.signupFailed"), description: err.message, variant: "destructive" });
     } finally {

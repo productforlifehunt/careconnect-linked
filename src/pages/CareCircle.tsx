@@ -1,8 +1,9 @@
 import { getStoredWPUser } from "@/services/wp-auth";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "@/lib/router-compat";
-import { parseCareGroupLink, careGroupPath } from "@/features/care-groups/join-link";
+import { useNavigate, useSearchParams, useLocation } from "@/lib/router-compat";
+import { parseCareGroupLink, groupIdFromPath } from "@/features/care-groups/join-link";
+import { GroupOnboarding, JoinRequestPanel } from "@/components/care-circle/GroupOnboarding";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ import {
   useCareGroupGallery, useGroupCaredOnes,
   useGroupMessages, useSendMessage,
   useInviteToGroup, useUpdateMemberRole, useRemoveGroupMember,
-  useUpdateCareGroup, useDeleteCareGroup, useJoinGroupByAnyCode,
+  useUpdateCareGroup, useDeleteCareGroup,
   useGroupInvitations, useCancelInvitation,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
   useDeleteTask, useLeaveGroup, useShareTask, useMyProfile,
@@ -56,20 +57,43 @@ export default function CareCircle() {
   const isCN = i18n.language?.startsWith("zh");
   const { toast } = useToast();
   const site = useSite();
-  const { data: profile, isLoading: profileLoading } = useMyProfile();
+  const { data: profile } = useMyProfile();
   const qc = useQueryClient();
-  const { data: groups, isLoading: groupsLoading } = useCareGroups();
+  const { data: groups, isLoading: groupsLoading, isFetching: groupsFetching } = useCareGroups();
   const createGroup = useCreateCareGroup();
   const navigate = useNavigate();
-  // Links such as /care-circle?group=12&tab=members open that group and tab.
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  /**
+   * One page per group: /care-circle/<id> (NotchSafety: /circle/<id>). It is
+   * also the link the group shares — members see the group, everyone else
+   * sees the group onboarding right here. Older ?group=<id> links forward.
+   */
+  const base = location.pathname.startsWith("/circle") ? "/circle" : "/care-circle";
+  const groupHref = useCallback((id: string | number) => `${base}/${String(id).replace(/^wp-/, "")}`, [base]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pathGroup = groupIdFromPath(location.pathname);
   // The router may hand numbers back JSON-quoted ("27"); keep digits only.
-  const urlGroup = (searchParams.get("group") || "").replace(/\D/g, "") || null;
+  const legacyGroup = (searchParams.get("group") || "").replace(/\D/g, "") || null;
+  const requesterId = (searchParams.get("request") || "").replace(/\D/g, "") || null;
+  const inviteToken = (searchParams.get("invite") || "").replace(/"/g, "").trim() || null;
   const urlTab = (searchParams.get("tab") || "").replace(/"/g, "") || null;
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(urlGroup);
   const [activeTab, setActiveTab] = useState(urlTab || "home");
-  useEffect(() => { if (urlGroup) setSelectedGroupId(urlGroup); }, [urlGroup]);
   useEffect(() => { if (urlTab) setActiveTab(urlTab); }, [urlTab]);
+  const dropParam = useCallback((key: string) => {
+    setSearchParams((prev) => { const next = new URLSearchParams(prev); next.delete(key); return next; }, { replace: true });
+  }, [setSearchParams]);
+
+  // Without a group in the address, open the old ?group= one or the first of
+  // mine, so the address always names the group on screen.
+  useEffect(() => {
+    if (pathGroup || groupsLoading) return;
+    const target = legacyGroup || (!groupsFetching ? groups?.[0]?.id : null);
+    if (!target) return;
+    const rest = new URLSearchParams(searchParams);
+    rest.delete("group");
+    const qs = rest.toString();
+    navigate(`${groupHref(target)}${qs ? `?${qs}` : ""}`, { replace: true });
+  }, [pathGroup, legacyGroup, groupsLoading, groupsFetching, groups, searchParams, groupHref, navigate]);
 
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [joinCodeOpen, setJoinCodeOpen] = useState(false);
@@ -77,17 +101,18 @@ export default function CareCircle() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDesc, setNewGroupDesc] = useState("");
   const [newGroupMyName, setNewGroupMyName] = useState("");
-  const [joinMyName, setJoinMyName] = useState("");
   const [editingPost, setEditingPost] = useState<any>(null);
   const [addCaredOneOpen, setAddCaredOneOpen] = useState(false);
 
-  const joinGroupByCode = useJoinGroupByAnyCode();
-
-  const selectedIsMine = !!selectedGroupId && (groups || []).some((g: any) => String(g.id) === String(selectedGroupId));
-  const activeGroupId = selectedIsMine ? String(selectedGroupId) : (groups && groups.length > 0 ? groups[0]!.id : null);
+  const idOf = (v: any) => String(v ?? "").replace(/^wp-/, "");
+  const urlGroup = pathGroup || legacyGroup;
+  const myUrlGroup = urlGroup ? (groups || []).find((g: any) => idOf(g.id) === urlGroup) : undefined;
+  // A group I'm not in (yet): show its onboarding instead of its content.
+  const showOnboarding = !!pathGroup && !myUrlGroup && !groupsLoading;
+  const activeGroupId: string | null = myUrlGroup ? myUrlGroup.id : (!urlGroup && groups && groups.length > 0 ? groups[0]!.id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
-  const { data: members, isLoading: membersLoadingRaw, isError: membersError } = useCareGroupMembers(activeGroupId);
+  const { data: members, isLoading: membersLoadingRaw } = useCareGroupMembers(activeGroupId);
   const membersLoading = !!activeGroupId && membersLoadingRaw;
   const { data: tasks, isLoading: tasksLoadingRaw } = useCareTasks(activeGroupId);
   // Disabled react-query queries stay `isLoading` forever — only treat them as
@@ -148,7 +173,6 @@ export default function CareCircle() {
   });
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
   const isOwner = currentMember?.is_owner;
-  const canShowJoin = !profileLoading && !membersLoading && !membersError && !!currentUserId && !!activeGroupId && !currentMember;
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
 
   const handleCreateGroup = () => {
@@ -158,29 +182,28 @@ export default function CareCircle() {
     });
   };
 
-  // The box takes the group link someone sent; older invite codes still work.
+  // The box only opens the link someone sent; joining happens on that group's page.
   const handleJoinByCode = () => {
-    if (!joinCode.trim()) return;
-    const linkedGroupId = parseCareGroupLink(joinCode);
-    if (linkedGroupId) {
-      setJoinCodeOpen(false); setJoinCode("");
-      navigate(careGroupPath(linkedGroupId));
-      return;
-    }
-    joinGroupByCode.mutate({ code: joinCode, displayName: joinMyName || undefined }, {
-      onSuccess: () => { setJoinCode(""); setJoinMyName(""); setJoinCodeOpen(false); toast({ title: t("careCircle.joinedSuccess") }); },
-      onError: () => toast({
+    const text = joinCode.trim();
+    if (!text) return;
+    const linkedGroupId = parseCareGroupLink(text);
+    const oldInvite = text.match(/\/join\/([^/?#\s]+)/)?.[1];
+    if (!linkedGroupId && !oldInvite) {
+      toast({
         title: t("careCircle.failedToJoin"),
         description: isCN ? "请粘贴对方发给您的完整群组链接。" : "Please paste the full group link you were sent.",
         variant: "destructive",
-      }),
-    });
+      });
+      return;
+    }
+    setJoinCodeOpen(false); setJoinCode("");
+    navigate(linkedGroupId ? groupHref(linkedGroupId) : `/join/${oldInvite}`);
   };
 
   const handleLeaveGroup = () => {
     if (!activeGroupId || !profile?.id) return;
     leaveGroup.mutate(activeGroupId, {
-      onSuccess: () => { setSelectedGroupId(null); toast({ title: t("careCircle.leftGroup") }); },
+      onSuccess: () => { navigate(base, { replace: true }); toast({ title: t("careCircle.leftGroup") }); },
       onError: (err: any) => toast({ title: t("common.error"), description: err.message, variant: "destructive" }),
     });
   };
@@ -196,6 +219,44 @@ export default function CareCircle() {
   };
 
   if (groupsLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+
+  const joinDialogBody = (
+    <div className="space-y-4 mt-2">
+      <div>
+        <Label htmlFor="care-group-link-input">{isCN ? "群组链接" : "Group link"}</Label>
+        <Input id="care-group-link-input" value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder={isCN ? "粘贴别人发给您的群组链接" : "Paste the group link you were sent"} />
+        <p className="text-xs text-muted-foreground mt-1">{isCN ? "打开后会看到这个群组，在那里填名字、输入加入码或申请加入。" : "It opens that group, where you enter your name and the join code, or ask to join."}</p>
+      </div>
+      <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={!joinCode.trim()}>{isCN ? "打开群组" : "Open group"}</Button>
+    </div>
+  );
+
+  const groupChips = groups && groups.length > 0 ? (
+    <div className="mb-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+        {isCN ? `我加入的${site.navLabels.careGroups}` : `My Joined ${site.navLabels.careGroups}`}
+      </p>
+      <div className="flex gap-2 flex-wrap">
+        {groups.map((g: any) => (<Badge key={g.id} variant={activeGroupId === g.id ? "default" : "outline"} className="cursor-pointer whitespace-nowrap" onClick={() => navigate(groupHref(g.id))}>{g.name}</Badge>))}
+      </div>
+    </div>
+  ) : null;
+
+  if (showOnboarding && pathGroup) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-5">
+        <div className="mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{site.navLabels.careGroups}</h1>
+        </div>
+        {groupChips}
+        <GroupOnboarding key={pathGroup} groupId={pathGroup} inviteToken={inviteToken} onClearInvite={() => dropParam("invite")} />
+      </div>
+    );
+  }
+
+  if (!pathGroup && urlGroup) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  }
 
   if (!groups || groups.length === 0) {
     return (
@@ -220,11 +281,7 @@ export default function CareCircle() {
             <DialogTrigger asChild><Button variant="outline"><KeyRound className="h-4 w-4 mr-2" /> {t("careCircle.joinWithCode")}</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
-              <div className="space-y-4 mt-2">
-                <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
-                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={joinMyName} onChange={e => setJoinMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
-                <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
-              </div>
+              {joinDialogBody}
             </DialogContent>
           </Dialog>
         </div>
@@ -240,19 +297,13 @@ export default function CareCircle() {
           <p className="text-sm text-muted-foreground">{t("careCircle.coordinateCare")}</p>
         </div>
         <div className="flex gap-2">
-          {canShowJoin && (
-            <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
-              <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
-                <div className="space-y-4 mt-2">
-                  <div><Label>{t("careCircle.joinCode")}</Label><Input value={joinCode} onChange={e => setJoinCode(e.target.value.trim())} placeholder={t("careCircle.joinCodePlaceholder")} /></div>
-                  <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={joinMyName} onChange={e => setJoinMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
-                <Button variant="coral" className="w-full" onClick={handleJoinByCode} disabled={joinGroupByCode.isPending || !joinCode.trim()}>{t("careCircle.joinGroup")}</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+          <Dialog open={joinCodeOpen} onOpenChange={setJoinCodeOpen}>
+            <DialogTrigger asChild><Button variant="outline" size="sm"><KeyRound className="h-4 w-4 mr-1" /> {t("careCircle.join")}</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>{t("careCircle.joinGroup")} {site.careGroupSingular}</DialogTitle></DialogHeader>
+              {joinDialogBody}
+            </DialogContent>
+          </Dialog>
           <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm"><Plus className="h-4 w-4 mr-1" /> {t("careCircle.newGroup")}</Button></DialogTrigger>
             <DialogContent>
@@ -271,14 +322,11 @@ export default function CareCircle() {
       <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
       <AddCaredOneDialog open={addCaredOneOpen} onOpenChange={setAddCaredOneOpen} activeGroupId={activeGroupId} />
 
-      <div className="mb-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
-          {isCN ? `我加入的${site.navLabels.careGroups}` : `My Joined ${site.navLabels.careGroups}`}
-        </p>
-        <div className="flex gap-2 flex-wrap">
-          {groups.map((g: any) => (<Badge key={g.id} variant={activeGroupId === g.id ? "default" : "outline"} className="cursor-pointer whitespace-nowrap" onClick={() => setSelectedGroupId(g.id)}>{g.name}</Badge>))}
-        </div>
-      </div>
+      {groupChips}
+
+      {requesterId && isAdmin && activeGroupId && (
+        <JoinRequestPanel groupId={idOf(activeGroupId)} groupName={activeGroup?.name || ""} requesterId={requesterId} onDone={() => dropParam("request")} />
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <GroupTabsBar
@@ -321,7 +369,7 @@ export default function CareCircle() {
         <TabsContent value="members" className="mt-4"><MembersTab members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} updateRole={updateRole} removeMember={removeMember} /></TabsContent>
         <TabsContent value="invite" className="mt-4"><InviteMembersTab members={members || []} activeGroupId={activeGroupId} isAdmin={!!isAdmin} pendingInvitations={pendingInvitations || []} inviteToGroup={inviteToGroup} cancelInvitation={cancelInvitation} /></TabsContent>
         <TabsContent value="member-groups" className="mt-4"><MemberGroupsTab members={members || []} memberCategories={memberCategories || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
-        <TabsContent value="settings" className="mt-4"><GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { setSelectedGroupId(null); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} /></TabsContent>
+        <TabsContent value="settings" className="mt-4"><GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { navigate(base, { replace: true }); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} /></TabsContent>
         <TabsContent value="help" className="mt-4"><GroupHelpTab groupName={activeGroup?.name} groupId={activeGroup?.id ? String(activeGroup.id) : undefined} /></TabsContent>
       </Tabs>
 

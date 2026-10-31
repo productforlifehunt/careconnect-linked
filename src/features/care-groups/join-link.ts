@@ -1,26 +1,39 @@
 /**
- * One group, one shareable address: <origin>/group/<group id>.
+ * One group, one address: <origin>/care-circle/<group id> — the group's own
+ * home page. Members see the group; everyone else sees the group onboarding
+ * on that same page (join code, accept an invitation, or ask the admins).
  *
  * The join code (CCT 199 a58) is the group's password and never appears in
- * any link. Personal invitations, shared links and "contact the admin" all
- * land on this same page; who you are decides what you see there.
+ * any link. Older /group/<id>, /care-circle?group=<id> and /join/<token>
+ * addresses only forward to this one.
  */
 export const JOIN_CODE_MAX_LENGTH = 6;
 
+function cleanId(groupId: string | number | null | undefined): string {
+  const id = String(groupId ?? "").trim().replace(/^wp-/, "");
+  return /^\d+$/.test(id) && Number(id) > 0 ? id : "";
+}
+
 export function careGroupLink(origin: string, groupId: string | number | null | undefined): string {
   const base = String(origin || "").trim().replace(/\/+$/, "");
-  const id = String(groupId ?? "").trim().replace(/^wp-/, "");
-  if (!base || !/^\d+$/.test(id) || Number(id) <= 0) return "";
-  return `${base}/group/${id}`;
+  const id = cleanId(groupId);
+  if (!base || !id) return "";
+  return `${base}/care-circle/${id}`;
 }
 
 export function careGroupPath(groupId: string | number): string {
-  return `/group/${String(groupId).replace(/^wp-/, "")}`;
+  return `/care-circle/${cleanId(groupId) || String(groupId).replace(/^wp-/, "")}`;
 }
 
-/** Reads the group id out of a pasted group link ("…/group/123"). */
+/** The group id inside a page address (/care-circle/12, NotchSafety /circle/12, old /group/12). */
+export function groupIdFromPath(pathname: string): string | null {
+  const m = String(pathname || "").match(/^\/(?:care-circle|circle|group)\/(\d+)\/?$/);
+  return m && Number(m[1]) > 0 ? m[1]! : null;
+}
+
+/** Reads the group id out of a pasted group link ("…/care-circle/123", old "…/group/123"). */
 export function parseCareGroupLink(text: string): string | null {
-  const m = String(text || "").trim().match(/\/group\/(\d+)(?:[/?#]|$)/);
+  const m = String(text || "").trim().match(/\/(?:care-circle|circle|group)\/(\d+)(?:[/?#]|$)/);
   return m && Number(m[1]) > 0 ? m[1]! : null;
 }
 

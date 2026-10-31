@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate, useSearchParams } from "@/lib/router-compat";
+import { safeNextPath } from "@/lib/return-path";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,9 @@ export default function Onboarding() {
 
   const app = currentAppId();
   const isSafety = app === "notchsafety";
-  const home = isSafety ? "/map" : "/dashboard";
+  const [searchParams] = useSearchParams();
+  // Opened from a link (e.g. a group link) before finishing setup — go back there.
+  const home = safeNextPath(searchParams.get("next")) || (isSafety ? "/map" : "/dashboard");
 
   const [name, setName] = useState("");
   const [communityName, setCommunityName] = useState("");

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { groupIdFromPath } from "@/features/care-groups/join-link";
 import { Navigate, useLocation } from "@/lib/router-compat";
 import { Routes, Route } from "@/lib/path-routes";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -6,7 +7,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
 import Auth from "@/pages/Auth";
 import JoinGroup from "@/pages/JoinGroup";
-import GroupLink from "@/pages/GroupLink";
 import NotFound from "@/pages/NotFound";
 import { GPSTracking } from "@/components/routing/BrowserOnlyPages";
 import CareCircle from "@/pages/CareCircle";
@@ -50,6 +50,9 @@ export default function SafetyApp() {
           <Route path="/map" element={<RequireAuth><GPSTracking /></RequireAuth>} />
           <Route path="/places" element={<RequireAuth><GPSTracking /></RequireAuth>} />
           <Route path="/circle" element={<RequireAuth><CareCircle /></RequireAuth>} />
+          {/* A group's one page (shared link /care-circle/<id>) opens under Circle here. */}
+          <Route path="/circle/:groupId" element={<RequireAuth><CareCircle /></RequireAuth>} />
+          <Route path="/care-circle/:groupId" element={<CircleGroupAlias />} />
           <Route path="/assistant" element={<RequireAuth><AICompanion /></RequireAuth>} />
           {/* One shared inbox for messages + alerts — same file the care app uses. */}
           <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
@@ -58,7 +61,6 @@ export default function SafetyApp() {
           <Route path="/me" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/join/:code" element={<JoinGroup />} />
-          <Route path="/group/:groupId" element={<GroupLink />} />
           {/* Aliases — shared pages navigate to the care app's paths. */}
           <Route path="/dashboard" element={<Navigate to="/map" replace />} />
           <Route path="/find" element={<Navigate to="/map" replace />} />
@@ -74,4 +76,11 @@ export default function SafetyApp() {
       </ErrorBoundary>
     </SafetyShell>
   );
+}
+
+/** /care-circle/<id> (the shared group link) opens the same group under /circle. */
+function CircleGroupAlias() {
+  const location = useLocation();
+  const id = groupIdFromPath(location.pathname);
+  return <Navigate to={id ? `/circle/${id}${location.search}` : "/circle"} replace />;
 }
