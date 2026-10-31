@@ -763,14 +763,23 @@ export async function joinGroupByJoinCodeWordPress(groupId: string, code: string
   const gid = normalizeWpObjectId(groupId);
   if (!gid) throw new Error("Invalid care group");
   const group = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) });
+  if (String(group?.[F_GROUP.STATUS] ?? "") === O_GROUP.STATUS.NO) throw new Error("This care group is no longer active.");
   const expected = String(group?.[F_GROUP.JOIN_CODE] || "").trim();
-  if (!expected) throw new Error("This care group has no join code. Ask an owner or admin for an invite link.");
+  if (!expected) throw new Error("This care group has no join code. Ask an admin to let you in.");
   if (expected.toLowerCase() !== String(code || "").trim().toLowerCase()) {
     throw new Error("That join code is not correct.");
   }
   const wpUser = getStoredWPUser();
   const userId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
   if (!userId) throw new Error("Please sign in to join this group.");
+  // A personal invitation that is still waiting keeps the role it offered.
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`);
+  const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === userId);
+  const decoded = existing ? decodeRel72Meta(existing.meta) : null;
+  if (decoded?.invitationStatus === "accepted") {
+    return { group_id: String(gid), group_name: group?.[F_GROUP.NAME] || "", already_member: true };
+  }
+  const keepTypes = decoded?.invitationStatus === "pending" && decoded.memberTypes.length ? decoded.memberTypes : ["nothing special"];
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
     method: "POST",
     body: {
@@ -780,7 +789,7 @@ export async function joinGroupByJoinCodeWordPress(groupId: string, code: string
       store_items_type: "update",
       meta: memberMeta({
         displayName: displayName?.trim() || (await fetchMyAppUserName()),
-        memberTypes: ["nothing special"],
+        memberTypes: keepTypes,
         memberRoles: ["nothing special"],
         invitationStatus: "accepted",
       }),
@@ -790,20 +799,124 @@ export async function joinGroupByJoinCodeWordPress(groupId: string, code: string
 }
 
 /**
- * One code box for the user: they paste whatever an admin gave them. It can be
- * an invite link code (CCT 200 a55) or the group's own join code (CCT 199 a58).
+ * Legacy code box: older invite-link codes (CCT 200 a55) that were already
+ * sent out keep working. Join codes are only typed on the group's own page,
+ * because six digits are not unique across groups.
  */
 export async function joinGroupByAnyCodeWordPress(code: string, displayName?: string | undefined): Promise<any> {
   const trimmed = String(code || "").trim();
   if (!trimmed) throw new Error("Please enter the code you were given.");
-  try {
-    return await joinGroupByCodeWordPress(trimmed, displayName);
-  } catch (inviteError) {
-    // Not an invite link — look for a care group whose own join code matches.
-    const byCode = await findGroupByJoinCode(trimmed);
-    if (!byCode) throw inviteError instanceof Error ? inviteError : new Error(String(inviteError));
-    return joinGroupByJoinCodeWordPress(String(byCode.groupId), trimmed, displayName);
+  return joinGroupByCodeWordPress(trimmed, displayName);
+}
+
+// ─── One group link: /group/<id> ────────────────────────────
+
+export type GroupLinkStatus = "none" | "pending" | "accepted" | "declined";
+
+/** What the group page needs to know about this group and the signed-in viewer. */
+export async function fetchGroupLinkStateWordPress(groupId: string): Promise<{
+  group_id: string;
+  group_name: string;
+  found: boolean;
+  is_active: boolean;
+  has_join_code: boolean;
+  my_status: GroupLinkStatus;
+  my_invited_as: InvitedAs;
+  i_am_admin: boolean;
+}> {
+  const gid = normalizeWpObjectId(groupId);
+  const empty = { group_id: String(groupId), group_name: "", found: false, is_active: false, has_join_code: false, my_status: "none" as GroupLinkStatus, my_invited_as: "normal group member" as InvitedAs, i_am_admin: false };
+  if (!gid) return empty;
+  const group = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) }).catch(() => null);
+  if (!group || !(group?._ID || group?.item_id || group?.id || group?.[F_GROUP.NAME])) return empty;
+  const userId = Number(getStoredWPUser()?.user_id || 0);
+  let myStatus: GroupLinkStatus = "none";
+  let invitedAs: InvitedAs = "normal group member";
+  let iAmAdmin = false;
+  if (userId) {
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`);
+    const mine = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === userId);
+    if (mine) {
+      const d = decodeRel72Meta(mine.meta);
+      myStatus = d.invitationStatus;
+      invitedAs = d.memberTypes.includes("owner") ? "owner" : d.memberTypes.includes("admin") ? "admin" : "normal group member";
+      iAmAdmin = myStatus === "accepted" && (d.memberTypes.includes("owner") || d.memberTypes.includes("admin"));
+    }
   }
+  return {
+    group_id: String(gid),
+    group_name: group?.[F_GROUP.NAME] || "",
+    found: true,
+    is_active: String(group?.[F_GROUP.STATUS] ?? "") !== O_GROUP.STATUS.NO,
+    has_join_code: !!String(group?.[F_GROUP.JOIN_CODE] || "").trim(),
+    my_status: myStatus,
+    my_invited_as: invitedAs,
+    i_am_admin: iAmAdmin,
+  };
+}
+
+/**
+ * "Ask to join": no membership row is written. The group's owners and admins
+ * get an inbox notice that opens this group's page with the request on it.
+ */
+export async function requestToJoinGroupWordPress(groupId: string): Promise<void> {
+  const gid = normalizeWpObjectId(groupId);
+  const userId = Number(getStoredWPUser()?.user_id || 0);
+  if (!gid) throw new Error("Invalid care group");
+  if (!userId) throw new Error("Please sign in first.");
+  const [admins, name] = await Promise.all([groupAdminIds(gid), groupNameOf(gid)]);
+  if (admins.length === 0) throw new Error("This group has no admin who can let you in.");
+  const { notifyJoinRequest } = await import("@/features/notifications/notify-events");
+  const { careGroupPath } = await import("@/features/care-groups/join-link");
+  await notifyJoinRequest(admins, name, `${careGroupPath(gid)}?request=${userId}`);
+}
+
+/** The person behind a join request, read fresh for the admin's decision. */
+export async function fetchJoinRequesterWordPress(groupId: string, requesterId: string): Promise<{ user_id: string; name: string; status: GroupLinkStatus }> {
+  const gid = normalizeWpObjectId(groupId);
+  const uid = normalizeWpObjectId(requesterId);
+  if (!gid || !uid) throw new Error("Invalid request");
+  const [profile, rels] = await Promise.all([
+    fetchWPUserPublicProfile(uid).catch(() => null),
+    wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`),
+  ]);
+  const row = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === uid);
+  return {
+    user_id: String(uid),
+    name: profile?.full_name || "",
+    status: row ? decodeRel72Meta(row.meta).invitationStatus : "none",
+  };
+}
+
+/** Admin answers a join request: approving writes the accepted Rel 223 row. */
+export async function answerJoinRequestWordPress(groupId: string, requesterId: string, approve: boolean): Promise<void> {
+  const gid = normalizeWpObjectId(groupId);
+  const uid = normalizeWpObjectId(requesterId);
+  if (!gid || !uid) throw new Error("Invalid request");
+  const name = await groupNameOf(gid);
+  const { careGroupPath } = await import("@/features/care-groups/join-link");
+  if (approve) {
+    const profile = await fetchWPUserPublicProfile(uid).catch(() => null);
+    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+      method: "POST",
+      body: {
+        parent_id: gid,
+        child_id: uid,
+        context: "child",
+        store_items_type: "update",
+        meta: memberMeta({
+          displayName: profile?.full_name || "",
+          memberTypes: ["nothing special"],
+          memberRoles: ["nothing special"],
+          invitationStatus: "accepted",
+        }),
+      },
+    });
+  }
+  try {
+    const { notifyJoinRequestAnswered } = await import("@/features/notifications/notify-events");
+    await notifyJoinRequestAnswered(uid, name, approve, careGroupPath(gid));
+  } catch { /* best-effort */ }
 }
 
 
