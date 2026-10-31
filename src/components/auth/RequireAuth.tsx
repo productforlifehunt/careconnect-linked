@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { currentAppId, fetchOnboardingDone } from "@/features/shared/app-profile";
+import { withNext } from "@/lib/return-path";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,7 +28,8 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+    // Come back to the page they opened (e.g. a group link) after signing in.
+    return <Navigate to={withNext("/auth", location.pathname + location.search)} replace />;
   }
 
   if (location.pathname !== "/onboarding") {
@@ -41,7 +43,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     // Only a definite "not done" sends the user to onboarding; a failed check
     // must never block the app.
     if (onboarded === false) {
-      return <Navigate to="/onboarding" replace />;
+      return <Navigate to={withNext("/onboarding", location.pathname + location.search)} replace />;
     }
   }
 

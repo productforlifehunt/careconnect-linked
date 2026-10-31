@@ -134,7 +134,7 @@ export function notifyGroupPost(
     type: "system",
     title: isAnnouncement ? Z("护理小组有新公告", "New announcement in your care group") : Z("护理小组有新帖子", "New post in your care group"),
     message: clip(title),
-    action_url: `/care-circle?group=${groupId}&tab=${isAnnouncement ? "announcements" : "posts"}`,
+    action_url: `/care-circle/${groupId}?tab=${isAnnouncement ? "announcements" : "posts"}`,
   });
 }
 
@@ -206,7 +206,7 @@ export function notifyInviteResponse(
     message: who
       ? Z(`${who} ${accepted ? "加入了" : "拒绝加入"}「${clip(groupName, 80)}」。`, `${who} ${accepted ? "joined" : "declined to join"} ${clip(groupName, 80)}.`)
       : Z(`有人${accepted ? "加入了" : "拒绝加入"}「${clip(groupName, 80)}」。`, `Someone ${accepted ? "joined" : "declined to join"} ${clip(groupName, 80)}.`),
-    action_url: `/care-circle?group=${groupId}&tab=members`,
+    action_url: `/care-circle/${groupId}?tab=members`,
   }));
 }
 
@@ -255,7 +255,7 @@ export function notifyMemberRoleChanged(
     message: who
       ? Z(`${who} 把你的身份设为「${clip(roleLabel, 60)}」。`, `${who} set your role to ${clip(roleLabel, 60)}.`)
       : Z(`你的身份被设为「${clip(roleLabel, 60)}」。`, `Your role was set to ${clip(roleLabel, 60)}.`),
-    action_url: `/care-circle?group=${groupId}&tab=members`,
+    action_url: `/care-circle/${groupId}?tab=members`,
   }));
 }
 

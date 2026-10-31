@@ -34,7 +34,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   ];
 
   const isActive = (url: string) => location.pathname === url || location.pathname.startsWith(url + "/");
-  const bare = location.pathname === "/" || location.pathname.startsWith("/auth") || location.pathname.startsWith("/join") || location.pathname.startsWith("/group/");
+  const bare = location.pathname === "/" || location.pathname.startsWith("/auth") || location.pathname.startsWith("/join");
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
