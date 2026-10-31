@@ -82,7 +82,8 @@ export default function CareCircle() {
 
   const joinGroupByCode = useJoinGroupByAnyCode();
 
-  const activeGroupId = selectedGroupId || (groups && groups.length > 0 ? groups[0]!.id : null);
+  const selectedIsMine = !!selectedGroupId && (groups || []).some((g: any) => String(g.id) === String(selectedGroupId));
+  const activeGroupId = selectedIsMine ? String(selectedGroupId) : (groups && groups.length > 0 ? groups[0]!.id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
   const { data: members, isLoading: membersLoadingRaw, isError: membersError } = useCareGroupMembers(activeGroupId);
