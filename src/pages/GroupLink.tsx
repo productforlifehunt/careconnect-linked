@@ -22,7 +22,8 @@ import { careGroupPath, cleanJoinCodeInput, JOIN_CODE_MAX_LENGTH } from "@/featu
 export default function GroupLink() {
   const { groupId = "" } = useParams<{ groupId: string }>();
   const [search] = useSearchParams();
-  const requesterId = search.get("request");
+  // The router may hand the id back JSON-quoted ("52"); keep digits only.
+  const requesterId = (search.get("request") || "").replace(/\D/g, "") || null;
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading } = useAuth();
   const { i18n } = useTranslation();
