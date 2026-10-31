@@ -1,18 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserPlus, Mail, Clock, X, Plus, Heart, MoreVertical, Trash2, Link2, Copy, Ban, Pencil } from "lucide-react";
+import { UserPlus, Mail, Clock, X, Heart, MoreVertical, Trash2, Link2, Copy, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles, useUserCaredOnes } from "@/hooks/use-care-data";
-import { formatDate, formatDateTime } from "@/lib/locale";
+import { useGroupInvites, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles, useUserCaredOnes } from "@/hooks/use-care-data";
 import type { InvitedAs } from "@/features/care-groups/source.wordpress-extended";
+import { careGroupLink } from "@/features/care-groups/join-link";
 
 interface InviteMembersTabProps {
   members: any[];
@@ -21,14 +19,6 @@ interface InviteMembersTabProps {
   pendingInvitations: any[];
   inviteToGroup: any;
   cancelInvitation: any;
-}
-
-function formatDateTimeLocal(value: string | null | undefined) {
-  if (!value) return "";
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export function InviteMembersTab({
@@ -46,30 +36,27 @@ export function InviteMembersTab({
   const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
   const { data: myCaredOnes } = useUserCaredOnes();
 
-  const { data: inviteLinks = [] } = useGroupInvites(activeGroupId);
-  const createInvite = useCreateGroupInvite();
+  // Older per-link invites (CCT 200) still work; none are created any more.
+  const { data: legacyLinks = [] } = useGroupInvites(activeGroupId);
   const updateInvite = useUpdateGroupInvite();
   const deleteInvite = useDeleteGroupInvite();
-  const [createInviteOpen, setCreateInviteOpen] = useState(false);
-  const [editInvite, setEditInvite] = useState<any>(null);
-  const [linkName, setLinkName] = useState("");
-  const [linkNote, setLinkNote] = useState("");
-  const [linkToken, setLinkToken] = useState("");
-  const [linkExpires, setLinkExpires] = useState("");
-  const [linkMaxUses, setLinkMaxUses] = useState("0");
-  const [linkInvitedAs, setLinkInvitedAs] = useState<InvitedAs>("normal group member");
 
-  const invitedAsLabel = (v: InvitedAs) =>
-    v === "owner" ? Z("拥有者", "Owner") : v === "admin" ? Z("管理员", "Admin") : Z("普通成员", "Member");
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const groupLink = careGroupLink(origin, activeGroupId);
+  const emailMode = !invitePerson && inviteEmail.includes("@");
+
+  const roleLabel = (r: string) => (r === "owner" ? Z("拥有者", "Owner") : r === "admin" ? Z("管理员", "Admin") : Z("普通成员", "Member"));
 
   /**
-   * Every invitation is an invite link. Inviting an app user sends them the link
-   * in their notifications; inviting an email address emails the link. Nobody is
-   * added to the group until they open the link and fill in their in-group name.
+   * Every invitation hands out the same group link. App users also get a
+   * personal invitation (with the chosen role) that shows when they open it;
+   * email addresses get the link plus the join code in the email text.
    */
   const invite = (target: { userId?: string | undefined; email?: string | undefined }) => {
     if (!activeGroupId) return;
-    inviteToGroup.mutate({ groupId: activeGroupId, ...target, invitedAs: inviteAs }, {
+    const invitedAs: InvitedAs = target.email ? "normal group member" : inviteAs;
+    inviteToGroup.mutate({ groupId: activeGroupId, ...target, invitedAs }, {
       onSuccess: (res: any) => {
         setInvitePerson(null); setInviteSearch(""); setInviteEmail("");
         navigator.clipboard?.writeText(res?.url || "").catch(() => {});
@@ -77,12 +64,16 @@ export function InviteMembersTab({
           title: Z("邀请已发出", "Invitation sent"),
           description: target.email
             ? (res?.email === "sent"
-                ? Z("邀请链接已发送到该邮箱，链接也已复制到剪贴板。", "The invite link was emailed to them, and copied to your clipboard.")
-                : Z("邮件没能发出。邀请链接已复制到剪贴板，请手动发送给对方。", "The email could not be sent. The invite link is copied to your clipboard — please send it to them yourself."))
-            : Z("对方会在通知里收到邀请链接，链接也已复制到剪贴板。", "They will find the invite link in their notifications, and it is copied to your clipboard."),
+                ? Z("群组链接和加入码已发到该邮箱，链接也已复制到剪贴板。", "The group link and join code were emailed to them; the link is also on your clipboard.")
+                : Z("邮件没能发出。群组链接已复制到剪贴板，请手动发给对方，并告诉对方加入码。", "The email could not be sent. The group link is on your clipboard — send it yourself and tell them the join code."))
+            : Z("对方会在通知里收到群组链接，打开后点「接受邀请」即可。", "They'll get the group link in their notifications and can tap \u201cAccept invitation\u201d."),
         });
       },
-      onError: (err: any) => toast({ title: Z("邀请失败", "Could not invite"), description: err.message, variant: "destructive" }),
+      onError: (err: any) => toast({
+        title: Z("邀请失败", "Could not invite"),
+        description: /already in the group/i.test(String(err?.message)) ? Z("对方已经在群里了。", "This person is already in the group.") : err.message,
+        variant: "destructive",
+      }),
     });
   };
 
@@ -91,83 +82,20 @@ export function InviteMembersTab({
     if (inviteEmail.includes("@")) return invite({ email: inviteEmail.trim() });
   };
 
-  const openCreateInvite = () => {
-    setEditInvite(null);
-    setLinkName(""); setLinkNote(""); setLinkToken(""); setLinkExpires(""); setLinkMaxUses("0");
-    setLinkInvitedAs("normal group member");
-    setCreateInviteOpen(true);
-  };
-
-  const openEditInvite = (inv: any) => {
-    setEditInvite(inv);
-    setLinkName(inv.name || "");
-    setLinkNote(inv.note || "");
-    setLinkToken(inv.token || "");
-    setLinkExpires(formatDateTimeLocal(inv.expires_at));
-    setLinkMaxUses(String(inv.max_uses ?? 0));
-    setLinkInvitedAs((inv.invited_as as InvitedAs) || "normal group member");
-    setCreateInviteOpen(true);
-  };
-
-  const handleSaveInvite = () => {
-    if (!activeGroupId || !linkName.trim()) return;
-    const expiresAt = linkExpires ? new Date(linkExpires).toISOString() : null;
-    const maxUses = Math.max(0, Number(linkMaxUses) || 0);
-    const trimmedToken = linkToken.trim();
-
-    // Soft duplicate check — tokens are stored normalized (lowercase) under the hood.
-    if (trimmedToken) {
-      const normalized = trimmedToken.toLowerCase();
-      const clash = (inviteLinks || []).some(
-        (i: any) => (i.token || "").toLowerCase() === normalized && i.id !== editInvite?.id
-      );
-      if (clash) {
-        toast({
-          title: Z("该代码已被占用", "That code is already taken"),
-          description: Z("请换一个代码，或留空让系统自动生成。", "Please pick a different code, or leave it blank to auto-generate one."),
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    if (editInvite) {
-      updateInvite.mutate(
-        { id: editInvite.id, groupId: activeGroupId, name: linkName.trim(), note: linkNote, token: trimmedToken || undefined, expiresAt, maxUses, invitedAs: linkInvitedAs },
-        {
-          onSuccess: () => { setCreateInviteOpen(false); toast({ title: Z("邀请链接已更新", "Invite link updated") }); },
-          onError: (err: any) => toast({ title: Z("更新失败", "Could not update"), description: err.message, variant: "destructive" }),
-        }
-      );
-    } else {
-      createInvite.mutate(
-        { groupId: activeGroupId, name: linkName.trim(), note: linkNote, token: trimmedToken || undefined, expiresAt, maxUses, invitedAs: linkInvitedAs, source: "custom" },
-        {
-          onSuccess: () => { setCreateInviteOpen(false); toast({ title: Z("邀请链接已创建", "Invite link created") }); },
-          onError: (err: any) => toast({ title: Z("创建失败", "Could not create"), description: err.message, variant: "destructive" }),
-        }
-      );
-    }
-  };
-
-  const copyCode = (token: string) => {
-    navigator.clipboard?.writeText(token);
-    toast({ title: Z("邀请码已复制！", "Invite code copied!") });
-  };
-
-  const copyLink = (token: string) => {
-    navigator.clipboard?.writeText(`${window.location.origin}/join/${token}`);
-    toast({ title: Z("邀请链接已复制！", "Invite link copied!") });
+  const copyGroupLink = () => {
+    if (!groupLink) return;
+    navigator.clipboard?.writeText(groupLink);
+    toast({ title: Z("群组链接已复制", "Group link copied") });
   };
 
   const toggleRevoke = (inv: any) => {
     updateInvite.mutate({ id: inv.id, isRevoked: !inv.is_revoked }, {
-      onSuccess: () => toast({ title: inv.is_revoked ? Z("邀请链接已重新启用", "Invite link reactivated") : Z("邀请链接已撤销", "Invite link revoked") }),
+      onSuccess: () => toast({ title: inv.is_revoked ? Z("旧链接已重新启用", "Older link reactivated") : Z("旧链接已撤销", "Older link revoked") }),
     });
   };
 
   const handleDeleteInvite = (inv: any) => {
-    deleteInvite.mutate({ id: inv.id }, { onSuccess: () => toast({ title: Z("邀请链接已删除", "Invite link deleted") }) });
+    deleteInvite.mutate({ id: inv.id }, { onSuccess: () => toast({ title: Z("旧链接已删除", "Older link deleted") }) });
   };
 
   if (!isAdmin) {
@@ -209,7 +137,7 @@ export function InviteMembersTab({
             )}
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground shrink-0">{Z("邀请身份", "Invite as")}</span>
-              <Select value={inviteAs} onValueChange={(v) => setInviteAs(v as InvitedAs)}>
+              <Select value={emailMode ? "normal group member" : inviteAs} onValueChange={(v) => setInviteAs(v as InvitedAs)} disabled={emailMode}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="normal group member">{Z("普通成员", "Member")}</SelectItem>
@@ -233,7 +161,9 @@ export function InviteMembersTab({
               <Mail className="h-4 w-4 mr-1" /> {Z("发出邀请", "Send invitation")}
             </Button>
             <p className="text-[11px] text-muted-foreground">
-              {Z("邀请会生成一个专属链接：注册用户在通知里收到，邮箱地址会收到邮件。对方打开链接、填写群内显示名后才正式入组。", "Each invitation creates its own link: app users get it in their notifications, email addresses get it by email. They join once they open the link and enter their in-group name.")}
+              {emailMode
+                ? Z("邮箱邀请：对方收到群组链接和加入码，注册后以普通成员加入，之后可在成员里调整身份。", "Email invite: they get the group link and the join code, and join as a member after signing up. You can change their role later.")
+                : Z("发的都是同一个群组链接。注册用户在通知里收到，打开后会看到这份邀请和您选的身份，点「接受邀请」就进群。", "Everyone gets the same group link. App users find it in their notifications; opening it shows this invitation with the role you chose.")}
             </p>
           </div>
 
