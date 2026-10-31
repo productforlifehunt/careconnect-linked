@@ -1,7 +1,8 @@
 import { getStoredWPUser } from "@/services/wp-auth";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate, useSearchParams } from "@/lib/router-compat";
+import { parseCareGroupLink, careGroupPath } from "@/features/care-groups/join-link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -59,8 +60,15 @@ export default function CareCircle() {
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading } = useCareGroups();
   const createGroup = useCreateCareGroup();
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("home");
+  const navigate = useNavigate();
+  // Links such as /care-circle?group=12&tab=members open that group and tab.
+  const [searchParams] = useSearchParams();
+  const urlGroup = searchParams.get("group");
+  const urlTab = searchParams.get("tab");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(urlGroup);
+  const [activeTab, setActiveTab] = useState(urlTab || "home");
+  useEffect(() => { if (urlGroup) setSelectedGroupId(urlGroup); }, [urlGroup]);
+  useEffect(() => { if (urlTab) setActiveTab(urlTab); }, [urlTab]);
 
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [joinCodeOpen, setJoinCodeOpen] = useState(false);
@@ -148,11 +156,22 @@ export default function CareCircle() {
     });
   };
 
+  // The box takes the group link someone sent; older invite codes still work.
   const handleJoinByCode = () => {
     if (!joinCode.trim()) return;
+    const linkedGroupId = parseCareGroupLink(joinCode);
+    if (linkedGroupId) {
+      setJoinCodeOpen(false); setJoinCode("");
+      navigate(careGroupPath(linkedGroupId));
+      return;
+    }
     joinGroupByCode.mutate({ code: joinCode, displayName: joinMyName || undefined }, {
       onSuccess: () => { setJoinCode(""); setJoinMyName(""); setJoinCodeOpen(false); toast({ title: t("careCircle.joinedSuccess") }); },
-      onError: (err: any) => toast({ title: t("careCircle.failedToJoin"), description: err.message, variant: "destructive" }),
+      onError: () => toast({
+        title: t("careCircle.failedToJoin"),
+        description: isCN ? "请粘贴对方发给您的完整群组链接。" : "Please paste the full group link you were sent.",
+        variant: "destructive",
+      }),
     });
   };
 

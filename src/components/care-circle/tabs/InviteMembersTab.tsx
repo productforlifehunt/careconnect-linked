@@ -246,8 +246,8 @@ export function InviteMembersTab({
               <Card key={inv.id} className="border-transparent card-elevated border-l-4 border-l-warning">
                 <CardContent className="p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{inv.invitee_email || inv.invited_email || Z("未知", "Unknown")}</p>
-                    <p className="text-xs text-muted-foreground">{Z(`邀请于 ${formatDate(inv.created_at, "zh-CN", { month: "short", day: "numeric" })}`, `Invited ${formatDate(inv.created_at, "en", { month: "short", day: "numeric" })}`)}</p>
+                    <p className="text-sm font-medium text-foreground">{inv.name || inv.invited_email || Z("未填姓名", "No name")}</p>
+                    <p className="text-xs text-muted-foreground">{Z(`等待对方接受 · 身份：${roleLabel(inv.role)}`, `Waiting to accept · ${roleLabel(inv.role)}`)}</p>
                   </div>
                   <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => cancelInvitation.mutate(inv.id)}><X className="h-4 w-4 mr-1" /> {Z("取消", "Cancel")}</Button>
                 </CardContent>
