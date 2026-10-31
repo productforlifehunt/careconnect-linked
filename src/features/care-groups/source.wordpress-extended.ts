@@ -395,7 +395,7 @@ export async function acceptInvitationWordPress(invitationId: string, displayNam
 export async function declineInvitationWordPress(invitationId: string): Promise<void> {
   const [groupPart, userPart] = invitationId.split(":");
   const groupId = normalizeWpObjectId(groupPart);
-  const userId = normalizeWpObjectId(userPart);
+  const userId = normalizeWpObjectId(userPart) || (getStoredWPUser()?.user_id ? Number(getStoredWPUser()!.user_id) : 0);
   if (!groupId || !userId) return;
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
     method: "POST",

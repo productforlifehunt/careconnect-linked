@@ -91,7 +91,7 @@ export default function GroupLink() {
         {nameField}
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" disabled={declineInvite.isPending || acceptInvite.isPending}
-            onClick={() => declineInvite.mutate(`${state.group_id}:${user?.id ? String(user.id).replace(/^wp-/, "") : ""}`, {
+            onClick={() => declineInvite.mutate(`${state.group_id}:`, {
               onSuccess: () => setDeclined(true),
               onError: (e: any) => toast({ title: Z("操作失败", "Something went wrong"), description: e?.message, variant: "destructive" }),
             })}>

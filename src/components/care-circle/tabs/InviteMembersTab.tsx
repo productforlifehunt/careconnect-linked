@@ -266,116 +266,45 @@ export function InviteMembersTab({
           </div>
 
           <div className="border-t pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-foreground flex items-center gap-2"><Link2 className="h-4 w-4" /> {Z("邀请链接", "Invite Links")}</h4>
-              <Button size="sm" variant="outline" onClick={openCreateInvite}><Plus className="h-3.5 w-3.5 mr-1" /> {Z("新建链接", "New link")}</Button>
+            <h4 className="text-sm font-medium text-foreground flex items-center gap-2 mb-2"><Link2 className="h-4 w-4" /> {Z("群组链接", "Group link")}</h4>
+            <div className="flex gap-2">
+              <Input readOnly value={groupLink} aria-label={Z("群组链接", "Group link")} className="flex-1 font-mono text-xs h-9" onFocus={(e) => e.currentTarget.select()} />
+              <Button type="button" size="sm" variant="outline" disabled={!groupLink} onClick={copyGroupLink}>
+                <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
+              </Button>
             </div>
-            {inviteLinks.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{Z("还没有邀请链接。创建一个分享给家人或护理人员。", "No invite links yet. Create one to share a join URL with family or care staff.")}</p>
-            ) : (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {Z("每个群组只有这一个链接，链接里没有加入码。对方打开后输入加入码，或者申请加入；加入码在「群组设置」里。", "This group's one link — it never contains the join code. People who open it type the join code or ask to join. The join code is in Group Setting.")}
+            </p>
+          </div>
+
+          {legacyLinks.length > 0 && (
+            <div className="border-t pt-3">
+              <h4 className="text-sm font-medium text-foreground mb-1">{Z("以前发出的旧邀请链接", "Older invite links already sent")}</h4>
+              <p className="text-[11px] text-muted-foreground mb-2">{Z("这些旧链接还能用，不会再新建。不想让它们继续生效可以撤销或删除。", "These older links still work; no new ones are made. Revoke or delete any you no longer want.")}</p>
               <div className="space-y-2">
-                {inviteLinks.map((inv: any) => {
-                  const link = `${window.location.origin}/join/${inv.token}`;
+                {legacyLinks.map((inv: any) => {
                   const status = inv.is_revoked ? Z("已撤销", "Revoked") : inv.is_expired ? Z("已过期", "Expired") : inv.is_exhausted ? Z("已用完", "Used up") : Z("有效", "Active");
                   return (
-                    <div key={inv.id} className="rounded-lg border p-3 space-y-2 bg-muted/30">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-medium text-foreground truncate">{inv.name || Z("邀请链接", "Invite link")}</p>
-                            <Badge variant={inv.is_active ? "default" : "outline"} className="text-[10px] h-4">{status}</Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {inv.expires_at ? Z(`过期时间：${formatDateTime(inv.expires_at, "zh-CN")}`, `Expires ${formatDateTime(inv.expires_at)}`) : Z("永不过期", "Never expires")}
-                            {" · "}
-                            {inv.max_uses > 0 ? Z(`已使用 ${inv.use_count}/${inv.max_uses}`, `${inv.use_count}/${inv.max_uses} uses`) : Z(`已使用 ${inv.use_count} 次（无限）`, `${inv.use_count} uses (unlimited)`)}
-                            {" · "}
-                            {Z(`加入身份：${invitedAsLabel(inv.invited_as)}`, `Joins as ${invitedAsLabel(inv.invited_as)}`)}
-                          </p>
-                          {inv.note && <p className="text-xs text-muted-foreground truncate">{inv.note}</p>}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEditInvite(inv)}><Pencil className="h-3.5 w-3.5 mr-2" /> {Z("编辑", "Edit")}</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleRevoke(inv)}><Ban className="h-3.5 w-3.5 mr-2" /> {inv.is_revoked ? Z("重新启用", "Reactivate") : Z("撤销", "Revoke")}</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteInvite(inv)}><Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("删除", "Delete")}</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div key={inv.id} className="rounded-lg border p-2 flex items-center justify-between gap-2 bg-muted/30">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <p className="text-sm text-foreground truncate">{inv.name || inv.token}</p>
+                        <Badge variant={inv.is_active ? "default" : "outline"} className="text-[10px] h-4">{status}</Badge>
                       </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-muted-foreground w-16 shrink-0">{Z("邀请码", "Code")}</span>
-                          <Input readOnly value={inv.token} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
-                          <Button type="button" size="sm" variant="outline" onClick={() => copyCode(inv.token)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-muted-foreground w-16 shrink-0">{Z("链接", "Link")}</span>
-                          <Input readOnly value={link} className="flex-1 font-mono text-xs h-8" onFocus={(e) => e.currentTarget.select()} />
-                          <Button type="button" size="sm" variant="outline" onClick={() => copyLink(inv.token)}>
-                            <Copy className="h-3.5 w-3.5 mr-1" /> {Z("复制", "Copy")}
-                          </Button>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          {Z("两种方式都可以：把链接发出去，或者让对方在「加入护理小组」里输入邀请码。", "Either works: send the link, or have them type the code in \u201cJoin a care group\u201d.")}
-                        </p>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label={Z("旧链接操作", "Older link actions")}><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => toggleRevoke(inv)}><Ban className="h-3.5 w-3.5 mr-2" /> {inv.is_revoked ? Z("重新启用", "Reactivate") : Z("撤销", "Revoke")}</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteInvite(inv)}><Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("删除", "Delete")}</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   );
                 })}
               </div>
-            )}
-          </div>
-
-          <Dialog open={createInviteOpen} onOpenChange={setCreateInviteOpen}>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{editInvite ? Z("编辑邀请链接", "Edit invite link") : Z("创建邀请链接", "Create invite link")}</DialogTitle></DialogHeader>
-              <div className="space-y-4 mt-2">
-                <div>
-                  <Label>{Z("名称 *", "Name *")}</Label>
-                  <Input value={linkName} onChange={e => setLinkName(e.target.value)} placeholder={Z("例如：家庭链接、夜班护士", "e.g. Family link, Night nurses")} />
-                  <p className="text-xs text-muted-foreground mt-1">{Z("用于区分不同链接的标签。", "A label so you can tell links apart.")}</p>
-                </div>
-                <div>
-                  <Label>{Z("自定义代码", "Custom code")}</Label>
-                  <Input value={linkToken} onChange={e => setLinkToken(e.target.value.replace(/\s+/g, ""))} placeholder={Z("留空则自动生成", "Leave blank to auto-generate")} />
-                  <p className="text-xs text-muted-foreground mt-1">{Z("可选 — 让它好记，例如 ", "Optional — make it memorable, e.g. ")}<code>moms-team-2026</code>{Z("。", ".")}</p>
-                </div>
-                <div>
-                  <Label>{Z("备注", "Note")}</Label>
-                  <Input value={linkNote} onChange={e => setLinkNote(e.target.value)} placeholder={Z("给自己看的备注，例如：给二姨一家", "A note for yourself, e.g. for my aunt's family")} />
-                </div>
-                <div>
-                  <Label>{Z("用这个链接加入的身份", "People joining with this link become")}</Label>
-                  <Select value={linkInvitedAs} onValueChange={(v) => setLinkInvitedAs(v as InvitedAs)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="normal group member">{Z("普通成员", "Member")}</SelectItem>
-                      <SelectItem value="admin">{Z("管理员", "Admin")}</SelectItem>
-                      <SelectItem value="owner">{Z("拥有者", "Owner")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{Z("过期时间", "Expires at")}</Label>
-                  <Input type="datetime-local" value={linkExpires} onChange={e => setLinkExpires(e.target.value)} />
-                  <p className="text-xs text-muted-foreground mt-1">{Z("留空表示永不过期。", "Leave blank for no expiry.")}</p>
-                </div>
-                <div>
-                  <Label>{Z("最大使用次数", "Max uses")}</Label>
-                  <Input type="number" min={0} value={linkMaxUses} onChange={e => setLinkMaxUses(e.target.value)} />
-                  <p className="text-xs text-muted-foreground mt-1">{Z("填 0 表示不限次数。", "Use 0 for unlimited.")}</p>
-                </div>
-                <Button variant="coral" className="w-full" onClick={handleSaveInvite}
-                  disabled={!linkName.trim() || createInvite.isPending || updateInvite.isPending}>
-                  {editInvite ? Z("保存更改", "Save changes") : Z("创建链接", "Create link")}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+            </div>
+          )}
         </CardContent>
       </Card>
 
