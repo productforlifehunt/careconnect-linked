@@ -236,48 +236,59 @@ async function groupAdminIds(groupId: number): Promise<number[]> {
 }
 
 /**
- * Bible flow: every invitation — in-app user or outside email — travels as a
- * CCT 200 invite link. Inviting somebody creates an "App Native generated"
- * one-time link (never expires, no use cap, hidden from the invite-links list)
- * and delivers that link. Membership is only written when the invited person
- * confirms and completes the group onboarding popup.
+ * Every invitation hands out the group's one link (<origin>/group/<id>).
+ * The system recognises the person, not the link:
+ *  - an app user gets a pending Rel 223 row carrying the invited role (a56)
+ *    and sees "accept" when they open the group link;
+ *  - an outside email address gets the group link, plus the join code written
+ *    in the email text (never inside the link). They join as a normal member.
  */
 export async function inviteToGroupWordPress(
   groupId: string,
   userIdOrEmail: string,
   invitedAs: InvitedAs = "normal group member",
-): Promise<{ token: string; url: string; email: "sent" | "skipped" | "failed" }> {
+): Promise<{ url: string; email: "sent" | "skipped" | "failed" }> {
   const isEmail = userIdOrEmail.includes("@");
   const normalizedGroupId = normalizeWpObjectId(groupId);
   if (!normalizedGroupId) throw new Error("Invalid care group");
   const childId = isEmail ? 0 : normalizeWpObjectId(userIdOrEmail);
   if (!isEmail && !childId) throw new Error("Invalid user");
 
-  const invite = await createGroupInviteWordPress({
-    groupId: String(normalizedGroupId),
-    name: "",
-    note: "",
-    invitedAs,
-    source: "app native generated",
-  });
-  const url = `${window.location.origin}/join/${invite.token}`;
-  const groupName = await groupNameOf(normalizedGroupId);
+  const { careGroupLink } = await import("@/features/care-groups/join-link");
+  const url = careGroupLink(window.location.origin, normalizedGroupId);
+  const group = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(normalizedGroupId) }).catch(() => null);
+  const groupName = group?.[F_GROUP.NAME] || "your care group";
 
   let emailResult: "sent" | "skipped" | "failed" = "skipped";
   if (childId) {
-    // App user: the invite arrives as an in-app notification carrying the link.
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
+    const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === childId);
+    if (existing && decodeRel72Meta(existing.meta).invitationStatus === "accepted") {
+      throw new Error("This person is already in the group.");
+    }
+    const memberType = invitedAs === "owner" ? "owner" : invitedAs === "admin" ? "admin" : "nothing special";
+    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+      method: "POST",
+      body: {
+        parent_id: normalizedGroupId,
+        child_id: childId,
+        context: "child",
+        store_items_type: "update",
+        meta: memberMeta({ memberTypes: [memberType], memberRoles: ["nothing special"], invitationStatus: "pending" }),
+      },
+    });
     try {
       const { notifyGroupInvite } = await import("@/features/notifications/notify-events");
       await notifyGroupInvite(childId, groupName, url);
     } catch { /* best-effort */ }
   } else {
-    // Outside email address: the link is emailed to them.
     try {
       const { sendGroupInviteEmail } = await import("@/features/notifications/invite-email");
-      emailResult = (await sendGroupInviteEmail(userIdOrEmail, groupName, url)) ? "sent" : "failed";
+      const code = String(group?.[F_GROUP.JOIN_CODE] || "").trim();
+      emailResult = (await sendGroupInviteEmail(userIdOrEmail, groupName, url, code)) ? "sent" : "failed";
     } catch { emailResult = "failed"; }
   }
-  return { token: invite.token, url, email: emailResult };
+  return { url, email: emailResult };
 }
 
 
@@ -285,17 +296,25 @@ export async function fetchGroupInvitationsWordPress(groupId: string): Promise<a
   try {
     const normalizedGroupId = normalizeWpObjectId(groupId);
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
-    return (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending")
-      .map((r: any) => ({
+    const pending = (Array.isArray(rels) ? rels : [])
+      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending");
+    return Promise.all(pending.map(async (r: any) => {
+      const decoded = decodeRel72Meta(r?.meta);
+      let name = decoded.displayName || "";
+      if (!name) {
+        try { name = (await fetchWPUserPublicProfile(Number(r.child_object_id))).full_name || ""; } catch { /* name stays empty */ }
+      }
+      return {
         id: `${normalizedGroupId}:${r.child_object_id}`,
         group_id: groupId,
         user_id: `wp-${r.child_object_id}`,
-        role: "nothing special",
+        name,
+        role: decoded.memberTypes.includes("owner") ? "owner" : decoded.memberTypes.includes("admin") ? "admin" : "nothing special",
         invitation_status: "pending",
         invited_email: null,
         created_at: null,
-      }));
+      };
+    }));
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
