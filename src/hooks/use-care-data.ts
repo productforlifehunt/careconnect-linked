@@ -906,7 +906,7 @@ export function useDeclineInvitation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (invitationId: string) => declineInvitationWordPress(invitationId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myPendingInvitations"] }); qc.invalidateQueries({ queryKey: ["groupLinkState"] }); },
   });
 }
 
