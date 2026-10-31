@@ -57,7 +57,7 @@ export default function CareCircle() {
   const isCN = i18n.language?.startsWith("zh");
   const { toast } = useToast();
   const site = useSite();
-  const { data: profile, isLoading: profileLoading } = useMyProfile();
+  const { data: profile } = useMyProfile();
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading, isFetching: groupsFetching } = useCareGroups();
   const createGroup = useCreateCareGroup();
@@ -112,7 +112,7 @@ export default function CareCircle() {
   const activeGroupId: string | null = myUrlGroup ? myUrlGroup.id : (!urlGroup && groups && groups.length > 0 ? groups[0]!.id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
-  const { data: members, isLoading: membersLoadingRaw, isError: membersError } = useCareGroupMembers(activeGroupId);
+  const { data: members, isLoading: membersLoadingRaw } = useCareGroupMembers(activeGroupId);
   const membersLoading = !!activeGroupId && membersLoadingRaw;
   const { data: tasks, isLoading: tasksLoadingRaw } = useCareTasks(activeGroupId);
   // Disabled react-query queries stay `isLoading` forever — only treat them as
