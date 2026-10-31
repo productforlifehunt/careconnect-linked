@@ -628,42 +628,15 @@ export async function previewGroupInviteWordPress(token: string): Promise<{
   note: string;
   name: string;
 }> {
-  try {
-    const { invite, groupId, groupName } = await resolveInviteByToken(token);
-    return {
-      group_id: String(groupId),
-      group_name: groupName,
-      invited_as: invite.invited_as as InvitedAs,
-      note: invite.note,
-      name: invite.name,
-    };
-  } catch (inviteError) {
-    // Group links hand out the group's own join code, so the join page must be
-    // able to preview that too.
-    const byCode = await findGroupByJoinCode(token);
-    if (!byCode) throw inviteError instanceof Error ? inviteError : new Error(String(inviteError));
-    return {
-      group_id: String(byCode.groupId),
-      group_name: byCode.groupName,
-      invited_as: "normal group member",
-      note: "",
-      name: "",
-    };
-  }
-}
-
-/** Finds a care group whose own join code (CCT 199 a58) matches, ignoring case. */
-async function findGroupByJoinCode(code: string): Promise<{ groupId: number; groupName: string } | null> {
-  const trimmed = String(code || "").trim();
-  if (!trimmed) return null;
-  const groups = await wordpressCCTFetch<any[]>(T.careGroup.slug, { params: { _limit: 500 } });
-  const match = (Array.isArray(groups) ? groups : []).find(
-    (g: any) => String(g?.[F_GROUP.JOIN_CODE] || "").trim().toLowerCase() === trimmed.toLowerCase(),
-  );
-  if (!match) return null;
-  const groupId = normalizeWpObjectId(match?._ID || match?.item_id || match?.id);
-  if (!groupId) return null;
-  return { groupId, groupName: await groupNameOf(groupId) };
+  // Older invite links only; the group's own link is /group/<id>.
+  const { invite, groupId, groupName } = await resolveInviteByToken(token);
+  return {
+    group_id: String(groupId),
+    group_name: groupName,
+    invited_as: invite.invited_as as InvitedAs,
+    note: invite.note,
+    name: invite.name,
+  };
 }
 
 
