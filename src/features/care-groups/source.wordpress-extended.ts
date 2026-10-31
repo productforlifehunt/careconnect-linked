@@ -362,23 +362,34 @@ export async function fetchMyPendingInvitationsWordPress(): Promise<any[]> {
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-export async function acceptInvitationWordPress(invitationId: string): Promise<void> {
+export async function acceptInvitationWordPress(invitationId: string, displayName?: string | undefined): Promise<void> {
   const [groupPart, userPart] = invitationId.split(":");
   const groupId = normalizeWpObjectId(groupPart);
   const userId = normalizeWpObjectId(userPart) || (getStoredWPUser()?.user_id ? Number(getStoredWPUser()!.user_id) : 0);
-  if (groupId && userId) {
-    await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
-      method: "POST",
-      body: {
-        parent_id: groupId,
-        child_id: userId,
-        context: "child",
-        store_items_type: "update",
-        meta: memberMeta({ invitationStatus: "accepted" }),
-      },
-    });
-    await notifyInviteOutcome(groupId, true);
-  }
+  if (!groupId || !userId) return;
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${groupId}`);
+  const row = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === userId);
+  const decoded = row ? decodeRel72Meta(row.meta) : null;
+  if (!decoded) throw new Error("This invitation is no longer available.");
+  if (decoded.invitationStatus === "accepted") return;
+  if (decoded.invitationStatus !== "pending") throw new Error("This invitation is no longer available.");
+  // Keep the role the invitation offered (a56); only the status flips.
+  await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
+    method: "POST",
+    body: {
+      parent_id: groupId,
+      child_id: userId,
+      context: "child",
+      store_items_type: "update",
+      meta: memberMeta({
+        displayName: displayName?.trim() || decoded.displayName || (await fetchMyAppUserName()),
+        memberTypes: decoded.memberTypes,
+        memberRoles: decoded.memberRoles,
+        invitationStatus: "accepted",
+      }),
+    },
+  });
+  await notifyInviteOutcome(groupId, true);
 }
 
 export async function declineInvitationWordPress(invitationId: string): Promise<void> {
