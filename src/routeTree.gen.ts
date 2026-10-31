@@ -62,6 +62,7 @@ import { Route as ArticlesIndexRouteImport } from './routes/articles/index'
 import { Route as ArticlesIdRouteImport } from './routes/articles/$id'
 import { Route as AwaredIndexRouteImport } from './routes/awared/index'
 import { Route as AwaredIdRouteImport } from './routes/awared/$id'
+import { Route as CareCircleGroupIdRouteImport } from './routes/care-circle_.$groupId'
 import { Route as CaredOnesIndexRouteImport } from './routes/cared-ones/index'
 import { Route as CaredIndexRouteImport } from './routes/cared/index'
 import { Route as CaredIdRouteImport } from './routes/cared/$id'
@@ -347,6 +348,11 @@ const AwaredIdRoute = AwaredIdRouteImport.update({
   path: '/awared/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CareCircleGroupIdRoute = CareCircleGroupIdRouteImport.update({
+  id: '/care-circle_/$groupId',
+  path: '/care-circle/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaredOnesIndexRoute = CaredOnesIndexRouteImport.update({
   id: '/cared-ones/',
   path: '/cared-ones/',
@@ -494,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/accompanied/$id': typeof AccompaniedIdRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/awared/$id': typeof AwaredIdRoute
+  '/care-circle/$groupId': typeof CareCircleGroupIdRoute
   '/cared/$id': typeof CaredIdRoute
   '/caregiver/$id': typeof CaregiverIdRoute
   '/community/$id': typeof CommunityIdRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/accompanied/$id': typeof AccompaniedIdRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/awared/$id': typeof AwaredIdRoute
+  '/care-circle/$groupId': typeof CareCircleGroupIdRoute
   '/cared/$id': typeof CaredIdRoute
   '/caregiver/$id': typeof CaregiverIdRoute
   '/community/$id': typeof CommunityIdRoute
@@ -643,6 +651,7 @@ export interface FileRoutesById {
   '/accompanied/$id': typeof AccompaniedIdRoute
   '/articles/$id': typeof ArticlesIdRoute
   '/awared/$id': typeof AwaredIdRoute
+  '/care-circle_/$groupId': typeof CareCircleGroupIdRoute
   '/cared/$id': typeof CaredIdRoute
   '/caregiver/$id': typeof CaregiverIdRoute
   '/community/$id': typeof CommunityIdRoute
@@ -719,6 +728,7 @@ export interface FileRouteTypes {
     | '/accompanied/$id'
     | '/articles/$id'
     | '/awared/$id'
+    | '/care-circle/$groupId'
     | '/cared/$id'
     | '/caregiver/$id'
     | '/community/$id'
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/accompanied/$id'
     | '/articles/$id'
     | '/awared/$id'
+    | '/care-circle/$groupId'
     | '/cared/$id'
     | '/caregiver/$id'
     | '/community/$id'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/accompanied/$id'
     | '/articles/$id'
     | '/awared/$id'
+    | '/care-circle_/$groupId'
     | '/cared/$id'
     | '/caregiver/$id'
     | '/community/$id'
@@ -942,6 +954,7 @@ export interface RootRouteChildren {
   AccompaniedIdRoute: typeof AccompaniedIdRoute
   ArticlesIdRoute: typeof ArticlesIdRoute
   AwaredIdRoute: typeof AwaredIdRoute
+  CareCircleGroupIdRoute: typeof CareCircleGroupIdRoute
   CaredIdRoute: typeof CaredIdRoute
   CaregiverIdRoute: typeof CaregiverIdRoute
   CommunityIdRoute: typeof CommunityIdRoute
@@ -1339,6 +1352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AwaredIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/care-circle_/$groupId': {
+      id: '/care-circle_/$groupId'
+      path: '/care-circle/$groupId'
+      fullPath: '/care-circle/$groupId'
+      preLoaderRoute: typeof CareCircleGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cared-ones/': {
       id: '/cared-ones/'
       path: '/cared-ones'
@@ -1526,6 +1546,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccompaniedIdRoute: AccompaniedIdRoute,
   ArticlesIdRoute: ArticlesIdRoute,
   AwaredIdRoute: AwaredIdRoute,
+  CareCircleGroupIdRoute: CareCircleGroupIdRoute,
   CaredIdRoute: CaredIdRoute,
   CaregiverIdRoute: CaregiverIdRoute,
   CommunityIdRoute: CommunityIdRoute,
