@@ -6,6 +6,7 @@ import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserProfile } from "@/features/shared/wp-users";
 import { dedupeRead } from "@/features/shared/rel-batch";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
+import { randomJoinCode } from "./join-link";
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
 const REL_GROUP_MEMBER = R.careGroupMembers; // M:M  care_group → users
