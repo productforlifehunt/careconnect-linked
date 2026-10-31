@@ -63,8 +63,9 @@ export default function CareCircle() {
   const navigate = useNavigate();
   // Links such as /care-circle?group=12&tab=members open that group and tab.
   const [searchParams] = useSearchParams();
-  const urlGroup = searchParams.get("group");
-  const urlTab = searchParams.get("tab");
+  // The router may hand numbers back JSON-quoted ("27"); keep digits only.
+  const urlGroup = (searchParams.get("group") || "").replace(/\D/g, "") || null;
+  const urlTab = (searchParams.get("tab") || "").replace(/"/g, "") || null;
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(urlGroup);
   const [activeTab, setActiveTab] = useState(urlTab || "home");
   useEffect(() => { if (urlGroup) setSelectedGroupId(urlGroup); }, [urlGroup]);
