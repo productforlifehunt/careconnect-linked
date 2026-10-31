@@ -501,6 +501,7 @@ export function useInviteToGroup() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["careGroupMembers"] });
       qc.invalidateQueries({ queryKey: ["groupInvites"] });
+      qc.invalidateQueries({ queryKey: ["groupInvitations"] });
     },
   });
 }
