@@ -16,7 +16,6 @@ export const Route = createFileRoute("/care-circle_/$groupId")({
       { property: "og:description", content: "Open this care group, or join it with the join code or by asking an admin." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "robots", content: "noindex" },
     ],
   }),
   component: RouteCareGroupPage,
