@@ -29,6 +29,9 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     // Come back to the page they opened (e.g. a group link) after signing in.
+    // While the jump is under way this still renders once with /auth as the
+    // location; a second jump from there would drop the return address.
+    if (location.pathname.startsWith("/auth")) return null;
     return <Navigate to={withNext("/auth", location.pathname + location.search)} replace />;
   }
 
