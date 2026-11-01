@@ -3,7 +3,7 @@
 - [x] Theme colors (11 app colors), Inter font and radii applied on the Login screen.
 - [x] Login screen rebuilt to match the real 393px page (header, card, Sign In/Sign Up switch, labels, inputs, pink button, forgot link); side-by-side compared; test1 login in Web Preview reaches Home with the 4-tab bar.
 - [ ] Login gaps: Sign Up switch, password eye toggle, language button, menu and forgot link not wired; error message still placeholder.
-- [ ] Shared header saved as custom block "AppHeader" (save started, not yet confirmed); bell badge + avatar for signed-in header not built. Bottom tabs exist (Home, Cared Ones, Care Teams, Inbox); "More" tab missing.
+- [ ] Shared header saved as custom block "AppHeader" (confirmed in Your Blocks); bell badge + avatar for signed-in header not built. Bottom tabs exist (Home, Cared Ones, Care Teams, Inbox); "More" tab missing.
 - [ ] Screens pixel-matched to the real app at 393px, each wired to WordPress through Classic REST endpoints: Dashboard, Cared Ones list, Cared-one tools (check-ins, medicine, tasks, location, family voice, contacts, cards), Care Teams/group page/join, Inbox (notifications+messages), Settings/Profile, More menu, Calendar, GPS/Find, Community, Resources, Search caregivers/facilities, Bookings, Cart/checkout, Help.
 - [ ] Device permissions: location and push notification permission requests.
 - [ ] Each screen verified in Web Preview with test1 and compared to the reference screenshot.
