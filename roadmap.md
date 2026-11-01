@@ -1,11 +1,11 @@
 ## Current request: Draftbit no-code backup (no Draftbit AI)
-- [x] Sign in to Draftbit (Next + Classic) with the user's Google account; SMS 2-step done.
-- [x] Next: created blank mobile app 210daeab5e without a prompt; added Custom REST service "WordPress Afresh" (base /afresh/wp-json); started `login` endpoint (unsaved).
-- [x] Finding: Draftbit Next official docs say it has no visual action/variable editor; logic (login, state, API calls, auth header) needs its AI or the paid Code Editor. Next = visual layout only on this free plan.
-- [x] Classic: deleted GetFit Copy (user approved).
-- [ ] Classic: still 2/2 free apps, cannot create — blocked on user choosing a second app to delete or reuse.
-- [ ] Classic build: WordPress JWT login, home/dashboard, groups, inbox, simple push, location — not started.
-- [ ] Write a workspace skill describing how to drive Draftbit — after the builder workflow is proven.
+- [x] Next: blank app 210daeab5e + WordPress REST service; finding: Next has no visual logic editor, so only layout is possible without AI/paid code.
+- [x] Classic: deleted GetFit Copy and CourseCast Copy 1 (user approved); created "CareConnect Backup" (inoaYMj5).
+- [x] Classic: device vars AUTH_TOKEN/USER_ID/USER_NAME; WordPress service with Authorization header; 8 endpoints (login, me, group/cared-one/notification relations + rows) all tested 200.
+- [x] Classic screens Login, Home, Groups, CaredOnes, Inbox built visually; web preview with test1: login → "你好，test1", groups list, cared one "challenged", notifications, logout all shown.
+- [ ] Gaps: pending-invite filter and app-scope notification filter need custom code; Login error text still placeholder; CaredOnes button went back to Login twice in one preview session (worked from a fresh Home preview).
+- [ ] Next: layout-only copy of the Classic screens not started.
+- [x] Skill draft written for driving Draftbit Classic (needs user activation).
 
 ## Current request: Professional zone drawing
 - [x] Add anchor/curve handles, add/delete points, straight/smooth corners, undo/redo and map-fit controls with plain bilingual labels; freehand tool implemented.
