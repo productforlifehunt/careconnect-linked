@@ -21,9 +21,11 @@
 - [ ] Find gaps: web preview frame blocks location so the result was not seen (needs a phone); no map, no people/groups tabs, no live sharing to WordPress yet.
 - [x] Push: Home On Mount runs native Get Expo Push Token (permission prompt) → PUSH_TOKEN device variable. Verified the prompt runs (web preview refuses with its alert).
 - [ ] Push gap: token not saved to WordPress CCT186 — its provider radio has no Expo option; needs the user's decision before any JetEngine GUI change.
-- [ ] Remaining screens not built: Care Teams rebuild, all cared-one tools (medicine, check-ins, tips, tasks, plan, notes, contacts, documents, cards, family voices), Calendar, Bookings, AI assistant, Resources/CareD/SafeD/CopeD/AwareD/AccompanieD, search screens, Community, Settings/Profile, cart/checkout, help.
+- [x] Care Teams top (native): title/subtitle, Join (key) + New Group (plus) buttons, MY JOINED CARE TEAMS label, live chips (REL223 links → CCT199 a55 name), only accepted rows (a58=b55 via JsonStringify+Includes), wrap layout, tap selects (SEL_GROUP screen variable), on-focus default = first link. test1 preview shows the same 15 chips in the same order as the real app; selected chip purple.
+- [ ] Care Teams gaps: default selection uses the first relation row even if it is a pending invite (no native "find first"); Join/New Group not wired; group nav pills (Home/Calendar/Tasks/Location/…), Pending Tasks/Members/Cared Ones stat cards, post composer (Discussion/Everyone/Post) and posts list not built; leftover copied tool grid (cGrid) still on the screen.
+- [ ] Remaining screens not built: all cared-one tools (medicine, check-ins, tips, tasks, plan, notes, contacts, documents, cards, family voices), Calendar, Bookings, AI assistant, Resources/CareD/SafeD/CopeD/AwareD/AccompanieD, search screens, Community, Settings/Profile, cart/checkout, help.
 - [ ] Native build / real device install not attempted.
-- [ ] BLOCKER (2026-11-01 16:10 UTC): sandbox restarted and lost the Draftbit sign-in. Google sign-in now shows a picture/audio check and then needs the SMS code on the user's phone; the check is not bypassed. Waiting for the user to be available for the SMS code.
+- [x] Draftbit sign-in restored with the user's SMS code (2026-11-02).
 
 ## Current request: Draftbit no-code backup (no Draftbit AI)
 - [x] Next: blank app 210daeab5e + WordPress REST service; finding: Next has no visual logic editor, so only layout is possible without AI/paid code.
