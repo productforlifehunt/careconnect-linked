@@ -1,13 +1,19 @@
-## Current request: Draftbit Classic full no-code replica (manual, no AI)
+## Current request: Draftbit Classic full no-code replica (manual, no AI) — user upgraded to paid plan
 - [x] Classic AI check: only the Draftbot help chat and an app-runtime OpenAI key slot; no AI that builds screens. Next AI not used (user: Classic, manual).
-- [x] Theme colors (11 app colors), Inter font and radii applied on the Login screen.
-- [x] Login screen rebuilt to match the real 393px page (header, card, Sign In/Sign Up switch, labels, inputs, pink button, forgot link); side-by-side compared; test1 login in Web Preview reaches Home with the 4-tab bar.
-- [ ] Login gaps: Sign Up switch, password eye toggle, language button, menu and forgot link not wired; error message still placeholder.
-- [ ] Shared header saved as custom block "AppHeader" (confirmed in Your Blocks); bell badge + avatar for signed-in header not built. Bottom tabs exist (Home, Cared Ones, Care Teams, Inbox); "More" tab missing.
-- [ ] Screens pixel-matched to the real app at 393px, each wired to WordPress through Classic REST endpoints: Dashboard, Cared Ones list, Cared-one tools (check-ins, medicine, tasks, location, family voice, contacts, cards), Care Teams/group page/join, Inbox (notifications+messages), Settings/Profile, More menu, Calendar, GPS/Find, Community, Resources, Search caregivers/facilities, Bookings, Cart/checkout, Help.
-- [ ] Device permissions: location and push notification permission requests.
-- [ ] Each screen verified in Web Preview with test1 and compared to the reference screenshot.
-- [ ] Blocker found: free Classic plan refuses source code access ("Upgrade to access source code"); native builds/push likely also need a paid plan — not yet checked.
+- [x] Theme colors (11 app colors + Teal, Warning, PrimarySoft, PrimaryLine), Inter font and radii.
+- [x] Login screen rebuilt to match the real 393px page; test1 login in Web Preview reaches Home with the tab bar.
+- [x] Login workflow: token saved only when WordPress returns a jwt; stale Get-Me steps switched off (Home now loads the user).
+- [ ] Login gaps: Sign Up switch, password eye toggle, language button, menu and forgot link not wired; error message still placeholder. Login still uses its own header copy, not the AppHeader block.
+- [x] AppHeader block: bell + pink badge + purple avatar appear only when signed in; menu only when signed out (verified in preview).
+- [ ] Header badge number "6" and avatar letter "A" are still fixed text, not live data.
+- [x] Paid plan confirmed: source view now opens (read-only use only, no code edits).
+- [x] Home screen rebuilt natively and compared with the real 393px dashboard: welcome row + settings button, Cared Ones card (live list REL219 + live WordPress avatar, 4 tiles), Today's Events, Smart Briefing row and card (live date), 4 summary cards, Upcoming Bookings, Care Tasks, Community (live CCT149 ChallengeD discussions, limit 3), AI + help floating buttons.
+- [x] Home on-open workflow: Get Me → USER_ID/USER_NAME; Care Teams count = length of REL223 links (15 for test1, matches real app).
+- [ ] Home gaps: Unread Inbox shows 29 (all REL188 links) vs real 6 (app scope + unread rule); Upcoming Bookings and Pending Tasks show "—" (not wired to WooCommerce / task CCT); tile values (None / 0 scheduled / No data / 0 pending) are fixed text; welcome uses WP name (test1) instead of CCT151 app name fallback "friend"; Smart Briefing body is the loading-skeleton look only (no AI); card shadows missing; settings / View All / floating buttons not wired.
+- [ ] Bottom tabs: "More" tab missing.
+- [ ] Remaining screens pixel-matched and wired: Cared Ones list + cared-one tools (check-ins, medicine, tasks, location, family voice, contacts, cards), Care Teams/group page/join, Inbox (notifications+messages), Settings/Profile, More menu, Calendar, GPS/Find, Community, Resources, Search, Bookings, Cart/checkout, Help.
+- [ ] Device permissions: location and push notification (Draftbit has native "Get Location" and "Get Expo Push Token" actions — not added yet).
+- [ ] Native build / real device install not attempted.
 
 ## Current request: Draftbit no-code backup (no Draftbit AI)
 - [x] Next: blank app 210daeab5e + WordPress REST service; finding: Next has no visual logic editor, so only layout is possible without AI/paid code.
