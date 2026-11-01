@@ -1,3 +1,11 @@
+## Current request: Draftbit Classic full no-code replica (manual, no AI)
+- [x] Classic AI check: only the Draftbot help chat and an app-runtime OpenAI key slot; no AI that builds screens. Next AI not used (user: Classic, manual).
+- [ ] Theme colors, fonts and radius matched to the ChallengeD app.
+- [ ] Shared header (logo, language, bell badge, avatar) and bottom tabs (Home, Cared Ones, Care Teams, Inbox, More) with matching icons.
+- [ ] Screens pixel-matched to the real app at 393px, each wired to WordPress through Classic REST endpoints: Login, Dashboard, Cared Ones list, Cared-one tools (check-ins, medicine, tasks, location, family voice, contacts, cards), Care Teams/group page/join, Inbox (notifications+messages), Settings/Profile, More menu, Calendar, GPS/Find, Community, Resources, Search caregivers/facilities, Bookings, Cart/checkout, Help.
+- [ ] Device permissions: location and push notification permission requests.
+- [ ] Each screen verified in Web Preview with test1 and compared to the reference screenshot.
+
 ## Current request: Draftbit no-code backup (no Draftbit AI)
 - [x] Next: blank app 210daeab5e + WordPress REST service; finding: Next has no visual logic editor, so only layout is possible without AI/paid code.
 - [x] Classic: deleted GetFit Copy and CourseCast Copy 1 (user approved); created "CareConnect Backup" (inoaYMj5).
