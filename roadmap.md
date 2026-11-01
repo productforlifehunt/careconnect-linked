@@ -27,6 +27,8 @@
 - [ ] Remaining screens not built: all cared-one tools (medicine, check-ins, tips, tasks, plan, notes, contacts, documents, cards, family voices), Calendar, Bookings, AI assistant, Resources/CareD/SafeD/CopeD/AwareD/AccompanieD, search screens, Community, Settings/Profile, cart/checkout, help.
 - [ ] Native build / real device install not attempted.
 - [x] Draftbit sign-in restored with the user's SMS code (2026-11-02).
+- [ ] BLOCKER (2026-11-01 21:36 UTC): sandbox restarted again and lost the Draftbit sign-in. Google password accepted; Google sent a new 6-digit SMS code to the phone ending 95 ("Don't ask again on this device" ticked). Waiting for that code. After sign-in, keep the browser session in private Files metadata so a restart does not need a new code.
+- [x] Reference captures of the real app (test1, 393px) saved privately: dashboard, care-circle (group 22), cared-ones, inbox, settings, calendar, bookings, community, resources, 11 cared-one tools (5 still showed the loading state: tips, emergency, location, documents, info-card).
 
 ## Current request: Draftbit no-code backup (no Draftbit AI)
 - [x] Next: blank app 210daeab5e + WordPress REST service; finding: Next has no visual logic editor, so only layout is possible without AI/paid code.
