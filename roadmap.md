@@ -23,6 +23,7 @@
 - [ ] Push gap: token not saved to WordPress CCT186 — its provider radio has no Expo option; needs the user's decision before any JetEngine GUI change.
 - [ ] Remaining screens not built: Care Teams rebuild, all cared-one tools (medicine, check-ins, tips, tasks, plan, notes, contacts, documents, cards, family voices), Calendar, Bookings, AI assistant, Resources/CareD/SafeD/CopeD/AwareD/AccompanieD, search screens, Community, Settings/Profile, cart/checkout, help.
 - [ ] Native build / real device install not attempted.
+- [ ] BLOCKER (2026-11-01 16:10 UTC): sandbox restarted and lost the Draftbit sign-in. Google sign-in now shows a picture/audio check and then needs the SMS code on the user's phone; the check is not bypassed. Waiting for the user to be available for the SMS code.
 
 ## Current request: Draftbit no-code backup (no Draftbit AI)
 - [x] Next: blank app 210daeab5e + WordPress REST service; finding: Next has no visual logic editor, so only layout is possible without AI/paid code.
