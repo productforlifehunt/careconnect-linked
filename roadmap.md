@@ -10,9 +10,18 @@
 - [x] Home screen rebuilt natively and compared with the real 393px dashboard: welcome row + settings button, Cared Ones card (live list REL219 + live WordPress avatar, 4 tiles), Today's Events, Smart Briefing row and card (live date), 4 summary cards, Upcoming Bookings, Care Tasks, Community (live CCT149 ChallengeD discussions, limit 3), AI + help floating buttons.
 - [x] Home on-open workflow: Get Me → USER_ID/USER_NAME; Care Teams count = length of REL223 links (15 for test1, matches real app).
 - [ ] Home gaps: Unread Inbox shows 29 (all REL188 links) vs real 6 (app scope + unread rule); Upcoming Bookings and Pending Tasks show "—" (not wired to WooCommerce / task CCT); tile values (None / 0 scheduled / No data / 0 pending) are fixed text; welcome uses WP name (test1) instead of CCT151 app name fallback "friend"; Smart Briefing body is the loading-skeleton look only (no AI); card shadows missing; settings / View All / floating buttons not wired.
-- [ ] Bottom tabs: "More" tab missing.
-- [ ] Remaining screens pixel-matched and wired: Cared Ones list + cared-one tools (check-ins, medicine, tasks, location, family voice, contacts, cards), Care Teams/group page/join, Inbox (notifications+messages), Settings/Profile, More menu, Calendar, GPS/Find, Community, Resources, Search, Bookings, Cart/checkout, Help.
-- [ ] Device permissions: location and push notification (Draftbit has native "Get Location" and "Get Expo Push Token" actions — not added yet).
+- [x] Bottom tabs: 5 tabs Home / Cared Ones / Care Teams / Inbox / More in the real order (verified in preview).
+- [x] Inbox rebuilt natively: title, All/Notifications/Messages tabs and All/Unread/Read filter (screen variables + native EqualTo/NotEqualTo/Includes rules, white selected pill), live notification cards (REL188 → CCT185: pink "Notification" label, title, unread dot when a59≠b55, text, "Oct 31 9:42 AM" date, only ChallengeD/empty a60), live message rows (REL137 parents → CCT121, ChallengeD only, no AI chats). Verified with test1.
+- [ ] Inbox gaps (no native loop/aggregate in Classic): tab/filter counts and "Mark all as read" removed; messages not mixed by date with notifications; read cards not faded; card tap does not open/mark read yet.
+- [x] Cared Ones rebuilt natively: title, pink Add button, cared-one pill with Edit (one per REL219 link), 11 tool tiles with icons + Care Tasks badge; matches real 393px screenshot.
+- [ ] Cared Ones gaps: pill shows fixed "Cared One" (real app reads CCT151 app name per person); Add / Edit / 10 of 11 tiles not wired (only Location & Safe Zones → Find).
+- [x] More screen rebuilt natively: Daily Care (4), Resources & Help (6), Find Care / Find Work switch (screen variable) with 4 / 3 buttons, Community (1), Customize link; matches real panel.
+- [ ] More gaps: only GPS is wired (→ Find); Customize and other buttons have no destination screens yet.
+- [x] Find screen (native): Back, "Share my location" uses native Get Location → lat/lng screen variables → coordinates text.
+- [ ] Find gaps: web preview frame blocks location so the result was not seen (needs a phone); no map, no people/groups tabs, no live sharing to WordPress yet.
+- [x] Push: Home On Mount runs native Get Expo Push Token (permission prompt) → PUSH_TOKEN device variable. Verified the prompt runs (web preview refuses with its alert).
+- [ ] Push gap: token not saved to WordPress CCT186 — its provider radio has no Expo option; needs the user's decision before any JetEngine GUI change.
+- [ ] Remaining screens not built: Care Teams rebuild, all cared-one tools (medicine, check-ins, tips, tasks, plan, notes, contacts, documents, cards, family voices), Calendar, Bookings, AI assistant, Resources/CareD/SafeD/CopeD/AwareD/AccompanieD, search screens, Community, Settings/Profile, cart/checkout, help.
 - [ ] Native build / real device install not attempted.
 
 ## Current request: Draftbit no-code backup (no Draftbit AI)
