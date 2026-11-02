@@ -435,3 +435,5 @@
 - MISTAKE to fix: Home's old `dFabHelpNode` was deleted -> Home currently has NO help button.
 - Not yet proven: real tap navigation (editor canvas selects instead of firing actions; need preview mode).
 - Remaining screens: 22 others need robot paste (+help paste) and old-duplicate cleanup.
+
+- [x] Draftbit：机器人+问号按钮已铺到除 Login 外全部 23 页（GUI 复制粘贴，点击动作保留；手机实机跳转未测）
