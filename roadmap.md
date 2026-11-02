@@ -425,4 +425,5 @@
 - [x] 2026-11-02: Draftbit Voices 页：标题改 Family Voices，名单读 REL323、记录读 CCT322（WP 直读对未授权拒绝，符合隐私）。新增 /api/public/family-voices（list/speak，WP 登录核实+访问权检查），test1 实测：未登录 401、本人 cared one 返回空列表、他人被拒。
 - [ ] Draftbit Voices 页改走 /api/public/family-voices（需新 REST 服务 + 带登录凭证），卡片字段改 a55，加试听；需发布后线上地址才可用。
 - [x] 2026-11-02: Draftbit Voices 页机器人圆按钮：外套定位 View(absolute r16 b72)+Pressable，On Press → Navigate Assistant；位置与原来一致（截图核对）。
-- [ ] 其余各页机器人按钮同样处理；问号按钮做帮助（原版为"使用帮助"弹窗）；尚未预览实测点击。
+- [x] Voices 页：机器人→Assistant、问号→Resources，网页预览实测跳转成功。
+- [ ] 其余页面的两个圆按钮照样改；问号原版是"使用帮助"弹窗，备用版暂用原版 /help 的跳转目标 Resources。
