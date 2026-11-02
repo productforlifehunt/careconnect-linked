@@ -1,4 +1,6 @@
 ## Current request: Draftbit Classic full no-code replica (manual, no AI) — user upgraded to paid plan
+- [ ] 2026-11-02 continuation: Settings created via Classic GUI (17 screens now), four native Tab View Items and six labelled inputs, email read-only, Save disabled because persistence is not connected. Settings moved to root navigator; final GUI read shows original five tabs. Native Tab View tap did not hide Personal content in preview; needs correction. Home settings icon is a View, not a pressable, so no navigation added.
+- [~] 2026-11-02 continuation: Meds/Checks Fetch 2 + Fetch 3 configured native Poll Interval=5000, Stale Time=0, Refetch On Mount/Reconnect=true. Window-focus binding failed; save/delete refresh not yet re-tested against real data. Refetch Data trial outside Fetch removed; existing confirmation untouched.
 - [ ] 2026-11-02 user: build ALL pages first, do not stop before 100%; the cross-account read finding is deferred (user thinks it is front-end logic) — do not fix now.
 - [x] Classic AI check: only the Draftbot help chat and an app-runtime OpenAI key slot; no AI that builds screens. Next AI not used (user: Classic, manual).
 - [x] Theme colors (11 app colors + Teal, Warning, PrimarySoft, PrimaryLine), Inter font and radii.
