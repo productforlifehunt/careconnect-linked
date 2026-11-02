@@ -427,3 +427,11 @@
 - [x] 2026-11-02: Draftbit Voices 页机器人圆按钮：外套定位 View(absolute r16 b72)+Pressable，On Press → Navigate Assistant；位置与原来一致（截图核对）。
 - [x] Voices 页：机器人→Assistant、问号→Resources，网页预览实测跳转成功。
 - [ ] 其余页面的两个圆按钮照样改；问号原版是"使用帮助"弹窗，备用版暂用原版 /help 的跳转目标 Resources。
+
+## Draftbit FAB pass (this turn)
+- Discovered GUI copy/paste: hover tree row -> More (346,y) -> `Paste "View"`; mark via copy icon `View::UnmarkedForCopy`; unmark via banner button (331,1784).
+- Pasted robot-button group into Home; pasted Pressable keeps `On Press` action (count 1) -> copy carries actions.
+- GAP: copied `View` contains only the robot button; `dFabHelp` is a sibling, so help needs its own mark+paste pass.
+- MISTAKE to fix: Home's old `dFabHelpNode` was deleted -> Home currently has NO help button.
+- Not yet proven: real tap navigation (editor canvas selects instead of firing actions; need preview mode).
+- Remaining screens: 22 others need robot paste (+help paste) and old-duplicate cleanup.
