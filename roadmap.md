@@ -437,3 +437,5 @@
 - Remaining screens: 22 others need robot paste (+help paste) and old-duplicate cleanup.
 
 - [x] Draftbit：机器人+问号按钮已铺到除 Login 外全部 23 页（GUI 复制粘贴，点击动作保留；手机实机跳转未测）
+- [x] 2026-11-03: 发现 12 页原有圆按钮没有点击动作（只是图标）；已删旧换上群组页能用的按钮。预览实点：22 页机器人→AI 助手、问号→学习资源均通过；Meds 页预览直接打开会落到登录页，未能实点。
+- [ ] Meds 页圆按钮实点（需从被护理者页进入）；问号原版是"使用帮助"弹窗，备用版仍是跳学习资源（近似）。
