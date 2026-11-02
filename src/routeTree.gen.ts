@@ -78,6 +78,7 @@ import { Route as JoinCodeRouteImport } from './routes/join/$code'
 import { Route as SafedIndexRouteImport } from './routes/safed/index'
 import { Route as SafedIdRouteImport } from './routes/safed/$id'
 import { Route as ShareNoteRouteImport } from './routes/share/note'
+import { Route as ApiPublicFamilyVoicesRouteImport } from './routes/api/public/family-voices'
 import { Route as CaredOnesPersonIdIndexRouteImport } from './routes/cared-ones/$personId/index'
 import { Route as CaredOnesPersonIdCardRouteImport } from './routes/cared-ones/$personId/$card'
 import { Route as FacilitiesIdEditRouteImport } from './routes/facilities/$id/edit'
@@ -428,6 +429,11 @@ const ShareNoteRoute = ShareNoteRouteImport.update({
   path: '/share/note',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFamilyVoicesRoute = ApiPublicFamilyVoicesRouteImport.update({
+  id: '/api/public/family-voices',
+  path: '/api/public/family-voices',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaredOnesPersonIdIndexRoute = CaredOnesPersonIdIndexRouteImport.update({
   id: '/cared-ones/$personId/',
   path: '/cared-ones/$personId/',
@@ -519,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/community/': typeof CommunityIndexRoute
   '/coped/': typeof CopedIndexRoute
   '/safed/': typeof SafedIndexRoute
+  '/api/public/family-voices': typeof ApiPublicFamilyVoicesRoute
   '/cared-ones/$personId/$card': typeof CaredOnesPersonIdCardRoute
   '/facilities/$id/edit': typeof FacilitiesIdEditRoute
   '/share/card/$token': typeof ShareCardTokenRoute
@@ -594,6 +601,7 @@ export interface FileRoutesByTo {
   '/community': typeof CommunityIndexRoute
   '/coped': typeof CopedIndexRoute
   '/safed': typeof SafedIndexRoute
+  '/api/public/family-voices': typeof ApiPublicFamilyVoicesRoute
   '/cared-ones/$personId/$card': typeof CaredOnesPersonIdCardRoute
   '/facilities/$id/edit': typeof FacilitiesIdEditRoute
   '/share/card/$token': typeof ShareCardTokenRoute
@@ -670,6 +678,7 @@ export interface FileRoutesById {
   '/community/': typeof CommunityIndexRoute
   '/coped/': typeof CopedIndexRoute
   '/safed/': typeof SafedIndexRoute
+  '/api/public/family-voices': typeof ApiPublicFamilyVoicesRoute
   '/cared-ones/$personId/$card': typeof CaredOnesPersonIdCardRoute
   '/facilities/$id/edit': typeof FacilitiesIdEditRoute
   '/share/card/$token': typeof ShareCardTokenRoute
@@ -747,6 +756,7 @@ export interface FileRouteTypes {
     | '/community/'
     | '/coped/'
     | '/safed/'
+    | '/api/public/family-voices'
     | '/cared-ones/$personId/$card'
     | '/facilities/$id/edit'
     | '/share/card/$token'
@@ -822,6 +832,7 @@ export interface FileRouteTypes {
     | '/community'
     | '/coped'
     | '/safed'
+    | '/api/public/family-voices'
     | '/cared-ones/$personId/$card'
     | '/facilities/$id/edit'
     | '/share/card/$token'
@@ -897,6 +908,7 @@ export interface FileRouteTypes {
     | '/community/'
     | '/coped/'
     | '/safed/'
+    | '/api/public/family-voices'
     | '/cared-ones/$personId/$card'
     | '/facilities/$id/edit'
     | '/share/card/$token'
@@ -973,6 +985,7 @@ export interface RootRouteChildren {
   CommunityIndexRoute: typeof CommunityIndexRoute
   CopedIndexRoute: typeof CopedIndexRoute
   SafedIndexRoute: typeof SafedIndexRoute
+  ApiPublicFamilyVoicesRoute: typeof ApiPublicFamilyVoicesRoute
   CaredOnesPersonIdCardRoute: typeof CaredOnesPersonIdCardRoute
   FacilitiesIdEditRoute: typeof FacilitiesIdEditRoute
   ShareCardTokenRoute: typeof ShareCardTokenRoute
@@ -1464,6 +1477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareNoteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/family-voices': {
+      id: '/api/public/family-voices'
+      path: '/api/public/family-voices'
+      fullPath: '/api/public/family-voices'
+      preLoaderRoute: typeof ApiPublicFamilyVoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cared-ones/$personId/': {
       id: '/cared-ones/$personId/'
       path: '/cared-ones/$personId'
@@ -1565,6 +1585,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommunityIndexRoute: CommunityIndexRoute,
   CopedIndexRoute: CopedIndexRoute,
   SafedIndexRoute: SafedIndexRoute,
+  ApiPublicFamilyVoicesRoute: ApiPublicFamilyVoicesRoute,
   CaredOnesPersonIdCardRoute: CaredOnesPersonIdCardRoute,
   FacilitiesIdEditRoute: FacilitiesIdEditRoute,
   ShareCardTokenRoute: ShareCardTokenRoute,
