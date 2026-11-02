@@ -424,3 +424,5 @@
 - [x] 2026-11-02: Draftbit 联系人弹窗顺序改为 电话输入→关系选择→保存（保存按钮复制后删旧，4个动作及关系字段绑定核对仍在）。
 - [x] 2026-11-02: Draftbit Voices 页：标题改 Family Voices，名单读 REL323、记录读 CCT322（WP 直读对未授权拒绝，符合隐私）。新增 /api/public/family-voices（list/speak，WP 登录核实+访问权检查），test1 实测：未登录 401、本人 cared one 返回空列表、他人被拒。
 - [ ] Draftbit Voices 页改走 /api/public/family-voices（需新 REST 服务 + 带登录凭证），卡片字段改 a55，加试听；需发布后线上地址才可用。
+- [x] 2026-11-02: Draftbit Voices 页机器人圆按钮：外套定位 View(absolute r16 b72)+Pressable，On Press → Navigate Assistant；位置与原来一致（截图核对）。
+- [ ] 其余各页机器人按钮同样处理；问号按钮做帮助（原版为"使用帮助"弹窗）；尚未预览实测点击。
