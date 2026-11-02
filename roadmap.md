@@ -422,3 +422,5 @@
 - [x] 2026-11-02: 被护理者主页名字按钮退回后实测显示 "challenged"；转圈是预览卡住，刷新编辑器即恢复（名单接口正常返回）。
 - [x] 2026-11-02: 核实原版名字规则=本App资料(CCT151 a01=challenged)的a55，空则用账号名；该被护理者a55为空，原版也显示 "challenged"，与备用版一致。a55非空时的优先读取尚未在 Draftbit 实现。
 - [x] 2026-11-02: Draftbit 联系人弹窗顺序改为 电话输入→关系选择→保存（保存按钮复制后删旧，4个动作及关系字段绑定核对仍在）。
+- [x] 2026-11-02: Draftbit Voices 页：标题改 Family Voices，名单读 REL323、记录读 CCT322（WP 直读对未授权拒绝，符合隐私）。新增 /api/public/family-voices（list/speak，WP 登录核实+访问权检查），test1 实测：未登录 401、本人 cared one 返回空列表、他人被拒。
+- [ ] Draftbit Voices 页改走 /api/public/family-voices（需新 REST 服务 + 带登录凭证），卡片字段改 a55，加试听；需发布后线上地址才可用。
