@@ -418,3 +418,5 @@
 - [ ] Test dose log #235 (CCT161) left from live test; no delete control in app.
 
 - [x] Draftbit 备用版：被护理者主页 + 10 个工具页（Contacts/Meds/Checks/Cards/Docs/Tips/Notes/Plan/Tasks）名字按钮读真名（Get Person .name）；Find 页无该按钮；联系人页登录实测显示真名
+
+- [x] 2026-11-02: 被护理者主页名字按钮退回后实测显示 "challenged"；转圈是预览卡住，刷新编辑器即恢复（名单接口正常返回）。
