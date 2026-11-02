@@ -1,4 +1,5 @@
 ## Current request: Draftbit Classic full no-code replica (manual, no AI) — user upgraded to paid plan
+- [ ] 2026-11-02 user: build ALL pages first, do not stop before 100%; the cross-account read finding is deferred (user thinks it is front-end logic) — do not fix now.
 - [x] Classic AI check: only the Draftbot help chat and an app-runtime OpenAI key slot; no AI that builds screens. Next AI not used (user: Classic, manual).
 - [x] Theme colors (11 app colors + Teal, Warning, PrimarySoft, PrimaryLine), Inter font and radii.
 - [x] Login screen rebuilt to match the real 393px page; test1 login in Web Preview reaches Home with the tab bar.
