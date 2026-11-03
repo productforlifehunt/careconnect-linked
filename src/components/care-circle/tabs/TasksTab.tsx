@@ -232,7 +232,7 @@ export function TasksTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">{Z(`任务（${pendingTasks.length} 项待办）`, `Tasks (${pendingTasks.length} pending)`)}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{Z(`任务（${tasksLoading ? "—" : pendingTasks.length} 项待办）`, `Tasks (${tasksLoading ? "—" : pendingTasks.length} pending)`)}</h3>
         <Dialog open={addOpen} onOpenChange={(open) => {
           setAddOpen(open);
           if (!open) { setEditingTaskId(null); setForm({ ...EMPTY_FORM }); }

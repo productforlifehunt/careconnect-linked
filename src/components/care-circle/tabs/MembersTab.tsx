@@ -10,6 +10,8 @@ import { useTranslation } from "react-i18next";
 
 interface MembersTabProps {
   members: any[];
+  /** While the roster is still loading the count is unknown, not zero. */
+  membersLoading?: boolean;
   activeGroupId: string | null;
   userId: string | undefined;
   isAdmin: boolean;
@@ -20,7 +22,7 @@ interface MembersTabProps {
 }
 
 export function MembersTab({
-  members, activeGroupId, userId, isAdmin, isOwner, currentMember, updateRole, removeMember,
+  members, membersLoading, activeGroupId, userId, isAdmin, isOwner, currentMember, updateRole, removeMember,
 }: MembersTabProps) {
   const { toast } = useToast();
   const { i18n } = useTranslation();
@@ -30,7 +32,7 @@ export function MembersTab({
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-foreground mb-3">{Z(`成员（${(members || []).length}）`, `Members (${(members || []).length})`)}</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3">{Z(`成员（${membersLoading ? "—" : (members || []).length}）`, `Members (${membersLoading ? "—" : (members || []).length})`)}</h3>
       <div className="space-y-2">
         {(members || []).map((m: any) => (
           <Card key={m.id} className="border-transparent card-elevated">
