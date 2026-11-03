@@ -44,7 +44,10 @@ function displayForms(raw: string): string[] {
   const forms: string[] = [];
   const hm = (h: number, m: number) => {
     const mm = String(m).padStart(2, "0");
-    forms.push(`${h}:${mm}`, `${String(h).padStart(2, "0")}:${mm}`, `${h % 12 || 12}:${mm} ${h >= 12 ? "pm" : "am"}`);
+    const h12 = h % 12 || 12; const ap = h >= 12 ? "pm" : "am"; const zh = h >= 12 ? "下午" : "上午";
+    forms.push(`${h}:${mm}`, `${String(h).padStart(2, "0")}:${mm}`, `${h12}:${mm} ${ap}`, `${zh}${h12}:${mm}`);
+    // Hour-axis labels ("8 AM", "上午8时") come from the same stored time when it is on the hour.
+    if (m === 0) forms.push(`${h12} ${ap}`, `${h12}${ap}`, `${zh}${h12}时`, `${h}时`);
   };
   const t = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (t) hm(+t[1]!, +t[2]!);
