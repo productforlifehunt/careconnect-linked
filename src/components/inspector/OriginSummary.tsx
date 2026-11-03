@@ -31,6 +31,28 @@ function filterText(r: RecordedRequest, def: Def | undefined): string {
   }).join("，");
 }
 
+/** Follow how each name in the shown expression is defined in the traced code, step by step. */
+function derivation(expr: string, logic: LogicStep[], defs: Def[]): string[] {
+  const out: string[] = []; const done = new Set<string>();
+  const queue = [...new Set(expr.match(/[A-Za-z_$][\w$]*/g) || [])];
+  while (queue.length && out.length < 12) {
+    const name = queue.shift()!; if (done.has(name) || /^(isCN|isZh|length|true|false|null|undefined|String|Number|Math)$/.test(name)) continue; done.add(name);
+    const re = new RegExp(`(?:const|let|var)\\s+(?:\\{[^}]*\\b${name}\\b[^}]*\\}|\\[[^\\]]*\\b${name}\\b[^\\]]*\\]|${name})\\s*(?::[^=]+)?=\\s*(.*)$|^\\s*${name}\\s*:\\s*(.+)$`);
+    for (const st of logic) {
+      const j = st.code.findIndex((l) => re.test(l)); if (j < 0) continue;
+      // Take the whole statement (until brackets balance) so filters/conditions are included.
+      let depth = 0; const body: string[] = [];
+      for (let k = j; k < st.code.length && body.length < 14; k++) { const l = st.code[k]!; body.push(l.trim()); for (const c of l) { if ("({[".includes(c)) depth++; else if (")}]".includes(c)) depth--; } if (depth <= 0 && /[;,)}]\s*$|[^=]$/.test(l) && !/[=(,{[]\s*$/.test(l)) break; }
+      const text = body.join(" ").replace(/\s+/g, " ");
+      out.push(`${name}：${annotate(text, defs).slice(0, 400)}  （${st.file}:${st.line + j}）`);
+      const rhs = text.replace(/^.*?=/, "");
+      for (const id of rhs.match(/[A-Za-z_$][\w$]*/g) || []) if (!done.has(id) && id.length > 2) queue.push(id);
+      break;
+    }
+  }
+  return out;
+}
+
 export function OriginSummary({ text, matches, reads, pageRequests, path, logic, expr, account }: {
   text: string; matches: FieldMatch[]; reads: RecordedRequest[]; pageRequests: RecordedRequest[]; path: string;
   logic: LogicStep[] | null; expr: string | null; account: string[];
@@ -61,12 +83,13 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
     return `${i + 1}. ${t.action} ${t.label}${f ? `，条件 ${f}` : ""}，返回 ${rows} 条${times}`;
   });
 
+  const steps = !matches.length && expr && logic ? derivation(expr, logic, defs) : [];
   // Conditions the decision logic applies (real code lines, field codes named from the dictionary).
   const conds: string[] = []; const falls: string[] = [];
   for (const st of logic || []) st.code.forEach((l, j) => {
     const s = l.trim(); if (!s || s.startsWith("//") || s.startsWith("*")) return;
     const a = `${annotate(s, defs).slice(0, 160)}  （${st.file}:${st.line + j}）`;
-    if (st.fallbacks.includes(j)) { if (!falls.includes(a)) falls.push(a); } else if (COND.test(s) && !/className|class=/.test(s) && !conds.includes(a)) conds.push(a);
+    if (st.fallbacks.includes(j)) { if (!falls.includes(a)) falls.push(a); } else if (COND.test(s) && !/className|class=|\b(isCN|isZh)\s*\?|label\s*:/.test(s) && !conds.includes(a)) conds.push(a);
   });
 
   if (!lines.length && !readLines.length && !conds.length) {
@@ -77,6 +100,7 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
       {lines.map((l, i) => <p key={i}>{l}</p>)}
       {readLines.length > 0 && <div><div className="font-medium">数据从哪读（当前登录用户起，按顺序）：</div>{readLines.map((l) => <div key={l}>{l}</div>)}</div>}
       {!readLines.length && (matches.length || expr) ? <div className="text-muted-foreground">本页没有记录到这个元素代码的读取（可能数据在别页已读好或还没加载）。</div> : null}
+      {steps.length > 0 && <div><div className="font-medium">计算过程（逐个变量往上追，现场代码原文）：</div>{steps.map((c, i) => <div key={c} className="break-all font-mono text-[10px]">{i + 1}. {c}</div>)}</div>}
       {conds.length > 0 && <div><div className="font-medium">判定/筛选条件（现场代码原文，列名按数据字典标注）：</div>{conds.slice(0, 14).map((c) => <div key={c} className="break-all font-mono text-[10px]">• {c}</div>)}</div>}
       {falls.length > 0 && <div><div className="font-medium text-destructive">兜底/默认值（读不到或为空时改用的值）：</div>{falls.slice(0, 8).map((c) => <div key={c} className="break-all font-mono text-[10px]">• {c}</div>)}</div>}
     </div>
