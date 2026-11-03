@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
 import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@/features/inspector/decode";
 import { inspectElement, pageSourceFiles, type ElementInfo } from "@/features/inspector/inspect-dom";
+import { traceLogic, type LogicStep } from "@/features/inspector/logic-trace";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 
 type Tab = "element" | "page" | "log";
@@ -164,6 +165,12 @@ export default function ReadWriteInspector() {
   const info: ElementInfo | null = useMemo(() => (selected ? inspectElement(selected, requests) : null), [selected, requests]);
   const [elementRefs, setElementRefs] = useState<CodeRef[]>([]);
   const [clickNo, setClickNo] = useState(0);
+  const [logic, setLogic] = useState<LogicStep[] | null>(null);
+  useEffect(() => {
+    let live = true; setLogic(null);
+    if (info?.sources[0]) void traceLogic(info.sources[0]).then((r) => { if (live) setLogic(r); });
+    return () => { live = false; };
+  }, [selected, clickNo]);
   useEffect(() => {
     let live = true; setElementRefs([]);
     if (info) void codeRefs([...new Set(info.sources.map((s) => s.split(":")[0]!))].slice(0, 2), 1).then((r) => { if (live) setElementRefs(r); });
@@ -184,10 +191,10 @@ export default function ReadWriteInspector() {
 
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
-      props: info.props, fieldMatches: info.matches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, fieldMatches: info.matches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }), [path, info, relatedRequests, elementRefs]);
+  }), [path, info, relatedRequests, elementRefs, logic]);
 
   const pageContext = useCallback(() => JSON.stringify({
     page: path, files: pageFiles,
@@ -246,6 +253,17 @@ export default function ReadWriteInspector() {
                       <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}</li>
                     ))}</ul>
                   )}
+                </section>
+                <section className="space-y-1">
+                  <div className="text-xs font-medium">判定逻辑 / Decision logic {logic ? `(${logic.length})` : "…"}</div>
+                  <p className="text-[10px] text-muted-foreground">现场读取当前代码：显示这段内容的代码、它的值在哪里被决定、调用了哪些判定函数。红色行是兜底/默认值（|| ?? catch 默认分支）。 / Read live from current code; red lines are fallbacks.</p>
+                  {logic?.length === 0 && <p className="text-xs text-muted-foreground">没找到 / none found</p>}
+                  {logic?.map((st, i) => (
+                    <div key={i} className="rounded border border-border">
+                      <div className="border-b border-border bg-muted/50 px-2 py-0.5 text-[10px]">{st.title} · <span className="font-mono">{st.file}:{st.line}</span>{st.fallbacks.length > 0 && <span className="ml-1 rounded bg-destructive px-1 text-destructive-foreground">兜底 fallback ×{st.fallbacks.length}</span>}</div>
+                      <pre className="max-h-56 overflow-auto p-1 font-mono text-[10px] leading-snug">{st.code.map((l, j) => <div key={j} className={st.fallbacks.includes(j) ? "bg-destructive/15" : ""}><span className="mr-2 select-none text-muted-foreground">{st.line + j}</span>{l}</div>)}</pre>
+                    </div>
+                  ))}
                 </section>
                 {info.props.length > 0 && (
                   <section className="space-y-1">
