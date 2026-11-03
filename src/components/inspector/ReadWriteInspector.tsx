@@ -266,7 +266,7 @@ export default function ReadWriteInspector() {
             ))}
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">
-            {interact && <p className="rounded-md bg-muted p-2 text-xs">浏览模式：可以正常点击和跳转，写入仍会被拦截。要查看某个元素，切回「选择」。 / Browse mode: navigate freely; writes are still held back.</p>}
+            {interact && <p className="rounded-md bg-muted p-2 text-xs">浏览模式：可以正常点击和跳转。要查看某个元素，切回「选择」。 / Browse mode: navigate freely.</p>}
             {tab === "element" && !info && <p className="text-xs text-muted-foreground">在「选择」模式下点页面上任意元素。 / In Select mode, click any element on the page.</p>}
             {tab === "element" && info && (
               <>
