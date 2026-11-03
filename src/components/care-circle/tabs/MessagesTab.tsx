@@ -34,7 +34,7 @@ export function MessagesTab({ groupMessages, userId, activeGroupId, sendMessage 
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-3">
               {(groupMessages || []).map((msg: any) => {
-                const isMine = (msg.sender_user_id || msg.sender_id) === userId;
+                const isMine = !!userId && String(msg.sender_user_id || msg.sender_id || "").replace(/^wp-/, "") === String(userId).replace(/^wp-/, "");
                 return (
                   <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
