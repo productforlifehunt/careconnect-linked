@@ -189,7 +189,7 @@ export default function ReadWriteInspector() {
   const [logic, setLogic] = useState<LogicStep[] | null>(null);
   useEffect(() => {
     let live = true; setLogic(null);
-    if (info?.sources[0]) void traceLogic(info.sources[0], 24, info.sources.slice(1)).then((r) => { if (live) setLogic(r); });
+    if (info?.sources[0]) void traceLogic(info.sources[0], 24, info.sources.slice(1), info.text).then((r) => { if (live) setLogic(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   useEffect(() => {

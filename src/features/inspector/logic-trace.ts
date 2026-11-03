@@ -50,7 +50,7 @@ function findDefinition(lines: string[], name: string): number {
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 24, parents: string[] = []): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 24, parents: string[] = [], shownText = ""): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -75,9 +75,14 @@ export async function traceLogic(source: string, maxSteps = 24, parents: string[
   while (queue.length && steps.length < maxSteps) {
     const p = queue.shift()!;
     if (done.has(p)) continue; done.add(p);
-    const re = new RegExp(`(?:\\b${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|\\b${p}\\s*=[^=>])`);
+    const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
+    const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
+    // A list of items (`[{ label: … }, …].map`): keep only the item that shows the clicked text.
+    const words = shownText.split(/\s+/).filter((w) => w.length > 2);
+    const focused = words.length ? hits.filter((i) => words.some((w) => lines[i]!.includes(w))) : [];
+    const use = new Set(focused.length ? focused : hits);
     lines.forEach((l, i) => {
-      if (steps.length >= maxSteps || i === at || !re.test(l)) return;
+      if (steps.length >= maxSteps || !use.has(i)) return;
       const key = `${file}:${i}`; if (seen.has(key)) return; seen.add(key);
       const b = block(lines, i, 12);
       steps.push(step(file, b.from, `“${p}” 在这里被赋值 / “${p}” is decided here`, b.code));
@@ -86,6 +91,8 @@ export async function traceLogic(source: string, maxSteps = 24, parents: string[
       // A value assigned from another local variable (status: medStatus) is traced too.
       const rhs = joined.match(new RegExp(`\\b${p}\\s*[:=]\\s*([A-Za-z_$][\\w$]*)\\s*[,;]`));
       if (rhs && !KEYWORDS.has(rhs[1]!) && !done.has(rhs[1]!)) queue.push(rhs[1]!);
+      // Item rows: every `key: variable` on the chosen item line is traced (value: pendingTasksCount).
+      if (focused.length) for (const kv of l.matchAll(/\b\w+\s*:\s*([A-Za-z_$][\w$]*)\s*[,}]/g)) if (!KEYWORDS.has(kv[1]!) && !done.has(kv[1]!) && !/^[A-Z]/.test(kv[1]!)) queue.push(kv[1]!);
     });
   }
 
