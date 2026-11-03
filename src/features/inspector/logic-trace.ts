@@ -128,6 +128,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       props.delete(param!); props.add(list!);
     }
   }
+  for (const x of ["className", "variant", "size", "style", "key", "type"]) props.delete(x);
   const calls = new Set<string>();
   const queue = [...props];
   const done = new Set<string>();
@@ -142,17 +143,17 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
     if (done.has(p)) continue; done.add(p);
     // A prop of a component defined in this same file: follow it to the line that hands it over (<MedRow med={med} />), then to that list.
     if (comp && comp.params.includes(p)) {
-      const use = lines.findIndex((l, i) => i !== at && l.includes(`<${comp!.name}`) && new RegExp(`\\b${p}=\\{`).test(lines.slice(i, i + 6).join(" ")));
-      if (use >= 0) {
+      const uses = lines.map((_, i) => i).filter((i) => i !== at && lines[i]!.includes(`<${comp!.name}`) && new RegExp(`\\b${p}=\\{`).test(lines.slice(i, i + 8).join(" "))).slice(0, 3);
+      for (const use of uses) {
         const key = `${file}:${use}`;
-        if (!seen.has(key)) { seen.add(key); steps.push(step(file, use, `本文件里把“${p}”传给 ${comp.name} / “${p}” handed to ${comp.name}`, lines.slice(use, use + 3))); }
-        const handed = lines.slice(use, use + 6).join(" ").match(new RegExp(`\\b${p}=\\{\\s*([A-Za-z_$][\\w$]*)`));
+        if (!seen.has(key)) { seen.add(key); steps.push(step(file, use, `本文件里把“${p}”传给 ${comp.name} / “${p}” handed to ${comp.name}`, lines.slice(Math.max(0, use - 1), use + 3))); }
+        const handed = lines.slice(use, use + 8).join(" ").match(new RegExp(`\\b${p}=\\{\\s*([A-Za-z_$][\\w$]*)`));
         const near = lines.slice(Math.max(0, use - 12), use + 1).join("\n");
-        const loop = handed && [...near.matchAll(/([A-Za-z_$][\w$]*)\s*(?:\|\|\s*\[\]\s*)?\)?(?:\.\w+\([^()]*\))*\??\.map\(\s*\(?\s*([A-Za-z_$][\w$]*)/g)].find((x) => x[2] === handed[1]);
+        const loop = handed && [...near.matchAll(/([A-Za-z_$][\w$]*)\s*(?:\|\|\s*\[\]\s*)?\)?(?:\.\w+\([^()]*\))*\??\.map\(\s*\(?\s*(\{[^}]*\}|[A-Za-z_$][\w$]*)/g)].reverse().find((x) => new RegExp(`\\b${handed[1]}\\b`).test(x[2]!));
         if (loop && !done.has(loop[1]!)) queue.unshift(loop[1]!);
         else if (handed && handed[1] !== p && !done.has(handed[1]!)) queue.unshift(handed[1]!);
-        continue;
       }
+      if (uses.length) continue;
     }
     const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
     const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
