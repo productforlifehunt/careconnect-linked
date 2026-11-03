@@ -195,7 +195,8 @@ export default function ReadWriteInspector() {
     return () => { window.removeEventListener("scroll", update, true); window.removeEventListener("resize", update); };
   }, [selected]);
 
-  const pageRequests = useMemo(() => requests.filter((r) => r.path === path), [requests, path]);
+  // Reads made just before a redirect into this page (/care-circle → /care-circle/28) belong to it too.
+  const pageRequests = useMemo(() => requests.filter((r) => r.path === path || (path.startsWith(r.path.split("?")[0]! + "/") && r.path.split("?")[0]!.length > 1)), [requests, path]);
   const info: ElementInfo | null = useMemo(() => (selected ? inspectElement(selected, requests) : null), [selected, requests]);
   const [elementRefs, setElementRefs] = useState<CodeRef[]>([]);
   const [clickNo, setClickNo] = useState(0);
@@ -248,7 +249,7 @@ export default function ReadWriteInspector() {
       for (const side of [def.parent, def.child]) { const n = side.match(/^(\d+)\./)?.[1]; if (n) { const set = proven.get(n) || new Set(); ids.forEach((x) => set.add(x)); proven.set(n, set); } }
     }
     const orphans = [...new Map(requests.filter((r) => {
-      if (r.method !== "GET" || r.path !== path || base.includes(r)) return false;
+      if (r.method !== "GET" || !pageRequests.includes(r) || base.includes(r)) return false;
       const m = r.endpoint.match(/^jet-cct\/([a-z0-9_]+)\/(\d+)/); const def = m ? cctBySlug(m[1]!) : undefined;
       return !!def && !!proven.get(String(def.id))?.has(m![2]!);
     }).map((r) => [r.endpoint, r])).values()];
