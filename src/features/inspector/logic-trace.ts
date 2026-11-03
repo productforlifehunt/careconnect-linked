@@ -82,6 +82,12 @@ function exprIds(line: string, key: string): string[] {
   return [...m[1]!.replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)].map((x) => x[1]!).filter((n) => !KEYWORDS.has(n) && n.length > 2);
 }
 
+/** `isDone ? "line-through opacity-60" : "text-foreground"`: a style choice, not shown data. */
+function isCssOnly(e: string): boolean {
+  const strs = [...e.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g)].map((x) => x[2]!);
+  return strs.length > 0 && strs.every((x) => /^[a-z0-9:/\-[\]. ]*$/.test(x) && /-/.test(x));
+}
+
 /** The expression that decides a computed value, for showing "this number is X.length". */
 export function decidingExpression(steps: LogicStep[]): string | null {
   for (const st of steps) {
@@ -90,7 +96,7 @@ export function decidingExpression(steps: LogicStep[]): string | null {
   }
   // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
   const render = (steps[0]?.code || []).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l.replace(/className=\{[^}]*\}/g, ""))) || "";
-  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
+  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
@@ -125,9 +131,29 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   const calls = new Set<string>();
   const queue = [...props];
   const done = new Set<string>();
+  // The component that renders the clicked line, and the props it receives (function MedRow({ med, slot })).
+  let comp: { name: string; params: string[] } | null = null;
+  for (let i = at; i >= Math.max(0, at - 400); i--) {
+    const m = lines[i]!.match(/(?:function\s+([A-Z]\w*)\s*\(|const\s+([A-Z]\w*)\s*=\s*(?:\w+\()?\()\s*\{([^}]*)\}?/);
+    if (m) { comp = { name: (m[1] || m[2])!, params: (m[3] || "").split(",").map((x) => x.trim().split(/[:=\s]/)[0]!).filter(Boolean) }; break; }
+  }
   while (queue.length && steps.length < maxSteps) {
     const p = queue.shift()!;
     if (done.has(p)) continue; done.add(p);
+    // A prop of a component defined in this same file: follow it to the line that hands it over (<MedRow med={med} />), then to that list.
+    if (comp && comp.params.includes(p)) {
+      const use = lines.findIndex((l, i) => i !== at && l.includes(`<${comp!.name}`) && new RegExp(`\\b${p}=\\{`).test(lines.slice(i, i + 6).join(" ")));
+      if (use >= 0) {
+        const key = `${file}:${use}`;
+        if (!seen.has(key)) { seen.add(key); steps.push(step(file, use, `本文件里把“${p}”传给 ${comp.name} / “${p}” handed to ${comp.name}`, lines.slice(use, use + 3))); }
+        const handed = lines.slice(use, use + 6).join(" ").match(new RegExp(`\\b${p}=\\{\\s*([A-Za-z_$][\\w$]*)`));
+        const near = lines.slice(Math.max(0, use - 12), use + 1).join("\n");
+        const loop = handed && [...near.matchAll(/([A-Za-z_$][\w$]*)\s*(?:\|\|\s*\[\]\s*)?\)?(?:\.\w+\([^()]*\))*\??\.map\(\s*\(?\s*([A-Za-z_$][\w$]*)/g)].find((x) => x[2] === handed[1]);
+        if (loop && !done.has(loop[1]!)) queue.unshift(loop[1]!);
+        else if (handed && handed[1] !== p && !done.has(handed[1]!)) queue.unshift(handed[1]!);
+        continue;
+      }
+    }
     const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
     const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
     // A list of items (`[{ label: … }, …].map`): keep only the item that shows the clicked text.
