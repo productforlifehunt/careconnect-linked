@@ -117,7 +117,7 @@ function installFetchObserver() {
     try {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       const stack = new Error().stack || "";
-      const viaClient = /wordpress-client\.ts|rel-batch\.ts/.test(stack) && !/woocommerce-api|wp-data|wp-auth/.test(stack);
+      const viaClient = /wordpress-client\.ts/.test(stack);
       const m = url.match(/\/wp-json\/([^?#]+)(?:\?([^#]*))?/) || url.match(/[?&]rest_route=\/?([^&#]+)(?:&([^#]*))?/);
       if (m && !viaClient && isResearcherAccount()) {
         const params = m[2] ? Object.fromEntries(new URLSearchParams(m[2])) : undefined;

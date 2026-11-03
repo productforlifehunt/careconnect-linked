@@ -9,6 +9,15 @@ import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspe
 import { importClosure } from "@/features/inspector/live-index";
 import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
+import { getStoredWPUser } from "@/services/wp-auth";
+
+/** Text that comes from the signed-in account saved at login (no request on this page). */
+function accountMatches(text: string): string[] {
+  const me = getStoredWPUser() as Record<string, unknown> | null;
+  if (!me || !text) return [];
+  const low = text.toLowerCase();
+  return Object.entries(me).filter(([k, v]) => typeof v === "string" && v.length >= 2 && !/token/i.test(k) && low.includes(v.toLowerCase())).map(([k, v]) => `${k} = “${String(v).slice(0, 60)}”`);
+}
 
 type Tab = "element" | "page" | "log";
 
@@ -294,6 +303,13 @@ export default function ReadWriteInspector() {
                     ))}</ul>
                   )}
                 </section>
+                {realMatches.length === 0 && accountMatches(info.text).length > 0 && (
+                  <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+                    <div className="font-medium">来自当前登录账号 / From the signed-in account</div>
+                    {accountMatches(info.text).map((m) => <div key={m} className="font-mono text-[10px]">{m}</div>)}
+                    <div className="text-[10px] text-muted-foreground">登录时 WordPress 返回并保存在本机的账号信息（WordPress 用户 #{String(getStoredWPUser()?.user_id ?? "?")}），本页没有为它另发读取。 / Saved from WordPress at sign-in; no extra read on this page.</div>
+                  </section>
+                )}
                 {realMatches.length === 0 && logic && decidingExpression(logic) && (
                   <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
                     <div className="font-medium">这个值是算出来的 / Computed value</div>
