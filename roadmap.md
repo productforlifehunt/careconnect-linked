@@ -1,4 +1,5 @@
 ## Current request: Draftbit Classic full no-code replica (manual, no AI) — user upgraded to paid plan
+- [x] 2026-11-03: Meds screen was set to hidden (excluded from generated app) — that is why 用药页 never opened. Re-included; preview now opens Medicine Tracker from Cared Ones tile. Open: list empty and empty-state box also not shown for cared one 'challenged'; Taken/Skip still untested (no medicine row).
 - [ ] 2026-11-03 user: 先补齐缺失页面与结构错误的功能，功能页面优先，之后再测试。
 - [x] 2026-11-03: 共用删除确认弹窗 DeleteConfirm 已接入 Checks/Meds/Contacts/Notes/Tips/Plan/Cards/Docs 共 8 页（垃圾桶设 DEL_ID+DEL_SLUG，列表 5 秒自动刷新）。Voices 原删除错指 emergency_contact，已移除旧弹窗，删除暂不可用待接 CCT322 服务器函数。Tasks 无垃圾桶待查。
 - [~] 2026-11-03: 第1项用药打卡：Meds 卡片新增「已服」(check-circle，a83=b60) 和「跳过」(skip-forward，a83=b58) 两个按钮；点按依次执行 Create Dose Log（药名=当前卡片 a55）→ REL191 计划→记录（条件：记录写成功）→ REL173 被护理者→记录（条件同上）。已补：a88/a61 用原生 Now + FormatDate "yyyy-MM-dd HH:mm:ss"（两个按钮都设好；a88 = 今天日期 + 药卡 a57 的 HH:mm:ss，对应原版 todayAtSlot）。未做、今日已打卡状态显示、预览实点测试、签到页同样功能。
