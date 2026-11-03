@@ -100,7 +100,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   // 2. Values printed: `{a.b.c}` → property `c`, plain `{x}` → variable `x`.
   const props = new Set<string>();
   for (const m of renderText.matchAll(/\{([^{}]+)\}/g)) {
-    for (const id of m[1]!.matchAll(/(?:\.|\b)([A-Za-z_$][\w$]*)\b(?!\s*\()/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 1) props.add(id[1]!);
+    for (const id of m[1]!.replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").matchAll(/(?:\.|\b)([A-Za-z_$][\w$]*)\b(?!\s*[(:])/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 1) props.add(id[1]!);
   }
   // `{p.title}` inside `list.map((p) => …)`: the value comes from `list`, so trace the list, not every `title:`.
   const above = lines.slice(Math.max(0, at - 40), at + 1).join("\n");
