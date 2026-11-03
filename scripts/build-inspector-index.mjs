@@ -64,6 +64,12 @@ for (const file of files) {
     for (const m of line.matchAll(/\bT\.([A-Za-z_]\w*)/g)) add("cctConst", m[1], "");
     for (const m of line.matchAll(/WP\.cct\[\s*["'](\d+)["']\s*\]/g)) add("cctId", m[1], "");
     for (const m of line.matchAll(/WP\.rel\[\s*["'](\d+)["']\s*\]/g)) add("rel", m[1], "");
+    const w = line.match(/method\s*:\s*["'`](POST|PUT|PATCH|DELETE)["'`]|\b(linkRel|unlinkRel|linkOwnRow|createWordPressFeature|updateWordPressFeature|deleteWordPressFeature)\s*\(/);
+    if (w) {
+      const start = Math.max(0, i - 2);
+      const snippet = lines.slice(start, i + 1).map((l) => l.trim()).join(" ").replace(/\s+/g, " ").slice(-220);
+      add("write", snippet, w[1] || w[2]);
+    }
     for (const m of line.matchAll(/(wc\/v3\/[a-z_/-]+|dokan\/v\d\/[a-z_/-]+|wp\/v2\/[a-z_-]+)/g)) add("woo", m[1], methodNear(lines, i));
   });
   // De-duplicate identical kind/key/method, keep first line.
