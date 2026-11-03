@@ -119,7 +119,8 @@ export function decidingExpression(steps: LogicStep[], shownText = ""): string |
   }
   // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
   // Children expressions only: attribute values (aria-pressed={isActive}, onClick={…}) are not what is shown.
-  const strip = (l: string) => l.replace(/[\w-]+=\{`[^`]*`\}/g, "").replace(/[\w-]+=\{[^{}]*\}/g, "");
+  // Template interpolations (${…}) only occur inside attribute strings (multi-line className={`…`}).
+  const strip = (l: string) => l.replace(/\$\{[^{}]*\}/g, "").replace(/[\w-]+=\{`[^`]*`\}/g, "").replace(/[\w-]+=\{[^{}]*\}/g, "");
   const render = strip((steps[0]?.code || []).map(strip).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l)) || "");
   // A wording/name element nested next to a count badge on one line ({card.title}{x && <Badge>{count}</Badge>}):
   // when the shown text has no number, the nested element's expressions are not what is shown.
