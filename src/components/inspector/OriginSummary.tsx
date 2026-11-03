@@ -110,6 +110,7 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   const noSource = !matches.length && !expr && !account.length && !!logic;
   if (staticWords) lines.splice(0, lines.length, `显示的${shown}是界面固定文字（双语文案 / 翻译词条 / 站点品牌设置），不读任何数据、不做计算。`);
   if (clockOnly) lines.splice(0, lines.length, `显示的${shown}是这台设备当前的日期/时间（浏览器时钟）：${expr}。不读任何数据。`);
+  if (noSource) lines.push(`没有找到${shown}读取的数据或计算式：按当前代码它是界面固定文字或代码生成的标签（如时间刻度），下面只列出它所在位置的判定条件。`);
   if (staticWords || clockOnly || noSource) readLines.length = 0;
   // Conditions the decision logic applies (real code lines, field codes named from the dictionary).
   const conds: string[] = []; const falls: string[] = [];
@@ -126,7 +127,7 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
     <div className="space-y-2 rounded border border-primary/40 bg-primary/5 p-2 text-xs leading-relaxed">
       {lines.map((l, i) => <p key={i}>{l}</p>)}
       {readLines.length > 0 && <div><div className="font-medium">数据从哪读（当前登录用户起，按顺序）：</div>{readLines.map((l) => <div key={l}>{l}</div>)}</div>}
-      {!readLines.length && (matches.length || expr) ? <div className="text-muted-foreground">本页没有记录到这个元素代码的读取（可能数据在别页已读好或还没加载）。</div> : null}
+      {!readLines.length && !staticWords && !clockOnly && (matches.length || expr) ? <div className="text-muted-foreground">本页没有记录到这个元素代码的读取（可能数据在别页已读好或还没加载）。</div> : null}
       {steps.length > 0 && <div><div className="font-medium">计算过程（逐个变量往上追，现场代码原文）：</div>{steps.map((c, i) => <div key={c} className="break-all font-mono text-[10px]">{i + 1}. {c}</div>)}</div>}
       {conds.length > 0 && <div><div className="font-medium">判定/筛选条件（现场代码原文，列名按数据字典标注）：</div>{conds.slice(0, 14).map((c) => <div key={c} className="break-all font-mono text-[10px]">• {c}</div>)}</div>}
       {falls.length > 0 && <div><div className="font-medium text-destructive">兜底/默认值（读不到或为空时改用的值）：</div>{falls.slice(0, 8).map((c) => <div key={c} className="break-all font-mono text-[10px]">• {c}</div>)}</div>}
