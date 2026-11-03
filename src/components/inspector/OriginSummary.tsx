@@ -66,7 +66,7 @@ function derivation(expr: string, srcs: Src[], defs: Def[]): string[] {
   return out;
 }
 
-export function OriginSummary({ text, matches, reads, pageRequests, path, logic, expr, account }: {
+export function OriginSummary({ text, matches, reads, pageRequests, path, logic, expr, account, files }: {
   text: string; matches: FieldMatch[]; reads: RecordedRequest[]; pageRequests: RecordedRequest[]; path: string;
   logic: LogicStep[] | null; expr: string | null; account: string[]; files?: string[];
 }) {
