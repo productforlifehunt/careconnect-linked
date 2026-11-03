@@ -68,6 +68,12 @@ function focusLines(hits: number[], lines: string[], shown: string, card: string
   return [];
 }
 
+/** `n` is defined in the clicked component before the shown line, or at file top level (not inside some other function). */
+function inScopeDef(lines: string[], n: string, from: number, at: number, self: number): boolean {
+  const re = new RegExp(`(?:const|let|var)\\s+(?:\\{[^}=]*[\\s{,:]|\\[[^\\]=]*[\\s\\[,])?${n}\\b[^=]*=(?!=)|function\\s+${n}\\b`);
+  return lines.some((l, i) => i !== self && re.test(l) && ((i >= from && i < at) || /^(export\s+)?(const|let|function|async)/.test(l)));
+}
+
 /** A line plus the definitions of the local labels it uses (label: careGroupsLabel → const careGroupsLabel = … "Care Teams"). */
 function expandLine(lines: string[], i: number): string {
   let out = lines[i]!;
@@ -134,10 +140,10 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   const queue = [...props];
   const done = new Set<string>();
   // The component that renders the clicked line, and the props it receives (function MedRow({ med, slot })).
-  let comp: { name: string; params: string[] } | null = null;
+  let comp: { name: string; params: string[] } | null = null; let compStart = 0;
   for (let i = at; i >= Math.max(0, at - 400); i--) {
     const m = lines[i]!.match(/(?:function\s+([A-Z]\w*)\s*\(|const\s+([A-Z]\w*)\s*=\s*(?:\w+\()?\()\s*\{([^}]*)\}?/);
-    if (m) { comp = { name: (m[1] || m[2])!, params: (m[3] || "").split(",").map((x) => x.trim().split(/[:=\s]/)[0]!).filter(Boolean) }; break; }
+    if (m) { compStart = i; comp = { name: (m[1] || m[2])!, params: (m[3] || "").split(",").map((x) => x.trim().split(/[:=\s]/)[0]!).filter(Boolean) }; break; }
   }
   // `{med.name}` where `med` is this component's prop: the row comes in through `med`, so `name:` elsewhere is unrelated.
   if (comp) for (const m of renderText.matchAll(/\b([A-Za-z_$][\w$]*)\??\.([A-Za-z_$][\w$]*)/g)) if (comp.params.includes(m[1]!) && m[2] !== m[1]) { const i = queue.indexOf(m[2]!); if (i >= 0) queue.splice(i, 1); }
@@ -161,7 +167,11 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       if (uses.length) continue;
     }
     const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
-    const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
+    let hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
+    // A variable: use its own definition in this component (nearest above the shown line), not every `name:` key in the file.
+    const defRe = new RegExp(`(?:const|let|var)\\s+(?:\\{[^}=]*[\\s{,:]|\\[[^\\]=]*[\\s\\[,])?${p}\\b[^=]*=(?!=)|function\\s+${p}\\b`);
+    const defs = hits.filter((i) => defRe.test(lines[i]!));
+    if (defs.length) { const inScope = defs.filter((i) => i >= compStart && i < at); const top = defs.filter((i) => /^(export\s+)?(const|let|function|async)/.test(lines[i]!)); hits = inScope.length ? [inScope[inScope.length - 1]!] : top.length ? [top[0]!] : [defs[0]!]; }
     // A list of items (`[{ label: … }, …].map`): keep only the item that shows the clicked text.
     // Items of one array literal ([{ label, value }, …].map) sit on consecutive lines: the clicked item's position picks its line.
     const run = hits.filter((i) => i > at - 40 && i < at && /^\s*(?:\.\.\.\(.*\[)?\{\s*\w+\s*:/.test(lines[i]!));
@@ -181,7 +191,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       // Item rows: every `key: variable` on the chosen item line is traced (value: pendingTasksCount).
       if (focused.length) for (const id of exprIds(l, p)) if (!done.has(id)) queue.push(id);
       // Local values the decision uses (const tasks = …, myPendingTasks = tasks.filter(…)) are traced to where they are made.
-      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && findDefinition(lines, n) >= 0 && findDefinition(lines, n) !== i) queue.push(n); }
+      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && inScopeDef(lines, n, compStart, at, i)) queue.push(n); }
     });
   }
 
