@@ -239,7 +239,7 @@ export default function ReadWriteInspector() {
     // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
     const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
     const base = [...session, ...own];
-    // Row reads with no app file on their stack (they run after an await) count only when a related relation read returned that row id.
+    // Row reads count when a related relation read returned that row id (proof by id, whatever code fetched it).
     const proven = new Map<string, Set<string>>();
     for (const r of base) {
       const m = r.endpoint.match(/^jet-rel\/(\d+)/); const def = m ? relById(m[1]!) : undefined; if (!def || !r.rows) continue;
@@ -248,7 +248,7 @@ export default function ReadWriteInspector() {
       for (const side of [def.parent, def.child]) { const n = side.match(/^(\d+)\./)?.[1]; if (n) { const set = proven.get(n) || new Set(); ids.forEach((x) => set.add(x)); proven.set(n, set); } }
     }
     const orphans = [...new Map(requests.filter((r) => {
-      if (r.method !== "GET" || r.callers.length || base.includes(r)) return false;
+      if (r.method !== "GET" || r.path !== path || base.includes(r)) return false;
       const m = r.endpoint.match(/^jet-cct\/([a-z0-9_]+)\/(\d+)/); const def = m ? cctBySlug(m[1]!) : undefined;
       return !!def && !!proven.get(String(def.id))?.has(m![2]!);
     }).map((r) => [r.endpoint, r])).values()];
