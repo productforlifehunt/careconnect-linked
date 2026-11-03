@@ -102,7 +102,7 @@ function isStaticLabel(e: string): boolean {
 }
 
 /** The expression that decides a computed value, for showing "this number is X.length". */
-export function decidingExpression(steps: LogicStep[]): string | null {
+export function decidingExpression(steps: LogicStep[], shownText = ""): string | null {
   for (const st of steps) {
     const m = st.code.join(" ").match(/\bvalue\s*:\s*(.+?)(?:,\s*\w+\s*:|\s*\}\s*[,\]]|$)/);
     if (m && /“value”/.test(st.title)) return m[1]!.trim();
@@ -111,7 +111,15 @@ export function decidingExpression(steps: LogicStep[]): string | null {
   // Children expressions only: attribute values (aria-pressed={isActive}, onClick={…}) are not what is shown.
   const strip = (l: string) => l.replace(/[\w-]+=\{`[^`]*`\}/g, "").replace(/[\w-]+=\{[^{}]*\}/g, "");
   const render = strip((steps[0]?.code || []).map(strip).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l)) || "");
-  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && !isStaticLabel(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
+  // A wording/name element nested next to a count badge on one line ({card.title}{x && <Badge>{count}</Badge>}):
+  // when the shown text has no number, the nested element's expressions are not what is shown.
+  let shownLine = render;
+  if (shownText && !/\d|—/.test(shownText)) {
+    shownLine = shownLine.replace(/^[^<]*<[\w.]+(?:[^>]|=>)*>/, "");
+    for (let k = 0; k < 4; k++) shownLine = shownLine.replace(/<([A-Za-z][\w.]*)\b[^<>]*>[^<>]*<\/\1>/g, "");
+    shownLine = shownLine.replace(/\{[^{}]*&&\s*\}/g, "");
+  }
+  const exprs = [...shownLine.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && !isStaticLabel(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
