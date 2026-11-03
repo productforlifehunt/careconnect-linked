@@ -353,7 +353,7 @@ export default function ReadWriteInspector() {
                 </section>
                 <section className="space-y-1">
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from</div>
-                  <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} />
+                  <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} files={[...new Set(info.sources.map((x) => x.split(":")[0]!))]} />
                 </section>
                 {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
                 <section className="space-y-1">
