@@ -127,7 +127,8 @@ export function decidingExpression(steps: LogicStep[], shownText = ""): string |
   let shownLine = render;
   if (shownText && !/\d|—/.test(shownText)) {
     shownLine = shownLine.replace(/^[^<]*<[\w.]+(?:[^>]|=>)*>/, "");
-    for (let k = 0; k < 4; k++) shownLine = shownLine.replace(/<([A-Za-z][\w.]*)\b[^<>]*>[^<>]*<\/\1>/g, "");
+    // Only nested count badges are dropped; a nested name/label element may be exactly what is shown.
+    for (let k = 0; k < 4; k++) shownLine = shownLine.replace(/<([A-Za-z][\w.]*)\b[^<>]*>([^<>]*)<\/\1>/g, (all, _tag, inner: string) => (/length|count|Count|total|badge|"—"/.test(inner) ? "" : inner));
     shownLine = shownLine.replace(/\{[^{}]*&&\s*\}/g, "");
   }
   const exprs = [...shownLine.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && !isStaticLabel(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
