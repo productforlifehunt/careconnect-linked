@@ -235,8 +235,7 @@ export default function ReadWriteInspector() {
     if (!info || !closure) return [];
     // Session data (signed-in profile) is read once by a context provider, often on an earlier page.
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
-    const latest = new Map(session.map((r) => [r.endpoint, r]));
-    return [...latest.values(), ...pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); })];
+    return [...session, ...pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); })];
   }, [info, pageRequests, closure, requests, path]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
   const realMatches = useMemo(() => (info ? info.matches.filter((m) => relatedIds.has(m.request.id)) : []), [info, relatedIds]);
