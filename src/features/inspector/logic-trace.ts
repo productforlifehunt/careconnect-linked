@@ -138,6 +138,8 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
     const m = lines[i]!.match(/(?:function\s+([A-Z]\w*)\s*\(|const\s+([A-Z]\w*)\s*=\s*(?:\w+\()?\()\s*\{([^}]*)\}?/);
     if (m) { comp = { name: (m[1] || m[2])!, params: (m[3] || "").split(",").map((x) => x.trim().split(/[:=\s]/)[0]!).filter(Boolean) }; break; }
   }
+  // `{med.name}` where `med` is this component's prop: the row comes in through `med`, so `name:` elsewhere is unrelated.
+  if (comp) for (const m of renderText.matchAll(/\b([A-Za-z_$][\w$]*)\??\.([A-Za-z_$][\w$]*)/g)) if (comp.params.includes(m[1]!) && m[2] !== m[1]) { const i = queue.indexOf(m[2]!); if (i >= 0) queue.splice(i, 1); }
   while (queue.length && steps.length < maxSteps) {
     const p = queue.shift()!;
     if (done.has(p)) continue; done.add(p);
