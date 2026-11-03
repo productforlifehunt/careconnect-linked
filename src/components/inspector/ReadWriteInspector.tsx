@@ -294,16 +294,30 @@ export default function ReadWriteInspector() {
 
   const summaryRef = useRef<HTMLElement | null>(null);
   const queryClient = useQueryClient();
+  const fitContext = (o: Record<string, any>): string => {
+    let out = JSON.stringify(o);
+    const cuts: Array<() => void> = [
+      () => { o.codeRefs = (o.codeRefs || []).slice(0, 30); },
+      () => { o.otherPageReads = (o.otherPageReads || []).map((r: any) => ({ ...r, rowSample: r.rowSample?.slice(0, 120) })); },
+      () => { o.liveRequests = (o.liveRequests || []).map((r: any) => ({ ...r, rowSample: r.rowSample?.slice(0, 400) })); },
+      () => { o.otherPageReads = (o.otherPageReads || []).slice(0, 40).map((r: any) => ({ target: r.target, endpoint: r.endpoint, returnedRows: r.returnedRows, callers: r.callers })); },
+      () => { o.codeRefs = []; },
+      () => { if (o.element) o.element.decisionLogic = (o.element.decisionLogic || []).map((d: any) => ({ ...d, code: String(d.code).slice(0, 600) })); },
+    ];
+    for (const cut of cuts) { if (out.length <= 58_000) break; cut(); out = JSON.stringify(o); }
+    return out;
+  };
   // The app's own cached query results for the hooks this element's logic calls (queryKey: ["inboxCounts"] …):
   // the exact values the screen computed from, so counts like "5" can be re-added from real data.
   const cachedResults = useCallback(() => {
-    const text = (logic || []).map((st) => st.code.join("\n")).join("\n");
+    const text = (logic || []).map((st) => st.code.join("\n")).join("\n") + "\n" + (summaryRef.current?.innerText || "");
     return queryClient.getQueryCache().findAll().filter((q) => { const k = q.queryKey[0]; return typeof k === "string" && k.length > 2 && /^[\w$]+$/.test(k) && new RegExp(`(?<![\\w$])${k}(?![\\w$])`).test(text); }).slice(0, 15).map((q) => {
       const d = q.state.data as unknown;
       return { queryKey: q.queryKey, status: q.state.status, length: Array.isArray(d) ? d.length : undefined, value: JSON.stringify(d ?? null, (_k, v) => v instanceof Map ? Object.fromEntries(v) : v instanceof Set ? [...v] : v).slice(0, 1500), size: d instanceof Map || d instanceof Set ? d.size : undefined };
     });
   }, [queryClient, logic]);
-  const elementContext = useCallback(() => JSON.stringify({
+  // The AI input is capped at 60k characters: shrink the least specific evidence first instead of cutting the JSON mid-way.
+  const elementContext = useCallback(() => fitContext({
     deterministicSummary: summaryRef.current?.innerText.slice(0, 6000) || null,
     cachedQueryResults: cachedResults(),
     // Dictionary column names and option meanings for every table this element really read (b55 → "accepted").
@@ -315,6 +329,7 @@ export default function ReadWriteInspector() {
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
   }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests, cachedResults]);
+
 
   const pageContext = useCallback(() => JSON.stringify({
     page: path, files: pageFiles,
