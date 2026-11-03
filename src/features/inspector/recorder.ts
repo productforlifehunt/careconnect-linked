@@ -157,9 +157,9 @@ function installFetchObserver() {
         if (name) {
           let data: unknown;
           try { data = typeof init?.body === "string" ? fromSeroval(JSON.parse(init.body)) : undefined; } catch { data = undefined; }
-          const input = (data && typeof data === "object" && "data" in (data as object) ? (data as { data: unknown }).data : data) as Record<string, unknown> | undefined;
-          const action = input && typeof input === "object" && typeof input["action"] === "string" ? String(input["action"]) : "";
-          entry = recordRequest(!action || /^(list|get|fetch|read|load|search|original)/.test(action) ? "GET" : "POST", `server-fn/${name}${action ? `/${action}` : ""}`, input && typeof input === "object" ? Object.fromEntries(Object.entries(input).filter(([, v]) => typeof v !== "string" || v.length < 200)) : undefined, undefined);
+          const payload = (data && typeof data === "object" && "data" in (data as object) ? (data as { data: unknown }).data : data) as Record<string, unknown> | undefined;
+          const action = payload && typeof payload === "object" && typeof payload["action"] === "string" ? String(payload["action"]) : "";
+          entry = recordRequest(!action || /^(list|get|fetch|read|load|search|original)/.test(action) ? "GET" : "POST", `server-fn/${name}${action ? `/${action}` : ""}`, payload && typeof payload === "object" ? Object.fromEntries(Object.entries(payload).filter(([, v]) => typeof v !== "string" || v.length < 200)) : undefined, undefined);
           if (entry) { entry.blocked = false; entry.via = "server-fn"; }
         }
       }

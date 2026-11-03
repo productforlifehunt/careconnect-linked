@@ -238,7 +238,7 @@ export default function ReadWriteInspector() {
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
     // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
     // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
-    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
+    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); const ownFile = info.sources[0]?.split(":")[0]; return app.slice(0, 2).some((c, i) => (closure.has(c) && (i === 0 || !/^hooks\//.test(c))) || (i === 0 && c === ownFile)); });
     const base = [...session, ...own];
     // Row reads count when a related relation read returned that row id (proof by id, whatever code fetched it).
     const proven = new Map<string, Set<string>>();
