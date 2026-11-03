@@ -167,7 +167,7 @@ function installFetchObserver() {
     const res = await original(input as RequestInfo, init);
     if (entry?.via) {
       const e = entry; e.status = res.status;
-      res.clone().json().then((raw) => { let j = e.via === "server-fn" ? fromSeroval(raw) : raw; if (e.via === "server-fn" && j && typeof j === "object" && "result" in (j as object)) j = (j as { result: unknown }).result; e.rows = trim((j && typeof j === "object" && "data" in (j as object) && e.via !== "server-fn") ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
+      res.clone().json().then((raw) => { let j = e.via === "server-fn" ? fromSeroval(raw) : raw; if (e.via === "server-fn" && j && typeof j === "object" && "result" in (j as object)) j = (j as { result: unknown }).result; if (e.via === "server-fn" && j && typeof j === "object" && !Array.isArray(j)) { const arrays = Object.values(j as object).filter(Array.isArray); if (arrays.length === 1) j = arrays[0]; } e.rows = trim((j && typeof j === "object" && "data" in (j as object) && e.via !== "server-fn") ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
     } else if (entry) attachResponse(entry, res);
     return res;
   }) as typeof fetch;
