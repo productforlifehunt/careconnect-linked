@@ -32,6 +32,7 @@ import ResearcherApp from "@/pages/researcher/ResearcherApp";
 import ConsentApp from "@/pages/consent/ConsentApp";
 import SickApp from "@/pages/sick/SickApp";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { InspectorGate } from "@/components/inspector/InspectorGate";
 
 // Pick the brand + language tab icon before the first paint so a Chinese app
 // never flashes (or gets cached with) the English icon, and vice versa.
@@ -168,6 +169,7 @@ function RootComponent() {
               <SiteProvider>
                 <Sonner />
                 <LocationSharingAgent />
+                <InspectorGate />
                 <AIAssistantProvider>
                   <SiteRouter />
                 </AIAssistantProvider>
