@@ -112,7 +112,6 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
       if (name && !SKIP_COMPONENTS.test(name) && !components.includes(name)) components.push(name);
       if (name && !owner) owner = name;
       // The handler belongs to the first real component above where it was found.
-      if (name && !SKIP_COMPONENTS.test(name)) while (pending.length && handlers.length < 4) { const h = pending.shift()!; if (!handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: name }); }
       // Data the component received (plain objects / arrays only).
       const fp = f.memoizedProps;
       if (name && !SKIP_COMPONENTS.test(name) && fp && typeof fp === "object" && props.length < 12 && components.length <= 4) {
@@ -140,7 +139,10 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   }
   if (!link) { const a = el.closest("a"); if (a?.getAttribute("href")) link = a.getAttribute("href")!; }
   const text = cleanText(el);
-  for (const h of pending) if (handlers.length < 4) handlers.push({ ...h, owner: owner || "?" });
+  // A handler is written in the nearest component that also has its own source file on the element chain.
+  const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
+  const writer = components.find((c) => files.includes(c)) || owner || "?";
+  for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
   return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props, matches: matchValues(text, requests) };
 }
 
