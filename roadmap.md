@@ -439,3 +439,11 @@
 - [x] Draftbit：机器人+问号按钮已铺到除 Login 外全部 23 页（GUI 复制粘贴，点击动作保留；手机实机跳转未测）
 - [x] 2026-11-03: 发现 12 页原有圆按钮没有点击动作（只是图标）；已删旧换上群组页能用的按钮。预览实点：22 页机器人→AI 助手、问号→学习资源均通过；Meds 页预览直接打开会落到登录页，未能实点。
 - [ ] Meds 页圆按钮实点（需从被护理者页进入）；问号原版是"使用帮助"弹窗，备用版仍是跳学习资源（近似）。
+
+## Draftbit 圆按钮（共用组件）
+- [x] AssistantFabs 共用组件，23 页调用（Login 除外）
+- [x] APP_GUIDE 全局数据 = 原版 GUIDE_BY_FAMILY.challenged + GUIDE_SHARED（15 条，中英）
+- [x] 问号 → SHOW_GUIDE=true → AI 助手页显示问答；机器人 → SHOW_GUIDE=null → 普通对话（预览实测 Groups/Home/Bookings/Assistant）
+- [ ] 问答点开/收起（Draftbit 显示条件只有"有/无"，暂全部展开）
+- [ ] 中文版问答切换、"隐藏帮助按钮"设置、按品牌切换问答
+- [ ] 其余 19 页逐页点测
