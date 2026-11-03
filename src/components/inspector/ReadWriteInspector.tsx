@@ -219,6 +219,7 @@ export default function ReadWriteInspector() {
   }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
+    console.log('RWDBG', JSON.stringify([...closure]), JSON.stringify(pageRequests.map((r) => [r.endpoint, ownerFile(r)])).slice(0, 3000));
     return pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o) && !INFRA.test(o); });
   }, [info, pageRequests, closure]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
