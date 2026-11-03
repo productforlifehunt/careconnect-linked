@@ -162,7 +162,7 @@ export default function ReadWriteInspector() {
 
   const pageRequests = useMemo(() => requests.filter((r) => r.path === path), [requests, path]);
   const info: ElementInfo | null = useMemo(() => (selected ? inspectElement(selected, requests) : null), [selected, requests]);
-  const elementRefs = useMemo(() => (info ? codeRefs(info.sources.slice(0, 3).map((s) => s.split(":")[0]!), 2) : []), [info]);
+  const elementRefs = useMemo(() => (info ? codeRefs(info.sources.slice(0, 3).map((s) => s.split(":")[0]!), 0) : []), [info]);
   const pageFiles = useMemo(() => (on && tab === "page" ? pageSourceFiles() : []), [on, tab, path, requests.length]);
   const pageRefs = useMemo(() => codeRefs(pageFiles, 1), [pageFiles]);
   const relatedRequests = useMemo(() => {
