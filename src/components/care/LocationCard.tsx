@@ -238,7 +238,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(managementSubject);
   const { data: locationSettings, refetch: refetchSettings } = useCaredOneLocationSettings(managementSubject);
   // CCT 258: a56 sharing on, a55 emergency requests allowed — decided per person.
-  const { data: flags, refetch: refetchFlags } = useLocationSharingFlags(managementSubject);
+  const { data: flags, refetch: refetchFlags, isLoading: flagsLoading } = useLocationSharingFlags(managementSubject);
   const enableEmergency = useEnableEmergencyLocationPermission();
   // Fallback map centre: where the person looking at this page is.
   const [viewerPos, setViewerPos] = useState<{ lat: number; lng: number } | null>(null);
@@ -617,10 +617,12 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
             {isZh ? `${caredOneName}的位置` : `${caredOneName}'s Location`}
           </h2>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {!readOnly && <Badge variant={flags?.shareOn ? "default" : "secondary"} className="text-xs">
+            {/* Until CCT 258 answers, say nothing about on/off rather than a false "off". */}
+            {!readOnly && flagsLoading && <Badge variant="outline" className="text-xs">{isZh ? "正在读取分享状态…" : "Checking sharing…"}</Badge>}
+            {!readOnly && !flagsLoading && <Badge variant={flags?.shareOn ? "default" : "secondary"} className="text-xs">
               {flags?.shareOn ? (isZh ? "📍 已开启实时位置分享" : "📍 Live sharing on") : (isZh ? "未开启实时位置分享" : "Live sharing off")}
             </Badge>}
-            {!readOnly && <Badge variant="outline" className="text-xs">
+            {!readOnly && !flagsLoading && <Badge variant="outline" className="text-xs">
               {flags?.emergencyAllowed ? (isZh ? "允许紧急请求" : "Emergency requests allowed") : (isZh ? "未允许紧急请求" : "Emergency requests not allowed")}
             </Badge>}
             {lastSeen && (
