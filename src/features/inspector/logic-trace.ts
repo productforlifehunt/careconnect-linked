@@ -50,7 +50,7 @@ function findDefinition(lines: string[], name: string): number {
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 20): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 24, parents: string[] = []): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -89,8 +89,30 @@ export async function traceLogic(source: string, maxSteps = 20): Promise<LogicSt
     });
   }
 
-  // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
   let frontier: Array<{ name: string; file: string; text: string }> = [...calls].map((name) => ({ name, file, text }));
+
+  // 2b. Values handed in as props: follow them into the parent component that passes them (`name={expr}`).
+  const parentFiles = [...new Set(parents.map((x) => x.split(":")[0]!).filter((f) => f && f !== file && !/^(components\/layout\/|routes\/__root|components\/ui\/)/.test(f)))];
+  for (const pf of parentFiles.slice(0, 3)) {
+    const pt = await readSource(pf); if (!pt) continue;
+    const pl = pt.split("\n");
+    const pending = [...done]; const pdone = new Set<string>();
+    while (pending.length && steps.length < maxSteps) {
+      const name = pending.shift()!; if (pdone.has(name)) continue; pdone.add(name);
+      const re = new RegExp(`\\b${name}=\\{([^}]*)\\}|(?:const|let)\\s+(?:\\{[^}]*\\b)?${name}\\b[^=]*=`);
+      pl.forEach((l, i) => {
+        const m = l.match(re); if (!m || steps.length >= maxSteps) return;
+        const key = `${pf}:${i}`; if (seen.has(key)) return; seen.add(key);
+        const code = m[1] != null ? [l.trim().slice(Math.max(0, l.trim().indexOf(`${name}=`) - 10), l.trim().indexOf(`${name}=`) + name.length + m[1].length + 40)] : block(pl, i, 12).code;
+        steps.push(step(pf, i, m[1] != null ? `父组件传入“${name}” / parent passes “${name}”` : `“${name}” 在父组件这里被算出 / computed in parent`, code));
+        const expr = m[1] ?? code.join(" ");
+        for (const id of expr.matchAll(/\b([A-Za-z_$][\w$]*)\b/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 2 && !pdone.has(id[1]!)) pending.push(id[1]!);
+        for (const c of expr.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!)) frontier.push({ name: c[1]!, file: pf, text: pt });
+      });
+    }
+  }
+
+  // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
   for (let hop = 0; hop < 2 && frontier.length && steps.length < maxSteps; hop++) {
     const next: typeof frontier = [];
     for (const { name, file: f, text: t } of frontier) {
