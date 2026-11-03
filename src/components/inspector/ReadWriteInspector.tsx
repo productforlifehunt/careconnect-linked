@@ -235,7 +235,7 @@ export default function ReadWriteInspector() {
   const [closureLabels, setClosureLabels] = useState<string[]>([]);
   useEffect(() => {
     let live = true; setClosureLabels([]);
-    if (closure?.size) void codeRefs([...closure], 1).then((r) => { if (live) setClosureLabels([...new Set(r.map((x) => x.label.replace(/ \[[RT]\.\w+\]$/, "")))]); });
+    if (closure?.size) void codeRefs([...closure], 2).then((r) => { if (live) setClosureLabels([...new Set(r.map((x) => x.label.replace(/ \[[RT]\.\w+\]$/, "")))]); });
     return () => { live = false; };
   }, [closure]);
   const relatedRequests = useMemo(() => {
@@ -244,7 +244,9 @@ export default function ReadWriteInspector() {
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
     const named = (r: RecordedRequest) => { if (r.method !== "GET" || ownerFile(r)) return false; const l = decodeEndpoint(r.method, r.endpoint).label.replace(/ #\d+$/, "").replace(/ (读子项|读父项).*$/, ""); return closureLabels.some((x) => x === l || l.startsWith(x)); };
     const orphans = [...new Map(requests.filter((r) => named(r) && r.path === path).map((r) => [r.endpoint, r])).values()];
-    const own = pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); });
+    // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
+    // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
+    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
     return [...session, ...own, ...orphans.filter((r) => !own.includes(r))];
   }, [info, pageRequests, closure, requests, path, closureLabels]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
