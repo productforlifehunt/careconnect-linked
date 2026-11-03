@@ -221,7 +221,7 @@ export async function traceLogic(source: string, maxSteps = 50, parents: string[
       // Item rows: every `key: variable` on the chosen item line is traced (value: pendingTasksCount).
       if (focused.length) for (const id of exprIds(l, p)) if (!done.has(id)) queue.push(id);
       // Local values the decision uses (const tasks = …, myPendingTasks = tasks.filter(…)) are traced to where they are made.
-      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && inScopeDef(lines, n, compStart, at, i)) queue.push(n); }
+      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && (inScopeDef(lines, n, compStart, at, i) || !!comp?.params.includes(n))) queue.push(n); }  // props are followed into the parent that passes them
     });
   }
 
