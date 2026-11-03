@@ -235,6 +235,9 @@ export default function ReadWriteInspector() {
     if (!info || !closure) return [];
     // Session data (signed-in profile) is read once by a context provider, often on an earlier page.
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
+    // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
+    // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
+    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
     const base = [...session, ...own];
     // Row reads with no app file on their stack (they run after an await) count only when a related relation read returned that row id.
     const proven = new Map<string, Set<string>>();
