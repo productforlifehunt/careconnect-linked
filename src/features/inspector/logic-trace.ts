@@ -44,6 +44,14 @@ function importsOf(file: string, text: string): Map<string, string> {
     if (!target) continue;
     for (const part of m[1]!.split(",")) { const name = part.trim().split(/\s+as\s+/).pop()!.replace(/^type\s+/, ""); if (name) map.set(name, target); }
   }
+  // Lazily loaded code: (await import("@/x")).fn(…) and const { fn } = await import("@/x").
+  for (const m of text.matchAll(/import\(\s*["'`]([^"'`]+)["'`]\s*\)\s*\)?\s*\.\s*([A-Za-z_$][\w$]*)/g)) {
+    const target = resolveImport(file, m[1]!); if (target && !map.has(m[2]!)) map.set(m[2]!, target);
+  }
+  for (const m of text.matchAll(/(?:const|let)\s*\{([^}]+)\}\s*=\s*await\s+import\(\s*["'`]([^"'`]+)["'`]\s*\)/g)) {
+    const target = resolveImport(file, m[2]!); if (!target) continue;
+    for (const part of m[1]!.split(",")) { const name = part.trim().split(/\s*:\s*/).pop()!; if (name && !map.has(name)) map.set(name, target); }
+  }
   return map;
 }
 
@@ -91,6 +99,8 @@ function exprIds(line: string, key: string): string[] {
 
 /** `isDone ? "line-through opacity-60" : "text-foreground"`: a style choice, not shown data. */
 function isCssOnly(e: string): boolean {
+  // Comparison operands (t.key === "alerts") are conditions, not shown text.
+  e = e.replace(/[!=]==?\s*(["'`])(?:\\.|(?!\1).)*\1/g, "");
   const strs = [...e.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g)].map((x) => x[2]!);
   return strs.length > 0 && strs.every((x) => /^[a-z0-9:/\-[\]. ]*$/.test(x) && /-/.test(x));
 }
