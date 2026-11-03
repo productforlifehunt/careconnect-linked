@@ -14,6 +14,7 @@ export interface LogicStep {
   title: string;
   code: string[];
   fallbacks: number[];    // indexes into code[] that contain a fallback
+  via?: string[];         // files the definition was re-exported through (their call frames name the same code)
 }
 
 const FALLBACK = /\|\||\?\?|\bcatch\b|\bdefault\s*:|\?[^:?]+:\s*(?:null|undefined|""|''|\[\]|\{\}|0|false|["'`][^"'`]*["'`])\s*[,;)}]?\s*$/;
@@ -156,7 +157,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   // `{med.name}` where `med` is this component's prop: the row comes in through `med`, so `name:` elsewhere is unrelated.
   if (comp) for (const m of renderText.matchAll(/\b([A-Za-z_$][\w$]*)\??\.([A-Za-z_$][\w$]*)/g)) if (comp.params.includes(m[1]!) && m[2] !== m[1]) { const i = queue.indexOf(m[2]!); if (i >= 0) queue.splice(i, 1); }
   // Leave room for the called data functions (hooks → sources), which say where rows are read.
-  const localBudget = Math.max(8, maxSteps - 12);
+  const localBudget = Math.max(8, maxSteps - 20);
   while (queue.length && steps.length < localBudget) {
     const p = queue.shift()!;
     if (done.has(p)) continue; done.add(p);
@@ -237,12 +238,13 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
     const next: typeof frontier = [];
     for (const { name, file: f, text: t } of frontier) {
       if (steps.length >= maxSteps) break;
-      let defFile = f; let defText: string | null = t;
+      let defFile = f; let defText: string | null = t; const via: string[] = [];
       let ls = defText.split("\n"); let idx = findDefinition(ls, name);
       if (idx < 0) {
         let target = importsOf(f, t).get(name);
         // Follow re-exports (export { name } from "…" / export * from "…") up to three files deep.
         for (let hopRe = 0; target && hopRe < 4; hopRe++) {
+          if (hopRe > 0) via.push(defFile);
           defFile = target; defText = await readSource(target);
           if (!defText) break;
           ls = defText.split("\n"); idx = findDefinition(ls, name);
@@ -255,7 +257,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       }
       const key = `${defFile}:${idx}`; if (seen.has(key)) continue; seen.add(key);
       const b = block(ls, idx, 30);
-      steps.push(step(defFile, b.from, `调用的判定函数 ${name}() / Called logic ${name}()`, b.code));
+      steps.push({ ...step(defFile, b.from, `调用的判定函数 ${name}() / Called logic ${name}()`, b.code), via });
       for (const c of b.code.join(" ").matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!) && c[1] !== name) next.push({ name: c[1]!, file: defFile, text: defText });
     }
     frontier = next;
