@@ -247,10 +247,10 @@ export default function ReadWriteInspector() {
     const own = pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); });
     return [...session, ...own, ...orphans.filter((r) => !own.includes(r))];
   }, [info, pageRequests, closure, requests, path, closureLabels]);
-  const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
+  const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
   // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
   const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
-  const keep = useCallback((m: FieldMatch) => relatedIds.has(m.request.id) && (!tinyText || !!m.sameCard), [relatedIds, tinyText]);
+  const keep = useCallback((m: FieldMatch) => relatedIds.has(`${m.request.method} ${m.request.endpoint} ${JSON.stringify(m.request.params || {})}`) && (!tinyText || !!m.sameCard), [relatedIds, tinyText]);
   const realMatches = useMemo(() => (info ? info.matches.filter(keep) : []), [info, keep]);
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
