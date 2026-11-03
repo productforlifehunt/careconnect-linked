@@ -168,9 +168,9 @@ export default function ReadWriteInspector() {
   // Grab any edge or corner to resize from that side.
   const startResize = (e: React.PointerEvent, d: string) => {
     e.preventDefault(); e.stopPropagation();
-    const sx = e.clientX, sy = e.clientY; const b0 = { ...box }; const z = scale;
+    const sx = e.clientX, sy = e.clientY; const b0 = { ...box };
     const move = (ev: PointerEvent) => {
-      const dx = (ev.clientX - sx) / z, dy = (ev.clientY - sy) / z; const b = { ...b0 };
+      const dx = ev.clientX - sx, dy = ev.clientY - sy; const b = { ...b0 };
       if (d.includes("e")) b.w = Math.max(280, b0.w + dx);
       if (d.includes("s")) b.h = Math.max(200, b0.h + dy);
       if (d.includes("w")) { b.w = Math.max(280, b0.w - dx); b.x = b0.x + (b0.w - b.w); }
@@ -318,7 +318,7 @@ export default function ReadWriteInspector() {
       )}
       {on && (
         <div ref={panelRef} className="fixed z-[9999] flex flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-2xl"
-          style={{ left: box.x, top: box.y, width: box.w, height: box.h, zoom: scale }}>
+          style={{ left: box.x, top: box.y, width: box.w, height: box.h }}>
           {(["n","s","e","w","ne","nw","se","sw"] as const).map((d) => <div key={d} onPointerDown={(e) => startResize(e, d)} className="absolute z-10" style={{ ...(d.includes("n") ? { top: 0 } : d.includes("s") ? { bottom: 0 } : { top: 8, bottom: 8 }), ...(d.includes("w") ? { left: 0 } : d.includes("e") ? { right: 0 } : { left: 8, right: 8 }), width: d.length === 2 || d === "e" || d === "w" ? 8 : undefined, height: d.length === 2 || d === "n" || d === "s" ? 8 : undefined, cursor: `${d}-resize`, touchAction: "none" }} />)}
           <div className="flex cursor-move touch-none select-none items-center gap-2 border-b border-border p-3" onPointerDown={startDrag} title="拖动移动面板 / Drag to move">
             <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.max(0.6, +(z - 0.1).toFixed(1)))} aria-label="缩小 / Smaller">A−</Button>
@@ -340,7 +340,7 @@ export default function ReadWriteInspector() {
               </button>
             ))}
           </div>
-          <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">
+          <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm" style={{ zoom: scale }}>
             {interact && <p className="rounded-md bg-muted p-2 text-xs">浏览模式：可以正常点击和跳转。要查看某个元素，切回「选择」。 / Browse mode: navigate freely.</p>}
             {tab === "element" && !info && <p className="text-xs text-muted-foreground">在「选择」模式下点页面上任意元素。 / In Select mode, click any element on the page.</p>}
             {tab === "element" && info && (
