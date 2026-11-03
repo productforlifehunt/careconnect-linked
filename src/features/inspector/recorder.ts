@@ -100,3 +100,36 @@ export class InspectorWriteBlocked extends Error {
     this.name = "InspectorWriteBlocked";
   }
 }
+
+/**
+ * Requests that bypass wordpressFetchRaw (WooCommerce, bookings, auth, media)
+ * are recorded too by observing window.fetch. Recording only: they are never
+ * held back here, so sign-in refresh and checkout behave normally.
+ */
+function installFetchObserver() {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { __rwFetchObserved?: boolean; fetch: typeof fetch };
+  if (w.__rwFetchObserved) return;
+  w.__rwFetchObserved = true;
+  const original = w.fetch.bind(window);
+  w.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    let entry: RecordedRequest | null = null;
+    try {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const stack = new Error().stack || "";
+      const viaClient = /wordpress-client\.ts|rel-batch\.ts/.test(stack) && !/woocommerce-api|wp-data|wp-auth/.test(stack);
+      const m = url.match(/\/wp-json\/([^?#]+)(?:\?([^#]*))?/) || url.match(/[?&]rest_route=\/?([^&#]+)(?:&([^#]*))?/);
+      if (m && !viaClient && isResearcherAccount()) {
+        const params = m[2] ? Object.fromEntries(new URLSearchParams(m[2])) : undefined;
+        let body: unknown;
+        try { body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined; } catch { body = undefined; }
+        entry = recordRequest((init?.method || (typeof input === "object" && "method" in input ? input.method : "GET")).toUpperCase(), decodeURIComponent(m[1]!), params, body);
+        if (entry) entry.blocked = false;
+      }
+    } catch { entry = null; }
+    const res = await original(input as RequestInfo, init);
+    if (entry) attachResponse(entry, res);
+    return res;
+  }) as typeof fetch;
+}
+installFetchObserver();
