@@ -9,7 +9,7 @@ const FILES = new Set(Object.keys(LOADERS).map((k) => k.replace(/^\/src\//, ""))
 export type LiveRef = [kind: string, key: string, method: string, line: number];
 export interface LiveEntry { i: string[]; r: LiveRef[] }
 
-async function readSource(file: string): Promise<string | null> {
+export async function readSource(file: string): Promise<string | null> {
   const key = `/src/${file}`;
   if (!LOADERS[key]) return null;
   if (import.meta.env.DEV) {
@@ -30,7 +30,7 @@ function joinPath(base: string, spec: string) {
   for (const p of spec.split("/")) { if (p === "..") parts.pop(); else if (p !== ".") parts.push(p); }
   return parts.join("/");
 }
-function resolveImport(from: string, spec: string): string | null {
+export function resolveImport(from: string, spec: string): string | null {
   let base: string;
   if (spec.startsWith("@/")) base = spec.slice(2);
   else if (spec.startsWith(".")) base = joinPath(dirOf(from), spec);

@@ -10,8 +10,9 @@ Write simplified Chinese first, then English, each as compact Markdown bullets:
 1. 显示什么 / What it shows: which CCT (number + name) and which fields (code + dictionary name) feed what the user sees.
 2. 读取 / Reads: each CCT/REL read and why, in call order if visible.
 3. 写入 / Writes: what clicking would create/update/delete/link (CCT, fields, REL), based on the handler code and write references. Say clearly when a write was only seen statically and not observed live.
-4. 跳转 / Navigation: where clicking goes, if any.
-5. 可疑之处 / Suspicious: concrete problems only — relation done by stored IDs instead of a JetEngine REL, CCT/REL not in the dictionary, duplicate or unused reads, legacy fields, writes on page load, cross-brand data. If none, say none found.
+4. 判定逻辑 / Decision logic: from decisionLogic, explain step by step how the shown value (e.g. a status like pending/done/missed, a time, a count) is computed, which stored fields and logs it compares, and every branch it can take.
+5. 跳转 / Navigation: where clicking goes, if any.
+6. 可疑之处 / Suspicious: concrete problems only — each fallback line in decisionLogic (say whether it hides a missing value, shows a default the user could mistake for real data, or is redundant), relation done by stored IDs instead of a JetEngine REL, CCT/REL not in the dictionary, duplicate or unused reads, legacy fields, writes on page load, cross-brand data. If none, say none found.
 Use only the supplied evidence. Never guess the meaning of a field or option code from its letters; use the dictionary names given. Say "未确认 / unconfirmed" when evidence is missing. Keep under 350 words per language.`;
 
 export async function verifyResearcher(token: string): Promise<void> {
