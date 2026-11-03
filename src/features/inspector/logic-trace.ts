@@ -241,7 +241,8 @@ export async function traceLogic(source: string, maxSteps = 50, parents: string[
       let handed = false;
       pl.forEach((l, i) => {
         const m = l.match(re); if (!m || steps.length >= maxSteps) return;
-        if (m[1] != null && (handed || (childName && !l.includes(`<${childName}`)))) return;
+        // Props often sit on their own lines below `<Child`: look a few lines up for the opening tag.
+        if (m[1] != null && (handed || (childName && !pl.slice(Math.max(0, i - 8), i + 1).join(" ").includes(`<${childName}`)))) return;
         if (m[1] != null) handed = true;
         const key = `${pf}:${i}`; if (seen.has(key)) return; seen.add(key);
         const code = m[1] != null ? [l.trim().slice(Math.max(0, l.trim().indexOf(`${name}=`) - 10), l.trim().indexOf(`${name}=`) + name.length + m[1].length + 40)] : block(pl, i, 12).code;
