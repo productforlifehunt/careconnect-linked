@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
 import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@/features/inspector/decode";
 import { inspectElement, pageSourceFiles, type ElementInfo } from "@/features/inspector/inspect-dom";
-import { traceLogic, type LogicStep } from "@/features/inspector/logic-trace";
+import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
 import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
@@ -35,6 +35,10 @@ function describeBody(req: RecordedRequest): string[] {
   return lines;
 }
 
+function rowCount(req: RecordedRequest): number {
+  return Array.isArray(req.rows) ? req.rows.length : req.rows ? 1 : 0;
+}
+
 function returnedFields(req: RecordedRequest): string {
   const rows = Array.isArray(req.rows) ? req.rows : req.rows ? [req.rows] : [];
   const first = rows[0] as Record<string, unknown> | undefined;
@@ -55,7 +59,7 @@ function DataChain({ requests }: { requests: RecordedRequest[] }) {
       {steps.map(({ t, r, n }, i) => (
         <li key={r.id} className="rounded border border-border p-1">
           <span className="font-medium">{["②","③","④","⑤","⑥","⑦","⑧","⑨"][i] || "·"} </span>
-          {t.kind === "rel" ? <>经关联 / via <b>{t.label}</b></> : <>{t.action} <b>{t.label}</b></>}{n > 1 && ` ×${n}`}
+          {t.kind === "rel" ? <>经关联 / via <b>{t.label}</b></> : <>{t.action} <b>{t.label}</b></>}{n > 1 && ` ×${n}`} <span className="text-muted-foreground">→ 返回 {rowCount(r)} 行 / {rowCount(r)} rows</span>
           {r.params && Object.keys(r.params).length > 0 && <div className="font-mono text-[10px] text-muted-foreground">条件 / filter: {new URLSearchParams(r.params as Record<string, string>).toString()}</div>}
           {t.kind !== "rel" && returnedFields(r) && <div className="text-[10px]">字段 / fields: {returnedFields(r)}</div>}
         </li>
@@ -189,7 +193,7 @@ export default function ReadWriteInspector() {
   const [logic, setLogic] = useState<LogicStep[] | null>(null);
   useEffect(() => {
     let live = true; setLogic(null);
-    if (info?.sources[0]) void traceLogic(info.sources[0], 30, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "").then((r) => { if (live) setLogic(r); });
+    if (info?.sources[0]) void traceLogic(info.sources[0], 30, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "", info.card).then((r) => { if (live) setLogic(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   useEffect(() => {
@@ -213,7 +217,7 @@ export default function ReadWriteInspector() {
       // Seeds: the helper/hook files the decision logic really calls (not the whole page and everything it imports).
       const pageFiles = new Set(info!.sources.map((x) => x.split(":")[0]!));
       const helpers = [...new Set(logic.map((st) => st.file))].filter((f) => !pageFiles.has(f) && !INFRA.test(f));
-      return helpers.length ? Promise.resolve(new Set(helpers)) : importClosure([own], 1);
+      return helpers.length ? importClosure(helpers, 1).then((c) => new Set([...c].filter((f) => !pageFiles.has(f) && !INFRA.test(f)))) : importClosure([own], 1);
     })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
@@ -290,6 +294,14 @@ export default function ReadWriteInspector() {
                     ))}</ul>
                   )}
                 </section>
+                {realMatches.length === 0 && logic && decidingExpression(logic) && (
+                  <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+                    <div className="font-medium">这个值是算出来的 / Computed value</div>
+                    <div>显示 “{info.text.slice(0, 40)}” = <span className="font-mono">{decidingExpression(logic)}</span></div>
+                    {/\.length\b/.test(decidingExpression(logic)!) && <div>即：下面数据链读出的行，经过判定逻辑筛选后剩下的条数。 / i.e. the number of rows left after the decision logic below filters the reads in the data chain.</div>}
+                    <div className="text-[10px] text-muted-foreground">计算过程见下方「判定逻辑」，数据来源见「数据链」。 / See decision logic and data chain below.</div>
+                  </section>
+                )}
                 {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
                 <section className="space-y-1">
                   <div className="text-xs font-medium">数据链 / Data chain {closure ? `(${relatedRequests.filter((r) => r.method === "GET").length})` : "…"}</div>

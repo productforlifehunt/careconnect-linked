@@ -16,6 +16,7 @@ export interface ElementInfo {
   link?: string | undefined;
   props: Array<{ component: string; prop: string; value: string }>;
   matches: FieldMatch[];
+  card: string;            // text of the surrounding card/row
 }
 
 export interface FieldMatch { sameCard?: boolean; target: Target; row: string; field: string; fieldName?: string | undefined; option?: string | undefined; value: string; request: RecordedRequest }
@@ -142,12 +143,13 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   // Text of the surrounding card/row, to tell which of several matching rows this element belongs to.
   let box: Element | null = el.closest("button, a, li, tr, [role=button], [role=row], [role=listitem]");
   if (!box) { box = el; for (let i = 0; i < 2 && box.parentElement && cleanText(box.parentElement).length < 200; i++) box = box.parentElement; }
-  const around = cleanText(box).toLowerCase();
+  const cardText = cleanText(box);
+  const around = cardText.toLowerCase();
   // A handler is written in the nearest component that also has its own source file on the element chain.
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()) };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText };
 }
 
 function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] {
