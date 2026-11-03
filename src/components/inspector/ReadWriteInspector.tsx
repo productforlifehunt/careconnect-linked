@@ -243,7 +243,7 @@ export default function ReadWriteInspector() {
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from ({info.matches.length})</div>
                   {info.matches.length === 0 ? <p className="text-xs text-muted-foreground">没在本次读取的数据里找到这段文字（可能是固定文字或经过换算） / Not found in recorded data (static text or computed).</p> : (
                     <ul className="space-y-1 text-xs">{info.matches.slice(0, 12).map((m, i) => (
-                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”</li>
+                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}</li>
                     ))}</ul>
                   )}
                 </section>

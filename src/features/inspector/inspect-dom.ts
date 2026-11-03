@@ -18,7 +18,7 @@ export interface ElementInfo {
   matches: FieldMatch[];
 }
 
-export interface FieldMatch { target: Target; row: string; field: string; fieldName?: string | undefined; option?: string | undefined; value: string; request: RecordedRequest }
+export interface FieldMatch { sameCard?: boolean; target: Target; row: string; field: string; fieldName?: string | undefined; option?: string | undefined; value: string; request: RecordedRequest }
 
 const SKIP_COMPONENTS = /^(Primitive|Slot|SlotClone|Presence|Portal|Provider|Consumer|Context|Lazy|Match|Outlet|ErrorBoundary|Suspense|Fragment|Popper|FocusScope|DismissableLayer|Collection|RovingFocus|_c\d*|[a-z])/;
 
@@ -116,7 +116,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
       const fp = f.memoizedProps;
       if (name && !SKIP_COMPONENTS.test(name) && fp && typeof fp === "object" && dataProps.length < 12 && components.length <= 4) {
         for (const [k, v] of Object.entries(fp)) {
-          if (k === "children" || typeof v === "function" || v == null || (v as any).$$typeof) continue;
+          if (k === "children" || k === "className" || k === "style" || k.startsWith("data-") || k.startsWith("aria-") || typeof v === "function" || v == null || (v as any).$$typeof) continue;
           if (typeof v === "object" || typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
             let txt: string; try { txt = JSON.stringify(v, (_k, x) => (typeof x === "function" ? undefined : x && x.$$typeof ? "[element]" : x)); } catch { txt = String(v); }
             if (txt && txt.length > 1) dataProps.push({ component: name, prop: k, value: txt.slice(0, 600) });
@@ -139,11 +139,25 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   }
   if (!link) { const a = el.closest("a"); if (a?.getAttribute("href")) link = a.getAttribute("href")!; }
   const text = cleanText(el);
+  // Text of the surrounding card/row, to tell which of several matching rows this element belongs to.
+  let box: Element = el;
+  for (let i = 0; i < 4 && box.parentElement && cleanText(box.parentElement).length < 400; i++) box = box.parentElement;
+  const around = cleanText(box).toLowerCase();
   // A handler is written in the nearest component that also has its own source file on the element chain.
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: matchValues(text, requests) };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()) };
+}
+
+function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] {
+  for (const m of matches) {
+    const rows = Array.isArray(m.request.rows) ? m.request.rows : [m.request.rows];
+    const row = (rows as Array<Record<string, unknown>>).find((r) => r && String(r["_ID"] ?? r["id"] ?? "") === m.row);
+    if (!row) continue;
+    m.sameCard = Object.entries(row).some(([k, v]) => k !== m.field && !k.startsWith("_") && typeof v === "string" && v.length >= 2 && !/^\d{1,3}$/.test(v) && !own.includes(v.toLowerCase()) && around.includes(v.toLowerCase()));
+  }
+  return [...matches].sort((a, b) => Number(!!b.sameCard) - Number(!!a.sameCard));
 }
 
 /** Every source file that rendered something on the current page. */
