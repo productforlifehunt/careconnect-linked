@@ -294,7 +294,7 @@ export default function ReadWriteInspector() {
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
       decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
-    liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
+    liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
   }), [path, info, relatedRequests, elementRefs, logic]);
 

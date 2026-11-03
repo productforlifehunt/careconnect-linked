@@ -29,6 +29,7 @@ Write simplified Chinese first, then English, as terse Markdown bullets under ex
 2. 数据链 / Chain: from the logged-in user through each REL/CCT read actually called, in order, with its condition (column = value) and returned row count.
 3. 判定 / Conditions: each filter/comparison actually applied, with column code + dictionary name and compared value, file:line.
 4. 计算 / Computation: the exact formula from raw rows to the shown value, step by step, e.g. "= rows where a60 (状态) ≠ 已完成 → count = 1".
+Use returnedRows / rowSample for row counts and stored values. For a condition, state its actual result for this value when the evidence shows it (e.g. "a59 为空 → 不过滤"); list a condition only if its code is on the path to this value; drop conditions that clearly did not apply (an optional argument not passed). One line per bullet, no repeated explanation. Chinese block first in full, then the English block.
 Never infer a code's meaning from its letters; use the dictionary names given, otherwise write "未确认 / unconfirmed".`;
 
 export async function explainInspection(context: string, mode: "full" | "origin" = "full"): Promise<{ text?: string; error?: string; status?: number }> {
