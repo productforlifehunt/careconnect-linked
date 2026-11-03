@@ -106,7 +106,10 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   const STATIC_ID = /^(isCN|isZh|isChinese|zh|t|i18n|language|startsWith|useSite|useTranslation|site|const|let|var|return|defaultValue|true|false|null|undefined|key|title|subtitle|icon|label|description)$/;
   // "data || literal" / "data ?? literal": when the value shown is the literal, it is a fallback for empty data, not interface text.
   const fbm = !matches.length ? [expr || "", ...steps].join("\n").match(/([A-Za-z_$][\w$]*(?:\??\.[\w$]+)*)\s*(?:\|\||\?\?)\s*([^\n;]{1,80})/) : null;
-  const fallbackOf = fbm && !STATIC_ID.test(fbm[1]!.split(/\??\./)[0]!) ? { data: fbm[1]!, alt: fbm[2]!.trim() } : null;
+  // Only a real fallback when what is on screen is the fallback itself: one of its literals is in the shown text, or it is a site/translation label.
+  const altLits = fbm ? [...fbm[2]!.matchAll(/(["'`])((?:\\.|(?!\1).)+)\1/g)].map((x) => x[2]!) : [];
+  const shownIsAlt = !!fbm && !/^\s*[\w$.?]+\s*\?/.test(fbm[2]!) && (altLits.some((l) => text.includes(l)) || (!altLits.some((l) => /\p{L}/u.test(l)) && /\b(site\.|t\(|Z\()/.test(fbm[2]!)) || (/\bsite\.\w+/.test(fbm[2]!) && !text.match(/\p{Script=Han}/u)));
+  const fallbackOf = fbm && shownIsAlt && !STATIC_ID.test(fbm[1]!.split(/\??\./)[0]!) ? { data: fbm[1]!, alt: fbm[2]!.trim() } : null;
   const staticWords = !fallbackOf && steps.length > 0 && steps.every((x) => {
     const body = x.replace(/^[^：]+：/, "").replace(/（[^）]*）\s*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").replace(/\.\s*[A-Za-z_$][\w$]*/g, "").replace(/\b[\w$]+\s*:/g, "");
     return !(body.match(/[A-Za-z_$][\w$]*/g) || []).some((id) => !STATIC_ID.test(id) && !/^[A-Z]/.test(id));
