@@ -94,6 +94,12 @@ function isCssOnly(e: string): boolean {
   return strs.length > 0 && strs.every((x) => /^[a-z0-9:/\-[\]. ]*$/.test(x) && /-/.test(x));
 }
 
+/** Fixed bilingual wording (Z("签到", "Check-In"), isCN ? "讨论" : "Discussion", site.navLabels.x): not data. */
+function isStaticLabel(e: string): boolean {
+  const rest = e.replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").replace(/\b(?:Z|t)\s*\(/g, "(").replace(/\bas any\b/g, "");
+  return [...rest.matchAll(/[A-Za-z_$][\w$.]*/g)].every((m) => /^(isCN|isZh|isChinese|zh|i18n(\.language)?|site(\.[\w$]+)*|defaultValue|startsWith)$/.test(m[0]));
+}
+
 /** The expression that decides a computed value, for showing "this number is X.length". */
 export function decidingExpression(steps: LogicStep[]): string | null {
   for (const st of steps) {
@@ -101,8 +107,10 @@ export function decidingExpression(steps: LogicStep[]): string | null {
     if (m && /“value”/.test(st.title)) return m[1]!.trim();
   }
   // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
-  const render = (steps[0]?.code || []).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l.replace(/className=\{[^}]*\}/g, ""))) || "";
-  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
+  // Children expressions only: attribute values (aria-pressed={isActive}, onClick={…}) are not what is shown.
+  const strip = (l: string) => l.replace(/[\w-]+=\{`[^`]*`\}/g, "").replace(/[\w-]+=\{[^{}]*\}/g, "");
+  const render = strip((steps[0]?.code || []).map(strip).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l)) || "");
+  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && !isStaticLabel(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
