@@ -112,7 +112,8 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   // 1. The rendering expression (a few lines from the tag).
   const render = lines.slice(at, at + 4);
   steps.push(step(file, at, "显示这段内容的代码 / Code that renders it", render));
-  const renderText = render.join(" ");
+  // Style-only expressions (className={`… ${isDone ? "line-through" : ""}`}) do not decide what is shown.
+  const renderText = render.join(" ").replace(/className=\{`[^`]*`\}/g, "").replace(/className=\{[^{}]*\}/g, "");
 
   // 2. Values printed: `{a.b.c}` → property `c`, plain `{x}` → variable `x`.
   const props = new Set<string>();
@@ -140,7 +141,9 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   }
   // `{med.name}` where `med` is this component's prop: the row comes in through `med`, so `name:` elsewhere is unrelated.
   if (comp) for (const m of renderText.matchAll(/\b([A-Za-z_$][\w$]*)\??\.([A-Za-z_$][\w$]*)/g)) if (comp.params.includes(m[1]!) && m[2] !== m[1]) { const i = queue.indexOf(m[2]!); if (i >= 0) queue.splice(i, 1); }
-  while (queue.length && steps.length < maxSteps) {
+  // Leave room for the called data functions (hooks → sources), which say where rows are read.
+  const localBudget = Math.max(8, maxSteps - 12);
+  while (queue.length && steps.length < localBudget) {
     const p = queue.shift()!;
     if (done.has(p)) continue; done.add(p);
     // A prop of a component defined in this same file: follow it to the line that hands it over (<MedRow med={med} />), then to that list.
