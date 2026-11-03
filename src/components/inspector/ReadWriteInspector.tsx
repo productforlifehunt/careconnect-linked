@@ -1,3 +1,4 @@
+import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
@@ -161,6 +162,16 @@ export default function ReadWriteInspector() {
   const [path, setPath] = useState(currentPath());
   const requests = useRecorded();
   const panelRef = useRef<HTMLDivElement>(null);
+  // Movable, resizable panel (drag the header, pull the bottom-right corner, A−/A+ scales text).
+  const [box, setBox] = useState(() => { const w = Math.min(440, window.innerWidth - 16); return { x: window.innerWidth - w - 8, y: 64, w, h: Math.min(window.innerHeight - 80, 640) }; });
+  const [scale, setScale] = useState(1);
+  const startDrag = (e: React.PointerEvent) => {
+    const el = panelRef.current; if (!el) return;
+    const r = el.getBoundingClientRect(); const dx = e.clientX - r.left, dy = e.clientY - r.top;
+    const move = (ev: PointerEvent) => setBox((b) => ({ x: Math.max(0, Math.min(window.innerWidth - 80, ev.clientX - dx)), y: Math.max(0, Math.min(window.innerHeight - 40, ev.clientY - dy)), w: el.offsetWidth, h: el.offsetHeight || b.h }));
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+  };
 
   useEffect(() => { const t = setInterval(() => setPath(currentPath()), 700); return () => clearInterval(t); }, []);
 
@@ -291,12 +302,15 @@ export default function ReadWriteInspector() {
         <div className="pointer-events-none fixed z-[9998] border-2 border-primary bg-primary/10" style={{ left: selBox.left, top: selBox.top, width: selBox.width, height: selBox.height }} />
       )}
       {on && (
-        <div ref={panelRef} className="fixed bottom-0 right-0 top-0 z-[9999] flex w-full max-w-[440px] flex-col border-l border-border bg-background text-foreground shadow-2xl">
-          <div className="flex items-center gap-2 border-b border-border p-3 pt-28 sm:pt-3">
+        <div ref={panelRef} className="fixed z-[9999] flex flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-2xl"
+          style={{ left: box.x, top: box.y, width: box.w, height: box.h, resize: "both", minWidth: 280, minHeight: 200, zoom: scale }}>
+          <div className="flex cursor-move touch-none select-none items-center gap-2 border-b border-border p-3" onPointerDown={startDrag} title="拖动移动面板 / Drag to move">
+            <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.max(0.6, +(z - 0.1).toFixed(1)))} aria-label="缩小 / Smaller">A−</Button>
+            <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.min(1.4, +(z + 0.1).toFixed(1)))} aria-label="放大 / Larger">A+</Button>
             <div className="flex-1">
               <div className="text-sm font-semibold">读写核对器 / Read-write inspector</div>
                           </div>
-            <Button size="icon" variant="ghost" onClick={toggle} aria-label="关闭 / Close"><X className="h-4 w-4" /></Button>
+            <Button size="icon" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={toggle} aria-label="关闭 / Close"><X className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-1 border-b border-border p-2">
             <Button size="sm" variant={interact ? "outline" : "default"} onClick={() => setInteract(false)}><MousePointerClick className="mr-1 h-4 w-4" />选择 / Select</Button>
