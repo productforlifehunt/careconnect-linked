@@ -58,7 +58,8 @@ function focusLines(hits: number[], lines: string[], shown: string, card: string
   const rest = card.replace(shown, " ").replace(/\s+/g, " ").trim();
   const phrases = [rest, ...rest.split(/[\s·|/]+/)].map(squash).filter((w) => w.length > 2 && !/^\d+$/.test(w));
   const words = shown.split(/\s+/).map(squash).filter((w) => w.length > 2 && !/^\d+$/.test(w));
-  for (const set of [phrases.slice(0, 1), phrases.slice(1), words]) {
+  const whole = [squash(shown)].filter((w) => w.length > 2 && !/^\d+$/.test(w));
+  for (const set of [whole, phrases.slice(0, 1), phrases.slice(1), words]) {
     if (!set.length) continue;
     const f = hits.filter((i) => set.some((w) => squash(lines[i]!).includes(w)));
     if (f.length) return f;
