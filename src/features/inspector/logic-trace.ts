@@ -70,6 +70,15 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   for (const m of renderText.matchAll(/\{([^{}]+)\}/g)) {
     for (const id of m[1]!.matchAll(/(?:\.|\b)([A-Za-z_$][\w$]*)\b(?!\s*\()/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 1) props.add(id[1]!);
   }
+  // `{p.title}` inside `list.map((p) => …)`: the value comes from `list`, so trace the list, not every `title:`.
+  const above = lines.slice(Math.max(0, at - 40), at + 1).join("\n");
+  for (const m of above.matchAll(/([A-Za-z_$][\w$]*)\s*(?:\|\|\s*\[\]\s*)?\)?(?:\.\w+\([^()]*\))*\.map\(\s*\(?\s*([A-Za-z_$][\w$]*)/g)) {
+    const [, list, param] = m;
+    if (new RegExp(`\\b${param}\\.`).test(renderText)) {
+      for (const id of renderText.matchAll(new RegExp(`\\b${param}\\??\\.([A-Za-z_$][\\w$]*)`, "g"))) props.delete(id[1]!);
+      props.delete(param!); props.add(list!);
+    }
+  }
   const calls = new Set<string>();
   const queue = [...props];
   const done = new Set<string>();
