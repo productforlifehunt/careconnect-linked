@@ -217,7 +217,7 @@ export default function ReadWriteInspector() {
       // Seeds: the helper/hook files the decision logic really calls (not the whole page and everything it imports).
       const pageFiles = new Set(info!.sources.map((x) => x.split(":")[0]!));
       const helpers = [...new Set(logic.map((st) => st.file))].filter((f) => !pageFiles.has(f) && !INFRA.test(f));
-      return helpers.length ? importClosure(helpers, 1).then((c) => new Set([...c].filter((f) => !pageFiles.has(f) && !INFRA.test(f)))) : importClosure([own], 1);
+      return helpers.length ? Promise.resolve(new Set(helpers)) : importClosure([own], 1);
     })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
