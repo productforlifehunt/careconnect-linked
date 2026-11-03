@@ -1,6 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
@@ -292,8 +293,19 @@ export default function ReadWriteInspector() {
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
   const summaryRef = useRef<HTMLElement | null>(null);
+  const queryClient = useQueryClient();
+  // The app's own cached query results for the hooks this element's logic calls (queryKey: ["inboxCounts"] …):
+  // the exact values the screen computed from, so counts like "5" can be re-added from real data.
+  const cachedResults = useCallback(() => {
+    const text = (logic || []).map((st) => st.code.join("\n")).join("\n");
+    return queryClient.getQueryCache().findAll().filter((q) => { const k = q.queryKey[0]; return typeof k === "string" && k.length > 2 && new RegExp(`["'\`]${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'\`]`).test(text); }).slice(0, 15).map((q) => {
+      const d = q.state.data as unknown;
+      return { queryKey: q.queryKey, status: q.state.status, length: Array.isArray(d) ? d.length : undefined, value: JSON.stringify(d ?? null).slice(0, 1500) };
+    });
+  }, [queryClient, logic]);
   const elementContext = useCallback(() => JSON.stringify({
     deterministicSummary: summaryRef.current?.innerText.slice(0, 6000) || null,
+    cachedQueryResults: cachedResults(),
     // Dictionary column names and option meanings for every table this element really read (b55 → "accepted").
     dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     page: path, uiLanguage: document.documentElement.lang || navigator.language, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
@@ -302,7 +314,7 @@ export default function ReadWriteInspector() {
     otherPageReads: pageRequests.filter((r) => !relatedRequests.includes(r)).slice(0, 100).map((r) => ({ target: decodeEndpoint(r.method, r.endpoint).label, endpoint: r.endpoint, returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 300), callers: (r.callers || []).slice(0, 2) })),
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests]);
+  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests, cachedResults]);
 
   const pageContext = useCallback(() => JSON.stringify({
     page: path, files: pageFiles,
