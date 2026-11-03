@@ -27,7 +27,7 @@ function block(lines: string[], start: number, max = 30): { from: number; code: 
     const l = lines[i]!; code.push(l);
     for (const ch of l) { if (ch === "{" || ch === "(" || ch === "[") depth++; else if (ch === "}" || ch === ")" || ch === "]") depth--; }
     if (depth <= 0 && i > start && /[;,)}]\s*$/.test(l)) break;
-    if (depth <= 0 && i === start && /;\s*$/.test(l)) break;
+    if (depth <= 0 && i === start && /[;,]\s*$/.test(l)) break;
   }
   return { from: start, code };
 }
