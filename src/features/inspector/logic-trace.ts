@@ -89,7 +89,7 @@ export function decidingExpression(steps: LogicStep[]): string | null {
     if (m && /“value”/.test(st.title)) return m[1]!.trim();
   }
   // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
-  const render = steps[0]?.code.join(" ") || "";
+  const render = (steps[0]?.code || []).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l.replace(/className=\{[^}]*\}/g, ""))) || "";
   const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
