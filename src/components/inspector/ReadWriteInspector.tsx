@@ -320,6 +320,7 @@ export default function ReadWriteInspector() {
   const elementContext = useCallback(() => fitContext({
     deterministicSummary: summaryRef.current?.innerText.slice(0, 6000) || null,
     cachedQueryResults: cachedResults(),
+    otherCachedQueries: queryClient.getQueryCache().findAll().map((q) => String(q.queryKey[0])).filter((k, i, a) => a.indexOf(k) === i).slice(0, 60),
     // Dictionary column names and option meanings for every table this element really read (b55 → "accepted").
     dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     page: path, uiLanguage: document.documentElement.lang || navigator.language, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
