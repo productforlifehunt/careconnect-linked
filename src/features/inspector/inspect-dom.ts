@@ -79,7 +79,7 @@ function matchValues(text: string, requests: RecordedRequest[]): FieldMatch[] {
           let how = "";
           if (low === want) how = "完全相同 / exact";
           else if (low.length >= 2 && !/^\d{1,3}$/.test(low) && want.includes(low)) how = "包含在显示文字中 / part of the text";
-          else if (want.length >= 4 && low.includes(want)) how = "显示的是其中一部分 / shown in part";
+          else if (want.length >= 4 && low.includes(want) && low.length <= want.length * 3) how = "显示的是其中一部分 / shown in part";
           else { const f = displayForms(s).find((x) => want.includes(x)); if (f) how = `换算显示为 / shown as ${f}`; }
           if (!how) continue;
           const key = `${target.key}|${rowId}|${prefix}${k}`;
