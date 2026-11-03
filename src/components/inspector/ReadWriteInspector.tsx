@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import ReactMarkdown from "react-markdown";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
@@ -111,7 +110,7 @@ function AiExplain({ build }: { build: () => string }) {
     <div className="space-y-2">
       <Button size="sm" variant="outline" onClick={run} disabled={state.loading}><Sparkles className="mr-1 h-4 w-4" />{state.loading ? "AI 解读中… / Explaining…" : "AI 解读 / Explain with AI"}</Button>
       {state.error && <p className="text-xs text-destructive">{state.error}</p>}
-      {state.text && <div className="prose prose-sm max-w-none text-xs"><ReactMarkdown>{state.text}</ReactMarkdown></div>}
+      {state.text && <div className="whitespace-pre-wrap rounded-md bg-muted/40 p-2 text-xs">{state.text}</div>}
     </div>
   );
 }
