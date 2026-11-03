@@ -94,7 +94,7 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   const readLines = [...seen.values()].map(({ r, n, rows, ids }, i) => {
     const t = decodeEndpoint(r.method, r.endpoint); const def = (t.cct || t.rel) as Def | undefined; if (def) defs.push(def);
     const f = filterText(r, def);
-    const times = n > 1 ? `（读了 ${n} 次${ids.length > 1 ? `，逐行读取 #${ids.join("、#")}，每次返回 1 行` : ""}）` : "";
+    const times = n > 1 ? `（读了 ${n} 次${t.kind === "cct" && ids.length > 1 ? `，逐行读取 #${ids.join("、#")}，每次返回 1 行` : ""}）` : "";
     if (t.kind === "cct" && ids.length > 1) return `${i + 1}. 逐行读取 ${t.label.replace(/\s*#\d+$/, "")}，共 ${ids.length} 行：#${ids.join("、#")}，每次 1 行`;
     if (t.kind === "rel") return `${i + 1}. 经 JetEngine 关联 ${t.label} 查关联对象${f ? `，条件 ${f}` : ""}，得到 ${rows} 条${times}`;
     if (t.kind === "cct") return `${i + 1}. 读取 ${t.label}${f ? `，条件 ${f}` : "，不带筛选条件"}，返回 ${rows} 行${times}`;
