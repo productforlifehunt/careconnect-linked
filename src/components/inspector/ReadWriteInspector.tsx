@@ -231,12 +231,22 @@ export default function ReadWriteInspector() {
     })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
+  // Reads with no app file on their call stack (timers, retries) count when the traced code names that same table/relation.
+  const [closureLabels, setClosureLabels] = useState<string[]>([]);
+  useEffect(() => {
+    let live = true; setClosureLabels([]);
+    if (closure?.size) void codeRefs([...closure], 1).then((r) => { if (live) setClosureLabels([...new Set(r.map((x) => x.label.replace(/ \[[RT]\.\w+\]$/, "")))]); });
+    return () => { live = false; };
+  }, [closure]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
     // Session data (signed-in profile) is read once by a context provider, often on an earlier page.
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
-    return [...session, ...pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); })];
-  }, [info, pageRequests, closure, requests, path]);
+    const named = (r: RecordedRequest) => { if (r.method !== "GET" || ownerFile(r)) return false; const l = decodeEndpoint(r.method, r.endpoint).label.replace(/ #\d+$/, "").replace(/ (读子项|读父项).*$/, ""); return closureLabels.some((x) => x === l || l.startsWith(x)); };
+    const orphans = requests.filter((r) => named(r) && (r.path === path || !pageRequests.length));
+    const own = pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); });
+    return [...session, ...own, ...orphans.filter((r) => !own.includes(r))];
+  }, [info, pageRequests, closure, requests, path, closureLabels]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
   const realMatches = useMemo(() => (info ? info.matches.filter((m) => relatedIds.has(m.request.id)) : []), [info, relatedIds]);
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !relatedIds.has(m.request.id)) : []), [info, relatedIds]);
