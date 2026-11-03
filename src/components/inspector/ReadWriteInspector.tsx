@@ -166,7 +166,7 @@ export default function ReadWriteInspector() {
   const [clickNo, setClickNo] = useState(0);
   useEffect(() => {
     let live = true; setElementRefs([]);
-    if (info) void codeRefs(info.sources.slice(0, 3).map((s) => s.split(":")[0]!), 0).then((r) => { if (live) setElementRefs(r); });
+    if (info) void codeRefs([...new Set(info.sources.map((s) => s.split(":")[0]!))].slice(0, 2), 1).then((r) => { if (live) setElementRefs(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   const pageFiles = useMemo(() => (on && tab === "page" ? pageSourceFiles() : []), [on, tab, path, requests.length]);
@@ -184,7 +184,7 @@ export default function ReadWriteInspector() {
 
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
-      fieldMatches: info.matches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+      props: info.props, fieldMatches: info.matches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
   }), [path, info, relatedRequests, elementRefs]);
@@ -243,10 +243,16 @@ export default function ReadWriteInspector() {
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from ({info.matches.length})</div>
                   {info.matches.length === 0 ? <p className="text-xs text-muted-foreground">没在本次读取的数据里找到这段文字（可能是固定文字或经过换算） / Not found in recorded data (static text or computed).</p> : (
                     <ul className="space-y-1 text-xs">{info.matches.slice(0, 12).map((m, i) => (
-                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”</li>
+                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}</li>
                     ))}</ul>
                   )}
                 </section>
+                {info.props.length > 0 && (
+                  <section className="space-y-1">
+                    <div className="text-xs font-medium">组件拿到的数据 / Data passed to the component</div>
+                    <ul className="space-y-1">{info.props.map((p, i) => <li key={i} className="break-all rounded bg-muted p-1 font-mono text-[10px]">{p.component}.{p.prop} = {p.value}</li>)}</ul>
+                  </section>
+                )}
                 {info.handlers.length > 0 && (
                   <section className="space-y-1">
                     <div className="text-xs font-medium">点击时会执行 / On click runs (未执行 / not run)</div>
