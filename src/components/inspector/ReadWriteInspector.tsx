@@ -8,6 +8,7 @@ import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } fr
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
 import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
+import { OriginSummary } from "./OriginSummary";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import { getStoredWPUser } from "@/services/wp-auth";
 
@@ -321,32 +322,9 @@ export default function ReadWriteInspector() {
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
                 <section className="space-y-1">
-                  <div className="text-xs font-medium">显示的值来自 / Shown value comes from ({realMatches.length})</div>
-                  {realMatches.length === 0 ? <p className="text-xs text-muted-foreground">没在本次读取的数据里找到这段文字（可能是固定文字或经过换算） / Not found in recorded data (static text or computed).</p> : (
-                    <ul className="space-y-1 text-xs">{realMatches.slice(0, 12).map((m, i) => (
-                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}
-                        <ol className="mt-1 space-y-0.5 border-l-2 border-primary/40 pl-2">{traceRow(m.row, m.request, pageRequests, path).map((st, j) => <li key={j}>{st.text}{st.detail && <div className="font-mono text-[10px] text-muted-foreground">{st.detail}</div>}</li>)}</ol></li>
-                    ))}</ul>
-                  )}
+                  <div className="text-xs font-medium">显示的值来自 / Shown value comes from</div>
+                  <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} />
                 </section>
-                {realMatches.length === 0 && accountMatches(info.text).length > 0 && (
-                  <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
-                    <div className="font-medium">来自当前登录账号 / From the signed-in account</div>
-                    {accountMatches(info.text).map((m) => <div key={m} className="font-mono text-[10px]">{m}</div>)}
-                    <div className="text-[10px] text-muted-foreground">登录时 WordPress 返回并保存在本机的账号信息（WordPress 用户 #{String(getStoredWPUser()?.user_id ?? "?")}），本页没有为它另发读取。 / Saved from WordPress at sign-in; no extra read on this page.</div>
-                  </section>
-                )}
-                {realMatches.length === 0 && logic && decidingExpression(logic, info.text) && (
-                  <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
-                    <div className="font-medium">这个值是算出来的 / Computed value</div>
-                    <div>显示 “{info.text.slice(0, 40)}” = <span className="font-mono">{decidingExpression(logic, info.text)}</span></div>
-                    {/\.length\b/.test(decidingExpression(logic, info.text)!) && <div>即：下面数据链读出的行，经过判定逻辑筛选后剩下的条数。 / i.e. the number of rows left after the decision logic below filters the reads in the data chain.</div>}
-                    <div className="text-[10px] text-muted-foreground">计算过程见下方「判定逻辑」，数据来源见「数据链」。 / See decision logic and data chain below.</div>
-                  </section>
-                )}
-                {realMatches.length === 0 && logic && logic.length > 0 && !decidingExpression(logic, info.text) && accountMatches(info.text).length === 0 && (
-                  <p className="rounded border border-border bg-muted/40 p-2 text-xs">这段是界面固定文字（双语文案或配置），不是从数据读出来的。 / Fixed interface wording, not read from data.</p>
-                )}
                 {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
                 <section className="space-y-1">
                   <div className="text-xs font-medium">数据链 / Data chain {closure ? `(${relatedRequests.filter((r) => r.method === "GET").length})` : "…"}</div>
