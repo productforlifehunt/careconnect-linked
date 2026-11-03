@@ -2,7 +2,7 @@ import { lazyRetry } from "@/lib/lazy-retry";
 // ported from main.tsx — i18n must initialise before any component renders.
 import "@/i18n/config";
 
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {

@@ -1,5 +1,5 @@
 import { lazyRetry } from "@/lib/lazy-retry";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 
 // The map (Leaflet) and calendar (FullCalendar) libraries touch `window` the

@@ -1,5 +1,5 @@
 import { lazyRetry } from "@/lib/lazy-retry";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { isResearcherAccount } from "@/features/inspector/recorder";
 
 const ReadWriteInspector = lazyRetry(() => import("./ReadWriteInspector"), "ReadWriteInspector");
