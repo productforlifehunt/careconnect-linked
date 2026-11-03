@@ -152,22 +152,22 @@ function installFetchObserver() {
       // App server functions (/_serverFn/<base64 {file, export}>): recorded under their export and action.
       const sf = url.match(/\/_serverFn\/([A-Za-z0-9_=-]+)/);
       if (sf && !entry && isResearcherAccount() && !/inspector-ai/.test(url)) {
-        let name = "serverFn";
-        try { const id = JSON.parse(atob(sf[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { export?: string; file?: string }; name = String(id.export || name).replace(/_createServerFn_handler$/, ""); if (/inspector-ai/.test(id.file || "")) name = ""; } catch { /* opaque id */ }
+        let name = "serverFn"; let serverFile = "";
+        try { const id = JSON.parse(atob(sf[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { export?: string; file?: string }; name = String(id.export || name).replace(/_createServerFn_handler$/, ""); serverFile = String(id.file || "").replace(/^\/?src\//, "").replace(/\?.*$/, ""); if (/inspector-ai/.test(id.file || "")) name = ""; } catch { /* opaque id */ }
         if (name) {
           let data: unknown;
           try { data = typeof init?.body === "string" ? fromSeroval(JSON.parse(init.body)) : undefined; } catch { data = undefined; }
           const payload = (data && typeof data === "object" && "data" in (data as object) ? (data as { data: unknown }).data : data) as Record<string, unknown> | undefined;
           const action = payload && typeof payload === "object" && typeof payload["action"] === "string" ? String(payload["action"]) : "";
           entry = recordRequest(!action || /^(list|get|fetch|read|load|search|original)/.test(action) ? "GET" : "POST", `server-fn/${name}${action ? `/${action}` : ""}`, payload && typeof payload === "object" ? Object.fromEntries(Object.entries(payload).filter(([, v]) => typeof v !== "string" || v.length < 200)) : undefined, undefined);
-          if (entry) { entry.blocked = false; entry.via = "server-fn"; }
+          if (entry) { entry.blocked = false; entry.via = "server-fn"; if (!entry.callers.length && serverFile) entry.callers = [serverFile]; }
         }
       }
     } catch { entry = null; }
     const res = await original(input as RequestInfo, init);
     if (entry?.via) {
       const e = entry; e.status = res.status;
-      res.clone().json().then((raw) => { const j = e.via === "server-fn" ? fromSeroval(raw) : raw; e.rows = trim((j && typeof j === "object" && "data" in (j as object) && e.via !== "server-fn") ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
+      res.clone().json().then((raw) => { let j = e.via === "server-fn" ? fromSeroval(raw) : raw; if (e.via === "server-fn" && j && typeof j === "object" && "result" in (j as object)) j = (j as { result: unknown }).result; e.rows = trim((j && typeof j === "object" && "data" in (j as object) && e.via !== "server-fn") ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
     } else if (entry) attachResponse(entry, res);
     return res;
   }) as typeof fetch;
