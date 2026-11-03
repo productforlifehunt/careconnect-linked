@@ -1,7 +1,8 @@
+import { lazyRetry } from "@/lib/lazy-retry";
 // ported from main.tsx — i18n must initialise before any component renders.
 import "@/i18n/config";
 
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -30,11 +31,11 @@ import { reportLovableError } from "@/lib/lovable-error-reporting";
 import { InspectorGate } from "@/components/inspector/InspectorGate";
 
 // Other sites must not delay hydration of the care homepage.
-const SafetyApp = lazy(() => import("@/pages/safety/SafetyApp"));
-const EsmApp = lazy(() => import("@/pages/esm/EsmApp"));
-const ResearcherApp = lazy(() => import("@/pages/researcher/ResearcherApp"));
-const ConsentApp = lazy(() => import("@/pages/consent/ConsentApp"));
-const SickApp = lazy(() => import("@/pages/sick/SickApp"));
+const SafetyApp = lazyRetry(() => import("@/pages/safety/SafetyApp"), "SafetyApp");
+const EsmApp = lazyRetry(() => import("@/pages/esm/EsmApp"), "EsmApp");
+const ResearcherApp = lazyRetry(() => import("@/pages/researcher/ResearcherApp"), "ResearcherApp");
+const ConsentApp = lazyRetry(() => import("@/pages/consent/ConsentApp"), "ConsentApp");
+const SickApp = lazyRetry(() => import("@/pages/sick/SickApp"), "SickApp");
 
 // Pick the brand + language tab icon before the first paint so a Chinese app
 // never flashes (or gets cached with) the English icon, and vice versa.

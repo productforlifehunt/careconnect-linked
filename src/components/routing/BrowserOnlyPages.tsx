@@ -1,10 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazyRetry } from "@/lib/lazy-retry";
+import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 
 // The map (Leaflet) and calendar (FullCalendar) libraries touch `window` the
 // moment they load, so these pages are only loaded in the browser.
-const GPSTrackingPage = lazy(() => import("@/pages/GPSTracking"));
-const CalendarPage = lazy(() => import("@/pages/Calendar"));
+const GPSTrackingPage = lazyRetry(() => import("@/pages/GPSTracking"), "GPSTrackingPage");
+const CalendarPage = lazyRetry(() => import("@/pages/Calendar"), "CalendarPage");
 
 function PageSpinner() {
   return (
