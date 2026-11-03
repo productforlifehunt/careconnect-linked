@@ -4,6 +4,8 @@
  * the calculation and the conditions the decision logic applies. Built only from
  * what was recorded and the live code trace — nothing is guessed from field codes.
  */
+import { useEffect, useState } from "react";
+import { readSource } from "@/features/inspector/live-index";
 import type { RecordedRequest } from "@/features/inspector/recorder";
 import { decodeEndpoint, fieldName, optionName } from "@/features/inspector/decode";
 import type { FieldMatch } from "@/features/inspector/inspect-dom";
@@ -31,32 +33,46 @@ function filterText(r: RecordedRequest, def: Def | undefined): string {
   }).join("，");
 }
 
-/** Follow how each name in the shown expression is defined in the traced code, step by step. */
-function derivation(expr: string, logic: LogicStep[], defs: Def[]): string[] {
+type Src = { file: string; line: number; code: string[] };
+const SKIP = /^(isCN|isZh|length|true|false|null|undefined|String|Number|Math|data|filter|map|status|const|return|number|string|boolean|any|t)$/;
+
+/** Follow how each name in the shown expression is defined (variables, props passed by the parent, hook results), step by step. */
+function derivation(expr: string, srcs: Src[], defs: Def[]): string[] {
   const out: string[] = []; const done = new Set<string>();
   const queue = [...new Set(expr.match(/[A-Za-z_$][\w$]*/g) || [])];
-  while (queue.length && out.length < 12) {
-    const name = queue.shift()!; if (done.has(name) || /^(isCN|isZh|length|true|false|null|undefined|String|Number|Math)$/.test(name)) continue; done.add(name);
-    const re = new RegExp(`(?:const|let|var)\\s+(?:\\{[^}]*\\b${name}\\b[^}]*\\}|\\[[^\\]]*\\b${name}\\b[^\\]]*\\]|${name})\\s*(?::[^=]+)?=\\s*(.*)$|^\\s*${name}\\s*:\\s*(.+)$`);
-    for (const st of logic) {
-      const j = st.code.findIndex((l) => re.test(l)); if (j < 0) continue;
-      // Take the whole statement (until brackets balance) so filters/conditions are included.
-      let depth = 0; const body: string[] = [];
-      for (let k = j; k < st.code.length && body.length < 14; k++) { const l = st.code[k]!; body.push(l.trim()); for (const c of l) { if ("({[".includes(c)) depth++; else if (")}]".includes(c)) depth--; } if (depth <= 0 && /[;,)}]\s*$|[^=]$/.test(l) && !/[=(,{[]\s*$/.test(l)) break; }
-      const text = body.join(" ").replace(/\s+/g, " ");
-      out.push(`${name}：${annotate(text, defs).slice(0, 400)}  （${st.file}:${st.line + j}）`);
-      const rhs = text.replace(/^.*?=/, "");
-      for (const id of rhs.match(/[A-Za-z_$][\w$]*/g) || []) if (!done.has(id) && id.length > 2) queue.push(id);
-      break;
+  while (queue.length && out.length < 14) {
+    const name = queue.shift()!; if (done.has(name) || SKIP.test(name)) continue; done.add(name);
+    const pats = [
+      new RegExp(`(?:const|let|var)\\s+${name}\\s*(?::[^=]+)?=\\s*\\S`),
+      new RegExp(`(?:const|let|var)\\s+[{[][^=]*\\b${name}\\b[^=]*[}\\]]\\s*=\\s*\\S`),
+      new RegExp(`\\b${name}=\\{`),
+      new RegExp(`^\\s*${name}\\s*:\\s*(?!number|string|boolean|any\\b|[A-Z]\\w*(?:\\[\\])?\\s*[;,]?$)\\S`),
+    ];
+    let hit = false;
+    for (const pat of pats) {
+      for (const st of srcs) {
+        const j = st.code.findIndex((l) => pat.test(l) && !/^\s*(\/\/|\*|import\b|interface\b|type\b)/.test(l)); if (j < 0) continue;
+        let text: string;
+        if (pat.source.includes("=\\{")) { const l = st.code[j]!; const i = l.indexOf(`${name}={`) + name.length + 2; let d = 1, k = i; while (k < l.length && d) { if (l[k] === "{") d++; else if (l[k] === "}") d--; k++; } text = `父组件传进来：${name} = ${l.slice(i, k - 1)}`; }
+        else { let depth = 0; const body: string[] = []; for (let k = j; k < st.code.length && body.length < 14; k++) { const l = st.code[k]!; body.push(l.trim()); for (const c of l) { if ("({[".includes(c)) depth++; else if (")}]".includes(c)) depth--; } if (depth <= 0) break; } text = body.join(" ").replace(/\s+/g, " "); }
+        out.push(`${name}：${annotate(text, defs).slice(0, 400)}  （${st.file}:${st.line + j}）`);
+        const rhs = text.includes("=") ? text.slice(text.indexOf("=") + 1) : text;
+        for (const id of rhs.match(/[A-Za-z_$][\w$]*/g) || []) if (!done.has(id) && id.length > 2) queue.push(id);
+        hit = true; break;
+      }
+      if (hit) break;
     }
   }
   return out;
 }
 
-export function OriginSummary({ text, matches, reads, pageRequests, path, logic, expr, account }: {
+export function OriginSummary({ text, matches, reads, pageRequests, path, logic, expr, account, files }: {
   text: string; matches: FieldMatch[]; reads: RecordedRequest[]; pageRequests: RecordedRequest[]; path: string;
-  logic: LogicStep[] | null; expr: string | null; account: string[];
+  logic: LogicStep[] | null; expr: string | null; account: string[]; files?: string[];
 }) {
+  const [full, setFull] = useState<Src[]>([]);
+  const fk = (files || []).join("|");
+  useEffect(() => { let live = true; void Promise.all((files || []).slice(0, 5).map(async (f) => ({ file: f, line: 1, code: ((await readSource(f)) || "").split("\n") }))).then((r) => { if (live) setFull(r); }); return () => { live = false; }; }, [fk]);
   const lines: string[] = [];
   const shown = `「${text.slice(0, 40)}」`;
   for (const m of matches.slice(0, 6)) {
@@ -83,7 +99,10 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
     return `${i + 1}. ${t.action} ${t.label}${f ? `，条件 ${f}` : ""}，返回 ${rows} 条${times}`;
   });
 
-  const steps = !matches.length && expr && logic ? derivation(expr, logic, defs) : [];
+  const steps = !matches.length && expr && logic ? derivation(expr, [...logic, ...full], defs) : [];
+  // A derivation that ends in bilingual string literals only is interface wording, not data.
+  const staticWords = steps.length > 0 && steps.every((x) => { const body = x.replace(/^[^：]+：/, "").replace(/（[^）]*）\s*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, ""); return !(body.replace(/^\s*[\w$]+\s*:/, "").match(/[A-Za-z_$][\w$]*/g) || []).some((id) => !/^(isCN|isZh|isChinese)$/.test(id)); });
+  if (staticWords) lines.splice(0, lines.length, `显示的${shown}是界面固定文字：按当前语言二选一的写死文案，不读任何数据、不做计算。`);
   // Conditions the decision logic applies (real code lines, field codes named from the dictionary).
   const conds: string[] = []; const falls: string[] = [];
   for (const st of logic || []) st.code.forEach((l, j) => {
