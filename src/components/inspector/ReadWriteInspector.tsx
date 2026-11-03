@@ -7,6 +7,7 @@ import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@
 import { inspectElement, pageSourceFiles, type ElementInfo } from "@/features/inspector/inspect-dom";
 import { traceLogic, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
+import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 
 type Tab = "element" | "page" | "log";
@@ -188,7 +189,7 @@ export default function ReadWriteInspector() {
   const [logic, setLogic] = useState<LogicStep[] | null>(null);
   useEffect(() => {
     let live = true; setLogic(null);
-    if (info?.sources[0]) void traceLogic(info.sources[0]).then((r) => { if (live) setLogic(r); });
+    if (info?.sources[0]) void traceLogic(info.sources[0], 30, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "").then((r) => { if (live) setLogic(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   useEffect(() => {
@@ -208,12 +209,17 @@ export default function ReadWriteInspector() {
   useEffect(() => {
     let live = true; setClosure(null);
     const own = info?.sources[0]?.split(":")[0];
-    if (own) void importClosure([own]).then((c) => { if (live) setClosure(c); });
+    if (own && logic) void (() => {
+      // Seeds: the helper/hook files the decision logic really calls (not the whole page and everything it imports).
+      const pageFiles = new Set(info!.sources.map((x) => x.split(":")[0]!));
+      const helpers = [...new Set(logic.map((st) => st.file))].filter((f) => !pageFiles.has(f) && !INFRA.test(f));
+      return helpers.length ? Promise.resolve(new Set(helpers)) : importClosure([own], 1);
+    })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
-  }, [selected, clickNo]);
+  }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
-    return pageRequests.filter((r) => r.callers.some((c) => closure.has(c)));
+    return pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o) && !INFRA.test(o); });
   }, [info, pageRequests, closure]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
   const realMatches = useMemo(() => (info ? info.matches.filter((m) => relatedIds.has(m.request.id)) : []), [info, relatedIds]);
@@ -221,7 +227,7 @@ export default function ReadWriteInspector() {
 
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
-      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), fieldMatches: realMatches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
   }), [path, info, relatedRequests, elementRefs, logic]);
@@ -248,9 +254,8 @@ export default function ReadWriteInspector() {
         <div ref={panelRef} className="fixed bottom-0 right-0 top-0 z-[9999] flex w-full max-w-[440px] flex-col border-l border-border bg-background text-foreground shadow-2xl">
           <div className="flex items-center gap-2 border-b border-border p-3 pt-28 sm:pt-3">
             <div className="flex-1">
-              <div className="text-sm font-semibold">读写核对模式 / Read-write inspector</div>
-              <div className="text-[11px] text-muted-foreground">只看不写：所有写入都会被拦截 / View only: every write is held back</div>
-            </div>
+              <div className="text-sm font-semibold">读写核对器 / Read-write inspector</div>
+                          </div>
             <Button size="icon" variant="ghost" onClick={toggle} aria-label="关闭 / Close"><X className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-1 border-b border-border p-2">
@@ -266,7 +271,7 @@ export default function ReadWriteInspector() {
             ))}
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm">
-            {interact && <p className="rounded-md bg-muted p-2 text-xs">浏览模式：可以正常点击和跳转，写入仍会被拦截。要查看某个元素，切回「选择」。 / Browse mode: navigate freely; writes are still held back.</p>}
+            {interact && <p className="rounded-md bg-muted p-2 text-xs">浏览模式：可以正常点击和跳转。要查看某个元素，切回「选择」。 / Browse mode: navigate freely.</p>}
             {tab === "element" && !info && <p className="text-xs text-muted-foreground">在「选择」模式下点页面上任意元素。 / In Select mode, click any element on the page.</p>}
             {tab === "element" && info && (
               <>
@@ -280,7 +285,8 @@ export default function ReadWriteInspector() {
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from ({realMatches.length})</div>
                   {realMatches.length === 0 ? <p className="text-xs text-muted-foreground">没在本次读取的数据里找到这段文字（可能是固定文字或经过换算） / Not found in recorded data (static text or computed).</p> : (
                     <ul className="space-y-1 text-xs">{realMatches.slice(0, 12).map((m, i) => (
-                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}</li>
+                      <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}
+                        <ol className="mt-1 space-y-0.5 border-l-2 border-primary/40 pl-2">{traceRow(m.row, m.request, pageRequests, path).map((st, j) => <li key={j}>{st.text}{st.detail && <div className="font-mono text-[10px] text-muted-foreground">{st.detail}</div>}</li>)}</ol></li>
                     ))}</ul>
                   )}
                 </section>

@@ -17,6 +17,7 @@ export interface LogicStep {
 }
 
 const FALLBACK = /\|\||\?\?|\bcatch\b|\bdefault\s*:|\?[^:?]+:\s*(?:null|undefined|""|''|\[\]|\{\}|0|false|["'`][^"'`]*["'`])\s*[,;)}]?\s*$/;
+const GENERIC = new Set(["data", "isLoading", "error", "props", "value", "item", "items", "result", "res", "row", "rows"]);
 const KEYWORDS = new Set(["if", "for", "while", "switch", "return", "typeof", "new", "await", "function", "catch", "map", "filter", "forEach", "find", "some", "every", "reduce", "push", "includes", "slice", "split", "join", "replace", "String", "Number", "Boolean", "parseInt", "parseFloat", "JSON", "Object", "Array", "Math", "Date", "Promise", "useMemo", "useState", "useEffect", "useCallback", "t", "cn"]);
 
 function block(lines: string[], start: number, max = 30): { from: number; code: string[] } {
@@ -50,7 +51,7 @@ function findDefinition(lines: string[], name: string): number {
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 20): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = ""): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -69,15 +70,29 @@ export async function traceLogic(source: string, maxSteps = 20): Promise<LogicSt
   for (const m of renderText.matchAll(/\{([^{}]+)\}/g)) {
     for (const id of m[1]!.matchAll(/(?:\.|\b)([A-Za-z_$][\w$]*)\b(?!\s*\()/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 1) props.add(id[1]!);
   }
+  // `{p.title}` inside `list.map((p) => …)`: the value comes from `list`, so trace the list, not every `title:`.
+  const above = lines.slice(Math.max(0, at - 40), at + 1).join("\n");
+  for (const m of above.matchAll(/([A-Za-z_$][\w$]*)\s*(?:\|\|\s*\[\]\s*)?\)?(?:\.\w+\([^()]*\))*\.map\(\s*\(?\s*([A-Za-z_$][\w$]*)/g)) {
+    const [, list, param] = m;
+    if (new RegExp(`\\b${param}\\.`).test(renderText)) {
+      for (const id of renderText.matchAll(new RegExp(`\\b${param}\\??\\.([A-Za-z_$][\\w$]*)`, "g"))) props.delete(id[1]!);
+      props.delete(param!); props.add(list!);
+    }
+  }
   const calls = new Set<string>();
   const queue = [...props];
   const done = new Set<string>();
   while (queue.length && steps.length < maxSteps) {
     const p = queue.shift()!;
     if (done.has(p)) continue; done.add(p);
-    const re = new RegExp(`(?:\\b${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|\\b${p}\\s*=[^=>])`);
+    const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
+    const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
+    // A list of items (`[{ label: … }, …].map`): keep only the item that shows the clicked text.
+    const words = shownText.split(/\s+/).filter((w) => w.length > 2);
+    const focused = words.length ? hits.filter((i) => words.some((w) => lines[i]!.includes(w))) : [];
+    const use = new Set(focused.length ? focused : hits);
     lines.forEach((l, i) => {
-      if (steps.length >= maxSteps || i === at || !re.test(l)) return;
+      if (steps.length >= maxSteps || !use.has(i)) return;
       const key = `${file}:${i}`; if (seen.has(key)) return; seen.add(key);
       const b = block(lines, i, 12);
       steps.push(step(file, b.from, `“${p}” 在这里被赋值 / “${p}” is decided here`, b.code));
@@ -86,12 +101,41 @@ export async function traceLogic(source: string, maxSteps = 20): Promise<LogicSt
       // A value assigned from another local variable (status: medStatus) is traced too.
       const rhs = joined.match(new RegExp(`\\b${p}\\s*[:=]\\s*([A-Za-z_$][\\w$]*)\\s*[,;]`));
       if (rhs && !KEYWORDS.has(rhs[1]!) && !done.has(rhs[1]!)) queue.push(rhs[1]!);
+      // Item rows: every `key: variable` on the chosen item line is traced (value: pendingTasksCount).
+      if (focused.length) for (const kv of l.matchAll(/\b\w+\s*:\s*([A-Za-z_$][\w$]*)\s*[,}]/g)) if (!KEYWORDS.has(kv[1]!) && !done.has(kv[1]!) && !/^[A-Z]/.test(kv[1]!)) queue.push(kv[1]!);
     });
   }
 
-  // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
   let frontier: Array<{ name: string; file: string; text: string }> = [...calls].map((name) => ({ name, file, text }));
-  for (let hop = 0; hop < 2 && frontier.length && steps.length < maxSteps; hop++) {
+
+  // 2b. Values handed in as props: follow them into the parent component that passes them (`name={expr}`).
+  const parentFiles = [...new Set(parents.map((x) => x.split(":")[0]!).filter((f) => f && f !== file && !/^(components\/layout\/|routes\/__root|components\/ui\/)/.test(f)))];
+  for (const pf of parentFiles.slice(0, 3)) {
+    const pt = await readSource(pf); if (!pt) continue;
+    const pl = pt.split("\n");
+    const pending = [...done]; const pdone = new Set<string>();
+    while (pending.length && steps.length < maxSteps) {
+      const name = pending.shift()!; if (pdone.has(name) || GENERIC.has(name)) continue;
+      const first = pdone.size === 0 || done.has(name); pdone.add(name);
+      // Props are matched only where the parent hands them to the clicked component; later names only by their definition.
+      const re = first ? new RegExp(`\\b${name}=\\{([^}]*)\\}|(?:const|let)\\s+(?:\\{[^}]*\\b)?${name}\\b[^=]*=`) : new RegExp(`(?:const|let)\\s+(?:\\{[^}]*\\b)?${name}\\b[^=]*=`);
+      let handed = false;
+      pl.forEach((l, i) => {
+        const m = l.match(re); if (!m || steps.length >= maxSteps) return;
+        if (m[1] != null && (handed || (childName && !l.includes(`<${childName}`)))) return;
+        if (m[1] != null) handed = true;
+        const key = `${pf}:${i}`; if (seen.has(key)) return; seen.add(key);
+        const code = m[1] != null ? [l.trim().slice(Math.max(0, l.trim().indexOf(`${name}=`) - 10), l.trim().indexOf(`${name}=`) + name.length + m[1].length + 40)] : block(pl, i, 12).code;
+        steps.push(step(pf, i, m[1] != null ? `父组件传入“${name}” / parent passes “${name}”` : `“${name}” 在父组件这里被算出 / computed in parent`, code));
+        const expr = m[1] ?? code.join(" ");
+        for (const id of expr.matchAll(/\b([A-Za-z_$][\w$]*)\b/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 2 && !pdone.has(id[1]!)) pending.push(id[1]!);
+        for (const c of expr.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!)) frontier.push({ name: c[1]!, file: pf, text: pt });
+      });
+    }
+  }
+
+  // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
+  for (let hop = 0; hop < 3 && frontier.length && steps.length < maxSteps; hop++) {
     const next: typeof frontier = [];
     for (const { name, file: f, text: t } of frontier) {
       if (steps.length >= maxSteps) break;
