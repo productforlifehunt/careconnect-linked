@@ -143,6 +143,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   let box: Element | null = el.closest("button, a, li, tr, [role=button], [role=row], [role=listitem]");
   if (!box) { box = el; for (let i = 0; i < 2 && box.parentElement && cleanText(box.parentElement).length < 200; i++) box = box.parentElement; }
   const around = cleanText(box).toLowerCase();
+  console.warn("RWDEBUG", JSON.stringify(around), JSON.stringify(requests.filter((r) => /users_calendar_event\/9[56]/.test(r.endpoint)).map((r) => r.rows)).slice(0, 1500));
   // A handler is written in the nearest component that also has its own source file on the element chain.
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
