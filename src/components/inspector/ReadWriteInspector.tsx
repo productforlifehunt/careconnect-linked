@@ -209,7 +209,12 @@ export default function ReadWriteInspector() {
   useEffect(() => {
     let live = true; setClosure(null);
     const own = info?.sources[0]?.split(":")[0];
-    if (own && logic) void importClosure([...new Set([own, ...logic.map((st) => st.file)])].filter((f) => !INFRA.test(f)), 2).then((c) => { if (live) setClosure(c); });
+    if (own && logic) void (() => {
+      // Seeds: the helper/hook files the decision logic really calls (not the whole page and everything it imports).
+      const pageFiles = new Set(info!.sources.map((x) => x.split(":")[0]!));
+      const helpers = [...new Set(logic.map((st) => st.file))].filter((f) => !pageFiles.has(f) && !INFRA.test(f));
+      return helpers.length ? importClosure(helpers, 2) : importClosure([own], 1);
+    })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
