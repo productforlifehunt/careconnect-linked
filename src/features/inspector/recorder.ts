@@ -107,6 +107,18 @@ export class InspectorWriteBlocked extends Error {
  * are recorded too by observing window.fetch. Recording only: they are never
  * held back here, so sign-in refresh and checkout behave normally.
  */
+/** Best-effort plain view of a server-function payload (seroval: t1 string, t0 number, t9 array, t10 object). */
+function fromSeroval(node: unknown): unknown {
+  if (!node || typeof node !== "object") return node;
+  const n = node as { t?: number; s?: unknown; a?: unknown[]; p?: { k?: string[]; v?: unknown[] }; i?: number };
+  if ("t" in n && typeof n.t === "number" && !("p" in n) && !("a" in n) && "s" in n) return n.t === 0 ? Number(n.s) : n.s;
+  if (n.t === 2) return n.s === 2 ? true : n.s === 3 ? false : null;
+  if (Array.isArray(n.a)) return n.a.map(fromSeroval);
+  if (n.p && Array.isArray(n.p.k)) return Object.fromEntries(n.p.k.map((k, i) => [k, fromSeroval(n.p!.v?.[i])]));
+  if ("t" in n && typeof (n as { t: unknown }).t === "object") return fromSeroval((n as { t: unknown }).t);
+  return node;
+}
+
 function installFetchObserver() {
   if (typeof window === "undefined") return;
   const w = window as unknown as { __rwFetchObserved?: boolean; fetch: typeof fetch };
@@ -137,11 +149,25 @@ function installFetchObserver() {
         entry = recordRequest(/^(list|get|fetch|read|search)/.test(action) ? "GET" : "POST", `wc/server-op/${action}`, rest, undefined);
         if (entry) { entry.blocked = false; entry.via = fn[1]; }
       }
+      // App server functions (/_serverFn/<base64 {file, export}>): recorded under their export and action.
+      const sf = url.match(/\/_serverFn\/([A-Za-z0-9_=-]+)/);
+      if (sf && !entry && isResearcherAccount() && !/inspector-ai/.test(url)) {
+        let name = "serverFn";
+        try { const id = JSON.parse(atob(sf[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { export?: string; file?: string }; name = String(id.export || name).replace(/_createServerFn_handler$/, ""); if (/inspector-ai/.test(id.file || "")) name = ""; } catch { /* opaque id */ }
+        if (name) {
+          let data: unknown;
+          try { data = typeof init?.body === "string" ? fromSeroval(JSON.parse(init.body)) : undefined; } catch { data = undefined; }
+          const input = (data && typeof data === "object" && "data" in (data as object) ? (data as { data: unknown }).data : data) as Record<string, unknown> | undefined;
+          const action = input && typeof input === "object" && typeof input["action"] === "string" ? String(input["action"]) : "";
+          entry = recordRequest(!action || /^(list|get|fetch|read|load|search|original)/.test(action) ? "GET" : "POST", `server-fn/${name}${action ? `/${action}` : ""}`, input && typeof input === "object" ? Object.fromEntries(Object.entries(input).filter(([, v]) => typeof v !== "string" || v.length < 200)) : undefined, undefined);
+          if (entry) { entry.blocked = false; entry.via = "server-fn"; }
+        }
+      }
     } catch { entry = null; }
     const res = await original(input as RequestInfo, init);
     if (entry?.via) {
       const e = entry; e.status = res.status;
-      res.clone().json().then((j) => { e.rows = trim((j && typeof j === "object" && "data" in j) ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
+      res.clone().json().then((raw) => { const j = e.via === "server-fn" ? fromSeroval(raw) : raw; e.rows = trim((j && typeof j === "object" && "data" in (j as object) && e.via !== "server-fn") ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
     } else if (entry) attachResponse(entry, res);
     return res;
   }) as typeof fetch;

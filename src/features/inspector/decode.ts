@@ -51,6 +51,8 @@ export function decodeEndpoint(method: string, endpoint: string): Target {
     return { kind: "cct", key: `cct:${m[1]}`, cct, label: cctLabel(cct, m[1]!) + (m[2] ? ` #${m[2]}` : ""), action: method === "GET" ? (m[2] ? "读一行 Read row" : "读列表 Read list") : action };
   }
   if (/^(wc\/|dokan\/)/.test(ep)) return { kind: "woo", key: `woo:${ep.replace(/\/\d+.*$/, "")}`, label: `WooCommerce/Dokan ${ep}`, action };
+  m = ep.match(/^server-fn\/([\w$]+)(?:\/([\w-]+))?/);
+  if (m) return { kind: "other", key: `server:${m[1]}`, label: `后端服务 / Backend function ${m[1]}${m[2] ? ` · ${m[2]}` : ""}（服务器内部读写不在浏览器里显示 / its own WordPress reads run on the server）`, action };
   if (/^wp\/v2\/users/.test(ep)) return { kind: "user", key: "user", label: `WordPress 用户 Users ${ep}`, action };
   return { kind: "other", key: `other:${ep}`, label: ep, action };
 }
