@@ -189,7 +189,7 @@ export default function ReadWriteInspector() {
   const [logic, setLogic] = useState<LogicStep[] | null>(null);
   useEffect(() => {
     let live = true; setLogic(null);
-    if (info?.sources[0]) void traceLogic(info.sources[0], 24, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "").then((r) => { if (live) setLogic(r); });
+    if (info?.sources[0]) void traceLogic(info.sources[0], 30, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "").then((r) => { if (live) setLogic(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   useEffect(() => {
@@ -213,13 +213,12 @@ export default function ReadWriteInspector() {
       // Seeds: the helper/hook files the decision logic really calls (not the whole page and everything it imports).
       const pageFiles = new Set(info!.sources.map((x) => x.split(":")[0]!));
       const helpers = [...new Set(logic.map((st) => st.file))].filter((f) => !pageFiles.has(f) && !INFRA.test(f));
-      return helpers.length ? importClosure(helpers, 2) : importClosure([own], 1);
+      return helpers.length ? Promise.resolve(new Set(helpers)) : importClosure([own], 1);
     })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
-    console.log('RWDBG', JSON.stringify([...closure]), JSON.stringify(pageRequests.map((r) => [r.endpoint, ownerFile(r)])).slice(0, 3000));
     return pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o) && !INFRA.test(o); });
   }, [info, pageRequests, closure]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);

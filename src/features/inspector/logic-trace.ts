@@ -51,7 +51,7 @@ function findDefinition(lines: string[], name: string): number {
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 24, parents: string[] = [], shownText = "", childName = ""): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = ""): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -126,7 +126,7 @@ export async function traceLogic(source: string, maxSteps = 24, parents: string[
   }
 
   // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
-  for (let hop = 0; hop < 2 && frontier.length && steps.length < maxSteps; hop++) {
+  for (let hop = 0; hop < 3 && frontier.length && steps.length < maxSteps; hop++) {
     const next: typeof frontier = [];
     for (const { name, file: f, text: t } of frontier) {
       if (steps.length >= maxSteps) break;
