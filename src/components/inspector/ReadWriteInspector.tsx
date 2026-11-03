@@ -292,7 +292,7 @@ export default function ReadWriteInspector() {
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
   const elementContext = useCallback(() => JSON.stringify({
-    page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
+    page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
       decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
@@ -351,7 +351,7 @@ export default function ReadWriteInspector() {
                   <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
-                <AiExplain build={elementContext} mode="origin" label="AI 分析这个值怎么来的 / AI: how this value is produced" />
+                <AiExplain key={`o-${info.sources.join()}-${info.text}`} build={elementContext} mode="origin" label="AI 分析这个值怎么来的 / AI: how this value is produced" />
                 <section className="space-y-1">
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from</div>
                   <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} files={[...new Set(info.sources.map((x) => x.split(":")[0]!))]} />
