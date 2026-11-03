@@ -221,12 +221,18 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       let defFile = f; let defText: string | null = t;
       let ls = defText.split("\n"); let idx = findDefinition(ls, name);
       if (idx < 0) {
-        const target = importsOf(f, t).get(name);
-        if (!target) continue;
-        defFile = target; defText = await readSource(target);
-        if (!defText) continue;
-        ls = defText.split("\n"); idx = findDefinition(ls, name);
-        if (idx < 0) continue;
+        let target = importsOf(f, t).get(name);
+        // Follow re-exports (export { name } from "…" / export * from "…") up to three files deep.
+        for (let hopRe = 0; target && hopRe < 4; hopRe++) {
+          defFile = target; defText = await readSource(target);
+          if (!defText) break;
+          ls = defText.split("\n"); idx = findDefinition(ls, name);
+          if (idx >= 0) break;
+          const re = [...defText.matchAll(/export\s*\{([^}]+)\}\s*from\s*["'`]([^"'`]+)["'`]/g)].find((m) => m[1]!.split(",").some((x) => x.trim().split(/\s+as\s+/).pop() === name));
+          const star = [...defText.matchAll(/export\s*\*\s*from\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]!);
+          target = re ? resolveImport(defFile, re[2]!) ?? undefined : star.length ? resolveImport(defFile, star[0]!) ?? undefined : undefined;
+        }
+        if (!defText || idx < 0) continue;
       }
       const key = `${defFile}:${idx}`; if (seen.has(key)) continue; seen.add(key);
       const b = block(ls, idx, 30);
