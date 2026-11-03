@@ -477,3 +477,4 @@
 - [x] 新增药品弹窗：提示文字改为药名/用法示例；加"服药时间"时间选择器 pTime；保存写 a57/a58=YYYY-MM-DD HH:mm:00、a66=FREQ=DAILY;INTERVAL=1（未拆 BYHOUR，原版有）；保存按钮移到时间下方（pSave 2）
 - [x] 跳过图标改 Feather x-circle、已服改 Feather check-circle（画布可见）
 - [ ] 编辑药品不改时间（Update Row 未接 pTime，避免空值覆盖）；多时段/频率未做；卡片今日状态；签到打卡
+- [ ] 签到打卡：原版写 CCT161 a55="Check-in"、a96=b55已签/b56跳过、a99=b56、a61=现在、a100=challenged，REL191+REL173。不能复用用药的 Create Dose Log（字段不同），需新建 "Create Checkin Log" 端点；复制粘贴试验已撤回。
