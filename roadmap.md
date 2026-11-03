@@ -481,3 +481,4 @@
 - [~] 群组页成员列表（2026-11-03，未测）：Groups 页底部新增"MEMBERS"区块（gJoined 2）：REL223 children(SEL_GROUP) → 每人 Get Person 显示姓名，点按无动作。缺：只算已接受成员（待处理邀请未过滤）、角色、邀请码/分享链接、群设置、非成员 onboarding、/care-circle/<id> 深链。
 - [x] 2026-11-03 群组成员（未测）：成员胶囊加显示条件 REL223 meta.a58 EqualTo "b55"，只显示已接受成员；名字后加角色标签 gRoleOwner 2（a56 Includes b56 → " · Owner"）、gRoleAdmin（Includes b57 → " · Admin"）。接口返回已用 22 号群只读核对含 meta.a58/a56。
 - [ ] 群组：邀请码、分享链接、群设置、非成员 onboarding、/care-circle/<id> 深链
+- [x] 2026-11-03 群组页底部加 Fetch 4（Get Group，groupId=SEL_GROUP）+ 文字 gCode："Join code: {{a58}}  Group page: careconnect-linked.lovable.app/care-circle/{{_ID}}"（未测；加入码只显示不进链接）
