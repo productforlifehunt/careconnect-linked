@@ -25,6 +25,7 @@ export interface RecordedRequest {
   status?: number | undefined;
   rows?: unknown;          // trimmed response sample (reads only)
   callers: string[];       // source files on the call stack (dev builds)
+  via?: string | undefined; // backend function that performed it (store operations)
 }
 
 let entries: RecordedRequest[] = [];
@@ -126,9 +127,22 @@ function installFetchObserver() {
         entry = recordRequest((init?.method || (typeof input === "object" && "method" in input ? input.method : "GET")).toUpperCase(), decodeURIComponent(m[1]!), params, body);
         if (entry) entry.blocked = false;
       }
+      // Store operations proxied by the backend function (orders, vendors): recorded under their store action.
+      const fn = url.match(/\/functions\/v1\/(wp-admin-ops)\b/);
+      if (fn && !entry && isResearcherAccount() && typeof init?.body === "string") {
+        let body: Record<string, unknown> = {};
+        try { body = JSON.parse(init.body) as Record<string, unknown>; } catch { body = {}; }
+        const action = String(body["action"] || "?");
+        const { wp_base: _base, action: _a, ...rest } = body;
+        entry = recordRequest(/^(list|get|fetch|read|search)/.test(action) ? "GET" : "POST", `wc/server-op/${action}`, rest, undefined);
+        if (entry) { entry.blocked = false; entry.via = fn[1]; }
+      }
     } catch { entry = null; }
     const res = await original(input as RequestInfo, init);
-    if (entry) attachResponse(entry, res);
+    if (entry?.via) {
+      const e = entry; e.status = res.status;
+      res.clone().json().then((j) => { e.rows = trim((j && typeof j === "object" && "data" in j) ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
+    } else if (entry) attachResponse(entry, res);
     return res;
   }) as typeof fetch;
 }
