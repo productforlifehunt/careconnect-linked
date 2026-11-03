@@ -17,6 +17,7 @@ export interface LogicStep {
 }
 
 const FALLBACK = /\|\||\?\?|\bcatch\b|\bdefault\s*:|\?[^:?]+:\s*(?:null|undefined|""|''|\[\]|\{\}|0|false|["'`][^"'`]*["'`])\s*[,;)}]?\s*$/;
+const GENERIC = new Set(["data", "isLoading", "error", "props", "value", "item", "items", "result", "res", "row", "rows"]);
 const KEYWORDS = new Set(["if", "for", "while", "switch", "return", "typeof", "new", "await", "function", "catch", "map", "filter", "forEach", "find", "some", "every", "reduce", "push", "includes", "slice", "split", "join", "replace", "String", "Number", "Boolean", "parseInt", "parseFloat", "JSON", "Object", "Array", "Math", "Date", "Promise", "useMemo", "useState", "useEffect", "useCallback", "t", "cn"]);
 
 function block(lines: string[], start: number, max = 30): { from: number; code: string[] } {
@@ -50,7 +51,7 @@ function findDefinition(lines: string[], name: string): number {
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 24, parents: string[] = [], shownText = ""): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 24, parents: string[] = [], shownText = "", childName = ""): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -105,10 +106,15 @@ export async function traceLogic(source: string, maxSteps = 24, parents: string[
     const pl = pt.split("\n");
     const pending = [...done]; const pdone = new Set<string>();
     while (pending.length && steps.length < maxSteps) {
-      const name = pending.shift()!; if (pdone.has(name)) continue; pdone.add(name);
-      const re = new RegExp(`\\b${name}=\\{([^}]*)\\}|(?:const|let)\\s+(?:\\{[^}]*\\b)?${name}\\b[^=]*=`);
+      const name = pending.shift()!; if (pdone.has(name) || GENERIC.has(name)) continue;
+      const first = pdone.size === 0 || done.has(name); pdone.add(name);
+      // Props are matched only where the parent hands them to the clicked component; later names only by their definition.
+      const re = first ? new RegExp(`\\b${name}=\\{([^}]*)\\}|(?:const|let)\\s+(?:\\{[^}]*\\b)?${name}\\b[^=]*=`) : new RegExp(`(?:const|let)\\s+(?:\\{[^}]*\\b)?${name}\\b[^=]*=`);
+      let handed = false;
       pl.forEach((l, i) => {
         const m = l.match(re); if (!m || steps.length >= maxSteps) return;
+        if (m[1] != null && (handed || (childName && !l.includes(`<${childName}`)))) return;
+        if (m[1] != null) handed = true;
         const key = `${pf}:${i}`; if (seen.has(key)) return; seen.add(key);
         const code = m[1] != null ? [l.trim().slice(Math.max(0, l.trim().indexOf(`${name}=`) - 10), l.trim().indexOf(`${name}=`) + name.length + m[1].length + 40)] : block(pl, i, 12).code;
         steps.push(step(pf, i, m[1] != null ? `父组件传入“${name}” / parent passes “${name}”` : `“${name}” 在父组件这里被算出 / computed in parent`, code));

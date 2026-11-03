@@ -189,7 +189,7 @@ export default function ReadWriteInspector() {
   const [logic, setLogic] = useState<LogicStep[] | null>(null);
   useEffect(() => {
     let live = true; setLogic(null);
-    if (info?.sources[0]) void traceLogic(info.sources[0], 24, info.sources.slice(1), info.text).then((r) => { if (live) setLogic(r); });
+    if (info?.sources[0]) void traceLogic(info.sources[0], 24, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "").then((r) => { if (live) setLogic(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function ReadWriteInspector() {
   useEffect(() => {
     let live = true; setClosure(null);
     const own = info?.sources[0]?.split(":")[0];
-    if (own && logic) void importClosure([...new Set([own, ...logic.map((st) => st.file)])], 1).then((c) => { if (live) setClosure(c); });
+    if (own && logic) void importClosure([...new Set([own, ...logic.map((st) => st.file)])].filter((f) => !INFRA.test(f)), 2).then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
