@@ -294,7 +294,7 @@ export default function ReadWriteInspector() {
 
   const summaryRef = useRef<HTMLElement | null>(null);
   const queryClient = useQueryClient();
-  const fitContext = (o: Record<string, any>): string => {
+  const fitContext = (o: any): string => {
     let out = JSON.stringify(o);
     const cuts: Array<() => void> = [
       () => { o.codeRefs = (o.codeRefs || []).slice(0, 30); },
