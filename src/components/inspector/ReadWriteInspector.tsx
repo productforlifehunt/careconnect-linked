@@ -254,7 +254,6 @@ export default function ReadWriteInspector() {
     }).map((r) => [r.endpoint, r])).values()];
     return [...base, ...orphans];
   }, [info, pageRequests, closure, requests, path]);
-  if (typeof window !== "undefined") (window as any).__rwDebug = { closure: closure && [...closure], related: relatedRequests.map((r) => r.endpoint), r190: requests.filter((r) => r.endpoint.includes("190")).map((r) => [r.path, r.callers, r.rows]), r187: requests.filter((r) => r.endpoint.includes("calendar_event")).map((r) => [r.endpoint, r.callers, r.path]), path };
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
   // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
   const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
