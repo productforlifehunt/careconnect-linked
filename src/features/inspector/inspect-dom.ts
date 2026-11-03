@@ -100,7 +100,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   }
   const components: string[] = [];
   const handlers: ElementInfo["handlers"] = [];
-  const props: ElementInfo["props"] = [];
+  const dataProps: ElementInfo["props"] = [];
   const pending: Array<{ prop: string; code: string }> = [];
   let link: string | undefined;
   let owner = "";
@@ -114,12 +114,12 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
       // The handler belongs to the first real component above where it was found.
       // Data the component received (plain objects / arrays only).
       const fp = f.memoizedProps;
-      if (name && !SKIP_COMPONENTS.test(name) && fp && typeof fp === "object" && props.length < 12 && components.length <= 4) {
+      if (name && !SKIP_COMPONENTS.test(name) && fp && typeof fp === "object" && dataProps.length < 12 && components.length <= 4) {
         for (const [k, v] of Object.entries(fp)) {
           if (k === "children" || typeof v === "function" || v == null || (v as any).$$typeof) continue;
           if (typeof v === "object" || typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
             let txt: string; try { txt = JSON.stringify(v, (_k, x) => (typeof x === "function" ? undefined : x && x.$$typeof ? "[element]" : x)); } catch { txt = String(v); }
-            if (txt && txt.length > 1) props.push({ component: name, prop: k, value: txt.slice(0, 600) });
+            if (txt && txt.length > 1) dataProps.push({ component: name, prop: k, value: txt.slice(0, 600) });
           }
         }
       }
@@ -143,7 +143,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props, matches: matchValues(text, requests) };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: matchValues(text, requests) };
 }
 
 /** Every source file that rendered something on the current page. */
