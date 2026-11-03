@@ -189,7 +189,8 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
     lines.forEach((l, i) => {
       if (steps.length >= maxSteps || !use.has(i)) return;
       const key = `${file}:${i}`; if (seen.has(key)) return; seen.add(key);
-      const b = block(lines, i, 12);
+      // A list built in a useMemo / function body is read whole: every source that pushes into it matters.
+      const b = block(lines, i, /useMemo\(|useCallback\(|=>\s*\{\s*$|function\b/.test(lines[i]!) ? 90 : 12);
       steps.push(step(file, b.from, `“${p}” 在这里被赋值 / “${p}” is decided here`, b.code));
       const joined = b.code.join(" ");
       for (const c of joined.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!)) calls.add(c[1]!);
