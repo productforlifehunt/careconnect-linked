@@ -104,12 +104,16 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   const steps = !matches.length && expr && logic ? derivation(expr, [...logic, ...full], defs) : [];
   // A derivation that only reaches wording (bilingual literals, translations t("…"), site brand settings, icons) is interface text, not data.
   const STATIC_ID = /^(isCN|isZh|isChinese|zh|t|i18n|language|startsWith|useSite|useTranslation|site|const|let|var|return|defaultValue|true|false|null|undefined|key|title|subtitle|icon|label|description)$/;
-  const staticWords = steps.length > 0 && steps.every((x) => {
+  // "data || literal" / "data ?? literal": when the value shown is the literal, it is a fallback for empty data, not interface text.
+  const fbm = !matches.length ? [expr || "", ...steps].join("\n").match(/([A-Za-z_$][\w$]*(?:\??\.[\w$]+)*)\s*(?:\|\||\?\?)\s*([^\n;]{1,80})/) : null;
+  const fallbackOf = fbm && !STATIC_ID.test(fbm[1]!.split(/\??\./)[0]!) ? { data: fbm[1]!, alt: fbm[2]!.trim() } : null;
+  const staticWords = !fallbackOf && steps.length > 0 && steps.every((x) => {
     const body = x.replace(/^[^：]+：/, "").replace(/（[^）]*）\s*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").replace(/\.\s*[A-Za-z_$][\w$]*/g, "").replace(/\b[\w$]+\s*:/g, "");
     return !(body.match(/[A-Za-z_$][\w$]*/g) || []).some((id) => !STATIC_ID.test(id) && !/^[A-Z]/.test(id));
   });
   const clockOnly = !matches.length && !!expr && /new Date\(\s*\)|Date\.now\(\)/.test(expr) && !/\b(row|item|data|event|log|task|med|a\d+)\b/.test(expr);
   const noSource = !matches.length && !expr && !account.length && !!logic;
+  if (fallbackOf) lines.push(`显示的${shown}是兜底值：代码先取数据 ${fallbackOf.data}，它为空，于是改用 ${fallbackOf.alt}。要显示真实内容，需要 ${fallbackOf.data} 对应的数据有值。`);
   if (staticWords) lines.splice(0, lines.length, `显示的${shown}是界面固定文字（双语文案 / 翻译词条 / 站点品牌设置），不读任何数据、不做计算。`);
   if (clockOnly) lines.splice(0, lines.length, `显示的${shown}是这台设备当前的日期/时间（浏览器时钟）：${expr}。不读任何数据。`);
   if (noSource) lines.push(`没有找到${shown}读取的数据或计算式：按当前代码它是界面固定文字或代码生成的标签（如时间刻度），下面只列出它所在位置的判定条件。`);
