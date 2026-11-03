@@ -1,6 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
@@ -292,15 +293,44 @@ export default function ReadWriteInspector() {
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
   const summaryRef = useRef<HTMLElement | null>(null);
-  const elementContext = useCallback(() => JSON.stringify({
+  const queryClient = useQueryClient();
+  const fitContext = (o: any): string => {
+    let out = JSON.stringify(o);
+    const cuts: Array<() => void> = [
+      () => { o.codeRefs = (o.codeRefs || []).slice(0, 30); },
+      () => { o.otherPageReads = (o.otherPageReads || []).map((r: any) => ({ ...r, rowSample: r.rowSample?.slice(0, 120) })); },
+      () => { o.liveRequests = (o.liveRequests || []).map((r: any) => ({ ...r, rowSample: r.rowSample?.slice(0, 400) })); },
+      () => { o.otherPageReads = (o.otherPageReads || []).slice(0, 40).map((r: any) => ({ target: r.target, endpoint: r.endpoint, returnedRows: r.returnedRows, callers: r.callers })); },
+      () => { o.codeRefs = []; },
+      () => { if (o.element) o.element.decisionLogic = (o.element.decisionLogic || []).map((d: any) => ({ ...d, code: String(d.code).slice(0, 600) })); },
+    ];
+    for (const cut of cuts) { if (out.length <= 58_000) break; cut(); out = JSON.stringify(o); }
+    return out;
+  };
+  // The app's own cached query results for the hooks this element's logic calls (queryKey: ["inboxCounts"] …):
+  // the exact values the screen computed from, so counts like "5" can be re-added from real data.
+  const cachedResults = useCallback(() => {
+    const text = (logic || []).map((st) => st.code.join("\n")).join("\n") + "\n" + (summaryRef.current?.innerText || "");
+    return queryClient.getQueryCache().findAll().filter((q) => { const k = q.queryKey[0]; return typeof k === "string" && k.length > 2 && /^[\w$]+$/.test(k) && new RegExp(`(?<![\\w$])${k}(?![\\w$])`).test(text); }).slice(0, 15).map((q) => {
+      const d = q.state.data as unknown;
+      return { queryKey: q.queryKey, status: q.state.status, length: Array.isArray(d) ? d.length : undefined, value: JSON.stringify(d ?? null, (_k, v) => v instanceof Map ? Object.fromEntries(v) : v instanceof Set ? [...v] : v).slice(0, 1500), size: d instanceof Map || d instanceof Set ? d.size : undefined };
+    });
+  }, [queryClient, logic]);
+  // The AI input is capped at 60k characters: shrink the least specific evidence first instead of cutting the JSON mid-way.
+  const elementContext = useCallback(() => fitContext({
     deterministicSummary: summaryRef.current?.innerText.slice(0, 6000) || null,
+    cachedQueryResults: cachedResults(),
+    otherCachedQueries: queryClient.getQueryCache().findAll().map((q) => String(q.queryKey[0])).filter((k, i, a) => a.indexOf(k) === i).slice(0, 60),
     // Dictionary column names and option meanings for every table this element really read (b55 → "accepted").
     dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     page: path, uiLanguage: document.documentElement.lang || navigator.language, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
       decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), pageValueMatches: (info?.matches || []).slice(0, 12).map((m) => ({ related: realMatches.includes(m), sameCard: !!m.sameCard, target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, value: m.value, chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text) })), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+    // Reads elsewhere on the page, not yet proven to feed this element; usable only when the element's code calls that fetch.
+    otherPageReads: pageRequests.filter((r) => !relatedRequests.includes(r)).slice(0, 100).map((r) => ({ target: decodeEndpoint(r.method, r.endpoint).label, endpoint: r.endpoint, returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 300), callers: (r.callers || []).slice(0, 2) })),
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests]);
+  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests, cachedResults]);
+
 
   const pageContext = useCallback(() => JSON.stringify({
     page: path, files: pageFiles,

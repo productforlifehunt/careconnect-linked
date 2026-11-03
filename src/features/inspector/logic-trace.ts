@@ -135,7 +135,7 @@ export function decidingExpression(steps: LogicStep[], shownText = ""): string |
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
-export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = "", cardText = "", itemIndex = -1): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 50, parents: string[] = [], shownText = "", childName = "", cardText = "", itemIndex = -1): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -221,7 +221,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       // Item rows: every `key: variable` on the chosen item line is traced (value: pendingTasksCount).
       if (focused.length) for (const id of exprIds(l, p)) if (!done.has(id)) queue.push(id);
       // Local values the decision uses (const tasks = …, myPendingTasks = tasks.filter(…)) are traced to where they are made.
-      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && inScopeDef(lines, n, compStart, at, i)) queue.push(n); }
+      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && (inScopeDef(lines, n, compStart, at, i) || !!comp?.params.includes(n))) queue.push(n); }  // props are followed into the parent that passes them
     });
   }
 
@@ -241,7 +241,8 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       let handed = false;
       pl.forEach((l, i) => {
         const m = l.match(re); if (!m || steps.length >= maxSteps) return;
-        if (m[1] != null && (handed || (childName && !l.includes(`<${childName}`)))) return;
+        // Props often sit on their own lines below `<Child`: look a few lines up for the opening tag.
+        if (m[1] != null && (handed || (childName && !pl.slice(Math.max(0, i - 8), i + 1).join(" ").includes(`<${childName}`)))) return;
         if (m[1] != null) handed = true;
         const key = `${pf}:${i}`; if (seen.has(key)) return; seen.add(key);
         const code = m[1] != null ? [l.trim().slice(Math.max(0, l.trim().indexOf(`${name}=`) - 10), l.trim().indexOf(`${name}=`) + name.length + m[1].length + 40)] : block(pl, i, 12).code;
@@ -254,7 +255,10 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   }
 
   // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
+  // Data readers (hooks/fetchers) first, so wording helpers (useSite, t) cannot use up the step budget before the real read.
+  const dataFirst = (a: { name: string }, b: { name: string }) => +!/^(use|fetch|load|list|read|get)[A-Z]/.test(a.name) - +!/^(use|fetch|load|list|read|get)[A-Z]/.test(b.name) || +/^use(Site|Translation|Language|Hydrated)$/.test(a.name) - +/^use(Site|Translation|Language|Hydrated)$/.test(b.name);
   for (let hop = 0; hop < 3 && frontier.length && steps.length < maxSteps; hop++) {
+    frontier.sort(dataFirst);
     const next: typeof frontier = [];
     for (const { name, file: f, text: t } of frontier) {
       if (steps.length >= maxSteps) break;

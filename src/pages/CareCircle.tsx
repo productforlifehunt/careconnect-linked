@@ -144,6 +144,14 @@ export default function CareCircle() {
   const allPostsWithAuthors = useMemo(() => withAuthors(allPosts), [withAuthors, allPosts]);
   const announcementsWithAuthors = useMemo(() => withAuthors(announcements), [withAuthors, announcements]);
   const wishesWithAuthors = useMemo(() => withAuthors(wishes), [withAuthors, wishes]);
+  // Group chat senders get the same in-group display name as post authors (REL 223 member name).
+  const messagesWithSenders = useMemo(() => {
+    const byId = new Map<string, any>((members || []).map((m: any) => [String(m.id), m]));
+    return (groupMessages || []).map((msg: any) => {
+      const m = byId.get(String(msg.sender_user_id || msg.sender_id || "").replace(/^wp-/, ""));
+      return m ? { ...msg, sender: { full_name: m.display_name || null, avatar_url: m.profile?.avatar_url || null } } : msg;
+    });
+  }, [members, groupMessages]);
 
 
   const createTask = useCreateTask();
@@ -361,7 +369,7 @@ export default function CareCircle() {
         <TabsContent value="calendar" className="mt-4"><CalendarTab tasks={tasks || []} /></TabsContent>
         <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} /></TabsContent>
         <TabsContent value="location" className="mt-4"><GroupLocationTab groupCaredOnes={groupCaredOnes || []} /></TabsContent>
-        <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={groupMessages || []} userId={currentUserId} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
+        <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={messagesWithSenders} userId={currentUserId} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
         <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="gallery" className="mt-4"><GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} /></TabsContent>
