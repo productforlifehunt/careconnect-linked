@@ -186,10 +186,10 @@ export default function ReadWriteInspector() {
 
   return (
     <div data-rw-inspector>
-      <button type="button" onClick={toggle}
+      {!on && <button type="button" onClick={toggle}
         className={`fixed right-3 top-16 z-[10000] flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium shadow-md ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
-        <ScanSearch className="h-4 w-4" />{on ? "退出读写核对 / Exit" : "读写核对 / Inspect"}
-      </button>
+        <ScanSearch className="h-4 w-4" />读写核对 / Inspect
+      </button>}
       {on && !interact && hoverBox && (
         <div className="pointer-events-none fixed z-[9998] border-2 border-dashed border-primary/70" style={{ left: hoverBox.left, top: hoverBox.top, width: hoverBox.width, height: hoverBox.height }} />
       )}
