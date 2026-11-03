@@ -138,7 +138,7 @@ export default function ReadWriteInspector() {
     const click = (e: MouseEvent) => {
       if (inPanel(e.target)) return;
       e.preventDefault(); e.stopPropagation();
-      const el = e.target as Element; setSelected(el); setSelBox(el.getBoundingClientRect()); setTab("element");
+      const el = e.target as Element; setSelected(el); setClickNo((n) => n + 1); setSelBox(el.getBoundingClientRect()); setTab("element");
     };
     const move = (e: MouseEvent) => { if (inPanel(e.target)) { setHoverBox(null); return; } setHoverBox((e.target as Element).getBoundingClientRect()); };
     const evs = ["pointerdown", "mousedown", "pointerup", "mouseup", "submit", "keydown"] as const;
@@ -162,9 +162,20 @@ export default function ReadWriteInspector() {
 
   const pageRequests = useMemo(() => requests.filter((r) => r.path === path), [requests, path]);
   const info: ElementInfo | null = useMemo(() => (selected ? inspectElement(selected, requests) : null), [selected, requests]);
-  const elementRefs = useMemo(() => (info ? codeRefs(info.sources.slice(0, 3).map((s) => s.split(":")[0]!), 0) : []), [info]);
+  const [elementRefs, setElementRefs] = useState<CodeRef[]>([]);
+  const [clickNo, setClickNo] = useState(0);
+  useEffect(() => {
+    let live = true; setElementRefs([]);
+    if (info) void codeRefs(info.sources.slice(0, 3).map((s) => s.split(":")[0]!), 0).then((r) => { if (live) setElementRefs(r); });
+    return () => { live = false; };
+  }, [selected, clickNo]);
   const pageFiles = useMemo(() => (on && tab === "page" ? pageSourceFiles() : []), [on, tab, path, requests.length]);
-  const pageRefs = useMemo(() => codeRefs(pageFiles, 1), [pageFiles]);
+  const [pageRefs, setPageRefs] = useState<CodeRef[]>([]);
+  useEffect(() => {
+    let live = true; setPageRefs([]);
+    if (pageFiles.length) void codeRefs(pageFiles, 1).then((r) => { if (live) setPageRefs(r); });
+    return () => { live = false; };
+  }, [pageFiles]);
   const relatedRequests = useMemo(() => {
     if (!info) return [];
     const files = info.sources.map((s) => s.split(":")[0]!);
