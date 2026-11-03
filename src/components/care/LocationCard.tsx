@@ -705,7 +705,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
       {/* LIVE LOCATION */}
       {activeTab === "location" && (
         <div className="space-y-4">
-          {!readOnly && !flags?.shareOn && (
+          {!readOnly && !flagsLoading && !flags?.shareOn && (
             <Card className="border-transparent card-elevated">
               <CardContent className="p-4 space-y-2">
                 <p className="text-sm font-medium">{isZh ? `${caredOneName}还没有开启实时位置分享` : `${caredOneName} has not turned on live sharing`}</p>
