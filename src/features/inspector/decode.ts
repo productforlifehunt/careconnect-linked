@@ -106,7 +106,8 @@ export function codeRefs(files: string[], maxDepth = 3): CodeRef[] {
     for (const file of frontier) {
       if (seen.has(file)) continue;
       seen.set(file, depth);
-      const entry = INDEX[file]!;
+      const entry = INDEX[file];
+      if (!entry) continue;
       for (const [kind, key, method, line] of entry.r) {
         if (kind === "write") out.push({ file, line, depth, kind: "write", label: method, method, snippet: key });
         else out.push({ file, line, depth, kind: method && method !== "GET" ? "write" : method === "GET" ? "read" : "ref", label: describeRef(kind, key), method });
