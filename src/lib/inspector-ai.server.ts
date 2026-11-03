@@ -30,7 +30,8 @@ Write simplified Chinese first, then English, as terse Markdown bullets under ex
 3. 判定 / Conditions: each filter/comparison actually applied, with column code + dictionary name and compared value, file:line.
 4. 计算 / Computation: the exact formula from raw rows to the shown value, step by step, e.g. "= rows where a60 (状态) ≠ 已完成 → count = 1".
 Use returnedRows / rowSample for row counts and stored values. For a condition, state its actual result for this value when the evidence shows it (e.g. "a59 为空 → 不过滤"); list a condition only if its code is on the path to this value; drop conditions that clearly did not apply (an optional argument not passed). One line per bullet, no repeated explanation. Chinese block first in full, then the English block.
-Never infer a code's meaning from its letters; use the dictionary names given, otherwise write "未确认 / unconfirmed".`;
+Never infer a code's meaning from its letters; use the dictionary names given, otherwise write "未确认 / unconfirmed".
+Evidence priority: (1) element.fieldMatches and element.pageValueMatches (a live row whose stored value equals the shown text, time values converted, e.g. "08:00" shown as "8:00 AM") prove the source — when any exists, NEVER call the value static text and NEVER pick a fallback branch; (2) deterministicSummary is the app's own code-derived explanation and is correct about sources, rows and fixed text; (3) props of the rendering component (e.g. item.label, item.time) tell which list row is shown; follow the list-building code to the source that pushed that row (a medicine row is not a check-in row). Say "界面固定文字" only when deterministicSummary says so and no value match exists. If liveRequests is empty but pageValueMatches exist, use the matches' chain.`;
 
 export async function explainInspection(context: string, mode: "full" | "origin" = "full"): Promise<{ text?: string; error?: string; status?: number }> {
   const key = process.env["LOVABLE_API_KEY"];
