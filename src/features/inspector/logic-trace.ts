@@ -16,7 +16,7 @@ export interface LogicStep {
   fallbacks: number[];    // indexes into code[] that contain a fallback
 }
 
-const FALLBACK = /\|\||\?\?|\bcatch\b|\bdefault\s*:|:\s*["'`][^"'`]*["'`]\s*[),;}]|\?\s*[^:]+:\s*(?:null|undefined|""|''|\[\]|\{\}|0|false)\b/;
+const FALLBACK = /\|\||\?\?|\bcatch\b|\bdefault\s*:|\?[^:?]+:\s*(?:null|undefined|""|''|\[\]|\{\}|0|false|["'`][^"'`]*["'`])\s*[,;)}]?\s*$/;
 const KEYWORDS = new Set(["if", "for", "while", "switch", "return", "typeof", "new", "await", "function", "catch", "map", "filter", "forEach", "find", "some", "every", "reduce", "push", "includes", "slice", "split", "join", "replace", "String", "Number", "Boolean", "parseInt", "parseFloat", "JSON", "Object", "Array", "Math", "Date", "Promise", "useMemo", "useState", "useEffect", "useCallback", "t", "cn"]);
 
 function block(lines: string[], start: number, max = 30): { from: number; code: string[] } {
@@ -50,7 +50,7 @@ function findDefinition(lines: string[], name: string): number {
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 14): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 20): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -70,14 +70,22 @@ export async function traceLogic(source: string, maxSteps = 14): Promise<LogicSt
     for (const id of m[1]!.matchAll(/(?:\.|\b)([A-Za-z_$][\w$]*)\b(?!\s*\()/g)) if (!KEYWORDS.has(id[1]!) && id[1]!.length > 1) props.add(id[1]!);
   }
   const calls = new Set<string>();
-  for (const p of props) {
+  const queue = [...props];
+  const done = new Set<string>();
+  while (queue.length && steps.length < maxSteps) {
+    const p = queue.shift()!;
+    if (done.has(p)) continue; done.add(p);
     const re = new RegExp(`(?:\\b${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|\\b${p}\\s*=[^=>])`);
     lines.forEach((l, i) => {
       if (steps.length >= maxSteps || i === at || !re.test(l)) return;
       const key = `${file}:${i}`; if (seen.has(key)) return; seen.add(key);
       const b = block(lines, i, 12);
       steps.push(step(file, b.from, `“${p}” 在这里被赋值 / “${p}” is decided here`, b.code));
-      for (const c of b.code.join(" ").matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!)) calls.add(c[1]!);
+      const joined = b.code.join(" ");
+      for (const c of joined.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!)) calls.add(c[1]!);
+      // A value assigned from another local variable (status: medStatus) is traced too.
+      const rhs = joined.match(new RegExp(`\\b${p}\\s*[:=]\\s*([A-Za-z_$][\\w$]*)\\s*[,;]`));
+      if (rhs && !KEYWORDS.has(rhs[1]!) && !done.has(rhs[1]!)) queue.push(rhs[1]!);
     });
   }
 
