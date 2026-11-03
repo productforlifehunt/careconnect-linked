@@ -83,17 +83,19 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   if (!matches.length && expr) lines.push(`显示的${shown}不是存出来的，而是代码算出来的：${shown} = ${expr}${/\.length\b/.test(expr) ? "，也就是下面这些读取结果经过条件筛选后剩下的条数" : ""}。`);
 
   // Reads, in order, de-duplicated.
-  const seen = new Map<string, { r: RecordedRequest; n: number; rows: number }>();
+  const seen = new Map<string, { r: RecordedRequest; n: number; rows: number; ids: string[] }>();
   for (const r of reads) {
     const t = decodeEndpoint(r.method, r.endpoint); const k = t.key + t.action + JSON.stringify(r.params || {});
     const rows = Array.isArray(r.rows) ? r.rows.length : r.rows ? 1 : 0;
-    const e = seen.get(k); if (e) { e.n++; e.rows += rows; } else seen.set(k, { r, n: 1, rows });
+    const id = r.endpoint.match(/\/(\d+)(?:\?|$)/)?.[1];
+    const e = seen.get(k); if (e) { e.n++; e.rows += rows; if (id) e.ids.push(id); } else seen.set(k, { r, n: 1, rows, ids: id ? [id] : [] });
   }
   const defs: Def[] = [];
-  const readLines = [...seen.values()].map(({ r, n, rows }, i) => {
+  const readLines = [...seen.values()].map(({ r, n, rows, ids }, i) => {
     const t = decodeEndpoint(r.method, r.endpoint); const def = (t.cct || t.rel) as Def | undefined; if (def) defs.push(def);
     const f = filterText(r, def);
-    const times = n > 1 ? `（读了 ${n} 次）` : "";
+    const times = n > 1 ? `（读了 ${n} 次${t.kind === "cct" && ids.length > 1 ? `，逐行读取 #${ids.join("、#")}，每次返回 1 行` : ""}）` : "";
+    if (t.kind === "cct" && ids.length > 1) return `${i + 1}. 逐行读取 ${t.label.replace(/\s*#\d+$/, "")}，共 ${ids.length} 行：#${ids.join("、#")}，每次 1 行`;
     if (t.kind === "rel") return `${i + 1}. 经 JetEngine 关联 ${t.label} 查关联对象${f ? `，条件 ${f}` : ""}，得到 ${rows} 条${times}`;
     if (t.kind === "cct") return `${i + 1}. 读取 ${t.label}${f ? `，条件 ${f}` : "，不带筛选条件"}，返回 ${rows} 行${times}`;
     return `${i + 1}. ${t.action} ${t.label}${f ? `，条件 ${f}` : ""}，返回 ${rows} 条${times}`;
