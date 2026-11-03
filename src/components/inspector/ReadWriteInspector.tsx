@@ -209,9 +209,9 @@ export default function ReadWriteInspector() {
   useEffect(() => {
     let live = true; setClosure(null);
     const own = info?.sources[0]?.split(":")[0];
-    if (own) void importClosure([own]).then((c) => { if (live) setClosure(c); });
+    if (own && logic) void importClosure([...new Set([own, ...logic.map((st) => st.file)])], 2).then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
-  }, [selected, clickNo]);
+  }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
     return pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o) && !INFRA.test(o); });
