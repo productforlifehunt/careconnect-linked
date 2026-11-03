@@ -81,3 +81,14 @@ export async function liveEntries(files: string[]): Promise<Record<string, LiveE
   await Promise.all(files.map(async (f) => { const t = await readSource(f); if (t != null) out[f] = analyse(f, t); }));
   return out;
 }
+
+/** Files reachable from `files` through imports (read live), up to `depth` hops. */
+export async function importClosure(files: string[], depth = 4): Promise<Set<string>> {
+  const out = new Set(files); let frontier = [...files];
+  for (let d = 0; d < depth && frontier.length; d++) {
+    const entries = await liveEntries(frontier);
+    frontier = [];
+    for (const e of Object.values(entries)) for (const f of e.i) if (!out.has(f) && !f.startsWith("components/ui/")) { out.add(f); frontier.push(f); }
+  }
+  return out;
+}
