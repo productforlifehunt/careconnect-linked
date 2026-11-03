@@ -4,10 +4,10 @@ import { z } from "zod";
 
 /** Researcher-only AI explanation of an inspected element or page. */
 export const explainReadWrite = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ context: z.string().min(2).max(60_000) }).parse(input))
+  .inputValidator((input: unknown) => z.object({ context: z.string().min(2).max(60_000), mode: z.enum(["full", "origin"]).optional() }).parse(input))
   .handler(async ({ data }) => {
     const { verifyResearcher, explainInspection } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); }
     catch (error) { return { error: error instanceof Error ? error.message : "Forbidden", status: 403 }; }
-    return explainInspection(data.context);
+    return explainInspection(data.context, data.mode);
   });

@@ -133,19 +133,19 @@ function RefList({ refs }: { refs: CodeRef[] }) {
   );
 }
 
-function AiExplain({ build }: { build: () => string }) {
+function AiExplain({ build, mode = "full", label }: { build: () => string; mode?: "full" | "origin"; label?: string }) {
   const explain = useServerFn(explainReadWrite);
   const [state, setState] = useState<{ loading?: boolean; text?: string; error?: string }>({});
   const run = async () => {
     setState({ loading: true });
     try {
-      const res = await explain({ data: { context: build().slice(0, 60_000) } });
+      const res = await explain({ data: { context: build().slice(0, 60_000), mode } });
       setState(res.text ? { text: res.text } : { error: res.error || "失败 / failed" });
     } catch (e) { setState({ error: e instanceof Error ? e.message : String(e) }); }
   };
   return (
     <div className="space-y-2">
-      <Button size="sm" variant="outline" onClick={run} disabled={state.loading}><Sparkles className="mr-1 h-4 w-4" />{state.loading ? "AI 解读中… / Explaining…" : "AI 解读 / Explain with AI"}</Button>
+      <Button size="sm" variant="outline" onClick={run} disabled={state.loading}><Sparkles className="mr-1 h-4 w-4" />{state.loading ? "AI 解读中… / Explaining…" : (label || "AI 解读 / Explain with AI")}</Button>
       {state.error && <p className="text-xs text-destructive">{state.error}</p>}
       {state.text && <div className="whitespace-pre-wrap rounded-md bg-muted/40 p-2 text-xs">{state.text}</div>}
     </div>
@@ -351,6 +351,7 @@ export default function ReadWriteInspector() {
                   <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
+                <AiExplain build={elementContext} mode="origin" label="AI 分析这个值怎么来的 / AI: how this value is produced" />
                 <section className="space-y-1">
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from</div>
                   <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} files={[...new Set(info.sources.map((x) => x.split(":")[0]!))]} />
