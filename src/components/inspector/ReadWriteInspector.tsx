@@ -133,7 +133,7 @@ function RefList({ refs }: { refs: CodeRef[] }) {
   );
 }
 
-function AiExplain({ build, mode = "full", label }: { build: () => string; mode?: "full" | "origin"; label?: string }) {
+function AiExplain({ build, mode = "full", label, ready = true }: { build: () => string; mode?: "full" | "origin"; label?: string; ready?: boolean }) {
   const explain = useServerFn(explainReadWrite);
   const [state, setState] = useState<{ loading?: boolean; text?: string; error?: string }>({});
   const run = async () => {
@@ -144,10 +144,10 @@ function AiExplain({ build, mode = "full", label }: { build: () => string; mode?
     } catch (e) { setState({ error: e instanceof Error ? e.message : String(e) }); }
   };
   return (
-    <div className="space-y-2">
-      <Button size="sm" variant="outline" onClick={run} disabled={state.loading}><Sparkles className="mr-1 h-4 w-4" />{state.loading ? "AI 解读中… / Explaining…" : (label || "AI 解读 / Explain with AI")}</Button>
+    <div className="space-y-2 rounded-md border border-primary/40 p-2">
+      <Button size="sm" variant="outline" onClick={run} disabled={state.loading || !ready}><Sparkles className="mr-1 h-4 w-4" />{!ready ? "等这页数据和代码读完… / Loading evidence…" : state.loading ? "AI 解读中… / Explaining…" : (label || "AI 解读 / Explain with AI")}</Button>
       {state.error && <p className="text-xs text-destructive">{state.error}</p>}
-      {state.text && <div className="whitespace-pre-wrap rounded-md bg-muted/40 p-2 text-xs">{state.text}</div>}
+      {state.text && <div className="max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-2 text-xs">{state.text}</div>}
     </div>
   );
 }
@@ -291,12 +291,14 @@ export default function ReadWriteInspector() {
   const realMatches = useMemo(() => (info ? info.matches.filter(keep) : []), [info, keep]);
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
+  const summaryRef = useRef<HTMLElement | null>(null);
   const elementContext = useCallback(() => JSON.stringify({
+    deterministicSummary: summaryRef.current?.innerText.slice(0, 6000) || null,
     page: path, uiLanguage: document.documentElement.lang || navigator.language, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
-      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), pageValueMatches: (info?.matches || []).slice(0, 12).map((m) => ({ related: realMatches.includes(m), sameCard: !!m.sameCard, target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, value: m.value, chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text) })), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }), [path, info, relatedRequests, elementRefs, logic]);
+  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests]);
 
   const pageContext = useCallback(() => JSON.stringify({
     page: path, files: pageFiles,
@@ -351,8 +353,8 @@ export default function ReadWriteInspector() {
                   <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
-                <AiExplain key={`o-${info.sources.join()}-${info.text}`} build={elementContext} mode="origin" label="AI 分析这个值怎么来的 / AI: how this value is produced" />
-                <section className="space-y-1">
+                <AiExplain key={`o-${info.sources.join()}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="AI 分析这个值怎么来的 / AI: how this value is produced" />
+                <section className="space-y-1" ref={summaryRef}>
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from</div>
                   <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} files={[...new Set(info.sources.map((x) => x.split(":")[0]!))]} />
                 </section>
