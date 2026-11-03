@@ -90,11 +90,11 @@ export function decidingExpression(steps: LogicStep[]): string | null {
   }
   // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
   const render = steps[0]?.code.join(" ") || "";
-  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$/.test(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
+  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
-export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = "", cardText = ""): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = "", cardText = "", itemIndex = -1): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -131,7 +131,10 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
     const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
     const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
     // A list of items (`[{ label: … }, …].map`): keep only the item that shows the clicked text.
-    const focused = focusLines(hits, lines, shownText, cardText);
+    // Items of one array literal ([{ label, value }, …].map) sit on consecutive lines: the clicked item's position picks its line.
+    const run = hits.filter((i) => i > at - 40 && i < at && /^\s*(?:\.\.\.\(.*\[)?\{\s*\w+\s*:/.test(lines[i]!));
+    const byIndex = itemIndex >= 0 && run.length > itemIndex && run.every((i, k) => k === 0 || i - run[k - 1]! <= 2) ? [run[itemIndex]!] : [];
+    const focused = byIndex.length ? byIndex : focusLines(hits, lines, shownText, cardText);
     const use = new Set(focused.length ? focused : hits);
     lines.forEach((l, i) => {
       if (steps.length >= maxSteps || !use.has(i)) return;
