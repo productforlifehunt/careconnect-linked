@@ -479,3 +479,5 @@
 - [ ] 编辑药品不改时间（Update Row 未接 pTime，避免空值覆盖）；多时段/频率未做；卡片今日状态；签到打卡
 - [x] 签到打卡（2026-11-03 已做，未测）：新建 Create Checkin Log 端点；签到卡同一行加已签到(b55)/跳过(b56)按钮，沿用 REL191+REL173。原版写 CCT161 a55="Check-in"、a96=b55已签/b56跳过、a99=b56、a61=现在、a100=challenged，REL191+REL173。不能复用用药的 Create Dose Log（字段不同），需新建 "Create Checkin Log" 端点；复制粘贴试验已撤回。
 - [~] 群组页成员列表（2026-11-03，未测）：Groups 页底部新增"MEMBERS"区块（gJoined 2）：REL223 children(SEL_GROUP) → 每人 Get Person 显示姓名，点按无动作。缺：只算已接受成员（待处理邀请未过滤）、角色、邀请码/分享链接、群设置、非成员 onboarding、/care-circle/<id> 深链。
+- [x] 2026-11-03 群组成员（未测）：成员胶囊加显示条件 REL223 meta.a58 EqualTo "b55"，只显示已接受成员；名字后加角色标签 gRoleOwner 2（a56 Includes b56 → " · Owner"）、gRoleAdmin（Includes b57 → " · Admin"）。接口返回已用 22 号群只读核对含 meta.a58/a56。
+- [ ] 群组：邀请码、分享链接、群设置、非成员 onboarding、/care-circle/<id> 深链
