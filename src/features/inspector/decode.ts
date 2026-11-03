@@ -4,7 +4,7 @@
  * only from the dictionary, never from guessing.
  */
 import { WP, R, T, CCT_SLUG } from "@/integrations/wp-schema";
-import codeIndex from "./code-index.json";
+import { liveEntries } from "./live-index";
 
 type CctDef = { id: number; slug: string; name: string; f: Record<string, string>; opt: Record<string, Record<string, string>> };
 type RelDef = { id: number; parent: string; child: string; type: string; f?: Record<string, string>; opt?: Record<string, Record<string, string>> };
@@ -73,8 +73,6 @@ export function optionName(def: { f?: Record<string, string>; opt?: Record<strin
 
 // ── Static code references ───────────────────────────────────────────
 
-type IndexEntry = { i: string[]; r: Array<[string, string, string, number]> };
-const INDEX = codeIndex as unknown as Record<string, IndexEntry>;
 const R_BY_NAME = R as unknown as Record<string, number>;
 const T_BY_NAME = T as unknown as Record<string, CctDef>;
 
@@ -96,17 +94,18 @@ export function normalizeFile(file: string): string {
   return file.replace(/^.*?\/src\//, "").replace(/^src\//, "").replace(/:\d+(:\d+)?$/, "");
 }
 
-/** Data references in a file and the files it imports (depth-limited, breadth-first). */
-export function codeRefs(files: string[], maxDepth = 3): CodeRef[] {
+/** Data references in files and the files they import, re-read from source on every call. */
+export async function codeRefs(files: string[], maxDepth = 3): Promise<CodeRef[]> {
   const out: CodeRef[] = [];
-  const seen = new Map<string, number>();
-  let frontier = files.map(normalizeFile).filter((f) => INDEX[f]);
+  const seen = new Set<string>();
+  let frontier = [...new Set(files.map(normalizeFile))];
   for (let depth = 0; depth <= maxDepth && frontier.length; depth++) {
+    const todo = frontier.filter((f) => !seen.has(f));
+    todo.forEach((f) => seen.add(f));
+    const entries = await liveEntries(todo);
     const next: string[] = [];
-    for (const file of frontier) {
-      if (seen.has(file)) continue;
-      seen.set(file, depth);
-      const entry = INDEX[file];
+    for (const file of todo) {
+      const entry = entries[file];
       if (!entry) continue;
       for (const [kind, key, method, line] of entry.r) {
         if (kind === "write") out.push({ file, line, depth, kind: "write", label: method, method, snippet: key });
@@ -118,5 +117,3 @@ export function codeRefs(files: string[], maxDepth = 3): CodeRef[] {
   }
   return out;
 }
-
-export function indexedFile(file: string): boolean { return !!INDEX[normalizeFile(file)]; }
