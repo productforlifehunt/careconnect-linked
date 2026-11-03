@@ -1,5 +1,6 @@
 import { getWPToken } from "@/services/wp-auth";
 import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
+import { recordRequest, attachResponse, InspectorWriteBlocked } from "@/features/inspector/recorder";
 
 export interface WordPressFetchOptions {
   method?: string | undefined;
@@ -56,6 +57,11 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   const url = buildWPUrl(endpoint, cleanParams, { forceEdge });
   const headers = buildWPHeaders(token, "application/json", { forceEdge });
 
+  // Researcher read/write inspector: record every request; in inspect mode a
+  // write is recorded and never sent.
+  const recorded = typeof window !== "undefined" ? recordRequest(method, endpoint, cleanParams, body) : null;
+  if (recorded?.blocked) throw new InspectorWriteBlocked(method, endpoint);
+
 
   // Any write invalidates the short-lived read dedupe cache (rel-batch listens),
   // so a mutation is never followed by stale cached reads.
@@ -105,10 +111,7 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   if (method !== "GET" && typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("wp-write"));
   }
-
-
-
-
+  attachResponse(recorded, response);
 
   if (!response.ok) {
     // Treat 404 on JetEngine relation lookups as "no relations" — the relation
