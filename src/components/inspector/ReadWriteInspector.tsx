@@ -298,7 +298,7 @@ export default function ReadWriteInspector() {
   // the exact values the screen computed from, so counts like "5" can be re-added from real data.
   const cachedResults = useCallback(() => {
     const text = (logic || []).map((st) => st.code.join("\n")).join("\n");
-    return queryClient.getQueryCache().findAll().filter((q) => { const k = q.queryKey[0]; return typeof k === "string" && k.length > 2 && new RegExp(`["'\`]${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'\`]`).test(text); }).slice(0, 15).map((q) => {
+    return queryClient.getQueryCache().findAll().filter((q) => { const k = q.queryKey[0]; return typeof k === "string" && k.length > 2 && /^[\w$]+$/.test(k) && new RegExp(`(?<![\\w$])${k}(?![\\w$])`).test(text); }).slice(0, 15).map((q) => {
       const d = q.state.data as unknown;
       return { queryKey: q.queryKey, status: q.state.status, length: Array.isArray(d) ? d.length : undefined, value: JSON.stringify(d ?? null, (_k, v) => v instanceof Map ? Object.fromEntries(v) : v instanceof Set ? [...v] : v).slice(0, 1500), size: d instanceof Map || d instanceof Set ? d.size : undefined };
     });
