@@ -259,6 +259,9 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       const b = block(ls, idx, 30);
       steps.push({ ...step(defFile, b.from, `调用的判定函数 ${name}() / Called logic ${name}()`, b.code), via });
       for (const c of b.code.join(" ").matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!KEYWORDS.has(c[1]!) && c[1] !== name) next.push({ name: c[1]!, file: defFile, text: defText });
+      // Functions handed over without being called here (queryFn: withLastGood("bookings", fetchBookingsWordPress)).
+      const imported = importsOf(defFile, defText);
+      for (const c of b.code.join(" ").matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b(?!\s*\()/g)) if (imported.has(c[1]!) && c[1] !== name && /^(fetch|load|get|list|read|use)/.test(c[1]!)) next.push({ name: c[1]!, file: defFile, text: defText });
     }
     frontier = next;
   }
