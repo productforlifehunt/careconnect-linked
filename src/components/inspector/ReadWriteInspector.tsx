@@ -238,7 +238,7 @@ export default function ReadWriteInspector() {
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
     // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
     // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
-    const logicText = logic.map((st) => st.code.join("\n")).join("\n");
+    const logicText = (logic || []).map((st) => st.code.join("\n")).join("\n");
     // Server functions run their WordPress reads on the server; they belong to the element when its logic calls them by name.
     const own = pageRequests.filter((r) => { if (r.via === "server-fn") { const fn = r.endpoint.split("/")[1] || ""; return !!fn && new RegExp(`\\b${fn}\\s*\\(`).test(logicText); } const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); const ownFile = info.sources[0]?.split(":")[0]; return app.slice(0, 2).some((c, i) => (closure.has(c) && (i === 0 || !/^hooks\//.test(c))) || (i === 0 && c === ownFile)); });
     const base = [...session, ...own];
@@ -256,7 +256,7 @@ export default function ReadWriteInspector() {
       return !!def && !!proven.get(String(def.id))?.has(m![2]!);
     }).map((r) => [r.endpoint, r])).values()];
     return [...base, ...orphans];
-  }, [info, pageRequests, closure, requests, path]);
+  }, [info, pageRequests, closure, requests, path, logic]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
   // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
   const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
