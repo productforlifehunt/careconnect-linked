@@ -44,6 +44,14 @@ function importsOf(file: string, text: string): Map<string, string> {
     if (!target) continue;
     for (const part of m[1]!.split(",")) { const name = part.trim().split(/\s+as\s+/).pop()!.replace(/^type\s+/, ""); if (name) map.set(name, target); }
   }
+  // Lazily loaded code: (await import("@/x")).fn(…) and const { fn } = await import("@/x").
+  for (const m of text.matchAll(/import\(\s*["'`]([^"'`]+)["'`]\s*\)\s*\)?\s*\.\s*([A-Za-z_$][\w$]*)/g)) {
+    const target = resolveImport(file, m[1]!); if (target && !map.has(m[2]!)) map.set(m[2]!, target);
+  }
+  for (const m of text.matchAll(/(?:const|let)\s*\{([^}]+)\}\s*=\s*await\s+import\(\s*["'`]([^"'`]+)["'`]\s*\)/g)) {
+    const target = resolveImport(file, m[2]!); if (!target) continue;
+    for (const part of m[1]!.split(",")) { const name = part.trim().split(/\s*:\s*/).pop()!; if (name && !map.has(name)) map.set(name, target); }
+  }
   return map;
 }
 
@@ -91,6 +99,8 @@ function exprIds(line: string, key: string): string[] {
 
 /** `isDone ? "line-through opacity-60" : "text-foreground"`: a style choice, not shown data. */
 function isCssOnly(e: string): boolean {
+  // Comparison operands (t.key === "alerts") are conditions, not shown text.
+  e = e.replace(/[!=]==?\s*(["'`])(?:\\.|(?!\1).)*\1/g, "");
   const strs = [...e.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g)].map((x) => x[2]!);
   return strs.length > 0 && strs.every((x) => /^[a-z0-9:/\-[\]. ]*$/.test(x) && /-/.test(x));
 }
@@ -102,16 +112,26 @@ function isStaticLabel(e: string): boolean {
 }
 
 /** The expression that decides a computed value, for showing "this number is X.length". */
-export function decidingExpression(steps: LogicStep[]): string | null {
+export function decidingExpression(steps: LogicStep[], shownText = ""): string | null {
   for (const st of steps) {
     const m = st.code.join(" ").match(/\bvalue\s*:\s*(.+?)(?:,\s*\w+\s*:|\s*\}\s*[,\]]|$)/);
     if (m && /“value”/.test(st.title)) return m[1]!.trim();
   }
   // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
   // Children expressions only: attribute values (aria-pressed={isActive}, onClick={…}) are not what is shown.
-  const strip = (l: string) => l.replace(/[\w-]+=\{`[^`]*`\}/g, "").replace(/[\w-]+=\{[^{}]*\}/g, "");
+  // Template interpolations (${…}) only occur inside attribute strings (multi-line className={`…`}).
+  const strip = (l: string) => (l.includes("{`") ? l : l.replace(/\$\{[^{}]*\}/g, "")).replace(/[\w-]+=\{`[^`]*`\}/g, "").replace(/[\w-]+=\{[^{}]*\}/g, "");
   const render = strip((steps[0]?.code || []).map(strip).find((l) => /\{[^{}]*[A-Za-z_$][^{}]*\}/.test(l)) || "");
-  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && !isStaticLabel(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
+  // A wording/name element nested next to a count badge on one line ({card.title}{x && <Badge>{count}</Badge>}):
+  // when the shown text has no number, the nested element's expressions are not what is shown.
+  let shownLine = render;
+  if (shownText && !/\d|—/.test(shownText)) {
+    shownLine = shownLine.replace(/^[^<]*<[\w.]+(?:[^>]|=>)*>/, "");
+    // Only nested count badges are dropped; a nested name/label element may be exactly what is shown.
+    for (let k = 0; k < 4; k++) shownLine = shownLine.replace(/<([A-Za-z][\w.]*)\b[^<>]*>([^<>]*)<\/\1>/g, (all, _tag, inner: string) => (/length|count|Count|total|badge|"—"/.test(inner) ? "" : inner));
+    shownLine = shownLine.replace(/\{[^{}]*&&\s*\}/g, "");
+  }
+  const exprs = [...shownLine.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$|=>|^defaultValue/.test(e) && !isCssOnly(e) && !isStaticLabel(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 

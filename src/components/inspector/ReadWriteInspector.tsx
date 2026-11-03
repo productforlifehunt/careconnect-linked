@@ -238,7 +238,9 @@ export default function ReadWriteInspector() {
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
     // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
     // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
-    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
+    const logicText = (logic || []).map((st) => st.code.join("\n")).join("\n");
+    // Server functions run their WordPress reads on the server; they belong to the element when its logic calls them by name.
+    const own = pageRequests.filter((r) => { if (r.via === "server-fn") { const fn = r.endpoint.split("/")[1] || ""; return !!fn && new RegExp(`\\b${fn}\\s*\\(`).test(logicText); } const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); const ownFile = info.sources[0]?.split(":")[0]; return app.slice(0, 2).some((c, i) => (closure.has(c) && (i === 0 || !/^hooks\//.test(c))) || (i === 0 && c === ownFile)); });
     const base = [...session, ...own];
     // Row reads count when a related relation read returned that row id (proof by id, whatever code fetched it).
     const proven = new Map<string, Set<string>>();
@@ -254,7 +256,7 @@ export default function ReadWriteInspector() {
       return !!def && !!proven.get(String(def.id))?.has(m![2]!);
     }).map((r) => [r.endpoint, r])).values()];
     return [...base, ...orphans];
-  }, [info, pageRequests, closure, requests, path]);
+  }, [info, pageRequests, closure, requests, path, logic]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
   // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
   const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
@@ -334,15 +336,15 @@ export default function ReadWriteInspector() {
                     <div className="text-[10px] text-muted-foreground">登录时 WordPress 返回并保存在本机的账号信息（WordPress 用户 #{String(getStoredWPUser()?.user_id ?? "?")}），本页没有为它另发读取。 / Saved from WordPress at sign-in; no extra read on this page.</div>
                   </section>
                 )}
-                {realMatches.length === 0 && logic && decidingExpression(logic) && (
+                {realMatches.length === 0 && logic && decidingExpression(logic, info.text) && (
                   <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
                     <div className="font-medium">这个值是算出来的 / Computed value</div>
-                    <div>显示 “{info.text.slice(0, 40)}” = <span className="font-mono">{decidingExpression(logic)}</span></div>
-                    {/\.length\b/.test(decidingExpression(logic)!) && <div>即：下面数据链读出的行，经过判定逻辑筛选后剩下的条数。 / i.e. the number of rows left after the decision logic below filters the reads in the data chain.</div>}
+                    <div>显示 “{info.text.slice(0, 40)}” = <span className="font-mono">{decidingExpression(logic, info.text)}</span></div>
+                    {/\.length\b/.test(decidingExpression(logic, info.text)!) && <div>即：下面数据链读出的行，经过判定逻辑筛选后剩下的条数。 / i.e. the number of rows left after the decision logic below filters the reads in the data chain.</div>}
                     <div className="text-[10px] text-muted-foreground">计算过程见下方「判定逻辑」，数据来源见「数据链」。 / See decision logic and data chain below.</div>
                   </section>
                 )}
-                {realMatches.length === 0 && logic && logic.length > 0 && !decidingExpression(logic) && accountMatches(info.text).length === 0 && (
+                {realMatches.length === 0 && logic && logic.length > 0 && !decidingExpression(logic, info.text) && accountMatches(info.text).length === 0 && (
                   <p className="rounded border border-border bg-muted/40 p-2 text-xs">这段是界面固定文字（双语文案或配置），不是从数据读出来的。 / Fixed interface wording, not read from data.</p>
                 )}
                 {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
