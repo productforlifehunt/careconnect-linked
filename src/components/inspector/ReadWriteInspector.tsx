@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
-import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@/features/inspector/decode";
+import { decodeEndpoint, codeRefs, fieldName, optionName, relById, cctBySlug, type CodeRef } from "@/features/inspector/decode";
 import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
@@ -231,25 +231,27 @@ export default function ReadWriteInspector() {
     })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
-  // Reads with no app file on their call stack (timers, retries) count when the traced code names that same table/relation.
-  const [closureLabels, setClosureLabels] = useState<string[]>([]);
-  useEffect(() => {
-    let live = true; setClosureLabels([]);
-    if (closure?.size) void codeRefs([...closure], 2).then((r) => { if (live) setClosureLabels([...new Set(r.map((x) => x.label.replace(/ \[[RT]\.\w+\]$/, "")))]); });
-    return () => { live = false; };
-  }, [closure]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
     // Session data (signed-in profile) is read once by a context provider, often on an earlier page.
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
-    const named = (r: RecordedRequest) => { if (r.method !== "GET" || ownerFile(r)) return false; const l = decodeEndpoint(r.method, r.endpoint).label.replace(/ #\d+$/, "").replace(/ (读子项|读父项).*$/, ""); return closureLabels.some((x) => x === l || l.startsWith(x)); };
-    const orphans = [...new Map(requests.filter((r) => named(r) && r.path === path).map((r) => [r.endpoint, r])).values()];
-    // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
-    // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
-    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
-    return [...session, ...own, ...orphans.filter((r) => !own.includes(r))];
-  }, [info, pageRequests, closure, requests, path, closureLabels]);
-  if (typeof window !== "undefined") (window as any).__rwDebug = { closure: closure && [...closure], closureLabels, related: relatedRequests.map((r) => r.endpoint), r190: requests.filter((r) => r.endpoint.includes("190")).map((r) => [r.path, r.callers]), path };
+    const base = [...session, ...own];
+    // Row reads with no app file on their stack (they run after an await) count only when a related relation read returned that row id.
+    const proven = new Map<string, Set<string>>();
+    for (const r of base) {
+      const m = r.endpoint.match(/^jet-rel\/(\d+)/); const def = m ? relById(m[1]!) : undefined; if (!def || !r.rows) continue;
+      const ids = new Set<string>(); const walk = (v: unknown) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const o = v as Record<string, unknown>; for (const k of ["child_object_id", "parent_object_id"]) if (o[k] != null) ids.add(String(o[k])); Object.values(o).forEach((x) => typeof x === "object" && walk(x)); } else if (v != null) ids.add(String(v)); };
+      walk(r.rows);
+      for (const side of [def.parent, def.child]) { const n = side.match(/^(\d+)\./)?.[1]; if (n) { const set = proven.get(n) || new Set(); ids.forEach((x) => set.add(x)); proven.set(n, set); } }
+    }
+    const orphans = [...new Map(requests.filter((r) => {
+      if (r.method !== "GET" || r.callers.length || base.includes(r)) return false;
+      const m = r.endpoint.match(/^jet-cct\/([a-z0-9_]+)\/(\d+)/); const def = m ? cctBySlug(m[1]!) : undefined;
+      return !!def && !!proven.get(String(def.id))?.has(m![2]!);
+    }).map((r) => [r.endpoint, r])).values()];
+    return [...base, ...orphans];
+  }, [info, pageRequests, closure, requests, path]);
+  if (typeof window !== "undefined") (window as any).__rwDebug = { closure: closure && [...closure], related: relatedRequests.map((r) => r.endpoint), r190: requests.filter((r) => r.endpoint.includes("190")).map((r) => [r.path, r.callers]), path };
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
   // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
   const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
