@@ -1,7 +1,8 @@
+import { lazyRetry } from "@/lib/lazy-retry";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { isResearcherAccount } from "@/features/inspector/recorder";
 
-const ReadWriteInspector = lazy(() => import("./ReadWriteInspector"));
+const ReadWriteInspector = lazyRetry(() => import("./ReadWriteInspector"), "ReadWriteInspector");
 
 /** Loads the read/write inspector only for the signed-in researcher account. */
 export function InspectorGate() {
