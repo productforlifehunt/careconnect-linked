@@ -47,11 +47,42 @@ function importsOf(file: string, text: string): Map<string, string> {
 }
 
 function findDefinition(lines: string[], name: string): number {
-  const re = new RegExp(`(?:function\\s+${name}\\b|(?:const|let|var)\\s+${name}\\s*=|^\\s*${name}\\s*\\([^)]*\\)\\s*\\{)`);
+  const re = new RegExp(`(?:function\\s+${name}\\b|(?:const|let|var)\\s+(?:\\{[^}=]*[\\s{,:]|\\[[^\\]=]*[\\s\\[,])?${name}\\b[^=]*=(?!=)|^\\s*${name}\\s*\\([^)]*\\)\\s*\\{)`);
   return lines.findIndex((l) => re.test(l));
 }
 
-export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = ""): Promise<LogicStep[]> {
+const squash = (x: string) => x.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, "");
+
+/** In an item list (`[{ label: t("dashboard.pendingTasks"), value: … }]`) pick the item whose label is the text beside the clicked value. */
+function focusLines(hits: number[], lines: string[], shown: string, card: string): number[] {
+  const rest = card.replace(shown, " ").replace(/\s+/g, " ").trim();
+  const phrases = [rest, ...rest.split(/[\s·|/]+/)].map(squash).filter((w) => w.length > 2 && !/^\d+$/.test(w));
+  const words = shown.split(/\s+/).map(squash).filter((w) => w.length > 2 && !/^\d+$/.test(w));
+  for (const set of [phrases.slice(0, 1), phrases.slice(1), words]) {
+    if (!set.length) continue;
+    const f = hits.filter((i) => set.some((w) => squash(lines[i]!).includes(w)));
+    if (f.length) return f;
+  }
+  return [];
+}
+
+/** Identifiers in the expression given to `key:` on one line (`value: loading ? "—" : myPendingTasks.length`). */
+function exprIds(line: string, key: string): string[] {
+  const m = line.match(new RegExp(`\\b${key}\\s*:\\s*(.+?)(?:,\\s*\\w+\\s*:|\\s*\\}\\s*[,\\]]?|$)`));
+  if (!m) return [];
+  return [...m[1]!.replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)].map((x) => x[1]!).filter((n) => !KEYWORDS.has(n) && n.length > 2);
+}
+
+/** The expression that decides a computed value, for showing "this number is X.length". */
+export function decidingExpression(steps: LogicStep[]): string | null {
+  for (const st of steps) {
+    const m = st.code.join(" ").match(/\bvalue\s*:\s*(.+?)(?:,\s*\w+\s*:|\s*\}\s*[,\]]|$)/);
+    if (m && /“value”/.test(st.title)) return m[1]!.trim();
+  }
+  return null;
+}
+
+export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = "", cardText = ""): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -88,8 +119,7 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
     const re = new RegExp(`(?:(?<![-\\w.])${p}\\s*:(?!:)|(?:const|let|var)\\s+(?:\\{[^}]*\\b)?${p}\\b[^=]*=|(?<![-\\w.])${p}\\s*=[^=>])`);
     const hits = lines.map((l, i) => i).filter((i) => i !== at && re.test(lines[i]!));
     // A list of items (`[{ label: … }, …].map`): keep only the item that shows the clicked text.
-    const words = shownText.split(/\s+/).filter((w) => w.length > 2);
-    const focused = words.length ? hits.filter((i) => words.some((w) => lines[i]!.includes(w))) : [];
+    const focused = focusLines(hits, lines, shownText, cardText);
     const use = new Set(focused.length ? focused : hits);
     lines.forEach((l, i) => {
       if (steps.length >= maxSteps || !use.has(i)) return;
@@ -102,7 +132,9 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
       const rhs = joined.match(new RegExp(`\\b${p}\\s*[:=]\\s*([A-Za-z_$][\\w$]*)\\s*[,;]`));
       if (rhs && !KEYWORDS.has(rhs[1]!) && !done.has(rhs[1]!)) queue.push(rhs[1]!);
       // Item rows: every `key: variable` on the chosen item line is traced (value: pendingTasksCount).
-      if (focused.length) for (const kv of l.matchAll(/\b\w+\s*:\s*([A-Za-z_$][\w$]*)\s*[,}]/g)) if (!KEYWORDS.has(kv[1]!) && !done.has(kv[1]!) && !/^[A-Z]/.test(kv[1]!)) queue.push(kv[1]!);
+      if (focused.length) for (const id of exprIds(l, p)) if (!done.has(id)) queue.push(id);
+      // Local values the decision uses (const tasks = …, myPendingTasks = tasks.filter(…)) are traced to where they are made.
+      for (const id of joined.matchAll(/(?<![.\w$])([a-z_$][\w$]*)\b/g)) { const n = id[1]!; if (n !== p && !KEYWORDS.has(n) && !GENERIC.has(n) && !done.has(n) && n.length > 2 && findDefinition(lines, n) >= 0 && findDefinition(lines, n) !== i) queue.push(n); }
     });
   }
 
