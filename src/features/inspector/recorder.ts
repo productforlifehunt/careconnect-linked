@@ -25,6 +25,7 @@ export interface RecordedRequest {
   status?: number | undefined;
   rows?: unknown;          // trimmed response sample (reads only)
   callers: string[];       // source files on the call stack (dev builds)
+  via?: string | undefined; // backend function that performed it (store operations)
 }
 
 let entries: RecordedRequest[] = [];
@@ -100,3 +101,49 @@ export class InspectorWriteBlocked extends Error {
     this.name = "InspectorWriteBlocked";
   }
 }
+
+/**
+ * Requests that bypass wordpressFetchRaw (WooCommerce, bookings, auth, media)
+ * are recorded too by observing window.fetch. Recording only: they are never
+ * held back here, so sign-in refresh and checkout behave normally.
+ */
+function installFetchObserver() {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { __rwFetchObserved?: boolean; fetch: typeof fetch };
+  if (w.__rwFetchObserved) return;
+  w.__rwFetchObserved = true;
+  const original = w.fetch.bind(window);
+  w.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    let entry: RecordedRequest | null = null;
+    try {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const stack = new Error().stack || "";
+      const viaClient = /wordpress-client\.ts/.test(stack);
+      const m = url.match(/\/wp-json\/([^?#]+)(?:\?([^#]*))?/) || url.match(/[?&]rest_route=\/?([^&#]+)(?:&([^#]*))?/);
+      if (m && !viaClient && isResearcherAccount()) {
+        const params = m[2] ? Object.fromEntries(new URLSearchParams(m[2])) : undefined;
+        let body: unknown;
+        try { body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined; } catch { body = undefined; }
+        entry = recordRequest((init?.method || (typeof input === "object" && "method" in input ? input.method : "GET")).toUpperCase(), decodeURIComponent(m[1]!), params, body);
+        if (entry) entry.blocked = false;
+      }
+      // Store operations proxied by the backend function (orders, vendors): recorded under their store action.
+      const fn = url.match(/\/functions\/v1\/(wp-admin-ops)\b/);
+      if (fn && !entry && isResearcherAccount() && typeof init?.body === "string") {
+        let body: Record<string, unknown> = {};
+        try { body = JSON.parse(init.body) as Record<string, unknown>; } catch { body = {}; }
+        const action = String(body["action"] || "?");
+        const { wp_base: _base, action: _a, ...rest } = body;
+        entry = recordRequest(/^(list|get|fetch|read|search)/.test(action) ? "GET" : "POST", `wc/server-op/${action}`, rest, undefined);
+        if (entry) { entry.blocked = false; entry.via = fn[1]; }
+      }
+    } catch { entry = null; }
+    const res = await original(input as RequestInfo, init);
+    if (entry?.via) {
+      const e = entry; e.status = res.status;
+      res.clone().json().then((j) => { e.rows = trim((j && typeof j === "object" && "data" in j) ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
+    } else if (entry) attachResponse(entry, res);
+    return res;
+  }) as typeof fetch;
+}
+installFetchObserver();

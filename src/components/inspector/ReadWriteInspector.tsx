@@ -3,12 +3,21 @@ import { useServerFn } from "@tanstack/react-start";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
-import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@/features/inspector/decode";
-import { inspectElement, pageSourceFiles, type ElementInfo } from "@/features/inspector/inspect-dom";
-import { traceLogic, type LogicStep } from "@/features/inspector/logic-trace";
+import { decodeEndpoint, codeRefs, fieldName, optionName, relById, cctBySlug, type CodeRef } from "@/features/inspector/decode";
+import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
+import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
 import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
+import { getStoredWPUser } from "@/services/wp-auth";
+
+/** Text that comes from the signed-in account saved at login (no request on this page). */
+function accountMatches(text: string): string[] {
+  const me = getStoredWPUser() as Record<string, unknown> | null;
+  if (!me || !text) return [];
+  const low = text.toLowerCase();
+  return Object.entries(me).filter(([k, v]) => typeof v === "string" && v.length >= 2 && !/token/i.test(k) && low.includes(v.toLowerCase())).map(([k, v]) => `${k} = “${String(v).slice(0, 60)}”`);
+}
 
 type Tab = "element" | "page" | "log";
 
@@ -35,6 +44,10 @@ function describeBody(req: RecordedRequest): string[] {
   return lines;
 }
 
+function rowCount(req: RecordedRequest): number {
+  return Array.isArray(req.rows) ? req.rows.length : req.rows ? 1 : 0;
+}
+
 function returnedFields(req: RecordedRequest): string {
   const rows = Array.isArray(req.rows) ? req.rows : req.rows ? [req.rows] : [];
   const first = rows[0] as Record<string, unknown> | undefined;
@@ -55,7 +68,7 @@ function DataChain({ requests }: { requests: RecordedRequest[] }) {
       {steps.map(({ t, r, n }, i) => (
         <li key={r.id} className="rounded border border-border p-1">
           <span className="font-medium">{["②","③","④","⑤","⑥","⑦","⑧","⑨"][i] || "·"} </span>
-          {t.kind === "rel" ? <>经关联 / via <b>{t.label}</b></> : <>{t.action} <b>{t.label}</b></>}{n > 1 && ` ×${n}`}
+          {t.kind === "rel" ? <>经关联 / via <b>{t.label}</b></> : <>{t.action} <b>{t.label}</b></>}{n > 1 && ` ×${n}`} <span className="text-muted-foreground">→ 返回 {rowCount(r)} 行 / {rowCount(r)} rows</span>
           {r.params && Object.keys(r.params).length > 0 && <div className="font-mono text-[10px] text-muted-foreground">条件 / filter: {new URLSearchParams(r.params as Record<string, string>).toString()}</div>}
           {t.kind !== "rel" && returnedFields(r) && <div className="text-[10px]">字段 / fields: {returnedFields(r)}</div>}
         </li>
@@ -182,14 +195,15 @@ export default function ReadWriteInspector() {
     return () => { window.removeEventListener("scroll", update, true); window.removeEventListener("resize", update); };
   }, [selected]);
 
-  const pageRequests = useMemo(() => requests.filter((r) => r.path === path), [requests, path]);
+  // Reads made just before a redirect into this page (/care-circle → /care-circle/28) belong to it too.
+  const pageRequests = useMemo(() => requests.filter((r) => r.path === path || (path.startsWith(r.path.split("?")[0]! + "/") && r.path.split("?")[0]!.length > 1)), [requests, path]);
   const info: ElementInfo | null = useMemo(() => (selected ? inspectElement(selected, requests) : null), [selected, requests]);
   const [elementRefs, setElementRefs] = useState<CodeRef[]>([]);
   const [clickNo, setClickNo] = useState(0);
   const [logic, setLogic] = useState<LogicStep[] | null>(null);
   useEffect(() => {
     let live = true; setLogic(null);
-    if (info?.sources[0]) void traceLogic(info.sources[0], 30, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "").then((r) => { if (live) setLogic(r); });
+    if (info?.sources[0]) void traceLogic(info.sources[0], 60, info.sources.slice(1), info.text, info.components.find((c) => !/^(Card|CardContent|Button|div|p|span)$/.test(c)) || "", info.card, info.itemIndex).then((r) => { if (live) setLogic(r); });
     return () => { live = false; };
   }, [selected, clickNo]);
   useEffect(() => {
@@ -212,18 +226,41 @@ export default function ReadWriteInspector() {
     if (own && logic) void (() => {
       // Seeds: the helper/hook files the decision logic really calls (not the whole page and everything it imports).
       const pageFiles = new Set(info!.sources.map((x) => x.split(":")[0]!));
-      const helpers = [...new Set(logic.map((st) => st.file))].filter((f) => !pageFiles.has(f) && !INFRA.test(f));
-      return helpers.length ? Promise.resolve(new Set(helpers)) : importClosure([own], 1);
+      // Context providers (e.g. the signed-in profile) count when the logic really calls into them.
+      const helpers = [...new Set(logic.flatMap((st) => [st.file, ...(st.via || [])]))].filter((f) => !pageFiles.has(f) && !/^(lib\/|integrations\/|features\/shared\/|components\/ui\/|components\/layout\/|routes\/__root)/.test(f));
+      return helpers.length ? Promise.resolve(new Set(helpers)) : importClosure([own], 1).then((c) => new Set([...c].filter((f) => !INFRA.test(f))));
     })().then((c) => { if (live) setClosure(c); });
     return () => { live = false; };
   }, [selected, clickNo, logic]);
   const relatedRequests = useMemo(() => {
     if (!info || !closure) return [];
-    return pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o) && !INFRA.test(o); });
-  }, [info, pageRequests, closure]);
-  const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
-  const realMatches = useMemo(() => (info ? info.matches.filter((m) => relatedIds.has(m.request.id)) : []), [info, relatedIds]);
-  const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !relatedIds.has(m.request.id)) : []), [info, relatedIds]);
+    // Session data (signed-in profile) is read once by a context provider, often on an earlier page.
+    const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
+    // A read belongs to this element when one of its two nearest app callers is code the element's logic runs
+    // (calendar-schedule ← source.medicine counts for the medicine list). Shared hook hubs only count as the nearest caller.
+    const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
+    const base = [...session, ...own];
+    // Row reads count when a related relation read returned that row id (proof by id, whatever code fetched it).
+    const proven = new Map<string, Set<string>>();
+    for (const r of base) {
+      const m = r.endpoint.match(/^jet-rel\/(\d+)/); const def = m ? relById(m[1]!) : undefined; if (!def || !r.rows) continue;
+      const ids = new Set<string>(); const walk = (v: unknown) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") { const o = v as Record<string, unknown>; for (const k of ["child_object_id", "parent_object_id"]) if (o[k] != null) ids.add(String(o[k])); Object.values(o).forEach((x) => typeof x === "object" && walk(x)); } else if (v != null) ids.add(String(v)); };
+      walk(r.rows);
+      for (const side of [def.parent, def.child]) { const n = side.match(/^(\d+)\./)?.[1]; if (n) { const set = proven.get(n) || new Set(); ids.forEach((x) => set.add(x)); proven.set(n, set); } }
+    }
+    const orphans = [...new Map(requests.filter((r) => {
+      if (r.method !== "GET" || !pageRequests.includes(r) || base.includes(r)) return false;
+      const m = r.endpoint.match(/^jet-cct\/([a-z0-9_]+)\/(\d+)/); const def = m ? cctBySlug(m[1]!) : undefined;
+      return !!def && !!proven.get(String(def.id))?.has(m![2]!);
+    }).map((r) => [r.endpoint, r])).values()];
+    return [...base, ...orphans];
+  }, [info, pageRequests, closure, requests, path]);
+  const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
+  // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
+  const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
+  const keep = useCallback((m: FieldMatch) => relatedIds.has(`${m.request.method} ${m.request.endpoint} ${JSON.stringify(m.request.params || {})}`) && (!tinyText || !!m.sameCard), [relatedIds, tinyText]);
+  const realMatches = useMemo(() => (info ? info.matches.filter(keep) : []), [info, keep]);
+  const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
@@ -290,6 +327,24 @@ export default function ReadWriteInspector() {
                     ))}</ul>
                   )}
                 </section>
+                {realMatches.length === 0 && accountMatches(info.text).length > 0 && (
+                  <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+                    <div className="font-medium">来自当前登录账号 / From the signed-in account</div>
+                    {accountMatches(info.text).map((m) => <div key={m} className="font-mono text-[10px]">{m}</div>)}
+                    <div className="text-[10px] text-muted-foreground">登录时 WordPress 返回并保存在本机的账号信息（WordPress 用户 #{String(getStoredWPUser()?.user_id ?? "?")}），本页没有为它另发读取。 / Saved from WordPress at sign-in; no extra read on this page.</div>
+                  </section>
+                )}
+                {realMatches.length === 0 && logic && decidingExpression(logic) && (
+                  <section className="space-y-1 rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+                    <div className="font-medium">这个值是算出来的 / Computed value</div>
+                    <div>显示 “{info.text.slice(0, 40)}” = <span className="font-mono">{decidingExpression(logic)}</span></div>
+                    {/\.length\b/.test(decidingExpression(logic)!) && <div>即：下面数据链读出的行，经过判定逻辑筛选后剩下的条数。 / i.e. the number of rows left after the decision logic below filters the reads in the data chain.</div>}
+                    <div className="text-[10px] text-muted-foreground">计算过程见下方「判定逻辑」，数据来源见「数据链」。 / See decision logic and data chain below.</div>
+                  </section>
+                )}
+                {realMatches.length === 0 && logic && logic.length > 0 && !decidingExpression(logic) && accountMatches(info.text).length === 0 && (
+                  <p className="rounded border border-border bg-muted/40 p-2 text-xs">这段是界面固定文字（双语文案或配置），不是从数据读出来的。 / Fixed interface wording, not read from data.</p>
+                )}
                 {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
                 <section className="space-y-1">
                   <div className="text-xs font-medium">数据链 / Data chain {closure ? `(${relatedRequests.filter((r) => r.method === "GET").length})` : "…"}</div>

@@ -16,6 +16,8 @@ export interface ElementInfo {
   link?: string | undefined;
   props: Array<{ component: string; prop: string; value: string }>;
   matches: FieldMatch[];
+  card: string;            // text of the surrounding card/row
+  itemIndex: number;       // position among siblings rendered by the same JSX line (list items), -1 if none
 }
 
 export interface FieldMatch { sameCard?: boolean; target: Target; row: string; field: string; fieldName?: string | undefined; option?: string | undefined; value: string; request: RecordedRequest }
@@ -77,7 +79,7 @@ function matchValues(text: string, requests: RecordedRequest[]): FieldMatch[] {
           let how = "";
           if (low === want) how = "完全相同 / exact";
           else if (low.length >= 2 && !/^\d{1,3}$/.test(low) && want.includes(low)) how = "包含在显示文字中 / part of the text";
-          else if (want.length >= 4 && low.includes(want)) how = "显示的是其中一部分 / shown in part";
+          else if (want.length >= 4 && low.includes(want) && low.length <= want.length * 3) how = "显示的是其中一部分 / shown in part";
           else { const f = displayForms(s).find((x) => want.includes(x)); if (f) how = `换算显示为 / shown as ${f}`; }
           if (!how) continue;
           const key = `${target.key}|${rowId}|${prefix}${k}`;
@@ -142,12 +144,20 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   // Text of the surrounding card/row, to tell which of several matching rows this element belongs to.
   let box: Element | null = el.closest("button, a, li, tr, [role=button], [role=row], [role=listitem]");
   if (!box) { box = el; for (let i = 0; i < 2 && box.parentElement && cleanText(box.parentElement).length < 200; i++) box = box.parentElement; }
-  const around = cleanText(box).toLowerCase();
+  const cardText = cleanText(box);
+  // Which list item this is: the nearest ancestor whose siblings come from the same JSX line.
+  let itemIndex = -1;
+  for (let n: Element | null = el; n && n.parentElement && itemIndex < 0; n = n.parentElement) {
+    const src = n.getAttribute("data-tsd-source"); if (!src) continue;
+    const sibs = [...n.parentElement.children].filter((c) => c.getAttribute("data-tsd-source") === src);
+    if (sibs.length > 1) itemIndex = sibs.indexOf(n);
+  }
+  const around = cardText.toLowerCase();
   // A handler is written in the nearest component that also has its own source file on the element chain.
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()) };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex };
 }
 
 function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] {
