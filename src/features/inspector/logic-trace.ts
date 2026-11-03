@@ -135,7 +135,7 @@ export function decidingExpression(steps: LogicStep[], shownText = ""): string |
   return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
-export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = "", cardText = "", itemIndex = -1): Promise<LogicStep[]> {
+export async function traceLogic(source: string, maxSteps = 50, parents: string[] = [], shownText = "", childName = "", cardText = "", itemIndex = -1): Promise<LogicStep[]> {
   const [file, lineStr] = source.split(":");
   const text = file ? await readSource(file) : null;
   if (!file || !text) return [];
@@ -254,7 +254,10 @@ export async function traceLogic(source: string, maxSteps = 30, parents: string[
   }
 
   // 3. Functions those decisions call — same file first, then imported files (one hop each, twice).
+  // Data readers (hooks/fetchers) first, so wording helpers (useSite, t) cannot use up the step budget before the real read.
+  const dataFirst = (a: { name: string }, b: { name: string }) => +!/^(use|fetch|load|list|read|get)[A-Z]/.test(a.name) - +!/^(use|fetch|load|list|read|get)[A-Z]/.test(b.name) || +/^use(Site|Translation|Language|Hydrated)$/.test(a.name) - +/^use(Site|Translation|Language|Hydrated)$/.test(b.name);
   for (let hop = 0; hop < 3 && frontier.length && steps.length < maxSteps; hop++) {
+    frontier.sort(dataFirst);
     const next: typeof frontier = [];
     for (const { name, file: f, text: t } of frontier) {
       if (steps.length >= maxSteps) break;
