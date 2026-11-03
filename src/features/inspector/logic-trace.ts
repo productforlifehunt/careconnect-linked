@@ -59,12 +59,20 @@ function focusLines(hits: number[], lines: string[], shown: string, card: string
   const phrases = [rest, ...rest.split(/[\s·|/]+/)].map(squash).filter((w) => w.length > 2 && !/^\d+$/.test(w));
   const words = shown.split(/\s+/).map(squash).filter((w) => w.length > 2 && !/^\d+$/.test(w));
   const whole = [squash(shown)].filter((w) => w.length > 2 && !/^\d+$/.test(w));
-  for (const set of [whole, phrases.slice(0, 1), phrases.slice(1), words]) {
+  for (const [n, set] of [whole, phrases.slice(0, 1), phrases.slice(1), words].entries()) {
     if (!set.length) continue;
-    const f = hits.filter((i) => set.some((w) => squash(lines[i]!).includes(w)));
-    if (f.length) return f;
+    const f = hits.filter((i) => { const t = squash(expandLine(lines, i)); return set.some((w) => t.includes(w)); });
+    // Single loose words ("care") only count when they pick out exactly one line.
+    if (f.length && (n < 2 || f.length === 1)) return f;
   }
   return [];
+}
+
+/** A line plus the definitions of the local labels it uses (label: careGroupsLabel → const careGroupsLabel = … "Care Teams"). */
+function expandLine(lines: string[], i: number): string {
+  let out = lines[i]!;
+  for (const id of lines[i]!.matchAll(/(?<![.\w$])([a-z_$][\w$]*(?:Label|Text|Title|Name))\b/g)) { const d = findDefinition(lines, id[1]!); if (d >= 0 && d !== i) out += " " + lines.slice(d, d + 3).join(" "); }
+  return out;
 }
 
 /** Identifiers in the expression given to `key:` on one line (`value: loading ? "—" : myPendingTasks.length`). */
@@ -80,7 +88,10 @@ export function decidingExpression(steps: LogicStep[]): string | null {
     const m = st.code.join(" ").match(/\bvalue\s*:\s*(.+?)(?:,\s*\w+\s*:|\s*\}\s*[,\]]|$)/);
     if (m && /“value”/.test(st.title)) return m[1]!.trim();
   }
-  return null;
+  // Otherwise the JSX expressions on the rendering line itself ({caredOneTasks.length} {t("…")}).
+  const render = steps[0]?.code.join(" ") || "";
+  const exprs = [...render.matchAll(/\{([^{}]+)\}/g)].map((x) => x[1]!.trim()).filter((e) => !/^`|className|^\s*$/.test(e) && /[A-Za-z_$][\w$]*/.test(e.replace(/\bt\([^()]*\)/g, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "")));
+  return exprs.length ? exprs.join("  ·  ").slice(0, 400) : null;
 }
 
 export async function traceLogic(source: string, maxSteps = 30, parents: string[] = [], shownText = "", childName = "", cardText = ""): Promise<LogicStep[]> {

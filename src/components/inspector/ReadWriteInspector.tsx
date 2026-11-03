@@ -4,7 +4,7 @@ import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
 import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@/features/inspector/decode";
-import { inspectElement, pageSourceFiles, type ElementInfo } from "@/features/inspector/inspect-dom";
+import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
 import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
@@ -243,13 +243,16 @@ export default function ReadWriteInspector() {
     // Session data (signed-in profile) is read once by a context provider, often on an earlier page.
     const session = requests.filter((r) => r.path !== path && r.method === "GET" && /^contexts\//.test(ownerFile(r) || "") && closure.has(ownerFile(r)!));
     const named = (r: RecordedRequest) => { if (r.method !== "GET" || ownerFile(r)) return false; const l = decodeEndpoint(r.method, r.endpoint).label.replace(/ #\d+$/, "").replace(/ (读子项|读父项).*$/, ""); return closureLabels.some((x) => x === l || l.startsWith(x)); };
-    const orphans = requests.filter((r) => named(r) && (r.path === path || !pageRequests.length));
+    const orphans = [...new Map(requests.filter((r) => named(r) && r.path === path).map((r) => [r.endpoint, r])).values()];
     const own = pageRequests.filter((r) => { const o = ownerFile(r); return !!o && closure.has(o); });
     return [...session, ...own, ...orphans.filter((r) => !own.includes(r))];
   }, [info, pageRequests, closure, requests, path, closureLabels]);
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
-  const realMatches = useMemo(() => (info ? info.matches.filter((m) => relatedIds.has(m.request.id)) : []), [info, relatedIds]);
-  const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !relatedIds.has(m.request.id)) : []), [info, relatedIds]);
+  // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
+  const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
+  const keep = useCallback((m: FieldMatch) => relatedIds.has(m.request.id) && (!tinyText || !!m.sameCard), [relatedIds, tinyText]);
+  const realMatches = useMemo(() => (info ? info.matches.filter(keep) : []), [info, keep]);
+  const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
