@@ -140,8 +140,8 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   if (!link) { const a = el.closest("a"); if (a?.getAttribute("href")) link = a.getAttribute("href")!; }
   const text = cleanText(el);
   // Text of the surrounding card/row, to tell which of several matching rows this element belongs to.
-  let box: Element = el;
-  for (let i = 0; i < 4 && box.parentElement && cleanText(box.parentElement).length < 400; i++) box = box.parentElement;
+  let box: Element | null = el.closest("button, a, li, tr, [role=button], [role=row], [role=listitem]");
+  if (!box) { box = el; for (let i = 0; i < 2 && box.parentElement && cleanText(box.parentElement).length < 200; i++) box = box.parentElement; }
   const around = cleanText(box).toLowerCase();
   // A handler is written in the nearest component that also has its own source file on the element chain.
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
@@ -155,7 +155,7 @@ function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] 
     const rows = Array.isArray(m.request.rows) ? m.request.rows : [m.request.rows];
     const row = (rows as Array<Record<string, unknown>>).find((r) => r && String(r["_ID"] ?? r["id"] ?? "") === m.row);
     if (!row) continue;
-    m.sameCard = Object.entries(row).some(([k, v]) => k !== m.field && !k.startsWith("_") && typeof v === "string" && v.length >= 2 && !/^\d{1,3}$/.test(v) && !own.includes(v.toLowerCase()) && around.includes(v.toLowerCase()));
+    m.sameCard = Object.entries(row).some(([k, v]) => k !== m.field && !k.startsWith("_") && typeof v === "string" && v.length >= 2 && !/^\d{1,3}$/.test(v) && !own.includes(v.toLowerCase()) && (around.includes(v.toLowerCase()) || displayForms(v).some((f) => f.length >= 4 && !own.includes(f) && around.includes(f))));
   }
   return [...matches].sort((a, b) => Number(!!b.sameCard) - Number(!!a.sameCard));
 }
