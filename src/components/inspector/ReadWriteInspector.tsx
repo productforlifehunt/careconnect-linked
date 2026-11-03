@@ -249,6 +249,7 @@ export default function ReadWriteInspector() {
     const own = pageRequests.filter((r) => { const app = r.callers.filter((c) => !/^(features\/shared\/|lib\/|integrations\/|services\/wp-|features\/inspector\/)/.test(c)); return app.slice(0, 2).some((c, i) => closure.has(c) && (i === 0 || !/^hooks\//.test(c))); });
     return [...session, ...own, ...orphans.filter((r) => !own.includes(r))];
   }, [info, pageRequests, closure, requests, path, closureLabels]);
+  if (typeof window !== "undefined") (window as any).__rwDebug = { closure: closure && [...closure], closureLabels, related: relatedRequests.map((r) => r.endpoint) };
   const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => `${r.method} ${r.endpoint} ${JSON.stringify(r.params || {})}`)), [relatedRequests]);
   // A bare small number or dash is almost always counted, not stored: a field that merely equals "0" is not its source.
   const tinyText = !!info && /^(\d{1,3}|—|-)$/.test(info.text.trim());
