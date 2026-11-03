@@ -157,7 +157,6 @@ function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] 
     if (!row) continue;
     m.sameCard = Object.entries(row).some(([k, v]) => !k.startsWith("cct_") && k !== m.field.replace(/^meta\./, "") &&  k !== m.field && !k.startsWith("_") && typeof v === "string" && v.length >= 2 && !/^\d{1,3}$/.test(v) && !own.includes(v.toLowerCase()) && (around.includes(v.toLowerCase()) || displayForms(v).some((f) => f.length >= 4 && !own.includes(f) && around.includes(f))));
   }
-  for (const m of matches) if (m.sameCard) { const rows = Array.isArray(m.request.rows) ? m.request.rows : [m.request.rows]; const row = (rows as any[]).find((r) => r && String(r["_ID"] ?? r["id"] ?? "") === m.row); console.warn("RWDEBUG", m.row, Object.entries(row).filter(([k, v]) => typeof v === "string" && v.length >= 2 && (around.includes(v.toLowerCase()) || displayForms(v).some((f) => f.length >= 4 && around.includes(f)))).map(([k, v]) => k + "=" + v).join("|")); }
   return [...matches].sort((a, b) => Number(!!b.sameCard) - Number(!!a.sameCard));
 }
 
