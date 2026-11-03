@@ -1,3 +1,8 @@
+## Current request: Homepage blank preview
+- [x] Local homepage renders successfully; user preview reproduced stuck on the pre-hydration blank screen.
+- [x] Lazy-load standalone sub-apps so unrelated site modules do not block care homepage startup.
+- [ ] Confirm the user's remote preview renders after the change; remote tab has stopped responding to inspection.
+
 ## Current request: Draftbit Classic full no-code replica (manual, no AI) — user upgraded to paid plan
 - [x] 2026-11-03: Meds screen was set to hidden (excluded from generated app) — that is why 用药页 never opened. Re-included; preview now opens Medicine Tracker from Cared Ones tile. Open: list empty and empty-state box also not shown for cared one 'challenged'; Taken/Skip still untested (no medicine row).
 - [ ] 2026-11-03 user: 先补齐缺失页面与结构错误的功能，功能页面优先，之后再测试。

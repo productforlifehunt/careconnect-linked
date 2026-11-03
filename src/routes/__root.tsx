@@ -1,7 +1,7 @@
 // ported from main.tsx — i18n must initialise before any component renders.
 import "@/i18n/config";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -26,13 +26,15 @@ import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/NotFound";
-import SafetyApp from "@/pages/safety/SafetyApp";
-import EsmApp from "@/pages/esm/EsmApp";
-import ResearcherApp from "@/pages/researcher/ResearcherApp";
-import ConsentApp from "@/pages/consent/ConsentApp";
-import SickApp from "@/pages/sick/SickApp";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import { InspectorGate } from "@/components/inspector/InspectorGate";
+
+// Other sites must not delay hydration of the care homepage.
+const SafetyApp = lazy(() => import("@/pages/safety/SafetyApp"));
+const EsmApp = lazy(() => import("@/pages/esm/EsmApp"));
+const ResearcherApp = lazy(() => import("@/pages/researcher/ResearcherApp"));
+const ConsentApp = lazy(() => import("@/pages/consent/ConsentApp"));
+const SickApp = lazy(() => import("@/pages/sick/SickApp"));
 
 // Pick the brand + language tab icon before the first paint so a Chinese app
 // never flashes (or gets cached with) the English icon, and vice versa.
@@ -171,7 +173,9 @@ function RootComponent() {
                 <LocationSharingAgent />
                 <InspectorGate />
                 <AIAssistantProvider>
-                  <SiteRouter />
+                  <Suspense fallback={<BootScreen />}>
+                    <SiteRouter />
+                  </Suspense>
                 </AIAssistantProvider>
               </SiteProvider>
             </AuthProvider>
