@@ -100,6 +100,9 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   });
 
   const steps = !matches.length && expr && logic ? derivation(expr, [...logic, ...full], defs) : [];
+  // A derivation that ends in bilingual string literals only is interface wording, not data.
+  const staticWords = steps.length > 0 && steps.every((x) => { const body = x.replace(/^[^：]+：/, "").replace(/（[^）]*）\s*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, ""); return !(body.replace(/^\s*[\w$]+\s*:/, "").match(/[A-Za-z_$][\w$]*/g) || []).some((id) => !/^(isCN|isZh|isChinese)$/.test(id)); });
+  if (staticWords) lines.splice(0, lines.length, `显示的${shown}是界面固定文字：按当前语言二选一的写死文案，不读任何数据、不做计算。`);
   // Conditions the decision logic applies (real code lines, field codes named from the dictionary).
   const conds: string[] = []; const falls: string[] = [];
   for (const st of logic || []) st.code.forEach((l, j) => {
