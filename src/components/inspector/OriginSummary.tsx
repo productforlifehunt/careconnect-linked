@@ -100,9 +100,17 @@ export function OriginSummary({ text, matches, reads, pageRequests, path, logic,
   });
 
   const steps = !matches.length && expr && logic ? derivation(expr, [...logic, ...full], defs) : [];
-  // A derivation that ends in bilingual string literals only is interface wording, not data.
-  const staticWords = steps.length > 0 && steps.every((x) => { const body = x.replace(/^[^：]+：/, "").replace(/（[^）]*）\s*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, ""); return !(body.replace(/^\s*[\w$]+\s*:/, "").match(/[A-Za-z_$][\w$]*/g) || []).some((id) => !/^(isCN|isZh|isChinese)$/.test(id)); });
-  if (staticWords) lines.splice(0, lines.length, `显示的${shown}是界面固定文字：按当前语言二选一的写死文案，不读任何数据、不做计算。`);
+  // A derivation that only reaches wording (bilingual literals, translations t("…"), site brand settings, icons) is interface text, not data.
+  const STATIC_ID = /^(isCN|isZh|isChinese|zh|t|i18n|language|startsWith|useSite|useTranslation|site|const|let|var|return|defaultValue|true|false|null|undefined|key|title|subtitle|icon|label|description)$/;
+  const staticWords = steps.length > 0 && steps.every((x) => {
+    const body = x.replace(/^[^：]+：/, "").replace(/（[^）]*）\s*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "").replace(/\.\s*[A-Za-z_$][\w$]*/g, "").replace(/\b[\w$]+\s*:/g, "");
+    return !(body.match(/[A-Za-z_$][\w$]*/g) || []).some((id) => !STATIC_ID.test(id) && !/^[A-Z]/.test(id));
+  });
+  const clockOnly = !matches.length && !!expr && /new Date\(\s*\)|Date\.now\(\)/.test(expr) && !/\b(row|item|data|event|log|task|med|a\d+)\b/.test(expr);
+  const noSource = !matches.length && !expr && !account.length && !!logic;
+  if (staticWords) lines.splice(0, lines.length, `显示的${shown}是界面固定文字（双语文案 / 翻译词条 / 站点品牌设置），不读任何数据、不做计算。`);
+  if (clockOnly) lines.splice(0, lines.length, `显示的${shown}是这台设备当前的日期/时间（浏览器时钟）：${expr}。不读任何数据。`);
+  if (staticWords || clockOnly || noSource) readLines.length = 0;
   // Conditions the decision logic applies (real code lines, field codes named from the dictionary).
   const conds: string[] = []; const falls: string[] = [];
   for (const st of logic || []) st.code.forEach((l, j) => {
