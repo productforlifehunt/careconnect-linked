@@ -6,6 +6,7 @@ import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspec
 import { decodeEndpoint, codeRefs, fieldName, optionName, type CodeRef } from "@/features/inspector/decode";
 import { inspectElement, pageSourceFiles, type ElementInfo } from "@/features/inspector/inspect-dom";
 import { traceLogic, type LogicStep } from "@/features/inspector/logic-trace";
+import { importClosure } from "@/features/inspector/live-index";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 
 type Tab = "element" | "page" | "log";
@@ -41,6 +42,25 @@ function returnedFields(req: RecordedRequest): string {
   const keys = Object.keys(first).filter((k) => !k.startsWith("cct_")).slice(0, 30);
   const meta = first["meta"] && typeof first["meta"] === "object" ? Object.keys(first["meta"] as object).map((k) => `meta.${k}${fieldName(t.rel, k) ? ` (${fieldName(t.rel, k)})` : ""}`) : [];
   return [...keys.filter((k) => k !== "meta").map((k) => `${k}${fieldName(t.cct, k) ? ` (${fieldName(t.cct, k)})` : ""}`), ...meta].join(" · ");
+}
+
+function DataChain({ requests }: { requests: RecordedRequest[] }) {
+  if (!requests.length) return <p className="text-xs text-muted-foreground">这个元素用到的代码在本页没有读取数据（可能是固定文字或数据还没加载）。 / No reads by this element's code on this page.</p>;
+  const seen = new Set<string>(); const steps: { t: ReturnType<typeof decodeEndpoint>; r: RecordedRequest; n: number }[] = [];
+  for (const r of requests) { const t = decodeEndpoint(r.method, r.endpoint); const k = t.key + t.action; const e = steps.find((x) => x.t.key + x.t.action === k); if (e) e.n++; else if (!seen.has(k)) { seen.add(k); steps.push({ t, r, n: 1 }); } }
+  return (
+    <ol className="space-y-1 text-xs">
+      <li className="rounded border border-border p-1">① 当前登录用户 / Signed-in WordPress user</li>
+      {steps.map(({ t, r, n }, i) => (
+        <li key={r.id} className="rounded border border-border p-1">
+          <span className="font-medium">{["②","③","④","⑤","⑥","⑦","⑧","⑨"][i] || "·"} </span>
+          {t.kind === "rel" ? <>经关联 / via <b>{t.label}</b></> : <>{t.action} <b>{t.label}</b></>}{n > 1 && ` ×${n}`}
+          {r.params && Object.keys(r.params).length > 0 && <div className="font-mono text-[10px] text-muted-foreground">条件 / filter: {new URLSearchParams(r.params as Record<string, string>).toString()}</div>}
+          {t.kind !== "rel" && returnedFields(r) && <div className="text-[10px]">字段 / fields: {returnedFields(r)}</div>}
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 function RequestList({ requests }: { requests: RecordedRequest[] }) {
@@ -183,15 +203,25 @@ export default function ReadWriteInspector() {
     if (pageFiles.length) void codeRefs(pageFiles, 1).then((r) => { if (live) setPageRefs(r); });
     return () => { live = false; };
   }, [pageFiles]);
+  // Only code this element really uses: the innermost source file plus what it imports (read live).
+  const [closure, setClosure] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    let live = true; setClosure(null);
+    const own = info?.sources[0]?.split(":")[0];
+    if (own) void importClosure([own]).then((c) => { if (live) setClosure(c); });
+    return () => { live = false; };
+  }, [selected, clickNo]);
   const relatedRequests = useMemo(() => {
-    if (!info) return [];
-    const files = info.sources.map((s) => s.split(":")[0]!);
-    return pageRequests.filter((r) => r.callers.some((c) => files.includes(c)) || info.matches.some((m) => m.request.id === r.id));
-  }, [info, pageRequests]);
+    if (!info || !closure) return [];
+    return pageRequests.filter((r) => r.callers.some((c) => closure.has(c)));
+  }, [info, pageRequests, closure]);
+  const relatedIds = useMemo(() => new Set(relatedRequests.map((r) => r.id)), [relatedRequests]);
+  const realMatches = useMemo(() => (info ? info.matches.filter((m) => relatedIds.has(m.request.id)) : []), [info, relatedIds]);
+  const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !relatedIds.has(m.request.id)) : []), [info, relatedIds]);
 
   const elementContext = useCallback(() => JSON.stringify({
     page: path, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers,
-      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, fieldMatches: info.matches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), fieldMatches: realMatches.map((m) => ({ target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
   }), [path, info, relatedRequests, elementRefs, logic]);
@@ -247,12 +277,17 @@ export default function ReadWriteInspector() {
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
                 <section className="space-y-1">
-                  <div className="text-xs font-medium">显示的值来自 / Shown value comes from ({info.matches.length})</div>
-                  {info.matches.length === 0 ? <p className="text-xs text-muted-foreground">没在本次读取的数据里找到这段文字（可能是固定文字或经过换算） / Not found in recorded data (static text or computed).</p> : (
-                    <ul className="space-y-1 text-xs">{info.matches.slice(0, 12).map((m, i) => (
+                  <div className="text-xs font-medium">显示的值来自 / Shown value comes from ({realMatches.length})</div>
+                  {realMatches.length === 0 ? <p className="text-xs text-muted-foreground">没在本次读取的数据里找到这段文字（可能是固定文字或经过换算） / Not found in recorded data (static text or computed).</p> : (
+                    <ul className="space-y-1 text-xs">{realMatches.slice(0, 12).map((m, i) => (
                       <li key={i} className="rounded border border-border p-1">{m.target.label} · 行 row #{m.row} · <span className="font-mono">{m.field}</span>{m.fieldName && ` (${m.fieldName})`}{m.option && ` → ${m.option}`} = “{m.value}”{m.sameCard && <span className="ml-1 rounded bg-primary px-1 text-primary-foreground">同卡片其他文字也来自这一行 / same row as the rest of this card</span>}</li>
                     ))}</ul>
                   )}
+                </section>
+                {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
+                <section className="space-y-1">
+                  <div className="text-xs font-medium">数据链 / Data chain {closure ? `(${relatedRequests.filter((r) => r.method === "GET").length})` : "…"}</div>
+                  <DataChain requests={relatedRequests.filter((r) => r.method === "GET")} />
                 </section>
                 <section className="space-y-1">
                   <div className="text-xs font-medium">判定逻辑 / Decision logic {logic ? `(${logic.length})` : "…"}</div>
