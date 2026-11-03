@@ -488,3 +488,4 @@
 - [ ] 群组：邀请码、分享链接、群设置、非成员 onboarding、/care-circle/<id> 深链
 - [x] 2026-11-03 群组页底部加 Fetch 4（Get Group，groupId=SEL_GROUP）+ 文字 gCode："Join code: {{a58}}  Group page: careconnect-linked.lovable.app/care-circle/{{_ID}}"（未测；加入码只显示不进链接）
 - [x] 2026-11-03 加入码改为只给群主/管理员看（对照原版 GroupSettingsTab 仅 isAdmin 可见）：Fetch 5(Get Group) 移入成员列表，显示条件=本人(child_object_id==USER_ID)；gCode 条件 a56 Includes b56（群主），gCode 2 条件 JsonStringify(a56)==JsonStringify(["b57"])（纯管理员，避免群主+管理员重复显示）。未测。
+- [ ] AI分析：修复读取证据缺失/误判，结果放入框内，全页实测
