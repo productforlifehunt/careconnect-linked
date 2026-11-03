@@ -342,6 +342,9 @@ export default function ReadWriteInspector() {
                     <div className="text-[10px] text-muted-foreground">计算过程见下方「判定逻辑」，数据来源见「数据链」。 / See decision logic and data chain below.</div>
                   </section>
                 )}
+                {realMatches.length === 0 && logic && logic.length > 0 && !decidingExpression(logic) && accountMatches(info.text).length === 0 && (
+                  <p className="rounded border border-border bg-muted/40 p-2 text-xs">这段是界面固定文字（双语文案或配置），不是从数据读出来的。 / Fixed interface wording, not read from data.</p>
+                )}
                 {strayMatches.length > 0 && <p className="text-[10px] text-muted-foreground">另有 {strayMatches.length} 条同文字数据来自别的功能（如 {strayMatches[0]!.target.label}），与这个元素无关，已排除。 / Same text found in unrelated data, excluded.</p>}
                 <section className="space-y-1">
                   <div className="text-xs font-medium">数据链 / Data chain {closure ? `(${relatedRequests.filter((r) => r.method === "GET").length})` : "…"}</div>
