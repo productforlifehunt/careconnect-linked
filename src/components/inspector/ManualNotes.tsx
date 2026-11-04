@@ -80,7 +80,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       <div className="flex flex-wrap gap-2">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild><Button variant="outline" size="sm" disabled={state.loading || state.saving}><ChevronsUpDown className="mr-1 h-3 w-3" />选择其他注释</Button></PopoverTrigger>
-          <PopoverContent className="w-80 p-0" onOpenAutoFocus={e => e.preventDefault()}>
+          <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={e => e.preventDefault()}>
             <Command><CommandInput placeholder="搜索注释名字或编号" /><CommandList><CommandEmpty>没有找到注释</CommandEmpty>{catalogue.map(n => <CommandItem key={n.id} value={`${n.title} ${n.id}`} onSelect={() => {setChoice(n.id);setOpen(false);}}>{n.title} · #{n.id}</CommandItem>)}</CommandList></Command>
           </PopoverContent>
         </Popover>

@@ -1,4 +1,7 @@
 ## Current request: CCT324 manual notes migration
+- [x] Current verification: reproduced catalogue serialization failure; gzip/base64 transport fixes empty notes. 16/16 tests pass. Real researcher community page/element display, edit-refresh, new note, dropdown lock and lock-refresh pass; original #1 text/association restored. Dropdown portal layering/event boundary fixed. Zero browser page errors, build OK.
+- [x] CCT324 access rechecked: GUI initially read public in all four capability fields; changed all four to manage_options through GUI and verified reload. Anonymous app read/save/select denied; direct WP list/item return 401. Researcher operation rerun passes after restriction.
+- [ ] Remaining: cold full-catalogue prefetch still takes about 31 seconds; this turn did not audit all pages/note content or publish. Three explicitly labelled test records retained (#6753, #6756, #6757); no record deleted.
 - [x] Verify /afresh CCT324 Manual Notes in WordPress GUI: manual_notes, a55 名字 (text), a56 内容 (textarea), empty list, GET/create/update endpoints registered.
 - [x] Correct scope: page/element source positions are inspector configuration, not business entities. Store position → CCT note ID separately; no new CCT or JetEngine REL.
 - [x] Through /afresh JetEngine GUI restrict all four CCT324 REST capabilities to manage_options; reloaded settings confirm all four.

@@ -1,6 +1,7 @@
 import type { SourceAnnotation } from "./source-notes";
+import { decodeNotes } from './notes-transport';
 export type CachedInspectorNote = SourceAnnotation;
-type Result = { notes: CachedInspectorNote[]; error?: string };
+type Result = { notes?: CachedInspectorNote[]; compressedNotes?: string; error?: string };
 
 /** Private, memory-only cache. A session change invalidates both data and in-flight reads. */
 export function createNotesCache() {
@@ -20,11 +21,13 @@ export function createNotesCache() {
       if (values) return values;
       if (pending) return pending;
       const version = generation;
-      pending = fetchNotes().then((result) => {
+      pending = fetchNotes().then(async (result) => {
         if (result.error) throw new Error(result.error);
+        const notes = result.compressedNotes ? await decodeNotes(result.compressedNotes) : result.notes;
+        if (!notes) throw new Error('注释返回格式异常，请重试。');
         if (version !== generation) throw new Error("登录状态已变化，请重新打开注释。");
         // Preserve saves that finished while this read was in flight.
-        const merged = new Map(result.notes.map((note) => [note.key, note]));
+        const merged = new Map(notes.map((note) => [note.key, note]));
         values?.forEach((note, key) => merged.set(key, note));
         values = merged;
         return merged;

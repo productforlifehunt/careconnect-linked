@@ -18,7 +18,8 @@ export const loadAllInspectorNotes = createServerFn({ method: "POST" })
     const { verifyResearcher } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden", notes: [] }; }
     const { readAllNotes } = await import("./inspector-notes.server");
-    try { return { notes: await readAllNotes() }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
+    const { encodeNotes } = await import('@/features/inspector/notes-transport');
+    try { return { compressedNotes: await encodeNotes(await readAllNotes()) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
   });
 
 /** Researcher-only: save (overwrite) the manual note for one element or page. */
