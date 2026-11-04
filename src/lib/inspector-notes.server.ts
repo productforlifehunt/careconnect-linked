@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /** Researcher manual notes for inspected elements/pages: one private JSON file per scope key. */
 const BUCKET = "inspector-notes";
-export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string }
+export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; source?: { file: string; line: number; endLine: number; tag: string; digest: string } }
 
 function client() {
   const url = process.env["SUPABASE_URL"] || ""; const key = process.env["SUPABASE_SERVICE_ROLE_KEY"] || "";
@@ -33,8 +33,14 @@ const ALL = "notes/all.json";
 /** Every note in one file, so the inspector loads them all with a single read. */
 export async function readAllNotes(): Promise<InspectorNote[]> {
   const { data, error } = await client().storage.from(BUCKET).download(ALL);
-  if (error || !data) return [];
-  try { return (JSON.parse(await data.text()) as InspectorNote[]).filter((n) => n.text.trim().length > 0); } catch { return []; }
+  if (error || !data) throw new Error("注释读取失败，请重试。");
+  const manual = JSON.parse(await data.text()) as InspectorNote[];
+  // Source annotations are separately compressed; manual edits keep their original independent files.
+  const bundle = await client().storage.from(BUCKET).download("notes/source.json.gz");
+  if (!bundle.data) return manual.filter((n) => n.text.trim().length > 0);
+  const stream = bundle.data.stream().pipeThrough(new DecompressionStream("gzip"));
+  const source = JSON.parse(await new Response(stream).text()) as InspectorNote[];
+  return [...new Map([...source, ...manual].map((n) => [n.key, n])).values()].filter((n) => n.text.trim().length > 0);
 }
 
 export async function writeNote(note: Omit<InspectorNote, "updatedAt">): Promise<InspectorNote> {
@@ -42,7 +48,7 @@ export async function writeNote(note: Omit<InspectorNote, "updatedAt">): Promise
   const path = `notes/${await hash(note.key)}.json`;
   const { error } = await client().storage.from(BUCKET).upload(path, new Blob([JSON.stringify(full)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
   if (error) throw new Error("注释没有保存成功 / The note was not saved.");
-  const all = (await readAllNotes()).filter((n) => n.key !== full.key); all.push(full);
+  const all = (await readAllNotes()).filter((n) => !n.source && n.key !== full.key); all.push(full);
   const r = await client().storage.from(BUCKET).upload(ALL, new Blob([JSON.stringify(all)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
   if (r.error) throw new Error("注释没有保存成功 / The note was not saved.");
   return full;

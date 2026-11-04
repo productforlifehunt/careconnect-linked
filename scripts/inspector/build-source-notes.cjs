@@ -110,19 +110,24 @@ function traces(file, expressions, line) {
 }
 const now = new Date().toISOString();
 const notes = [], coverage = [];
-const domTags = { Card: 'div', CardContent: 'div', CardHeader: 'div', CardTitle: 'div', Button: 'button', Badge: 'div', Input: 'input', Textarea: 'textarea', Link: 'a' };
+const domTags = { Card: 'div', CardContent: 'div', CardHeader: 'div', CardTitle: 'h3', CardDescription: 'p', CardFooter: 'div', Button: 'button', Badge: 'div', Input: 'input', Textarea: 'textarea', Link: 'a' };
 for (const item of inventory) {
   const p = read(item.file); if (!p) continue;
   const expressionText = item.expressions.join('\n');
   const trace = traces(item.file, item.expressions, item.line);
   const tokens = new Set(identifiers(expressionText + '\n' + trace.map(t => t.code || '').join('\n')));
-  const facts = reports.filter(r => (r.files || []).some(f => f.replace(/^src\//, '').replace(/:\d+.*$/, '') === item.file) && (r.symbols || []).some(s => tokens.has(s) || expressionText.includes(s)));
+  const nodeText = p.text.split('\n').slice(item.line - 1, item.endLine).join('\n');
+  const sameFile = f => f.replace(/^src\//, '').replace(/:\d+.*$/, '').replace(/\.tsx?$/, '') === item.file.replace(/\.tsx?$/, '');
+  const facts = reports.filter(r => (r.files || []).some(sameFile) && ((r.symbols || []).some(s => tokens.has(s) || expressionText.includes(s) || (s.length > 2 && nodeText.includes(s))) || (r.evidence || []).some(e => { const m = e.match(/^(.*?):(\d+)/); return m && sameFile(m[1]) && Number(m[2]) >= item.line && Number(m[2]) <= item.endLine; })));
   const local = item.expressions.map(e => `显示规则：${prose(e)}。`).join('\n');
   const detail = facts.map(f => typeof f.text === 'string' ? f.text : JSON.stringify(f.text)).join('\n\n');
   const text = `【源码核查注释；不是当前数据库记录快照】\n\n${detail || '这处的说明按实际显示表达式及它的赋值位置编写，没有凭屏幕上的同一个数字去猜字段。'}\n\n${local || '这是一组重复内容的外层；内部逐项显示，外层本身不是另外一条数据。'}\n\n` + trace.map(t => t.text + `（${t.file}:${t.line}）`).join('\n') + `\n\n显示位置：${item.file}:${item.line}。源码可以确认这个数字怎样算，不能单凭源码确认当前这一条的记录 ID 或输入笔数；这里没有伪造当前值。`;
   const digest = crypto.createHash('sha256').update(p.text.split('\n').slice(item.line - 1, item.endLine).join('\n')).digest('hex');
   const key = `source|${item.file}|${item.line}|${item.tag}|${digest.slice(0, 12)}`;
-  notes.push({ key, scope: 'element', page: '', label: `${item.tag} ${item.file}:${item.line}`, text: text.slice(0, 20000), updatedAt: now, source: { file: item.file, line: item.line, endLine: item.endLine, tag: domTags[item.tag] || item.tag, digest } });
+  // Save concise complete paragraphs; never truncate a claim halfway through.
+  const paragraphs = text.split('\n\n'); let concise = '';
+  for (const paragraph of paragraphs) { if (concise.length + paragraph.length > 12000) break; concise += (concise ? '\n\n' : '') + paragraph; }
+  notes.push({ key, scope: 'element', page: '', label: `${item.tag} ${item.file}:${item.line}`, text: concise, updatedAt: now, source: { file: item.file, line: item.line, endLine: item.endLine, tag: domTags[item.tag] || item.tag, digest } });
   coverage.push({ ...item, sourceNote: key, humanAudit: facts.length > 0, tracedBindings: trace.length });
 }
 const unique = [...new Map(notes.map(n => [n.key, n])).values()];
