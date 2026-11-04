@@ -450,7 +450,6 @@ export default function ReadWriteInspector() {
               <>
                 <div className="text-xs">页面 / Page: <span className="font-mono">{path}</span></div>
                 <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`p-${pathname}`} build={pageContext} label="生成整页 AI 分析 / Generate page AI analysis" /></div>
-                <div className={sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={pageNarrRef}><ReadWriteNarrative scope="page" matches={[]} requests={pageRequests} refs={pageRefs} /></div>
                 <section className="space-y-1"><div className="text-xs font-medium">本页实际读写 / Live reads and writes on this page ({pageRequests.length})</div><RequestList requests={pageRequests} /></section>
@@ -459,6 +458,7 @@ export default function ReadWriteInspector() {
                 </div>
               </>
             )}
+            {on && <div className={tab === "page" && sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>}
           </div>
         </div>
       )}
