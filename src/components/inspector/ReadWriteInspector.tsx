@@ -405,7 +405,7 @@ export default function ReadWriteInspector() {
                   <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
-                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" /></div>
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, `page|${pathname}`]} /></div>
                 <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} scope="element" page={pathname} label={elementLabel} source={info.sources[0]} tag={info.tag} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
@@ -449,7 +449,7 @@ export default function ReadWriteInspector() {
             {tab === "page" && (
               <>
                 <div className="text-xs">页面 / Page: <span className="font-mono">{path}</span></div>
-                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`p-${pathname}`} build={pageContext} label="生成整页 AI 分析 / Generate page AI analysis" /></div>
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`p-${pathname}`} build={pageContext} label="生成整页 AI 分析 / Generate page AI analysis" noteKeys={[`page|${pathname}`]} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={pageNarrRef}><ReadWriteNarrative scope="page" matches={[]} requests={pageRequests} refs={pageRefs} /></div>
                 <section className="space-y-1"><div className="text-xs font-medium">本页实际读写 / Live reads and writes on this page ({pageRequests.length})</div><RequestList requests={pageRequests} /></section>
