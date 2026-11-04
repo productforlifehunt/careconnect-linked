@@ -301,7 +301,8 @@ export default function ReadWriteInspector() {
   const narrRef = useRef<HTMLDivElement | null>(null);
   const pageNarrRef = useRef<HTMLDivElement | null>(null);
   const pathname = path.split("?")[0]!;
-  const elementKey = info ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}` : "";
+  // Fixed list slots (stat cards drawn by one JSX line) get their own note; data rows of one list share theirs.
+  const elementKey = info ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.itemSlot ? `|${info.itemSlot}` : ""}` : "";
   const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();
   const fitContext = (o: any): string => {
