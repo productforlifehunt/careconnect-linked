@@ -37,6 +37,7 @@ export async function resolveSourceNote(
   }
   // Multiple same-line tags are indistinguishable without a source column; share their verified explanation.
   if (valid.length === 1) return valid[0];
-  if (valid.length > 1) return { ...valid[0], key: valid[0]?.key || "", text: [...new Set(valid.map((n) => n.text))].join("\n\n") };
+  const first = valid[0];
+  if (first && valid.length > 1) return { ...first, text: [...new Set(valid.map((n) => n.text))].join("\n\n") };
   return undefined;
 }

@@ -10,7 +10,7 @@ import { useRef } from "react";
 import { isGeneratedNote, resolveSourceNote } from "@/features/inspector/source-notes";
 import { readSource } from "@/features/inspector/live-index";
 
-export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string; tag?: string; onChange?: (text: string) => void }) {
+export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
   const [retry, setRetry] = useState(0);
