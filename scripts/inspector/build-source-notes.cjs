@@ -79,7 +79,7 @@ function prose(expr) {
   };
   return describe(init);
 }
-const ignored = new Set(['true','false','null','undefined','Math','Date','Number','String','Array','Object','t','Z','cn']);
+const ignored = new Set(['true','false','null','undefined','Math','Date','Number','String','Array','Object','t','Z','cn','R','T','WP','OC','FC']);
 function identifiers(code) {
   return [...new Set([...code.replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '').matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)/g)].map(m => m[1]).filter(n => !ignored.has(n)))];
 }
@@ -92,8 +92,16 @@ function traces(file, expressions, line) {
     seen.add(key);
     const p = read(q.file); if (!p) continue;
     const at = p.sf.getPositionOfLineAndCharacter(Math.min(q.line - 1, p.text.split('\n').length - 1), 0);
-    const hits = p.definitions.filter(d => d.name === q.name && d.at <= at);
-    let hit = hits[hits.length - 1] || p.definitions.find(d => d.name === q.name);
+    const inScope = d => {
+      let ancestor = d.node.parent;
+      while (ancestor && !ts.isSourceFile(ancestor)) {
+        if ((ts.isFunctionLike(ancestor) || ts.isBlock(ancestor)) && (at < ancestor.getStart(p.sf) || at > ancestor.end)) return false;
+        ancestor = ancestor.parent;
+      }
+      return true;
+    };
+    const hits = p.definitions.filter(d => d.name === q.name && d.at <= at && inScope(d));
+    let hit = hits[hits.length - 1];
     if (!hit) {
       const imp = p.imports.get(q.name);
       if (imp && imp.name !== 'default') queue.push({ ...imp, line: 100000, depth: q.depth + 1 });
@@ -103,7 +111,8 @@ function traces(file, expressions, line) {
     if (ts.isParameter(n)) { found.push({ file: q.file, line: position, name: q.name, text: `「${q.name}」是这个函数接收的输入，不能把其他同名变量当作它的数据来源。` }); continue; }
     const code = n.getText(p.sf);
     const init = ts.isVariableDeclaration(n) ? n.initializer?.getText(p.sf) : null;
-    found.push({ file: q.file, line: position, name: q.name, text: init ? `「${q.name}」在这里赋值：${prose(init)}。` : `「${q.name}」是此处定义的处理函数，调用后按函数内部条件返回结果。`, code });
+    const safeDescription = init && init.length < 700 ? prose(init) : null;
+    found.push({ file: q.file, line: position, name: q.name, text: safeDescription ? `「${q.name}」在这里赋值：${safeDescription}。` : `「${q.name}」在此处定义；详细业务来源以本注释已核查的段落为准，仅定位到定义不代表已解释全部分支。`, code });
     for (const name of identifiers(init || code)) if (name !== q.name) queue.push({ file: q.file, name, line: position, depth: q.depth + 1 });
   }
   return found;
