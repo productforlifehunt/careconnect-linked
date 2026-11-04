@@ -127,7 +127,7 @@ for (const item of inventory) {
   const tokens = new Set(identifiers(expressionText + '\n' + trace.map(t => t.code || '').join('\n')));
   const nodeText = p.text.split('\n').slice(item.line - 1, item.endLine).join('\n');
   const sameFile = f => f.replace(/^src\//, '').replace(/:\d+.*$/, '').replace(/\.tsx?$/, '') === item.file.replace(/\.tsx?$/, '');
-  const facts = reports.filter(r => (r.files || []).some(sameFile) && ((r.symbols || []).some(s => tokens.has(s) || expressionText.includes(s) || (s.length > 2 && nodeText.includes(s))) || (r.evidence || []).some(e => { const m = e.match(/^(.*?):(\d+)/); return m && sameFile(m[1]) && Number(m[2]) >= item.line && Number(m[2]) <= item.endLine; })));
+  const facts = reports.filter(r => (r.files || []).some(sameFile) && ((r.line && item.line >= r.line && item.line <= (r.endLine || r.line)) || (r.symbols || []).some(s => tokens.has(s) || expressionText.includes(s) || (s.length > 2 && nodeText.includes(s))) || (r.evidence || []).some(e => { const m = e.match(/^(.*?):(\d+)/); return m && sameFile(m[1]) && Number(m[2]) >= item.line && Number(m[2]) <= item.endLine; })));
   const local = item.expressions.map(e => `显示规则：${prose(e)}。`).join('\n');
   const detail = [...new Set(facts.map(f => typeof f.text === 'string' ? f.text.split(/逐段源证据|\n\s*\d+: import /)[0].trim() : JSON.stringify(f.text)).filter(Boolean))].join('\n\n');
   const text = `【源码核查注释；不是当前数据库记录快照】\n\n${detail || '这处的说明按实际显示表达式及它的赋值位置编写，没有凭屏幕上的同一个数字去猜字段。'}\n\n${local || '这是一组重复内容的外层；内部逐项显示，外层本身不是另外一条数据。'}\n\n` + trace.map(t => t.text + `（${t.file}:${t.line}）`).join('\n') + `\n\n显示位置：${item.file}:${item.line}。源码可以确认这个数字怎样算，不能单凭源码确认当前这一条的记录 ID 或输入笔数；这里没有伪造当前值。`;
