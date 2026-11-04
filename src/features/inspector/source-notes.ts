@@ -38,7 +38,7 @@ export async function resolveSourceNote(
     if (!ref) continue;
     if (await sourceDigest(lines.slice(ref.line - 1, ref.endLine).join("\n")) === ref.digest) valid.push(note);
   }
-  // Multiple same-line tags are indistinguishable without a source column; share their verified explanation.
+  // A position selects one real note; do not synthesize a merged body with a misleading CCT ID.
   if (valid.length === 1) return valid[0];
   const first = valid[0];
   if (first && valid.length > 1) return first;
