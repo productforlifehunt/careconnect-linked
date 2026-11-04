@@ -1,6 +1,6 @@
 ## Current request: CCT324 manual notes migration
 - [x] Verify /afresh CCT324 Manual Notes in WordPress GUI: manual_notes, a55 名字 (text), a56 内容 (textarea), empty list, GET/create/update endpoints registered.
-- [ ] Decide persistent element/page association: existing two fields have no location key or JetEngine relation; awaiting user decision before adding a page/element CCT and JetEngine relation. Do not invent a custom relationship.
+- [x] Correct scope: page/element source positions are inspector configuration, not business entities. Store position → CCT note ID separately; no new CCT or JetEngine REL.
 - [x] Through /afresh JetEngine GUI restrict all four CCT324 REST capabilities to manage_options; reloaded settings confirm all four.
 - [ ] Implement researcher-only CCT reads, edits, creation, selected-note names and explicit locked associations.
 - [x] GUI-created real /community whole-page note as CCT324 item #1; a55 社区整页 /community, a56 original text; independently reopened edit form verifies exact content. No original archive deleted.
