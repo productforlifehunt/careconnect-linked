@@ -3,6 +3,9 @@ export interface SourceAnnotation {
   key: string;
   text: string;
   updatedAt: string;
+  id?: string;
+  title?: string;
+  locked?: boolean;
   source?: { file: string; line: number; endLine: number; tag: string; digest: string };
 }
 
