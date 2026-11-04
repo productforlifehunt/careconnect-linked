@@ -137,13 +137,13 @@ function RefList({ refs }: { refs: CodeRef[] }) {
   );
 }
 
-function AiExplain({ build, mode = "full", label, ready = true }: { build: () => string; mode?: "full" | "origin"; label?: string; ready?: boolean }) {
+function AiExplain({ build, mode = "full", label, ready = true, noteKeys }: { build: () => string; mode?: "full" | "origin"; label?: string; ready?: boolean; noteKeys?: string[] }) {
   const explain = useServerFn(explainReadWrite);
   const [state, setState] = useState<{ loading?: boolean; text?: string; error?: string }>({});
   const run = async () => {
     setState({ loading: true });
     try {
-      const res = await explain({ data: { context: build().slice(0, 60_000), mode } });
+      const res = await explain({ data: { context: build().slice(0, 60_000), mode, ...(noteKeys ? { noteKeys } : {}) } });
       setState(res.text ? { text: res.text } : { error: res.error || "失败 / failed" });
     } catch (e) { setState({ error: e instanceof Error ? e.message : String(e) }); }
   };

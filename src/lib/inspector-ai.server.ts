@@ -14,8 +14,14 @@ STYLE AND EXTRA RULES (override any earlier format instruction): Be extremely te
 计算：<formula, only if computed>
 备用：<only if the code has a real || / ?? fallback: 字段为空时显示“xx”>
 写入/推送：<only if clicking writes or notifies>
-注释核对：<only if manualNotes exist: 吻合, or list each 冲突 with evidence>
 疑点：<only real evidence-backed problems>
+Then ALWAYS end with this final block (required even when no note exists), based on CCT324_MANUAL_NOTES (a55 名字, a56 内容), ignoring any manualNotes field inside EVIDENCE:
+【与手动注释呼应判定】（CCT324 #<id>；无绑定注释时写“无对应手动注释，无法判定”并省略下面几行）
+呼应度：<100% only if every read/write/condition/calculation in the note matches the evidence AND the evidence path has no redundant fallback, mock/placeholder, legacy or wrong-source compatibility logic; otherwise a lower percentage>
+疑点：<each mismatch between note and code/live data, with evidence>
+多余处：<each redundant fallback (|| / ?? / default literal), mock/sample/placeholder, legacy field or compatibility branch for a wrong data source, misleading code comment, or wrong link that is still in the code, with file:line>
+需要修改：<concrete fix per item: change the note, or remove/fix the code at file:line>
+Omit 疑点/多余处/需要修改 lines that have nothing evidenced; at 100% write only the 呼应度 line.
 EVERY table/relation gives its number AND full name; EVERY column gives code + dictionary name + field type; EVERY option code gives its decoded name. Only write about this element's own value, never other elements on the same card. No paragraphs, no file paths or variable names unless under 疑点, no self-justification, no "没有伪造/未发现/不是" style denials.
 Only describe what the code and data actually contain. NEVER write sentences about things that do not exist or were not found (e.g. "没有关联键的旧记录", "没有旧数据", "没有 legacy 字段", "这里没有…") — if something is absent, simply leave it out. NEVER invent or name categories of records ("旧记录", "历史数据", "兼容数据") that the evidence does not show. Only when the evidence contains an actual fallback/default expression (|| / ?? / default literal) quote that expression with file:line under 疑点 and say whether it is 多余 or 错误; otherwise write nothing about fallbacks. Never pad; only evidence-backed statements.`;
 

@@ -128,3 +128,12 @@ export async function writeNote(note: Omit<InspectorNote, 'updatedAt'> & { creat
   await storeBinding(binding);
   return { ...mapRow(row), ...binding };
 }
+
+/** Fresh CCT324 note for one inspector key (override binding first, then migration binding); null when unbound. */
+export async function readCCTNoteForKey(key: string): Promise<{ id: string; title: string; text: string } | null> {
+  const binding = (await override(key)) || (await configuration()).find(b => b.key === key);
+  if (!binding?.id) return null;
+  const row = await wp(`/${binding.id}`) as CCTRow;
+  if (String(row._ID) !== binding.id) return null;
+  return { id: binding.id, title: row.a55 || '', text: row.a56 || '' };
+}
