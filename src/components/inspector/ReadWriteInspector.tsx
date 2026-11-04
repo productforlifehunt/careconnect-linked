@@ -5,7 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { X, ScanSearch, MousePointerClick, Navigation, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspectMode, type RecordedRequest } from "@/features/inspector/recorder";
-import { decodeEndpoint, codeRefs, fieldName, optionName, relById, cctBySlug, type CodeRef } from "@/features/inspector/decode";
+import { decodeEndpoint, codeRefs, fieldName, fieldType, optionName, relById, cctBySlug, type CodeRef } from "@/features/inspector/decode";
+import { ReadWriteNarrative } from "./ReadWriteNarrative";
+import { ManualNotes } from "./ManualNotes";
 import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
@@ -22,7 +24,8 @@ function accountMatches(text: string): string[] {
   return Object.entries(me).filter(([k, v]) => typeof v === "string" && v.length >= 2 && !/token/i.test(k) && low.includes(v.toLowerCase())).map(([k, v]) => `${k} = “${String(v).slice(0, 60)}”`);
 }
 
-type Tab = "element" | "page" | "log";
+type Tab = "element" | "page";
+type Sub = "rw" | "ai" | "notes";
 
 function useRecorded(): RecordedRequest[] {
   return useSyncExternalStore(subscribeRecorder, getRecorded, getRecorded);
@@ -157,6 +160,8 @@ export default function ReadWriteInspector() {
   const [on, setOn] = useState(inspectModeOn());
   const [interact, setInteract] = useState(false);
   const [tab, setTab] = useState<Tab>("element");
+  const [sub, setSub] = useState<Sub>("rw");
+  const [notes, setNotes] = useState<{ element: string; page: string }>({ element: "", page: "" });
   const [selected, setSelected] = useState<Element | null>(null);
   const [hoverBox, setHoverBox] = useState<DOMRect | null>(null);
   const [selBox, setSelBox] = useState<DOMRect | null>(null);
@@ -293,6 +298,11 @@ export default function ReadWriteInspector() {
   const strayMatches = useMemo(() => (info ? info.matches.filter((m) => !keep(m)) : []), [info, keep]);
 
   const summaryRef = useRef<HTMLElement | null>(null);
+  const narrRef = useRef<HTMLDivElement | null>(null);
+  const pageNarrRef = useRef<HTMLDivElement | null>(null);
+  const pathname = path.split("?")[0]!;
+  const elementKey = info ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}` : "";
+  const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();
   const fitContext = (o: any): string => {
     let out = JSON.stringify(o);
@@ -318,25 +328,28 @@ export default function ReadWriteInspector() {
   }, [queryClient, logic]);
   // The AI input is capped at 60k characters: shrink the least specific evidence first instead of cutting the JSON mid-way.
   const elementContext = useCallback(() => fitContext({
-    deterministicSummary: summaryRef.current?.innerText.slice(0, 6000) || null,
+    manualNotes: { element: notes.element || null, page: notes.page || null },
+    deterministicSummary: ((narrRef.current?.innerText || "") + "\n" + (summaryRef.current?.innerText || "")).slice(0, 7000) || null,
     cachedQueryResults: cachedResults(),
     otherCachedQueries: queryClient.getQueryCache().findAll().map((q) => String(q.queryKey[0])).filter((k, i, a) => a.indexOf(k) === i).slice(0, 60),
     // Dictionary column names and option meanings for every table this element really read (b55 → "accepted").
-    dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
+    dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, fieldTypes: t.cct ? Object.fromEntries(Object.values(t.cct.f || {}).map((c) => [c, fieldType(t.cct, c) || "?"])) : undefined, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     page: path, uiLanguage: document.documentElement.lang || navigator.language, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
       decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), pageValueMatches: (info?.matches || []).slice(0, 12).map((m) => ({ related: realMatches.includes(m), sameCard: !!m.sameCard, target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, value: m.value, chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text) })), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     // Reads elsewhere on the page, not yet proven to feed this element; usable only when the element's code calls that fetch.
     otherPageReads: pageRequests.filter((r) => !relatedRequests.includes(r)).slice(0, 100).map((r) => ({ target: decodeEndpoint(r.method, r.endpoint).label, endpoint: r.endpoint, returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 300), callers: (r.callers || []).slice(0, 2) })),
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
     codeRefs: elementRefs.slice(0, 80).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests, cachedResults]);
+  }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests, cachedResults, notes]);
 
 
   const pageContext = useCallback(() => JSON.stringify({
-    page: path, files: pageFiles,
+    page: path, files: pageFiles, manualNotes: { page: notes.page || null },
+    descriptiveSummary: pageNarrRef.current?.innerText.slice(0, 8000) || null,
+    dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, fieldTypes: t.cct ? Object.fromEntries(Object.values(t.cct.f || {}).map((c) => [c, fieldType(t.cct, c) || "?"])) : undefined, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     liveRequests: pageRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: pageRefs.slice(0, 150).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }), [path, pageFiles, pageRequests, pageRefs]);
+  }).slice(0, 60_000), [path, pageFiles, pageRequests, pageRefs, notes]);
 
   return (
     <div data-rw-inspector>
@@ -368,9 +381,16 @@ export default function ReadWriteInspector() {
             <Button size="sm" variant="ghost" onClick={clearRecorded} aria-label="清空记录 / Clear"><Trash2 className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-1 border-b border-border p-2 text-xs">
-            {(["element", "page", "log"] as Tab[]).map((t) => (
+            {(["element", "page"] as Tab[]).map((t) => (
               <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-md px-2 py-1 ${tab === t ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"}`}>
-                {t === "element" ? "元素 / Element" : t === "page" ? "整页 / Page" : `全部记录 / Log (${requests.length})`}
+                {t === "element" ? "元素 / Element" : "整页 / Page"}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 border-b border-border p-2 text-xs">
+            {(["rw", "ai", "notes"] as Sub[]).map((t) => (
+              <button key={t} type="button" onClick={() => setSub(t)} className={`rounded-md border px-2 py-1 ${sub === t ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}>
+                {t === "rw" ? "读写分析" : t === "ai" ? "AI 分析" : `手动注释${(tab === "element" ? notes.element : notes.page) ? " ●" : ""}`}
               </button>
             ))}
           </div>
@@ -385,7 +405,10 @@ export default function ReadWriteInspector() {
                   <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
-                <AiExplain key={`o-${info.sources.join()}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="AI 分析这个值怎么来的 / AI: how this value is produced" />
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" /></div>
+                <div className={sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={elementKey} scope="element" page={pathname} label={elementLabel} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
+                <div className={sub === "rw" ? "space-y-4" : "hidden"}>
+                <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
                 <section className="space-y-1" ref={summaryRef}>
                   <div className="text-xs font-medium">显示的值来自 / Shown value comes from</div>
                   <OriginSummary text={info.text} matches={realMatches} reads={closure ? relatedRequests.filter((r) => r.method === "GET") : []} pageRequests={pageRequests} path={path} logic={logic} expr={logic ? decidingExpression(logic, info.text) : null} account={realMatches.length ? [] : accountMatches(info.text)} files={[...new Set(info.sources.map((x) => x.split(":")[0]!))]} />
@@ -420,19 +443,22 @@ export default function ReadWriteInspector() {
                 )}
                 <section className="space-y-1"><div className="text-xs font-medium">这个组件实际发出的请求 / Live requests from this component</div><RequestList requests={relatedRequests} /></section>
                 <section><RefList refs={elementRefs} /></section>
-                <AiExplain build={elementContext} />
+                </div>
               </>
             )}
             {tab === "page" && (
               <>
                 <div className="text-xs">页面 / Page: <span className="font-mono">{path}</span></div>
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`p-${pathname}`} build={pageContext} label="生成整页 AI 分析 / Generate page AI analysis" /></div>
+                <div className={sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>
+                <div className={sub === "rw" ? "space-y-4" : "hidden"}>
+                <div ref={pageNarrRef}><ReadWriteNarrative scope="page" matches={[]} requests={pageRequests} refs={pageRefs} /></div>
                 <section className="space-y-1"><div className="text-xs font-medium">本页实际读写 / Live reads and writes on this page ({pageRequests.length})</div><RequestList requests={pageRequests} /></section>
                 <section className="space-y-1 text-xs"><div className="font-medium">本页用到的源文件 / Source files on this page ({pageFiles.length})</div><div className="break-all font-mono text-[10px] text-muted-foreground">{pageFiles.join(" · ") || "仅预览版可见 / only in the preview build"}</div></section>
                 <section><RefList refs={pageRefs} /></section>
-                <AiExplain build={pageContext} />
+                </div>
               </>
             )}
-            {tab === "log" && <RequestList requests={[...requests].reverse()} />}
           </div>
         </div>
       )}
