@@ -1,4 +1,5 @@
-export type CachedInspectorNote = { key: string; text: string; updatedAt: string };
+import type { SourceAnnotation } from "./source-notes";
+export type CachedInspectorNote = SourceAnnotation;
 type Result = { notes: CachedInspectorNote[]; error?: string };
 
 /** Private, memory-only cache. A session change invalidates both data and in-flight reads. */

@@ -1,3 +1,9 @@
+## Current request: Source-proven human-readable notes for all listings and data displays
+- [ ] Inventory every JSX display and listing from source, including wrappers, without frontend automation.
+- [ ] Trace actual CCT/REL fields, app/ownership filters, count/time/status formulas and fallbacks; persist source-proven notes without replacing genuine researcher edits.
+- [ ] Resolve notes for selected elements from verified source locations so wrappers/nested values no longer depend on the old first-ten selection.
+- [ ] Run matching/coverage tests, verify private saved-note readback and record exact uncovered items; no unsupported total completion percentage.
+
 ## Current request: Faster inspector manual notes
 - [x] Prefetch saved notes before opening the inspector; share one session-scoped read across elements/pages.
 - [x] Update the cache after confirmed saves, clear on session changes, and allow failed reads to retry.

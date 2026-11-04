@@ -7,8 +7,10 @@ import { loadAllInspectorNotes, saveInspectorNote } from "@/lib/inspector-notes.
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
+import { isGeneratedNote, resolveSourceNote } from "@/features/inspector/source-notes";
+import { readSource } from "@/features/inspector/live-index";
 
-export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; onChange?: (text: string) => void }) {
+export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
   const [retry, setRetry] = useState(0);
@@ -16,19 +18,22 @@ export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey
   useEffect(() => {
     let live = true;
     const session = getWPToken() || "";
-    const apply = (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
+    const apply = async (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
       if (!live || session !== (getWPToken() || "")) return;
-      const n = map.get(noteKey);
+      const existing = map.get(noteKey);
+      const n = existing?.text && !isGeneratedNote(existing.text) ? existing :
+        (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined) || existing;
+      if (!live || session !== (getWPToken() || "")) return;
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
     };
     const cached = inspectorNotesCache.peek(session);
-    if (cached) apply(cached);
+    if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
       inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
-  }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const doSave = async () => {
     const session = getWPToken() || "";
     const key = noteKey;
