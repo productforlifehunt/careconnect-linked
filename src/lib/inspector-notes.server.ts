@@ -137,3 +137,55 @@ export async function readCCTNoteForKey(key: string): Promise<{ id: string; titl
   if (String(row._ID) !== binding.id) return null;
   return { id: binding.id, title: row.a55 || '', text: row.a56 || '' };
 }
+
+/** REL325 "One manual note can have many related manual notes" (CCT324 → CCT324, One to many). */
+const NOTE_REL = 325;
+const REL_BASE = 'https://app.challenged-dementia.com/afresh/wp-json/jet-rel/' + NOTE_REL;
+async function rel(path = '', method = 'GET', body?: unknown): Promise<unknown> {
+  const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
+  if (!user || !password) throw new Error('注释关联未配置。');
+  const response = await fetch(REL_BASE + path, { method, headers: { Authorization: `Basic ${btoa(`${user}:${password}`)}`, 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  if (!response.ok) throw new Error(`注释关联读取或保存失败（${response.status}），请重试。`);
+  return response.json();
+}
+export interface RelatedNote { id: string; title: string; text: string; side: 'parent' | 'child' }
+async function relIds(side: 'parents' | 'children', id: string): Promise<string[]> {
+  const rows = await rel(`/${side}/${id}`);
+  if (!Array.isArray(rows)) throw new Error('注释关联返回异常。');
+  return rows.map((r: { parent_object_id?: unknown; child_object_id?: unknown }) => String(side === 'parents' ? r.parent_object_id : r.child_object_id)).filter(v => /^\d+$/.test(v));
+}
+/** Parent (REL325 父) and children (REL325 子) of one CCT324 note, read fresh with their a55/a56. */
+export async function readRelatedNotes(id: string): Promise<RelatedNote[]> {
+  const [parents, children] = await Promise.all([relIds('parents', id), relIds('children', id)]);
+  const entries: [string, 'parent' | 'child'][] = [...parents.map(p => [p, 'parent'] as [string, 'parent']), ...children.map(c => [c, 'child'] as [string, 'child'])];
+  return Promise.all(entries.map(async ([nid, side]) => { const row = await wp(`/${nid}`) as CCTRow; return { id: nid, title: row.a55 || '', text: row.a56 || '', side }; }));
+}
+/** One to many: a child note has at most one parent, so an existing parent is never silently replaced. */
+export async function linkNotes(parent: string, child: string): Promise<void> {
+  if (parent === child) throw new Error('不能把注释关联到它自己。');
+  const [p, c] = await Promise.all([wp(`/${parent}`) as Promise<CCTRow>, wp(`/${child}`) as Promise<CCTRow>]);
+  if (String(p._ID) !== parent || String(c._ID) !== child) throw new Error('所选注释不存在。');
+  const existing = await relIds('parents', child);
+  if (existing.includes(parent)) return;
+  if (existing.length) throw new Error(`注释 #${child} 已关联到上级注释 #${existing[0]}（REL325 是一对多，一条注释只能有一个上级），请先取消那条关联。`);
+  await rel('', 'POST', { parent_id: Number(parent), child_id: Number(child), context: 'child', store_items_type: 'update' });
+  if (!(await relIds('parents', child)).includes(parent)) throw new Error('关联保存后核对不一致。');
+}
+export async function unlinkNotes(parent: string, child: string): Promise<void> {
+  await rel('', 'POST', { parent_id: Number(parent), child_id: Number(child), context: 'child', store_items_type: 'disconnect' });
+  if ((await relIds('parents', child)).includes(parent)) throw new Error('取消关联后核对不一致。');
+}
+/** Data-dictionary notes ("数据字典 · …") are always the REL325 parent; otherwise the current note is the parent. */
+export function relationDirection(current: { id: string; title: string }, other: { id: string; title: string }): { parent: string; child: string } {
+  const dict = (t: string) => t.trim().startsWith('数据字典');
+  return dict(other.title) && !dict(current.title) ? { parent: other.id, child: current.id } : { parent: current.id, child: other.id };
+}
+export async function noteTitle(id: string): Promise<string> { const row = await wp(`/${id}`) as CCTRow; if (String(row._ID) !== id) throw new Error('所选注释不存在。'); return row.a55 || ''; }
+export async function createPlainNote(title: string, text: string): Promise<string> {
+  const result = await wp('', 'POST', { a55: title, a56: text, cct_status: 'publish' }) as number | string | { item_id?: number; _ID?: number };
+  const id = String(typeof result === 'number' || typeof result === 'string' ? result : result.item_id || result._ID || '');
+  if (!/^\d+$/.test(id)) throw new Error('没有返回新注释编号，请重新读取列表，勿重复新建。');
+  const row = await wp(`/${id}`) as CCTRow;
+  if (row.a55 !== title || row.a56 !== text) throw new Error('保存后的内容核对不一致。');
+  return id;
+}
