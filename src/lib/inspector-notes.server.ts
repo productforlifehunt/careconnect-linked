@@ -107,11 +107,11 @@ export async function selectNote(binding: NoteBinding): Promise<InspectorNote> {
   await storeBinding({ ...binding, locked: true });
   return { ...mapRow(row), ...binding, locked: true };
 }
-export async function writeNote(note: Omit<InspectorNote, 'updatedAt'>): Promise<InspectorNote> {
+export async function writeNote(note: Omit<InspectorNote, 'updatedAt'> & { create?: boolean | undefined }): Promise<InspectorNote> {
   await configuration();
   const current = await override(note.key);
-  let id = note.id || current?.id;
-  if (!id) {
+  let id = note.create ? undefined : note.id || current?.id;
+  if (!id && !note.create) {
     const binding = (await configuration()).find(binding => binding.key === note.key);
     id = binding?.id;
   }

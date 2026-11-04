@@ -20,6 +20,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
   const select = useServerFn(selectInspectorNote);
   const [catalogue, setCatalogue] = useState<CCTNote[]>([]);
   const [selected, setSelected] = useState<string>();
+  const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState(''); const [savedTitle, setSavedTitle] = useState('');
   const [choice, setChoice] = useState<string>(); const [open, setOpen] = useState(false);
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
@@ -36,6 +37,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       if (!live || session !== (getWPToken() || "")) return;
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
       setCatalogue(noteCatalogue(map)); setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
+      setCreating(false);
     };
     const cached = inspectorNotesCache.peek(session);
     if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
@@ -49,13 +51,14 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     const session = getWPToken() || "";
     const key = noteKey;
     setState((s) => ({ ...s, saving: true, error: undefined }));
-    const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
+    const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, create: creating, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
     if (session !== (getWPToken() || "")) return;
     if ("note" in r && r.note) {
       inspectorNotesCache.put(session, r.note);
       if (activeKey.current !== key) return;
       setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt });
       setSelected(r.note.id); setChoice(r.note.id); setTitle(r.note.title || title); setSavedTitle(r.note.title || title);
+      setCreating(false);
       const map = inspectorNotesCache.peek(session); if (map) setCatalogue(noteCatalogue(map));
     } else if (activeKey.current === key) setState({ error: r.error || "保存失败" });
   };
@@ -82,7 +85,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" disabled={!choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
-        <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
+        <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setCreating(true);setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
       </div>
       {choice && choice !== selected && <p>待锁定：{catalogue.find(n=>n.id===choice)?.title} · #{choice}</p>}
       <Input aria-label="注释名字" value={title} onChange={e=>setTitle(e.target.value)} maxLength={240} disabled={state.loading || state.saving} />
@@ -92,7 +95,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
-      {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => setRetry((n) => n + 1)}>重新读取</Button></div>}
+      {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => {inspectorNotesCache.reset();setRetry((n) => n + 1);}}>重新读取</Button></div>}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export const loadAllInspectorNotes = createServerFn({ method: "POST" })
 
 /** Researcher-only: save (overwrite) the manual note for one element or page. */
 export const saveInspectorNote = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), id: z.string().regex(/^\d+$/).optional(), text: z.string().max(100_000) }).parse(input))
+  .inputValidator((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), id: z.string().regex(/^\d+$/).optional(), create: z.boolean().optional(), text: z.string().max(100_000) }).parse(input))
   .handler(async ({ data }) => {
     const { verifyResearcher } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden" }; }
