@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronsUpDown, Plus, Lock } from 'lucide-react';
+import { RelatedNotes } from './RelatedNotes';
 
 export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
@@ -95,6 +96,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
+      {selected && !creating && <RelatedNotes noteId={selected} catalogue={catalogue} />}
       {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => {inspectorNotesCache.reset();setRetry((n) => n + 1);}}>重新读取</Button></div>}
     </div>
   );

@@ -31,13 +31,13 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
     return () => { live = false; };
   }, [noteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const apply = (id: string, r: { notes?: Related[]; error?: string }) => {
-    if (active.current !== id) return;
-    if (r.notes) { setNotes(r.notes); setState({}); setAi({}); } else setState({ error: r.error || "失败" });
-  };
-  const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>) => {
+  const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>): Promise<boolean> => {
     const id = noteId; setState({ busy: true });
-    try { apply(id, await fn()); } catch (e) { if (active.current === id) setState({ error: String(e) }); }
+    try {
+      const r = await fn(); if (active.current !== id) return false;
+      if (r.notes) { setNotes(r.notes); setState({}); setAi({}); return true; }
+      setState({ error: r.error || "失败" }); return false;
+    } catch (e) { if (active.current === id) setState({ error: String(e) }); return false; }
   };
   const linked = new Set([noteId, ...notes.map((n) => n.id)]);
   const busy = state.loading || state.busy;
@@ -80,7 +80,7 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
           <Input aria-label="关联注释名字" placeholder="名字（数据结构注释以“数据字典 · ”开头会作为上级）" value={draft.title} maxLength={240} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           <Textarea rows={6} placeholder="内容" value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
           <div className="flex gap-2">
-            <Button size="sm" disabled={busy || !draft.title.trim()} onClick={async () => { const d = draft; await run(() => link({ data: { id: noteId, create: { title: d.title.trim(), text: d.text } } })); setDraft(null); }}>保存并关联</Button>
+            <Button size="sm" disabled={busy || !draft.title.trim()} onClick={async () => { const d = draft; if (await run(() => link({ data: { id: noteId, create: { title: d.title.trim(), text: d.text } } }))) setDraft(null); }}>保存并关联</Button>
             <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>取消</Button>
           </div>
         </div>
