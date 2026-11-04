@@ -7,7 +7,7 @@ import { loadInspectorNotes, saveInspectorNote } from "@/lib/inspector-notes.fun
 
 export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; onChange?: (text: string) => void }) {
   const load = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
-  const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string; at?: string }>({ loading: true });
+  const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
   useEffect(() => {
     let live = true; setState({ loading: true }); setText(""); setSaved("");
     load({ data: { keys: [noteKey] } }).then((r) => {
