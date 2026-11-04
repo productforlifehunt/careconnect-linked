@@ -7,8 +7,10 @@ const MODEL = "openai/gpt-6-luna";
 
 const EXTRA = `
 
+MANDATORY NAMING FORMAT (strict, no abbreviation, applies to every line including the final block): every CCT is written exactly "<CCT Name> (CCT<number>)" using the dictionary name, e.g. "Community post (CCT149)"; never a bare "CCT149", never a name without its number, never a nickname. Every column is written exactly "<Column Name> (<Column Key>)" using the dictionary column name, e.g. "TITLE (a55)"; never a bare "a55", never a name without its key. Every relation is written exactly "REL<number>（父：<parent name> (CCT<n>) 或 Users，子：<child name> (CCT<n>) 或 Users）" taken from the dictionary relation's parent/child, e.g. "REL152（父：Users，子：User's extended profile (CCT151)）"; never a bare "REL152". Option codes are written "<Option Name> (<code>)", e.g. "ACCEPTED (b55)". If a name is not in the dictionary write "未确认名称 (a59)" — never guess. Do not use "…", "等", "etc." or any shortening of lists.
+
 STYLE AND EXTRA RULES (override any earlier format instruction): Be extremely terse. Simplified Chinese only (no English block). Output only these lines, one sentence each, and omit any line that does not apply:
-显示：<what is shown>，来自 CCT149「Community post」a55「TITLE」（Text）.
+显示：<what is shown>，来自 Community post (CCT149) 的 TITLE (a55)（Text）.
 数据链：<actual call chain in order, one sentence>
 条件：<only filters that decide whether this value appears>
 计算：<formula, only if computed>
