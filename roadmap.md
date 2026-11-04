@@ -1,4 +1,5 @@
 ## Current request: CCT324 manual notes migration
+- [ ] Current verification: reproduce catalogue serialization failure, fix bounded transport, rerun real display/edit/create/lock/refresh and access checks.
 - [x] Verify /afresh CCT324 Manual Notes in WordPress GUI: manual_notes, a55 名字 (text), a56 内容 (textarea), empty list, GET/create/update endpoints registered.
 - [x] Correct scope: page/element source positions are inspector configuration, not business entities. Store position → CCT note ID separately; no new CCT or JetEngine REL.
 - [x] Through /afresh JetEngine GUI restrict all four CCT324 REST capabilities to manage_options; reloaded settings confirm all four.
