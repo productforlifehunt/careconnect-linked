@@ -119,3 +119,24 @@ export async function codeRefs(files: string[], maxDepth = 3): Promise<CodeRef[]
   }
   return out;
 }
+
+// ── Field types (Text / Textarea / Radio / Checkbox …) from the dictionary file's own comments ──
+import schemaRaw from "@/integrations/wp-schema.ts?raw";
+const TYPES: Record<string, Record<string, string>> = (() => {
+  const out: Record<string, Record<string, string>> = {}; let cur = "";
+  for (const line of String(schemaRaw).split("\n")) {
+    const b = line.match(/^\s*"(\d+)": \{\s*$/); if (b) { cur = b[1]!; continue; }
+    const f = line.match(/^\s*"[A-Z0-9_]+": "([a-z]{1,2}\d{1,3})",\s*\/\/\s*(.+?)\s*$/);
+    if (f && cur) (out[cur] ||= {})[f[1]!] = f[2]!;
+  }
+  return out;
+})();
+/** Dictionary field type of a CCT column, e.g. a55 → "Text". */
+export function fieldType(def: { id?: number } | undefined, code: string): string | undefined {
+  return def?.id !== undefined ? TYPES[String(def.id)]?.[code] : undefined;
+}
+/** "a55「TITLE」(Text)" — code, dictionary name and type together. */
+export function fieldFull(def: { id?: number; f?: Record<string, string> } | undefined, code: string): string {
+  const n = fieldName(def, code); const t = fieldType(def, code);
+  return `${code}${n ? `「${n}」` : ""}${t ? `（${t}）` : ""}`;
+}
