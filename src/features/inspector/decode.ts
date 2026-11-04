@@ -133,6 +133,7 @@ const TYPES: Record<string, Record<string, string>> = (() => {
 })();
 /** Dictionary field type of a CCT column, e.g. a55 → "Text". */
 export function fieldType(def: { id?: number } | undefined, code: string): string | undefined {
+  if (def?.id === 324) return ({ a55: 'Text', a56: 'Textarea' } as Record<string, string>)[code];
   return def?.id !== undefined ? TYPES[String(def.id)]?.[code] : undefined;
 }
 /** "a55「TITLE」(Text)" — code, dictionary name and type together. */

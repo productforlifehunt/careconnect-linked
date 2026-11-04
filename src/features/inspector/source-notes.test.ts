@@ -25,3 +25,11 @@ it("distinguishes old automated placeholders from genuine manual edits", () => {
   expect(isGeneratedNote("这段代码同一处会显示多项内容")).toBe(true);
   expect(isGeneratedNote("这条点赞数必须只统计 REL166 关联的投票。")).toBe(false);
 });
+
+it('selects exactly one persisted note when same-line source candidates exist', async () => {
+  const code = '{count}';
+  const source = { file:'page.tsx',line:1,endLine:1,tag:'span',digest:await sourceDigest(code) };
+  const a = {key:'source|a',id:'11',text:'第一条',updatedAt:'today',source};
+  const b = {key:'source|b',id:'12',text:'第二条',updatedAt:'today',source};
+  expect(await resolveSourceNote(new Map([[a.key,a],[b.key,b]]),'page.tsx:1','span',async()=>code)).toEqual(a);
+});

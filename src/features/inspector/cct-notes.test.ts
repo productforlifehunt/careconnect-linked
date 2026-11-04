@@ -22,7 +22,8 @@ it('offers existing notes once even when several positions use the same note', (
 });
 it('editing a CCT note updates every cached position using it without changing any binding', () => {
   const notes = bindCCTNotes(rows, [{key:'el|x',id:'1',scope:'element',page:'/community',label:'x',locked:true}]);
-  const map = replaceCCTNote(new Map(notes.map(n=>[n.key,n])), {...rows[0],text:'已编辑',title:'新名字'});
+  const first = rows[0]; if (!first) throw new Error('missing fixture');
+  const map = replaceCCTNote(new Map(notes.map(n=>[n.key,n])), {...first,text:'已编辑',title:'新名字'});
   expect(map.get('el|x')).toMatchObject({id:'1',text:'已编辑',title:'新名字',locked:true});
   expect(map.get('cct|2')?.text).toBe('正文二');
 });

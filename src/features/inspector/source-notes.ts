@@ -3,10 +3,10 @@ export interface SourceAnnotation {
   key: string;
   text: string;
   updatedAt: string;
-  id?: string;
-  title?: string;
-  locked?: boolean;
-  source?: { file: string; line: number; endLine: number; tag: string; digest: string };
+  id?: string | undefined;
+  title?: string | undefined;
+  locked?: boolean | undefined;
+  source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined;
 }
 
 export async function sourceDigest(text: string): Promise<string> {
@@ -38,9 +38,9 @@ export async function resolveSourceNote(
     if (!ref) continue;
     if (await sourceDigest(lines.slice(ref.line - 1, ref.endLine).join("\n")) === ref.digest) valid.push(note);
   }
-  // Multiple same-line tags are indistinguishable without a source column; share their verified explanation.
+  // A position selects one real note; do not synthesize a merged body with a misleading CCT ID.
   if (valid.length === 1) return valid[0];
   const first = valid[0];
-  if (first && valid.length > 1) return { ...first, text: [...new Set(valid.map((n) => n.text))].join("\n\n") };
+  if (first && valid.length > 1) return first;
   return undefined;
 }
