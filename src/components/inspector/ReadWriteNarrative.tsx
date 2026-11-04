@@ -1,3 +1,4 @@
+import type React from "react";
 /**
  * Non-AI, descriptive paragraphs of what the selected element (or the whole page) really reads,
  * writes and pushes: every table/relation with its number and full dictionary name, every column
