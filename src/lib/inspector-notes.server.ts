@@ -180,7 +180,8 @@ export function relationDirection(current: { id: string; title: string }, other:
   const dict = (t: string) => t.trim().startsWith('数据字典');
   return dict(other.title) && !dict(current.title) ? { parent: other.id, child: current.id } : { parent: current.id, child: other.id };
 }
-export async function noteTitle(id: string): Promise<string> { const row = await wp(`/${id}`) as CCTRow; if (String(row._ID) !== id) throw new Error('所选注释不存在。'); return row.a55 || ''; }
+export async function readNoteById(id: string): Promise<{ id: string; title: string; text: string }> { const row = await wp(`/${id}`) as CCTRow; if (String(row._ID) !== id) throw new Error('所选注释不存在。'); return { id, title: row.a55 || '', text: row.a56 || '' }; }
+export async function noteTitle(id: string): Promise<string> { return (await readNoteById(id)).title; }
 export async function createPlainNote(title: string, text: string): Promise<string> {
   const result = await wp('', 'POST', { a55: title, a56: text, cct_status: 'publish' }) as number | string | { item_id?: number; _ID?: number };
   const id = String(typeof result === 'number' || typeof result === 'string' ? result : result.item_id || result._ID || '');

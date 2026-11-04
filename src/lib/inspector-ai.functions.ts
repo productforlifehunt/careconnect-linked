@@ -34,14 +34,10 @@ export const checkNoteConflicts = createServerFn({ method: "POST" })
     catch (error) { return { error: error instanceof Error ? error.message : "Forbidden", status: 403 }; }
     let payload: string;
     try {
-      const { noteTitle, readRelatedNotes } = await import("./inspector-notes.server");
-      const { readCCTNoteForKey } = await import("./inspector-notes.server");
-      void readCCTNoteForKey;
-      const related = await readRelatedNotes(data.id);
+      const { readNoteById, readRelatedNotes } = await import("./inspector-notes.server");
+      const [note, related] = await Promise.all([readNoteById(data.id), readRelatedNotes(data.id)]);
       if (!related.length) return { error: "这条注释还没有关联注释，无法比较。", status: 422 };
-      const title = await noteTitle(data.id);
-      const { fetchNoteText } = await import("./inspector-notes.server");
-      payload = JSON.stringify({ note: { cct: `CCT324 #${data.id}`, a55: title, a56: await fetchNoteText(data.id) }, related: related.map((r) => ({ cct: `CCT324 #${r.id}`, side: r.side === "parent" ? "REL325 父" : "REL325 子", a55: r.title, a56: r.text })) });
+      payload = JSON.stringify({ note: { cct: `CCT324 #${data.id}`, a55: note.title, a56: note.text }, related: related.map((r) => ({ cct: `CCT324 #${r.id}`, side: r.side === "parent" ? "REL325 父" : "REL325 子", a55: r.title, a56: r.text })) });
     } catch (error) { return { error: `注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     return compareNotes(payload);
   });
