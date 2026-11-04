@@ -7,13 +7,13 @@ export interface NoteBinding {
   scope: 'element' | 'page';
   page: string;
   label: string;
-  locked?: boolean;
+  locked?: boolean | undefined;
   source?: SourceAnnotation['source'];
 }
 export interface CCTNote extends SourceAnnotation {
   id: string;
   title: string;
-  locked?: boolean;
+  locked?: boolean | undefined;
 }
 export function bindCCTNotes(rows: CCTNote[], bindings: NoteBinding[]): CCTNote[] {
   const byId = new Map(rows.map(row => [row.id, row]));

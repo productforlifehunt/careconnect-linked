@@ -3,10 +3,10 @@ export interface SourceAnnotation {
   key: string;
   text: string;
   updatedAt: string;
-  id?: string;
-  title?: string;
-  locked?: boolean;
-  source?: { file: string; line: number; endLine: number; tag: string; digest: string };
+  id?: string | undefined;
+  title?: string | undefined;
+  locked?: boolean | undefined;
+  source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined;
 }
 
 export async function sourceDigest(text: string): Promise<string> {

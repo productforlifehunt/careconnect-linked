@@ -3,7 +3,7 @@ import { bindCCTNotes, type CCTNote, type NoteBinding } from '@/features/inspect
 
 /** Researcher manual notes for inspected elements/pages: one private JSON file per scope key. */
 const BUCKET = "inspector-notes";
-export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string; title?: string; locked?: boolean; source?: { file: string; line: number; endLine: number; tag: string; digest: string } }
+export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string | undefined; title?: string | undefined; locked?: boolean | undefined; source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined }
 
 function client() {
   const url = process.env["SUPABASE_URL"] || ""; const key = process.env["SUPABASE_SERVICE_ROLE_KEY"] || "";
