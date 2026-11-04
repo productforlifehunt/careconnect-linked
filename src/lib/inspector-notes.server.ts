@@ -138,7 +138,7 @@ export async function readCCTNoteForKey(key: string): Promise<{ id: string; titl
   return { id: binding.id, title: row.a55 || '', text: row.a56 || '' };
 }
 
-/** REL325 "One manual note can have many related manual notes" (CCT324 → CCT324, One to many). */
+/** REL325 "One manual note can have many related manual notes" (CCT324 → CCT324, Many to many). */
 const NOTE_REL = 325;
 const REL_BASE = 'https://app.challenged-dementia.com/afresh/wp-json/jet-rel/' + NOTE_REL;
 async function rel(path = '', method = 'GET', body?: unknown): Promise<unknown> {
@@ -160,16 +160,16 @@ export async function readRelatedNotes(id: string): Promise<RelatedNote[]> {
   const entries: [string, 'parent' | 'child'][] = [...parents.map(p => [p, 'parent'] as [string, 'parent']), ...children.map(c => [c, 'child'] as [string, 'child'])];
   return Promise.all(entries.map(async ([nid, side]) => { const row = await wp(`/${nid}`) as CCTRow; return { id: nid, title: row.a55 || '', text: row.a56 || '', side }; }));
 }
-/** One to many: a child note has at most one parent, so an existing parent is never silently replaced. */
+/** Many to many: adding a link never removes the note's other links. */
 export async function linkNotes(parent: string, child: string): Promise<void> {
   if (parent === child) throw new Error('不能把注释关联到它自己。');
   const [p, c] = await Promise.all([wp(`/${parent}`) as Promise<CCTRow>, wp(`/${child}`) as Promise<CCTRow>]);
   if (String(p._ID) !== parent || String(c._ID) !== child) throw new Error('所选注释不存在。');
-  const existing = await relIds('parents', child);
-  if (existing.includes(parent)) return;
-  if (existing.length) throw new Error(`注释 #${child} 已关联到上级注释 #${existing[0]}（REL325 是一对多，一条注释只能有一个上级），请先取消那条关联。`);
+  const before = await relIds('parents', child);
+  if (before.includes(parent)) return;
   await rel('', 'POST', { parent_id: Number(parent), child_id: Number(child), context: 'child', store_items_type: 'update' });
-  if (!(await relIds('parents', child)).includes(parent)) throw new Error('关联保存后核对不一致。');
+  const after = await relIds('parents', child);
+  if (!after.includes(parent) || before.some(id => !after.includes(id))) throw new Error('关联保存后核对不一致。');
 }
 export async function unlinkNotes(parent: string, child: string): Promise<void> {
   await rel('', 'POST', { parent_id: Number(parent), child_id: Number(child), context: 'child', store_items_type: 'disconnect' });
