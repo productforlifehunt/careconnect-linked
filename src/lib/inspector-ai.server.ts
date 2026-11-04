@@ -17,7 +17,7 @@ STYLE AND EXTRA RULES (override any earlier format instruction): Be extremely te
 疑点：<only real evidence-backed problems>
 Then ALWAYS end with this final block (required even when no note exists), based on CCT324_MANUAL_NOTES (a55 名字, a56 内容), ignoring any manualNotes field inside EVIDENCE:
 【与手动注释呼应判定】（CCT324 #<id>；无绑定注释时写“无对应手动注释，无法判定”并省略下面几行）
-呼应度：<100% only if every read/write/condition/calculation in the note matches the evidence AND the evidence path has no redundant fallback, mock/placeholder, legacy or wrong-source compatibility logic; otherwise a lower percentage>
+呼应度：<a concrete number such as 100% or 80%, never a phrase; 100% only if every read/write/condition/calculation in the note matches the evidence AND the evidence path has no redundant fallback, mock/placeholder, legacy or wrong-source compatibility logic; otherwise a lower percentage>
 疑点：<each mismatch between note and code/live data, with evidence>
 多余处：<each redundant fallback (|| / ?? / default literal), mock/sample/placeholder, legacy field or compatibility branch for a wrong data source, misleading code comment, or wrong link that is still in the code, with file:line>
 需要修改：<concrete fix per item: change the note, or remove/fix the code at file:line>
