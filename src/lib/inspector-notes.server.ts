@@ -29,10 +29,21 @@ export async function readNotes(keys: string[]): Promise<InspectorNote[]> {
   return out.filter((n): n is InspectorNote => !!n && n.text.trim().length > 0);
 }
 
+const ALL = "notes/all.json";
+/** Every note in one file, so the inspector loads them all with a single read. */
+export async function readAllNotes(): Promise<InspectorNote[]> {
+  const { data, error } = await client().storage.from(BUCKET).download(ALL);
+  if (error || !data) return [];
+  try { return (JSON.parse(await data.text()) as InspectorNote[]).filter((n) => n.text.trim().length > 0); } catch { return []; }
+}
+
 export async function writeNote(note: Omit<InspectorNote, "updatedAt">): Promise<InspectorNote> {
   const full: InspectorNote = { ...note, updatedAt: new Date().toISOString() };
   const path = `notes/${await hash(note.key)}.json`;
   const { error } = await client().storage.from(BUCKET).upload(path, new Blob([JSON.stringify(full)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
   if (error) throw new Error("注释没有保存成功 / The note was not saved.");
+  const all = (await readAllNotes()).filter((n) => n.key !== full.key); all.push(full);
+  const r = await client().storage.from(BUCKET).upload(ALL, new Blob([JSON.stringify(all)], { type: "application/json" }), { upsert: true, contentType: "application/json" });
+  if (r.error) throw new Error("注释没有保存成功 / The note was not saved.");
   return full;
 }

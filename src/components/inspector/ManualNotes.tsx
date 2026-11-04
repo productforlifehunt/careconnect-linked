@@ -3,15 +3,24 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { loadInspectorNotes, saveInspectorNote } from "@/lib/inspector-notes.functions";
+import { loadAllInspectorNotes, saveInspectorNote } from "@/lib/inspector-notes.functions";
+
+type Note = { key: string; text: string; updatedAt: string };
+/** One shared read of all notes per browser session; saves update it in place, so switching elements is instant. */
+let cache: Promise<{ map: Map<string, Note>; error?: string | undefined }> | null = null;
+function allNotes(load: () => Promise<{ notes: Note[]; error?: string }>) {
+  if (!cache) cache = load().then((r) => ({ map: new Map(r.notes.map((n) => [n.key, n])), error: r.error }), (e) => ({ map: new Map(), error: String(e) }));
+  const p = cache; p.then((r) => { if (r.error && cache === p) cache = null; });
+  return p;
+}
 
 export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; onChange?: (text: string) => void }) {
-  const load = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
+  const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
   useEffect(() => {
     let live = true; setState({ loading: true }); setText(""); setSaved("");
-    load({ data: { keys: [noteKey] } }).then((r) => {
-      if (!live) return; const n = r.notes[0];
+    allNotes(() => load()).then((r) => {
+      if (!live) return; const n = r.map.get(noteKey);
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ error: r.error, at: n?.updatedAt });
     }).catch((e) => live && setState({ error: String(e) }));
     return () => { live = false; };
@@ -19,7 +28,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey
   const doSave = async () => {
     setState((s) => ({ ...s, saving: true, error: undefined }));
     const r = await save({ data: { key: noteKey, scope, page, label, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
-    if ("note" in r && r.note) { setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt }); } else setState({ error: r.error || "保存失败" });
+    if ("note" in r && r.note) { const nn = r.note; void cache?.then((c) => c.map.set(nn.key, nn)); setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt }); } else setState({ error: r.error || "保存失败" });
   };
   return (
     <div className="space-y-2 text-xs">
