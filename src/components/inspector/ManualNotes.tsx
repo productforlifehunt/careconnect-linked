@@ -4,31 +4,42 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { loadAllInspectorNotes, saveInspectorNote } from "@/lib/inspector-notes.functions";
-
-type Note = { key: string; text: string; updatedAt: string };
-/** One shared read of all notes per browser session; saves update it in place, so switching elements is instant. */
-let cache: Promise<{ map: Map<string, Note>; error?: string | undefined }> | null = null;
-function allNotes(load: () => Promise<{ notes: Note[]; error?: string }>) {
-  if (!cache) cache = load().then((r) => ({ map: new Map(r.notes.map((n) => [n.key, n])), error: r.error }), (e) => ({ map: new Map(), error: String(e) }));
-  const p = cache; p.then((r) => { if (r.error && cache === p) cache = null; });
-  return p;
-}
+import { inspectorNotesCache } from "@/features/inspector/notes-cache";
+import { getWPToken } from "@/services/wp-auth";
+import { useRef } from "react";
 
 export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; onChange?: (text: string) => void }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
+  const [retry, setRetry] = useState(0);
+  const activeKey = useRef(noteKey); activeKey.current = noteKey;
   useEffect(() => {
-    let live = true; setState({ loading: true }); setText(""); setSaved("");
-    allNotes(() => load()).then((r) => {
-      if (!live) return; const n = r.map.get(noteKey);
-      setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ error: r.error, at: n?.updatedAt });
-    }).catch((e) => live && setState({ error: String(e) }));
+    let live = true;
+    const session = getWPToken() || "";
+    const apply = (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
+      if (!live || session !== (getWPToken() || "")) return;
+      const n = map.get(noteKey);
+      setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
+    };
+    const cached = inspectorNotesCache.peek(session);
+    if (cached) apply(cached);
+    else {
+      setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
+      inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
+    }
     return () => { live = false; };
-  }, [noteKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const doSave = async () => {
+    const session = getWPToken() || "";
+    const key = noteKey;
     setState((s) => ({ ...s, saving: true, error: undefined }));
     const r = await save({ data: { key: noteKey, scope, page, label, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
-    if ("note" in r && r.note) { const nn = r.note; void cache?.then((c) => c.map.set(nn.key, nn)); setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt }); } else setState({ error: r.error || "保存失败" });
+    if (session !== (getWPToken() || "")) return;
+    if ("note" in r && r.note) {
+      inspectorNotesCache.put(session, r.note);
+      if (activeKey.current !== key) return;
+      setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt });
+    } else if (activeKey.current === key) setState({ error: r.error || "保存失败" });
   };
   return (
     <div className="space-y-2 text-xs">
@@ -39,7 +50,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange }: { noteKey
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
-      {state.error && <p className="text-destructive">{state.error}</p>}
+      {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => setRetry((n) => n + 1)}>重新读取</Button></div>}
     </div>
   );
 }

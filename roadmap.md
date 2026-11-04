@@ -1,3 +1,8 @@
+## Current request: Faster inspector manual notes
+- [x] Prefetch saved notes before opening the inspector; share one session-scoped read across elements/pages.
+- [x] Update the cache after confirmed saves, clear on session changes, and allow failed reads to retry.
+- [x] 5/5 cache tests pass; real researcher /community note opens in 554ms after prefetch, confirmed save survives tab switching and refresh; original text restored, screenshot inspected, zero page errors, build OK. Published site not updated; existing note wording/coverage not audited.
+
 ## Current request: Homepage blank preview
 - [x] Local homepage renders successfully; user preview reproduced stuck on the pre-hydration blank screen.
 - [x] Lazy-load standalone sub-apps so unrelated site modules do not block care homepage startup.
