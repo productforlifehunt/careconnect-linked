@@ -27,7 +27,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
     };
     const cached = inspectorNotesCache.peek(session);
-    if (cached) void apply(cached);
+    if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
       inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));

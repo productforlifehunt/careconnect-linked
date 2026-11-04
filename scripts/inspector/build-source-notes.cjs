@@ -135,9 +135,11 @@ for (const item of inventory) {
   const key = `source|${item.file}|${item.line}|${item.tag}|${digest.slice(0, 12)}`;
   // Save concise complete paragraphs; never truncate a claim halfway through.
   const paragraphs = text.split('\n\n'); let concise = '';
-  for (const paragraph of paragraphs) { if (concise.length + paragraph.length > 12000) break; concise += (concise ? '\n\n' : '') + paragraph; }
+  let omitted = false;
+  for (const paragraph of paragraphs) { if (concise.length + paragraph.length > 18000) { omitted = true; break; } concise += (concise ? '\n\n' : '') + paragraph; }
+  if (omitted) concise += '\n\n本说明长度已达显示上限，后续证据未包含，不能视为此元素全部分支已解释。';
   notes.push({ key, scope: 'element', page: '', label: `${item.tag} ${item.file}:${item.line}`, text: concise, updatedAt: now, source: { file: item.file, line: item.line, endLine: item.endLine, tag: domTags[item.tag] || item.tag, digest } });
-  coverage.push({ ...item, sourceNote: key, humanAudit: facts.length > 0, tracedBindings: trace.length });
+  coverage.push({ ...item, sourceNote: key, humanAudit: facts.length > 0, tracedBindings: trace.length, omitted });
 }
 const unique = [...new Map(notes.map(n => [n.key, n])).values()];
 fs.writeFileSync(path.join(outDir, 'source-notes.json'), JSON.stringify(unique));
