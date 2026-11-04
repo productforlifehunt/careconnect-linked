@@ -185,12 +185,12 @@ export default function Dashboard() {
     "stats": (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
-          ...(paidCare ? [{ label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
-          { label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
-          { label: t("dashboard.pendingTasks"), value: tasksLoading || caredOnesLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
-          { label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
+          ...(paidCare ? [{ id: "upcoming-bookings", label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
+          { id: "care-groups", label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
+          { id: "pending-tasks", label: t("dashboard.pendingTasks"), value: tasksLoading || caredOnesLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
+          { id: "unread-inbox", label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
         ].map((s) => (
-          <button key={s.label} onClick={() => navigate(s.to)}
+          <button key={s.id} onClick={() => navigate(s.to)}
             className="text-left rounded-lg border border-transparent card-elevated p-3 hover:border-primary/30 transition-colors">
             <div className="flex items-center gap-2">
               <s.icon className={`h-4 w-4 ${s.color}`} />
