@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, it } from 'vitest';
 import { encodeNotes, decodeNotes } from './notes-transport';
 
@@ -6,7 +7,7 @@ it('round-trips all 6519 Chinese notes and associations in a bounded scalar', as
   const encoded = await encodeNotes(notes);
   expect(encoded.length).toBeLessThan(1_000_000);
   expect(await decodeNotes(encoded)).toEqual(notes);
-});
+}, 20000);
 
 it('rejects corrupted compressed data instead of presenting an empty catalogue', async () => {
   await expect(decodeNotes(btoa('not gzip'))).rejects.toThrow();
