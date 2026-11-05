@@ -39,7 +39,6 @@ export function SafetyShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16">
-          <PageBackButton />
           <button
             type="button"
             onClick={() => navigate(isAuthenticated ? "/map" : "/")}
@@ -92,6 +91,9 @@ export function SafetyShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className={`w-full flex-1 ${bare ? "" : "px-0 pb-20 md:px-4"}`}>
+        <div className="px-4 pt-2">
+          <PageBackButton />
+        </div>
         {children}
       </main>
 

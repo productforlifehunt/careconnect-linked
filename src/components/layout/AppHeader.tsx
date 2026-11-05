@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
 import { Menu, LogOut, LayoutDashboard, Bell, Heart, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
-import { PageBackButton } from "./PageBackButton";
 import { useState } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -122,7 +121,6 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center gap-2 px-4 sm:gap-3">
-        <PageBackButton />
         {/* Logo — always the first element on the left (standard convention) */}
         <Link to="/" className="flex shrink-0 items-center" aria-label={logoWordmarkText}>
           <BrandMark size={42} showWordmark className="[&>span:last-child]:text-xl" />
