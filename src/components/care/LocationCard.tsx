@@ -238,7 +238,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   const { data: locationRequests, refetch: refetchRequests } = useLocationRequests(managementSubject);
   const { data: locationSettings, refetch: refetchSettings } = useCaredOneLocationSettings(managementSubject);
   // CCT 258: a56 sharing on, a55 emergency requests allowed — decided per person.
-  const { data: flags, refetch: refetchFlags, isLoading: flagsLoading } = useLocationSharingFlags(managementSubject);
+  const { data: flags, refetch: refetchFlags, isLoading: flagsLoading, isError: flagsError } = useLocationSharingFlags(managementSubject);
   const enableEmergency = useEnableEmergencyLocationPermission();
   // Fallback map centre: where the person looking at this page is.
   const [viewerPos, setViewerPos] = useState<{ lat: number; lng: number } | null>(null);
@@ -801,9 +801,16 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
               </Button>
               <div className="flex flex-col gap-2 p-3 rounded-lg border bg-destructive/5 border-destructive/30">
                 <p className="flex items-center gap-1.5 text-sm font-medium"><ShieldAlert className="h-4 w-4 text-destructive" />{isZh ? "紧急请求" : "Emergency request"}</p>
-                {flags?.emergencyAllowed ? (
+                {flagsLoading ? (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />{isZh ? `正在读取${caredOneName}是否已开启紧急请求…` : `Checking whether ${caredOneName} has turned on emergency requests…`}</p>
+                ) : flagsError ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-destructive">{isZh ? "读取紧急请求设置失败。" : "Could not read the emergency request setting."}</p>
+                    <Button size="sm" variant="outline" onClick={() => refetchFlags()}>{isZh ? "重试" : "Retry"}</Button>
+                  </div>
+                ) : flags?.emergencyAllowed ? (
                   <>
-                    <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}已允许紧急请求：不需要对方确认，只要对方的应用开着，位置会立即发过来，并记为紧急模式。` : `${caredOneName} allows emergency requests: no confirmation needed. As long as their app is open, the location arrives at once and is marked as emergency mode.`}</p>
+                    <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}已开启紧急请求。你可以发送紧急位置请求：不需要对方确认，只要对方的应用开着，位置会立即发过来，并记为紧急模式。` : `${caredOneName} has turned on emergency requests. You can send an emergency location request: no confirmation needed. As long as their app is open, the location arrives at once and is marked as emergency mode.`}</p>
                     {emergencyConfirm && <p className="text-xs text-destructive font-medium">{isZh ? "确定吗？再点一次发送。" : "Are you sure? Click again to send."}</p>}
                     <Button variant="destructive" onClick={() => handleSendRequest(true)} disabled={sendingRequest || sendRequest.isPending}>
                       {emergencyConfirm ? (isZh ? "确认发送紧急请求" : "Confirm emergency request") : (isZh ? "发送紧急请求" : "Send emergency request")}
