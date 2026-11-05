@@ -172,7 +172,7 @@ export async function linkNotes(parent: string, child: string): Promise<void> {
   const [p, c] = await Promise.all([wp(`/${parent}`) as Promise<CCTRow>, wp(`/${child}`) as Promise<CCTRow>]);
   if (String(p._ID) !== parent || String(c._ID) !== child) throw new Error('所选注释不存在。');
   const before = await relIds('parents', child);
-  if (before.includes(parent)) return;
+  if (before.includes(parent) || (await relIds('parents', parent)).includes(child)) return;
   await rel('', 'POST', { parent_id: Number(parent), child_id: Number(child), context: 'child', store_items_type: 'update' });
   const after = await relIds('parents', child);
   if (!after.includes(parent) || before.some(id => !after.includes(id))) throw new Error('关联保存后核对不一致。');
@@ -181,9 +181,9 @@ export async function unlinkNotes(parent: string, child: string): Promise<void> 
   await rel('', 'POST', { parent_id: Number(parent), child_id: Number(child), context: 'child', store_items_type: 'disconnect' });
   if ((await relIds('parents', child)).includes(parent)) throw new Error('取消关联后核对不一致。');
 }
-/** Data-dictionary notes ("数据字典 · …") are always the REL325 parent; otherwise the current note is the parent. */
+/** REL325 is shown without parent/child, so the current note is stored as parent (titles no longer mark note kinds). */
 export function relationDirection(current: { id: string; title: string }, other: { id: string; title: string }): { parent: string; child: string } {
-  const dict = (t: string) => t.trim().startsWith('数据字典');
+  const dict = (_t: string) => false;
   return dict(other.title) && !dict(current.title) ? { parent: other.id, child: current.id } : { parent: current.id, child: other.id };
 }
 export async function readNoteById(id: string): Promise<{ id: string; title: string; text: string }> { const row = await wp(`/${id}`) as CCTRow; if (String(row._ID) !== id) throw new Error('所选注释不存在。'); return { id, title: row.a55 || '', text: row.a56 || '' }; }
