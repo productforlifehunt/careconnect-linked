@@ -186,13 +186,38 @@ export default function ReadWriteInspector() {
     const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
+  // Drag from anywhere on the panel except controls and scrollbars; a 4px threshold keeps plain clicks as clicks.
   const startDrag = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    const t = e.target as HTMLElement;
+    if (t.closest('button,input,textarea,select,a,label,[role=button],[role=option],[role=switch],[role=tab],[role=combobox],[role=checkbox],[contenteditable=""],[contenteditable=true],[data-no-drag]')) return;
+    if (e.nativeEvent.offsetX > t.clientWidth && t.clientWidth > 0) return;
     const el = panelRef.current; if (!el) return;
+    const sx = e.clientX, sy = e.clientY;
     const r = el.getBoundingClientRect(); const dx = e.clientX - r.left, dy = e.clientY - r.top;
-    const move = (ev: PointerEvent) => setBox((b) => ({ x: Math.max(0, Math.min(window.innerWidth - 80, ev.clientX - dx)), y: Math.max(0, Math.min(window.innerHeight - 40, ev.clientY - dy)), w: el.offsetWidth, h: el.offsetHeight || b.h }));
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    let dragging = false;
+    const move = (ev: PointerEvent) => {
+      if (!dragging) { if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 4) return; dragging = true; window.getSelection()?.removeAllRanges(); document.body.style.userSelect = "none"; }
+      setBox((b) => ({ x: Math.max(0, Math.min(window.innerWidth - 80, ev.clientX - dx)), y: Math.max(0, Math.min(window.innerHeight - 40, ev.clientY - dy)), w: el.offsetWidth, h: el.offsetHeight || b.h }));
+    };
+    const up = () => { document.body.style.userSelect = ""; window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
+
+  // Clicks, focus and scrolling inside the inspector must not reach the page's open dialogs/popups:
+  // Radix registers its outside-click, focus-trap and scroll-lock listeners on document when a popup opens,
+  // i.e. after this one, so stopping them here keeps the popup open while React handlers still run.
+  useEffect(() => {
+    const inside = (n: EventTarget | null) => n instanceof Element && !!n.closest("[data-rw-inspector]");
+    const guard = (e: Event) => {
+      if (!inspectModeOn()) return;
+      const rel = (e as FocusEvent).relatedTarget ?? null;
+      if (inside(e.target) || (e.type === "focusout" && inside(rel))) e.stopImmediatePropagation();
+    };
+    const evs = ["pointerdown", "mousedown", "touchstart", "focusin", "focusout", "wheel", "touchmove", "keydown"] as const;
+    evs.forEach((ev) => document.addEventListener(ev, guard));
+    return () => evs.forEach((ev) => document.removeEventListener(ev, guard));
+  }, []);
 
   useEffect(() => { const t = setInterval(() => setPath(currentPath()), 700); return () => clearInterval(t); }, []);
 
@@ -353,7 +378,7 @@ export default function ReadWriteInspector() {
   }).slice(0, 60_000), [path, pageFiles, pageRequests, pageRefs, notes]);
 
   return (
-    <div data-rw-inspector>
+    <div data-rw-inspector style={{ pointerEvents: "auto" }}>
       {!on && <button type="button" onClick={toggle}
         className={`fixed right-3 top-16 z-[10000] flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium shadow-md ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
         <ScanSearch className="h-4 w-4" />读写核对 / Inspect
@@ -366,9 +391,9 @@ export default function ReadWriteInspector() {
       )}
       {on && (
         <div ref={panelRef} className="fixed z-[9999] flex flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-2xl"
-          style={{ left: box.x, top: box.y, width: box.w, height: box.h }}>
+          style={{ left: box.x, top: box.y, width: box.w, height: box.h, pointerEvents: "auto" }} onPointerDown={startDrag}>
           {(["n","s","e","w","ne","nw","se","sw"] as const).map((d) => <div key={d} onPointerDown={(e) => startResize(e, d)} className="absolute z-10" style={{ ...(d.includes("n") ? { top: 0 } : d.includes("s") ? { bottom: 0 } : { top: 8, bottom: 8 }), ...(d.includes("w") ? { left: 0 } : d.includes("e") ? { right: 0 } : { left: 8, right: 8 }), width: d.length === 2 || d === "e" || d === "w" ? 8 : undefined, height: d.length === 2 || d === "n" || d === "s" ? 8 : undefined, cursor: `${d}-resize`, touchAction: "none" }} />)}
-          <div className="flex cursor-move touch-none select-none items-center gap-2 border-b border-border p-3" onPointerDown={startDrag} title="拖动移动面板 / Drag to move">
+          <div className="flex cursor-move touch-none select-none items-center gap-2 border-b border-border p-3" title="面板任意空白处都可拖动 / Drag anywhere to move">
             <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.max(0.6, +(z - 0.1).toFixed(1)))} aria-label="缩小 / Smaller">A−</Button>
             <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.min(1.4, +(z + 0.1).toFixed(1)))} aria-label="放大 / Larger">A+</Button>
             <div className="flex-1">
