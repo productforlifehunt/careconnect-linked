@@ -177,7 +177,16 @@ export async function wpValidateToken(): Promise<WPUser | null> {
  * Renew the stored sign-in token (WordPress tokens last 60 minutes).
  * Returns false when there is no token or WordPress refuses to renew it.
  */
-export async function wpRefreshToken(): Promise<boolean> {
+let refreshInflight: Promise<boolean> | null = null;
+export function wpRefreshToken(): Promise<boolean> {
+  // Many requests may notice an old token at once; share one renewal.
+  if (!refreshInflight) {
+    refreshInflight = doRefreshToken().finally(() => { refreshInflight = null; });
+  }
+  return refreshInflight;
+}
+
+async function doRefreshToken(): Promise<boolean> {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token) return false;
   try {
