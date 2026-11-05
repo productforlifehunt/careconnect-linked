@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
-/** Shared across page headers; direct-entry pages return to the current site's home. */
+/** Shared at the start of page content; direct-entry pages return to the site's home. */
 export function PageBackButton() {
   const router = useRouter();
   const { i18n } = useTranslation();
