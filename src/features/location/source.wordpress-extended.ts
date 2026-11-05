@@ -631,6 +631,12 @@ export async function enableEmergencyLocationPermissionWordPress(caredOneId: str
   const target = normalizeWpUserId(caredOneId);
   if (!target) throw new Error("Invalid cared one user");
   await setLocationSharingFlags(target, { emergencyAllowed: true });
+  // The permission is saved at this point; the notice to the cared one is sent
+  // in the background so a slow notification service cannot freeze the button.
+  void notifyEmergencyEnabled(target).catch((e) => console.error("Emergency permission notice failed", e));
+}
+
+async function notifyEmergencyEnabled(target: number): Promise<void> {
   const cn = zh();
   const askerName = (await fetchMyAppUserName().catch(() => "")) || (cn ? "你的护理者" : "Your caregiver");
   await runNotificationSkill("send-notification", {
