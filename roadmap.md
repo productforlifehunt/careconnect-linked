@@ -1,3 +1,9 @@
+## Current request: Independent functional-logic manual notes (2026-11-05)
+- [ ] Read the user's saved example and inventory all independent logic units from current source, including care, discussions and payments.
+- [ ] Write human-readable functional notes with full dictionary CCT names/numbers, column names/keys/types and REL parent/child; preserve researcher-edited/verified notes.
+- [ ] Associate relevant visible dynamic read/write elements through existing REL325 only; perform relation operations through WordPress GUI, preserving existing associations.
+- [ ] Verify saved content and associations, test expansion/multiple related notes, and deliver a screenshot with exact coverage counts.
+
 ## Current request: Emergency sharing toggle
 - [x] Toggle visible in both states; confirmation before saving with other-caregiver warning. 5/5 rule tests pass. Real challenged account/person 46: cancel unchanged, disable and refresh, enable and refresh pass; original enabled state restored. Desktop and 774px dialog screenshots verified; zero page errors, build OK. Not published.
 
