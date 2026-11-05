@@ -80,3 +80,12 @@ export const unlinkRelatedNote = createServerFn({ method: 'POST' })
     const s = await import('./inspector-notes.server');
     try { await s.unlinkNotes(data.parent, data.child); return { notes: await s.readRelatedNotes(data.id) }; } catch (e) { return { error: e instanceof Error ? e.message : '取消关联失败' }; }
   });
+
+/** Researcher-only: edit a related note (name, content, manual-check flag) and return the refreshed REL325 list. */
+export const updateRelatedNote = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({ id: noteId, otherId: noteId, title: z.string().min(1).max(240), text: z.string().max(100_000), verified: z.boolean() }).parse(input))
+  .handler(async ({ data }) => {
+    const denied = await researcherOnly(); if (denied) return { error: denied };
+    const s = await import('./inspector-notes.server');
+    try { await s.updatePlainNote(data.otherId, data.title, data.text, data.verified); return { notes: await s.readRelatedNotes(data.id) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
+  });
