@@ -10,7 +10,7 @@ describe("emergency sharing confirmation", () => {
     render(<EmergencySharingToggle allowed pending={false} isZh onSave={save} />);
     fireEvent.click(screen.getByRole("switch"));
     expect(save).not.toHaveBeenCalled();
-    expect(screen.getByRole("switch").getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("switch", { hidden: true }).getAttribute("aria-checked")).toBe("true");
   });
   it("cancelling keeps permission enabled without a write", () => {
     const save = vi.fn();
@@ -40,7 +40,7 @@ describe("emergency sharing confirmation", () => {
     fireEvent.click(screen.getByRole("switch"));
     fireEvent.click(screen.getByRole("button", { name: "确认关闭" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "确认关闭" }).hasAttribute("disabled")).toBe(false));
-    expect(screen.getByRole("switch").getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("switch", { hidden: true }).getAttribute("aria-checked")).toBe("true");
     expect(screen.getByRole("alertdialog")).toBeTruthy();
   });
 });
