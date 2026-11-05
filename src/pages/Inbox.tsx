@@ -157,11 +157,6 @@ export default function Inbox() {
             >
               <InboxIcon className="h-4 w-4 shrink-0" />
               <span>{Z("全部", "All")}</span>
-              {counts.unread > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">
-                  {counts.unread > 99 ? "99+" : counts.unread}
-                </Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
@@ -169,7 +164,6 @@ export default function Inbox() {
             >
               <Bell className="h-4 w-4 shrink-0" />
               <span>{Z("通知", "Notifications")}</span>
-              {counts.unreadNotifications > 0 && <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">{counts.unreadNotifications}</Badge>}
             </TabsTrigger>
             <TabsTrigger
               value="messages"
@@ -177,7 +171,6 @@ export default function Inbox() {
             >
               <MessageSquare className="h-4 w-4 shrink-0" />
               <span>{Z("消息", "Messages")}</span>
-              {counts.unreadMessages > 0 && <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">{counts.unreadMessages}</Badge>}
             </TabsTrigger>
           </TabsList>
 

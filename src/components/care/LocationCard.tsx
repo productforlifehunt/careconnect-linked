@@ -308,7 +308,6 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   const [refreshing, setRefreshing] = useState(false);
 
   const unreadAlerts = (alerts || []).filter((a: any) => !a.is_read).length;
-  const pendingRequests = (locationRequests || []).filter((r: any) => r.status === "pending").length;
 
   const breaches = useMemo(() => (zones || []).filter((z: any) => {
     if (!currentLocation?.latitude || !currentLocation?.longitude) return false;
@@ -613,8 +612,8 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
   const tabs: { key: Tab; label: string; icon: any; badge?: number | undefined }[] = [
     { key: "location", label: isZh ? "实时位置" : "Live Location", icon: MapPin },
-    { key: "requests", label: isZh ? "共享请求" : "Requests", icon: Send, badge: pendingRequests || undefined },
-    { key: "alerts", label: isZh ? "提醒" : "Alerts", icon: Bell, badge: unreadAlerts || undefined },
+    { key: "requests", label: isZh ? "共享请求" : "Requests", icon: Send },
+    { key: "alerts", label: isZh ? "提醒" : "Alerts", icon: Bell },
     { key: "safezones", label: isZh ? "安全区域" : "Safe Zones", icon: Shield, badge: (zones || []).length || undefined },
     { key: "history", label: isZh ? "历史记录" : "History", icon: Clock },
   ];

@@ -17,9 +17,8 @@ import {
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
 import { Menu, LogOut, LayoutDashboard, Bell, Heart, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { PageBackButton } from "./PageBackButton";
 import { useState } from "react";
-import { useInboxCounts } from "@/hooks/use-care-data";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { BrandMark } from "@/components/BrandMark";
@@ -32,7 +31,6 @@ export function AppHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { unread: unreadCount } = useInboxCounts();
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
@@ -124,6 +122,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center gap-2 px-4 sm:gap-3">
+        <PageBackButton />
         {/* Logo — always the first element on the left (standard convention) */}
         <Link to="/" className="flex shrink-0 items-center" aria-label={logoWordmarkText}>
           <BrandMark size={42} showWordmark className="[&>span:last-child]:text-xl" />
@@ -199,11 +198,6 @@ export function AppHeader() {
               aria-label={isChinese ? "收件箱" : "Inbox"}
             >
               <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-coral text-coral-foreground text-xs border-2 border-card">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </Badge>
-              )}
             </Button>
 
             <DropdownMenu>
