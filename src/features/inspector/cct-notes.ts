@@ -33,7 +33,7 @@ export function noteCatalogue(notes: Map<string, SourceAnnotation>): CCTNote[] {
 }
 export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CCTNote) {
   const next = new Map(notes);
-  next.forEach((note, key) => { if (note.id === updated.id) next.set(key, { ...note, text: updated.text, title: updated.title, updatedAt: updated.updatedAt }); });
+  next.forEach((note, key) => { if (note.id === updated.id) next.set(key, { ...note, text: updated.text, title: updated.title, updatedAt: updated.updatedAt, verified: updated.verified }); });
   next.set(updated.key, updated);
   return next;
 }

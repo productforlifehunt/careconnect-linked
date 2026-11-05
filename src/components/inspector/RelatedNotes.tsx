@@ -47,10 +47,10 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
       <p className="font-medium">关联注释（REL325 One manual note can have many related manual notes）· {state.loading ? "读取中…" : `${notes.length} 条`}</p>
       {notes.map((n) => (
         <div key={`${n.side}-${n.id}`} className="rounded border">
-          <button type="button" className="flex w-full items-start gap-1 p-2 text-left hover:bg-muted/50" onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}>
+          <Button type="button" variant="ghost" aria-expanded={!!open[n.id]} className="h-auto w-full justify-start whitespace-normal rounded-none p-2 text-left" onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}>
             {open[n.id] ? <ChevronDown className="mt-0.5 h-3 w-3 shrink-0" /> : <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />}
             <span><span className="text-muted-foreground">{n.side === "parent" ? "上级（父）" : "下级（子）"} · #{n.id} · </span>{n.title}</span>
-          </button>
+          </Button>
           {open[n.id] && (
             <div className="space-y-2 border-t p-2">
               <div className="max-h-[40vh] overflow-auto whitespace-pre-wrap break-words">{n.text}</div>

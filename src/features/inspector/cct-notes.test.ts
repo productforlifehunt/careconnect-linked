@@ -27,3 +27,12 @@ it('editing a CCT note updates every cached position using it without changing a
   expect(map.get('el|x')).toMatchObject({id:'1',text:'已编辑',title:'新名字',locked:true});
   expect(map.get('cct|2')?.text).toBe('正文二');
 });
+it('saving manual verification updates every position sharing that CCT324 note', () => {
+  const notes = bindCCTNotes(rows, [{key:'el|x',id:'1',scope:'element',page:'/community',label:'x',locked:true}]);
+  const first = rows[0]; if (!first) throw new Error('missing fixture');
+  const checked = replaceCCTNote(new Map(notes.map(n=>[n.key,n])), {...first,verified:true});
+  expect(checked.get('el|x')).toMatchObject({id:'1',verified:true,locked:true});
+  const unchecked = replaceCCTNote(checked, {...first,verified:false});
+  expect(unchecked.get('el|x')).toMatchObject({id:'1',verified:false,locked:true});
+  expect(unchecked.get('cct|2')).not.toHaveProperty('verified');
+});
