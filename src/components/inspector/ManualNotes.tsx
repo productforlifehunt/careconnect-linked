@@ -80,7 +80,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
   };
   return (
     <div className="space-y-2 text-xs">
-      <p className="text-muted-foreground">{selected ? `当前注释：${savedTitle} · CCT324 #${selected}` : '当前没有已保存的注释'}</p>
+      <p className="text-muted-foreground">{state.loading ? '正在读取已保存的注释…' : selected ? `当前注释：${savedTitle} · CCT324 #${selected}` : '当前没有已保存的注释'}</p>
       <div className="flex flex-wrap gap-2">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild><Button variant="outline" size="sm" disabled={state.loading || state.saving}><ChevronsUpDown className="mr-1 h-3 w-3" />选择其他注释</Button></PopoverTrigger>
