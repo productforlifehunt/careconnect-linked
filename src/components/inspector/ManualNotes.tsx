@@ -9,6 +9,7 @@ import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
 import { isGeneratedNote, resolveSourceNote } from "@/features/inspector/source-notes";
+import { findSameElementNote } from "@/features/inspector/route-key";
 import { readSource } from "@/features/inspector/live-index";
 import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     const session = getWPToken() || "";
     const apply = async (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
       if (!live || session !== (getWPToken() || "")) return;
-      const existing = map.get(noteKey);
+      const existing = findSameElementNote(map, noteKey);
       const n = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? existing :
         (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined) || existing;
       if (!live || session !== (getWPToken() || "")) return;
