@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { loadAllInspectorNotes, saveInspectorNote, selectInspectorNote } from "@/lib/inspector-notes.functions";
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
@@ -26,6 +27,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
   const [choice, setChoice] = useState<string>(); const [open, setOpen] = useState(false);
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
   const [retry, setRetry] = useState(0);
+  const [verified, setVerified] = useState(false); const [savedVerified, setSavedVerified] = useState(false);
   const activeKey = useRef(noteKey); activeKey.current = noteKey;
   useEffect(() => {
     let live = true;
@@ -38,6 +40,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       if (!live || session !== (getWPToken() || "")) return;
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
       setCatalogue(noteCatalogue(map)); setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
+      setVerified(!!(n as CCTNote | undefined)?.verified); setSavedVerified(!!(n as CCTNote | undefined)?.verified);
       setCreating(false);
     };
     const cached = inspectorNotesCache.peek(session);
@@ -52,13 +55,13 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     const session = getWPToken() || "";
     const key = noteKey;
     setState((s) => ({ ...s, saving: true, error: undefined }));
-    const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, create: creating, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
+    const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, create: creating, verified, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
     if (session !== (getWPToken() || "")) return;
     if ("note" in r && r.note) {
       inspectorNotesCache.put(session, r.note);
       if (activeKey.current !== key) return;
       setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt });
-      setSelected(r.note.id); setChoice(r.note.id); setTitle(r.note.title || title); setSavedTitle(r.note.title || title);
+      setSelected(r.note.id); setChoice(r.note.id); setTitle(r.note.title || title); setSavedTitle(r.note.title || title); setVerified(!!r.note.verified); setSavedVerified(!!r.note.verified);
       setCreating(false);
       const map = inspectorNotesCache.peek(session); if (map) setCatalogue(noteCatalogue(map));
     } else if (activeKey.current === key) setState({ error: r.error || "保存失败" });
@@ -72,7 +75,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       if (session !== (getWPToken() || '') || activeKey.current !== key) return;
       if (!result.note) throw new Error(result.error || '选择未保存');
       inspectorNotesCache.put(session, result.note);
-      setSelected(result.note.id); setText(result.note.text); setSaved(result.note.text); setTitle(result.note.title || ''); setSavedTitle(result.note.title || ''); onChange?.(result.note.text); setState({at:result.note.updatedAt});
+      setSelected(result.note.id); setText(result.note.text); setSaved(result.note.text); setTitle(result.note.title || ''); setSavedTitle(result.note.title || ''); setVerified(!!result.note.verified); setSavedVerified(!!result.note.verified); onChange?.(result.note.text); setState({at:result.note.updatedAt});
     } catch (e) { if (activeKey.current === key) setState({error:String(e)}); }
   };
   return (
@@ -86,13 +89,14 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" disabled={!choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
-        <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setCreating(true);setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
+        <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setCreating(true);setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setVerified(false);setSavedVerified(false);setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
       </div>
       {choice && choice !== selected && <p>待锁定：{catalogue.find(n=>n.id===choice)?.title} · #{choice}</p>}
       <Input aria-label="注释名字" value={title} onChange={e=>setTitle(e.target.value)} maxLength={240} disabled={state.loading || state.saving} />
       <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={8} disabled={state.loading} placeholder={state.loading ? "读取中…" : "写下这里应该怎么读写、怎么判定…"} />
+      <label className="flex items-center gap-2"><Switch checked={verified} onCheckedChange={setVerified} disabled={state.loading || state.saving} aria-label="已手动核对" /><span>{verified ? '已手动核对' : '未手动核对'}</span>{verified !== savedVerified && <span className="text-muted-foreground">（未保存）</span>}</label>
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={doSave} disabled={state.loading || state.saving || !title.trim() || (selected !== undefined && text === saved && title === savedTitle)}>{state.saving ? "保存中…" : "保存注释"}</Button>
+        <Button size="sm" onClick={doSave} disabled={state.loading || state.saving || !title.trim() || (selected !== undefined && text === saved && title === savedTitle && verified === savedVerified)}>{state.saving ? "保存中…" : "保存注释"}</Button>
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
