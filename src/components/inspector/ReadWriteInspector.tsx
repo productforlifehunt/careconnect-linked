@@ -378,7 +378,7 @@ export default function ReadWriteInspector() {
   }).slice(0, 60_000), [path, pageFiles, pageRequests, pageRefs, notes]);
 
   return (
-    <div data-rw-inspector>
+    <div data-rw-inspector style={{ pointerEvents: "auto" }}>
       {!on && <button type="button" onClick={toggle}
         className={`fixed right-3 top-16 z-[10000] flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium shadow-md ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
         <ScanSearch className="h-4 w-4" />读写核对 / Inspect
@@ -391,9 +391,9 @@ export default function ReadWriteInspector() {
       )}
       {on && (
         <div ref={panelRef} className="fixed z-[9999] flex flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-2xl"
-          style={{ left: box.x, top: box.y, width: box.w, height: box.h }}>
+          style={{ left: box.x, top: box.y, width: box.w, height: box.h, pointerEvents: "auto" }} onPointerDown={startDrag}>
           {(["n","s","e","w","ne","nw","se","sw"] as const).map((d) => <div key={d} onPointerDown={(e) => startResize(e, d)} className="absolute z-10" style={{ ...(d.includes("n") ? { top: 0 } : d.includes("s") ? { bottom: 0 } : { top: 8, bottom: 8 }), ...(d.includes("w") ? { left: 0 } : d.includes("e") ? { right: 0 } : { left: 8, right: 8 }), width: d.length === 2 || d === "e" || d === "w" ? 8 : undefined, height: d.length === 2 || d === "n" || d === "s" ? 8 : undefined, cursor: `${d}-resize`, touchAction: "none" }} />)}
-          <div className="flex cursor-move touch-none select-none items-center gap-2 border-b border-border p-3" onPointerDown={startDrag} title="拖动移动面板 / Drag to move">
+          <div className="flex cursor-move touch-none select-none items-center gap-2 border-b border-border p-3" title="面板任意空白处都可拖动 / Drag anywhere to move">
             <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.max(0.6, +(z - 0.1).toFixed(1)))} aria-label="缩小 / Smaller">A−</Button>
             <Button size="sm" variant="ghost" onPointerDown={(e) => e.stopPropagation()} onClick={() => setScale((z) => Math.min(1.4, +(z + 0.1).toFixed(1)))} aria-label="放大 / Larger">A+</Button>
             <div className="flex-1">
