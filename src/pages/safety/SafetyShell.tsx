@@ -6,7 +6,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useInboxCounts } from "@/hooks/use-care-data";
+import { PageBackButton } from "@/components/layout/PageBackButton";
 
 /**
  * NotchSafety app shell — one persistent header on every screen and one
@@ -21,7 +21,6 @@ export function SafetyShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const { unread } = useInboxCounts();
 
   const tabs = [
     { url: "/map", label: L("地图", "Map"), icon: MapPin },
@@ -40,6 +39,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16">
+          <PageBackButton />
           <button
             type="button"
             onClick={() => navigate(isAuthenticated ? "/map" : "/")}
@@ -75,11 +75,6 @@ export function SafetyShell({ children }: { children: ReactNode }) {
                 aria-label={L("收件箱", "Inbox")}
               >
                 <Bell className="h-5 w-5" />
-                {unread > 0 && (
-                  <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {unread > 99 ? "99+" : unread}
-                  </span>
-                )}
               </Button>
             )}
             <LanguageSwitcher />

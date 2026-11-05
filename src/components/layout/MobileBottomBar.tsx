@@ -3,7 +3,6 @@ import { NavLink } from "@/components/NavLink";
 import { Link, useLocation } from "@/lib/router-compat";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useInboxCounts } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
 import {
   Heart as HeartIcon,
@@ -80,7 +79,6 @@ export function MobileBottomBar() {
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
-  const { unread: unreadCount } = useInboxCounts();
   const [open, setOpen] = useState(false);
   const { openAssistant } = useAIAssistant();
   const [customizeOpen, setCustomizeOpen] = useState(false);
@@ -269,7 +267,6 @@ export function MobileBottomBar() {
     <>
       <nav data-bottom-nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1">
         {items.map((item) => {
-          const showBadge = item.url === "/inbox" && unreadCount > 0;
           return (
             <NavLink
               key={item.url}
@@ -280,11 +277,6 @@ export function MobileBottomBar() {
             >
               <div className="relative">
                 <item.icon className="h-5 w-5" />
-                {showBadge && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-coral text-coral-foreground text-[9px] font-bold flex items-center justify-center leading-none">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
               </div>
               <span className="text-[11px] leading-tight truncate">{item.title}</span>
             </NavLink>
