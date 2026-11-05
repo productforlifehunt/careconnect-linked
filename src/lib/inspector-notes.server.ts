@@ -148,7 +148,7 @@ async function rel(path = '', method = 'GET', body?: unknown): Promise<unknown> 
   if (!response.ok) throw new Error(`注释关联读取或保存失败（${response.status}），请重试。`);
   return response.json();
 }
-export interface RelatedNote { id: string; title: string; text: string; side: 'parent' | 'child' }
+export interface RelatedNote { id: string; title: string; text: string; side: 'parent' | 'child'; verified: boolean }
 async function relIds(side: 'parents' | 'children', id: string): Promise<string[]> {
   const rows = await rel(`/${side}/${id}`);
   if (!Array.isArray(rows)) throw new Error('注释关联返回异常。');
@@ -158,7 +158,13 @@ async function relIds(side: 'parents' | 'children', id: string): Promise<string[
 export async function readRelatedNotes(id: string): Promise<RelatedNote[]> {
   const [parents, children] = await Promise.all([relIds('parents', id), relIds('children', id)]);
   const entries: [string, 'parent' | 'child'][] = [...parents.map(p => [p, 'parent'] as [string, 'parent']), ...children.map(c => [c, 'child'] as [string, 'child'])];
-  return Promise.all(entries.map(async ([nid, side]) => { const row = await wp(`/${nid}`) as CCTRow; return { id: nid, title: row.a55 || '', text: row.a56 || '', side }; }));
+  return Promise.all(entries.map(async ([nid, side]) => { const row = await wp(`/${nid}`) as CCTRow; return { id: nid, title: row.a55 || '', text: row.a56 || '', side, verified: row.a58 === 'b55' }; }));
+}
+/** Edit a related CCT324 note's a55/a56/a58 in place; never touches element/page bindings. */
+export async function updatePlainNote(id: string, title: string, text: string, verified: boolean): Promise<void> {
+  await wp(`/${id}`, 'POST', { a55: title, a56: text, a58: verified ? 'b55' : 'b56' });
+  const row = await wp(`/${id}`) as CCTRow;
+  if (String(row._ID) !== id || row.a55 !== title || row.a56 !== text || (row.a58 === 'b55') !== verified) throw new Error('保存后的内容核对不一致。');
 }
 /** Many to many: adding a link never removes the note's other links. */
 export async function linkNotes(parent: string, child: string): Promise<void> {
