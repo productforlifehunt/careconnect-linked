@@ -1,4 +1,4 @@
-import { getWPToken } from "@/services/wp-auth";
+import { getWPToken, wpEnsureFreshToken, wpRefreshToken } from "@/services/wp-auth";
 import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
 import { recordRequest, attachResponse, InspectorWriteBlocked } from "@/features/inspector/recorder";
 
@@ -34,8 +34,13 @@ function needsCredentialedProxy(endpoint: string): boolean {
 }
 
 
-export async function wordpressFetchRaw(endpoint: string, options: WordPressFetchOptions = {}): Promise<Response> {
+export async function wordpressFetchRaw(endpoint: string, options: WordPressFetchOptions = {}, retried = false): Promise<Response> {
 
+  // Sign-in tokens last 60 minutes; renew quietly before they run out so the
+  // user stays signed in as long as WordPress allows renewal.
+  if (typeof window !== "undefined" && getWPToken()) {
+    await wpEnsureFreshToken().catch(() => false);
+  }
   const token = getWPToken();
   const { method = "GET", body, params } = options;
 
@@ -140,6 +145,9 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
         // mid-edit (unsaved notes or a running transcript would be lost).
         const onResearcherPage = typeof window !== "undefined" &&
           new URLSearchParams(window.location.search).get("__site") === "researcher";
+        if (looksLikeAuthFailure && token && !retried && (await wpRefreshToken())) {
+          return wordpressFetchRaw(endpoint, options, true);
+        }
         if (looksLikeAuthFailure && token && onResearcherPage) {
           throw new Error("Session expired. Please log in again.");
         }
