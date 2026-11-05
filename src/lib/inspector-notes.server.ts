@@ -3,7 +3,7 @@ import { bindCCTNotes, type CCTNote, type NoteBinding } from '@/features/inspect
 
 /** Researcher manual notes for inspected elements/pages: one private JSON file per scope key. */
 const BUCKET = "inspector-notes";
-export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string | undefined; title?: string | undefined; locked?: boolean | undefined; source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined }
+export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string | undefined; title?: string | undefined; locked?: boolean | undefined; verified?: boolean | undefined; source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined }
 
 function client() {
   const url = process.env["SUPABASE_URL"] || ""; const key = process.env["SUPABASE_SERVICE_ROLE_KEY"] || "";
@@ -44,7 +44,7 @@ export async function readArchivedNotes(): Promise<InspectorNote[]> {
   return [...new Map([...source, ...manual].map((n) => [n.key, n])).values()].filter((n) => n.text.trim().length > 0);
 }
 
-type CCTRow = { _ID: string | number; a55: string; a56: string; cct_modified?: string };
+type CCTRow = { _ID: string | number; a55: string; a56: string; a58?: string; cct_modified?: string };
 const CCT_BASE = 'https://app.challenged-dementia.com/afresh/wp-json/jet-cct/manual_notes';
 async function wp(path = '', method = 'GET', body?: unknown): Promise<unknown> {
   const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
@@ -54,7 +54,7 @@ async function wp(path = '', method = 'GET', body?: unknown): Promise<unknown> {
   return response.json();
 }
 function mapRow(row: CCTRow): CCTNote {
-  return { key: `cct|${row._ID}`, id: String(row._ID), title: row.a55, text: row.a56, updatedAt: row.cct_modified ? row.cct_modified.replace(' ', 'T') + '+08:00' : '' };
+  return { key: `cct|${row._ID}`, id: String(row._ID), title: row.a55, text: row.a56, verified: row.a58 === 'b55', updatedAt: row.cct_modified ? row.cct_modified.replace(' ', 'T') + '+08:00' : '' };
 }
 async function configuration(): Promise<NoteBinding[]> {
   const { data, error } = await client().storage.from(BUCKET).download('notes/cct-bindings.json.gz');
@@ -116,14 +116,14 @@ export async function writeNote(note: Omit<InspectorNote, 'updatedAt'> & { creat
     id = binding?.id;
   }
   if (!id) {
-    const result = await wp('', 'POST', { a55: note.title || note.label, a56: note.text, cct_status: 'publish' }) as number | string | { item_id?: number; _ID?: number };
+    const result = await wp('', 'POST', { a55: note.title || note.label, a56: note.text, a58: note.verified ? 'b55' : 'b56', cct_status: 'publish' }) as number | string | { item_id?: number; _ID?: number };
     id = String(typeof result === 'number' || typeof result === 'string' ? result : result.item_id || result._ID || '');
     if (!/^\d+$/.test(id)) throw new Error('没有返回新注释编号，请重新读取列表，勿重复新建。');
   } else {
-    await wp(`/${id}`, 'POST', { a55: note.title || note.label, a56: note.text });
+    await wp(`/${id}`, 'POST', { a55: note.title || note.label, a56: note.text, a58: note.verified ? 'b55' : 'b56' });
   }
   const row = await wp(`/${id}`) as CCTRow;
-  if (row.a56 !== note.text || row.a55 !== (note.title || note.label)) throw new Error('保存后的内容核对不一致。');
+  if (row.a56 !== note.text || row.a55 !== (note.title || note.label) || (row.a58 === 'b55') !== !!note.verified) throw new Error('保存后的内容核对不一致。');
   const binding: NoteBinding = { key: note.key, id, scope: note.scope, page: note.page, label: note.label, ...(note.source ? { source: note.source } : {}), locked: true };
   await storeBinding(binding);
   return { ...mapRow(row), ...binding };

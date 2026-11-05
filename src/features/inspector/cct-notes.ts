@@ -14,6 +14,8 @@ export interface CCTNote extends SourceAnnotation {
   id: string;
   title: string;
   locked?: boolean | undefined;
+  /** CCT324 已手动核对 (a58): b55 是 / b56 否。 */
+  verified?: boolean | undefined;
 }
 export function bindCCTNotes(rows: CCTNote[], bindings: NoteBinding[]): CCTNote[] {
   const byId = new Map(rows.map(row => [row.id, row]));
