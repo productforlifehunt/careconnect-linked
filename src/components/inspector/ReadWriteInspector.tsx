@@ -186,13 +186,38 @@ export default function ReadWriteInspector() {
     const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
+  // Drag from anywhere on the panel except controls and scrollbars; a 4px threshold keeps plain clicks as clicks.
   const startDrag = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    const t = e.target as HTMLElement;
+    if (t.closest('button,input,textarea,select,a,label,[role=button],[role=option],[role=switch],[role=tab],[role=combobox],[role=checkbox],[contenteditable=""],[contenteditable=true],[data-no-drag]')) return;
+    if (e.nativeEvent.offsetX > t.clientWidth && t.clientWidth > 0) return;
     const el = panelRef.current; if (!el) return;
+    const sx = e.clientX, sy = e.clientY;
     const r = el.getBoundingClientRect(); const dx = e.clientX - r.left, dy = e.clientY - r.top;
-    const move = (ev: PointerEvent) => setBox((b) => ({ x: Math.max(0, Math.min(window.innerWidth - 80, ev.clientX - dx)), y: Math.max(0, Math.min(window.innerHeight - 40, ev.clientY - dy)), w: el.offsetWidth, h: el.offsetHeight || b.h }));
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    let dragging = false;
+    const move = (ev: PointerEvent) => {
+      if (!dragging) { if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 4) return; dragging = true; window.getSelection()?.removeAllRanges(); document.body.style.userSelect = "none"; }
+      setBox((b) => ({ x: Math.max(0, Math.min(window.innerWidth - 80, ev.clientX - dx)), y: Math.max(0, Math.min(window.innerHeight - 40, ev.clientY - dy)), w: el.offsetWidth, h: el.offsetHeight || b.h }));
+    };
+    const up = () => { document.body.style.userSelect = ""; window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
+
+  // Clicks, focus and scrolling inside the inspector must not reach the page's open dialogs/popups:
+  // Radix registers its outside-click, focus-trap and scroll-lock listeners on document when a popup opens,
+  // i.e. after this one, so stopping them here keeps the popup open while React handlers still run.
+  useEffect(() => {
+    const inside = (n: EventTarget | null) => n instanceof Element && !!n.closest("[data-rw-inspector]");
+    const guard = (e: Event) => {
+      if (!inspectModeOn()) return;
+      const rel = (e as FocusEvent).relatedTarget ?? null;
+      if (inside(e.target) || (e.type === "focusout" && inside(rel))) e.stopImmediatePropagation();
+    };
+    const evs = ["pointerdown", "mousedown", "touchstart", "focusin", "focusout", "wheel", "touchmove", "keydown"] as const;
+    evs.forEach((ev) => document.addEventListener(ev, guard));
+    return () => evs.forEach((ev) => document.removeEventListener(ev, guard));
+  }, []);
 
   useEffect(() => { const t = setInterval(() => setPath(currentPath()), 700); return () => clearInterval(t); }, []);
 
