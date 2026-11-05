@@ -6,6 +6,7 @@ export interface SourceAnnotation {
   id?: string | undefined;
   title?: string | undefined;
   locked?: boolean | undefined;
+  verified?: boolean | undefined;
   source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined;
 }
 
