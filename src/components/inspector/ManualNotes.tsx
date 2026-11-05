@@ -101,7 +101,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
-      {selected && !creating && <RelatedNotes noteId={selected} catalogue={catalogue} />}
+      {selected && !creating ? <RelatedNotes noteId={selected} catalogue={catalogue} /> : !state.loading && <p className="rounded-md border p-2 text-muted-foreground">关联注释：这个元素还没有自己的注释。先写好并点"保存注释"（或用"选择其他注释"再"锁定选择"），下面就会出现"关联已有注释"（可搜索名字或编号）和"新建关联注释"。</p>}
       {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => {inspectorNotesCache.reset();setRetry((n) => n + 1);}}>重新读取</Button></div>}
     </div>
   );
