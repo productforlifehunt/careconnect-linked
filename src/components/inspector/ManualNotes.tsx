@@ -86,13 +86,13 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild><Button variant="outline" size="sm" disabled={state.loading || state.saving}><ChevronsUpDown className="mr-1 h-3 w-3" />选择其他注释</Button></PopoverTrigger>
           <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={e => e.preventDefault()}>
-            <Command><CommandInput placeholder="搜索注释名字或编号" /><CommandList><CommandEmpty>没有找到注释</CommandEmpty>{catalogue.map(n => <CommandItem key={n.id} value={`${n.title} ${n.id}`} onSelect={() => {setChoice(n.id);setOpen(false);}}>{n.title} · #{n.id}</CommandItem>)}</CommandList></Command>
+            <Command><CommandInput placeholder="搜索注释名字或编号" /><CommandList><CommandEmpty>没有找到注释</CommandEmpty>{catalogue.map(n => <CommandItem key={n.id} value={`${n.title} ${n.id}`} onSelect={() => {setChoice(n.id);setOpen(false);}}><span className="min-w-0 truncate">{n.title} · #{n.id}</span><span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground">{n.verified ? "已手动核对" : "未手动核对"}</span></CommandItem>)}</CommandList></Command>
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" disabled={!choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
         <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setCreating(true);setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setVerified(false);setSavedVerified(false);setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
       </div>
-      {choice && choice !== selected && <p>待锁定：{catalogue.find(n=>n.id===choice)?.title} · #{choice}</p>}
+      {choice && choice !== selected && <p>待锁定：{catalogue.find(n=>n.id===choice)?.title} · #{choice} · {catalogue.find(n=>n.id===choice)?.verified ? "已手动核对" : "未手动核对"}</p>}
       <Input aria-label="注释名字" value={title} onChange={e=>setTitle(e.target.value)} maxLength={240} disabled={state.loading || state.saving} />
       <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={8} disabled={state.loading} placeholder={state.loading ? "读取中…" : "写下这里应该怎么读写、怎么判定…"} />
       <label className="flex items-center gap-2"><Switch checked={verified} onCheckedChange={setVerified} disabled={state.loading || state.saving} aria-label="已手动核对" /><span>{verified ? '已手动核对' : '未手动核对'}</span>{verified !== savedVerified && <span className="text-muted-foreground">（未保存）</span>}</label>
