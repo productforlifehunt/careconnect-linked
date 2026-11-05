@@ -28,7 +28,10 @@ export async function resolveSourceNote(
   if (!match) return undefined;
   const file = match[1]; const line = Number(match[2]);
   if (!file) return undefined;
-  const candidates = [...notes.values()].filter((n) => n.source?.file === file && n.source.line === line && n.source.tag.toLowerCase() === tag.toLowerCase());
+  // Same file and tag at any saved line: edits above an element shift its line, so the saved
+  // source block is compared at the element's current line instead of its old line number.
+  const candidates = [...notes.values()].filter((n) => n.source?.file === file && n.source.tag.toLowerCase() === tag.toLowerCase())
+    .sort((a, b) => Math.abs((a.source?.line ?? 0) - line) - Math.abs((b.source?.line ?? 0) - line));
   if (!candidates.length) return undefined;
   const current = await read(file);
   if (!current) return undefined;
@@ -37,7 +40,7 @@ export async function resolveSourceNote(
   for (const note of candidates) {
     const ref = note.source;
     if (!ref) continue;
-    if (await sourceDigest(lines.slice(ref.line - 1, ref.endLine).join("\n")) === ref.digest) valid.push(note);
+    if (await sourceDigest(lines.slice(line - 1, line + (ref.endLine - ref.line)).join("\n")) === ref.digest) valid.push(note);
   }
   // A position selects one real note; do not synthesize a merged body with a misleading CCT ID.
   if (valid.length === 1) return valid[0];
