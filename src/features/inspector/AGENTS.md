@@ -1,2 +1,3 @@
 - Inspector element note keys add the list item's React key only when it names a fixed slot (stat cards keyed by a stable id), so differently-meaning cards from one JSX line never share a note while data rows of one list still do.
 - Element notes on record pages (/care-circle/<id>) match across record ids by replacing numeric path segments, so one card's note is shared by every group instead of being tied to the group it was written on.
+- Source-bound element notes match by file, tag and saved block digest compared at the element's current line, so edits above an element do not orphan its note while changed block content still does.
