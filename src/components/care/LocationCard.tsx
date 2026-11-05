@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ZonePathEditor } from "@/components/care/ZonePathEditor";
+import { EmergencySharingToggle } from "@/components/care/EmergencySharingToggle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,7 @@ import {
   useCaredOneLocation, useCaredOneLocationHistory,
   useSafeZoneAlerts, useAcknowledgeAlert, useAcknowledgeAllAlerts,
   useLocationRequests, useSendLocationRequest, useCancelLocationRequest,
-  useLocationSharingFlags, useEnableEmergencyLocationPermission,
+  useLocationSharingFlags, useEnableEmergencyLocationPermission, useSetLocationSharingFlags,
   useCaredOneLocationSettings, useShareMyLocation,
 } from "@/hooks/use-care-data";
 import {
@@ -240,6 +241,19 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   // CCT 258: a56 sharing on, a55 emergency requests allowed — decided per person.
   const { data: flags, refetch: refetchFlags, isLoading: flagsLoading, isError: flagsError } = useLocationSharingFlags(managementSubject);
   const enableEmergency = useEnableEmergencyLocationPermission();
+  const setSharingFlags = useSetLocationSharingFlags();
+  const saveEmergencySharing = async (allowed: boolean) => {
+    try {
+      if (allowed) await enableEmergency.mutateAsync(caredOneId);
+      else await setSharingFlags.mutateAsync({ userId: caredOneId, emergencyAllowed: false });
+      setEmergencyConfirm(false);
+      await refetchFlags();
+      toast({ title: allowed ? (isZh ? "已开启紧急共享模式" : "Emergency sharing mode on") : (isZh ? "已关闭紧急共享模式" : "Emergency sharing mode off") });
+    } catch (e) {
+      toast({ title: isZh ? "保存失败" : "Save failed", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
+      throw e;
+    }
+  };
   // Fallback map centre: where the person looking at this page is.
   const [viewerPos, setViewerPos] = useState<{ lat: number; lng: number } | null>(null);
   useEffect(() => {
@@ -801,6 +815,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
               </Button>
               <div className="flex flex-col gap-2 p-3 rounded-lg border bg-destructive/5 border-destructive/30">
                 <p className="flex items-center gap-1.5 text-sm font-medium"><ShieldAlert className="h-4 w-4 text-destructive" />{isZh ? "紧急请求" : "Emergency request"}</p>
+                {!flagsLoading && !flagsError && flags && <EmergencySharingToggle allowed={flags.emergencyAllowed} pending={enableEmergency.isPending || setSharingFlags.isPending} isZh={!!isZh} onSave={saveEmergencySharing} />}
                 {flagsLoading ? (
                   <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />{isZh ? `正在读取${caredOneName}是否已开启紧急请求…` : `Checking whether ${caredOneName} has turned on emergency requests…`}</p>
                 ) : flagsError ? (
@@ -819,14 +834,6 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
                 ) : (
                   <>
                     <p className="text-xs text-muted-foreground">{isZh ? `${caredOneName}还没有开启紧急请求许可。开启后，紧急时不需要对方确认就能查看位置；开启时会给对方发送通知。` : `Emergency requests are off for ${caredOneName}. Once on, you can see their location in an emergency without them confirming. They are notified when you turn it on.`}</p>
-                    <Button variant="outline" disabled={enableEmergency.isPending}
-                      onClick={() => enableEmergency.mutate(caredOneId, {
-                        onSuccess: () => { refetchFlags(); toast({ title: isZh ? "已开启紧急请求许可，并已通知对方" : "Emergency permission on; they were notified" }); },
-                        onError: (e: any) => toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }),
-                      })}>
-                      {enableEmergency.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      {isZh ? `为${caredOneName}开启紧急请求许可` : `Turn on emergency requests for ${caredOneName}`}
-                    </Button>
                   </>
                 )}
               </div>

@@ -1,3 +1,6 @@
+## Current request: Emergency sharing toggle
+- [ ] Keep emergency permission toggle visible in both states; require confirmation before saving, warn about other caregivers when disabling; test cancel, disable, enable and refresh.
+
 ## Current request: CCT324 manual notes migration
 - [x] Current verification: reproduced catalogue serialization failure; gzip/base64 transport fixes empty notes. 16/16 tests pass. Real researcher community page/element display, edit-refresh, new note, dropdown lock and lock-refresh pass; original #1 text/association restored. Dropdown portal layering/event boundary fixed. Zero browser page errors, build OK.
 - [x] CCT324 access rechecked: GUI initially read public in all four capability fields; changed all four to manage_options through GUI and verified reload. Anonymous app read/save/select denied; direct WP list/item return 401. Researcher operation rerun passes after restriction.
