@@ -18,7 +18,7 @@ describe("visible inspector scopes", () => {
       return stableElementKey("/dashboard", stableAnchor(dialog));
     };
     const before = await render(false);
-    expect(before).toBe("el|/dashboard|scope:ai-chat-dialog|@div");
+    expect(before).toBe("el|*|scope:ai-chat-dialog|@div");
     expect(await render(true)).toBe(before);
     await act(async () => root.unmount()); host.remove(); portal.remove();
   });
@@ -33,6 +33,13 @@ describe("visible inspector scopes", () => {
     expect(inputs.map(key)).toEqual(before);
     const scope = host.firstElementChild;
     if (!scope) throw new Error("form missing");
-    expect(key(scope)).toBe("el|/settings|scope:settings-personal-form|@div");
+    expect(key(scope)).toBe("el|*|scope:settings-personal-form|@div");
   });
+});
+import { stableElementKey as sek } from "./inspect-dom";
+import { it as it2, expect as ex2 } from "vitest";
+it2("a scoped element has the same key on every page", () => {
+  const a = { names: ["scope:ai-chat-dialog"], path: "div" };
+  ex2(sek("/dashboard", a)).toBe(sek("/cared-ones/46/tips", a));
+  ex2(sek("/dashboard", { names: ["Card"], path: "div" })).not.toBe(sek("/inbox", { names: ["Card"], path: "div" }));
 });
