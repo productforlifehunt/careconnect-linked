@@ -38,6 +38,19 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
   const activeKey = useRef(noteKey); activeKey.current = noteKey;
   const revision = `${noteKey}|${selected}|${title}|${text}`;
   const activeRevision = useRef(revision); activeRevision.current = revision;
+  const correctionState = useRef({ selected, title, text, savedTitle, saved });
+  correctionState.current = { selected, title, text, savedTitle, saved };
+  useEffect(() => {
+    const updated = (event: Event) => {
+      const note = (event as CustomEvent<{ id: string; title: string; text: string; verified: boolean }>).detail;
+      const current = correctionState.current;
+      if (note.id !== current.selected) return;
+      if (current.text !== current.saved || current.title !== current.savedTitle) { setState({ error: '此笔记已通过修改建议保存；这里仍有未保存的旧编辑，请重新读取后再编辑。' }); return; }
+      setText(note.text); setSaved(note.text); setTitle(note.title); setSavedTitle(note.title); setVerified(note.verified); setSavedVerified(note.verified); onChange?.(note.text);
+    };
+    window.addEventListener('inspector-note-corrected', updated);
+    return () => window.removeEventListener('inspector-note-corrected', updated);
+  }, [onChange]);
   useEffect(() => { setAi({}); }, [revision]);
   const analyzeNotes = async () => {
     if (!buildEvidence || !selected) return;
