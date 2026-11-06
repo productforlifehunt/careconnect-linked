@@ -1,6 +1,7 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { R, T, WP } from "@/integrations/wp-schema";
 import { fetchRatingSummary } from "@/features/reviews/source.wordpress";
+import { toCodeList } from "@/lib/facility-options";
 
 /**
  * Care Facility extended ops.
@@ -23,11 +24,11 @@ const REL249 = WP.rel["249"];
 const RF = REL249.f;
 
 const MEMBER_TYPE_TO_CODE: Record<string, string> = {
-  member: "b55", nothing: "b55", "nothing special": "b55",
-  owner: "b56",
-  admin: "b57",
+  member: REL249.opt.FACILITY_MEMBER_TYPE.NOTHING_SPECIAL,
+  owner: REL249.opt.FACILITY_MEMBER_TYPE.OWNER,
+  admin: REL249.opt.FACILITY_MEMBER_TYPE.ADMIN,
 };
-const MEMBER_CODE_TO_TYPE: Record<string, string> = { b55: "member", b56: "owner", b57: "admin" };
+const MEMBER_CODE_TO_TYPE = Object.fromEntries(Object.entries(MEMBER_TYPE_TO_CODE).map(([label, code]) => [code, label]));
 
 function normalizeWpObjectId(value: string | number | null | undefined): number {
   return Number(String(value ?? "").replace(/^wp-/, ""));
@@ -52,6 +53,10 @@ export async function createCareFacilityWordPress(input: {
 }): Promise<any> {
   const list = (v: string[] | string | null | undefined) =>
     Array.isArray(v) ? v.filter(Boolean) : v ? [String(v)] : [];
+  if (input.isOwner) {
+    const { getStoredWPUser } = await import("@/services/wp-auth");
+    if (!normalizeWpObjectId(getStoredWPUser()?.user_id)) throw new Error("You must be signed in to claim ownership");
+  }
   const result = await wordpressCCTFetch(CCT_SLUG, {
     method: "POST",
     body: {
@@ -74,15 +79,11 @@ export async function createCareFacilityWordPress(input: {
   const facilityId = String(normalizeWpObjectId(result?.item_id || result?._ID || result?.id) || "");
   if (!facilityId) throw new Error("Care facility was not created");
   if (input.isOwner) {
-    const { getStoredWPUser } = await import("@/services/wp-auth");
-    const meId = normalizeWpObjectId(getStoredWPUser()?.user_id);
-    if (!meId) throw new Error("You must be signed in to claim ownership");
-    // Relation 249 records the owner membership; CCT 288 + Relation 291 record
-    // the reviewable ownership claim itself.
-    await addFacilityMemberWordPress(facilityId, String(meId), { type: "owner", roleLabel: input.ownerRole || undefined });
+    // A declaration is only a pending application. The site owner grants
+    // REL249 membership manually after review; no permission is granted here.
     await createFacilityOwnershipClaimWordPress({
       facility_id: facilityId,
-      claim: input.ownershipClaim || "",
+      claim: [input.ownerRole?.trim() ? `Role / 职务：${input.ownerRole.trim()}` : "", input.ownershipClaim || ""].filter(Boolean).join("\n\n"),
       attachment_urls: input.ownershipAttachmentUrls || [],
       is_dispute: false,
     });
@@ -108,7 +109,7 @@ export async function updateCareFacilityWordPress(id: string, updates: Record<st
   return { id: result?.id || id };
 }
 
-// ─── Facility Members (REL 163) ─────────────────────────────
+// ─── Facility Members (REL 249) ─────────────────────────────
 export async function fetchFacilityMembersWordPress(facilityId: string): Promise<any[]> {
   try {
     const fid = normalizeWpObjectId(facilityId);
@@ -118,13 +119,18 @@ export async function fetchFacilityMembersWordPress(facilityId: string): Promise
     return rels.map((r: any) => {
       const userId = normalizeWpObjectId(r.child_object_id);
       const meta = r.meta || r.meta_fields || {};
-       const typeCode = String(meta[RF.FACILITY_MEMBER_TYPE]);
-       if (!MEMBER_CODE_TO_TYPE[typeCode]) throw new Error(`Invalid facility-member type code: ${typeCode}`);
+      const codes = toCodeList(meta[RF.FACILITY_MEMBER_TYPE]);
+      if (!codes.length || codes.some((code) => !MEMBER_CODE_TO_TYPE[code])) throw new Error("Invalid facility-member checkbox codes");
+      const isOwner = codes.includes(REL249.opt.FACILITY_MEMBER_TYPE.OWNER);
+      const isAdmin = codes.includes(REL249.opt.FACILITY_MEMBER_TYPE.ADMIN);
       return {
         id: String(r.id || `${fid}-${userId}`),
         post_id: facilityId,
         user_id: userId ? `wp-${userId}` : null,
-         role: MEMBER_CODE_TO_TYPE[typeCode],
+         role: isOwner ? "owner" : isAdmin ? "admin" : "member",
+         member_types: codes,
+         is_owner: isOwner,
+         is_admin: isAdmin,
          role_label: meta[RF.FACILITY_MEMBER_ROLE] || null,
         created_at: r.created_at || null,
         profile: null,
@@ -147,12 +153,12 @@ export async function addFacilityMemberWordPress(
     method: "POST",
     body: {
       parent_id: fid, child_id: uid, context: "child", store_items_type: "update",
-       meta: { [RF.FACILITY_MEMBER_TYPE]: typeCode, ...(opts?.roleLabel ? { [RF.FACILITY_MEMBER_ROLE]: opts.roleLabel } : {}) },
+       meta: { [RF.FACILITY_MEMBER_TYPE]: [typeCode], ...(opts?.roleLabel !== undefined ? { [RF.FACILITY_MEMBER_ROLE]: opts.roleLabel } : {}) },
     },
   });
 }
 
-// ─── Facility Permissions (derived from REL 163 meta) ──────
+// ─── Facility Permissions (derived from REL 249 meta) ──────
 export async function getMyFacilityPermissionWordPress(facilityId: string): Promise<{ canEdit: boolean; membership: any | null }> {
   try {
     const { getStoredWPUser } = await import("@/services/wp-auth");
@@ -161,7 +167,7 @@ export async function getMyFacilityPermissionWordPress(facilityId: string): Prom
     const members = await fetchFacilityMembersWordPress(facilityId);
     const mine = members.find((m) => normalizeWpObjectId(m.user_id) === meId);
     if (!mine) return { canEdit: false, membership: null };
-    return { canEdit: mine.role === "owner" || mine.role === "admin", membership: mine };
+    return { canEdit: mine.is_owner || mine.is_admin, membership: mine };
   } catch { return { canEdit: false, membership: null }; }
 }
 
@@ -266,7 +272,6 @@ export async function createFacilityOwnershipClaimWordPress(input: {
   claim?: string | null | undefined;
   attachment_urls?: string[] | string | null | undefined;
   is_dispute?: boolean | undefined;
-  status?: "pending" | "approved" | "rejected" | undefined;
 }): Promise<{ id: string }> {
   const fid = normalizeWpObjectId(input.facility_id);
   if (!fid) throw new Error("Invalid facility ID");
@@ -276,7 +281,7 @@ export async function createFacilityOwnershipClaimWordPress(input: {
     body: {
       [FC.CLAIM]: input.claim || "",
       [FC.PROOF]: JSON.stringify(proof),
-      [FC.STATUS]: CLAIM_STATUS_CODE[input.status || "pending"],
+      [FC.STATUS]: CLAIM.opt.STATUS.PENDING,
       [FC.IS_DISPUTE]: input.is_dispute ? CLAIM.opt.IS_DISPUTE.YES : CLAIM.opt.IS_DISPUTE.NO,
       [FC.REPLY]: "",
     },
@@ -285,7 +290,7 @@ export async function createFacilityOwnershipClaimWordPress(input: {
   if (!claimId) throw new Error("Ownership claim was not created");
   await wordpressFetch(`jet-rel/${REL_FACILITY_CLAIM}`, {
     method: "POST",
-    body: { parent_id: fid, child_id: claimId, context: "parent", store_items_type: "update" },
+    body: { parent_id: fid, child_id: claimId, context: "child", store_items_type: "update" },
   });
   return { id: String(claimId) };
 }

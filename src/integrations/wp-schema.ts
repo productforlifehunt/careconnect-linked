@@ -1318,8 +1318,8 @@ export const WP = {
     "248": { id: 248, parent: "Users", child: "214. Safe Zone", type: "One to many" },
     /** 290. One cared one’s location notification can have many added related receivers — Users -> Users (One to many) */
     "290": { id: 290, parent: "Users", child: "Users", type: "One to many" },
-    /** 249. One care facility can have many related facility members — 215. Care Facility -> Users (One to Many) */
-    "249": { id: 249, parent: "215. Care Facility", child: "Users", type: "One to Many", f: { "FACILITY_MEMBER_TYPE": "a55", "FACILITY_MEMBER_ROLE": "a56" }, opt: { "FACILITY_MEMBER_TYPE": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
+    /** 249. Facility -> Users; Many to many verified in /afresh GUI. One owner is a business rule, not relation cardinality. */
+    "249": { id: 249, parent: "215. Care Facility", child: "Users", type: "Many to many", f: { "FACILITY_MEMBER_TYPE": "a55", "FACILITY_MEMBER_ROLE": "a56" }, opt: { "FACILITY_MEMBER_TYPE": { "NOTHING_SPECIAL": "b55", "OWNER": "b56", "ADMIN": "b57" } } },
     /** 291. One 215. Care Facility can have many related ownership claims — 215. Care Facility -> 288. ownership claim (Many to many（使用many to many以保证后续可拓展性)) */
     "291": { id: 291, parent: "215. Care Facility", child: "288. ownership claim", type: "Many to many（使用many to many以保证后续可拓展性)" },
     /** 255. One user can many related finished ChallengeD learn content — Users -> 217. Challenged App Content (One to Many) */
