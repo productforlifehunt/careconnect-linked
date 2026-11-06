@@ -42,3 +42,33 @@ export const checkNoteConflicts = createServerFn({ method: "POST" })
     } catch (error) { return { error: `注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     return compareNotes(payload);
   });
+
+/** One bounded part of a site audit. Every call verifies WP identity and re-reads CCT324 + REL325. */
+export const analyzeSiteNote = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({ page: z.string().max(500), noteId: z.string().regex(/^\d+$/), pageNoteIds: z.array(z.string().regex(/^\d+$/)).max(100).optional(), evidence: z.string().min(1).max(40_000), chunk: z.number().int().min(1), chunks: z.number().int().min(1), omissions: z.array(z.string().max(1000)).max(1000) }).refine(v => v.chunk <= v.chunks).parse(input))
+  .handler(async ({ data }) => {
+    const { verifyResearcher, explainInspection } = await import('./inspector-ai.server');
+    try { await verifyResearcher(getRequestHeader('X-WP-Token') || ''); }
+    catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden', status: 403 }; }
+    try {
+      const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
+      const rootIds = [...new Set([data.noteId, ...(data.pageNoteIds || [])])];
+      const collected: { id: string; title: string; text: string }[] = [];
+      for (const id of rootIds) {
+        const [note, related] = await Promise.all([readNoteById(id), readRelatedNotes(id)]);
+        collected.push(note, ...related);
+      }
+      const notes = [...new Map(collected.map(n => [n.id, { id: n.id, title: n.title, text: n.text }])).values()];
+      const { WP, R, T } = await import('@/integrations/wp-schema');
+      const evidenceText = data.evidence + '\n' + notes.map(n => n.text).join('\n');
+      const cctIds = new Set([...evidenceText.matchAll(/CCT\s*([0-9]+)|cct\[["']([0-9]+)["']\]/gi)].map(m => m[1] || m[2]));
+      const relIds = new Set([...evidenceText.matchAll(/REL\s*([0-9]+)|jet-rel\/([0-9]+)/gi)].map(m => m[1] || m[2]));
+      const tables = T as unknown as Record<string, { id: number }>; const relations = R as unknown as Record<string, number>;
+      for (const match of evidenceText.matchAll(/\bT\.([A-Za-z_]\w*)/g)) { const table = tables[match[1] || '']; if (table) cctIds.add(String(table.id)); }
+      for (const match of evidenceText.matchAll(/\bR\.([A-Za-z_]\w*)/g)) { const relation = relations[match[1] || '']; if (relation) relIds.add(String(relation)); }
+      const dictionary = { cct: Object.fromEntries(Object.entries(WP.cct).filter(([id]) => cctIds.has(id))), rel: Object.fromEntries(Object.entries(WP.rel).filter(([id]) => relIds.has(id))) };
+      const context = JSON.stringify({ page: data.page, analysis: '全站分析中的一项；逐对比较当前元素、整页主注释和它们所有直接关联注释；注释的用途与当前代码不一致也要明确指出，不自动裁决需求', sourceChunk: data.chunk, sourceChunks: data.chunks, evidenceOmissions: data.omissions, notes, dictionary, source: data.evidence });
+      if (context.length > 120_000) return { error: '当前注释和所有关联注释超过分析容量，未截断、未执行；此项未完成。', status: 422 };
+      return explainInspection(context, 'full', undefined, notes.map(n => n.id), true);
+    } catch (error) { return { error: error instanceof Error ? error.message : '全站分析读取失败', status: 502 }; }
+  });
