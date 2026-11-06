@@ -39,13 +39,18 @@ export function stableAnchor(el: Element): { names: string[]; path: string } {
   const names: string[] = [];
   const hosts: Array<{ node: Element; key: unknown }> = [];
   let f = fiberOf(el);
-  for (let depth = 0; f && depth < 120 && names.length < 4; depth++, f = f.return) {
+  // Markup is collected until two components are passed and at least four tags are known, so wrapper
+  // components that draw no tag of their own (Button inside a menu trigger) cannot merge two buttons.
+  const collecting = () => (names.length < 2 || hosts.length < 4) && hosts.length < 20;
+  let open = true;
+  for (let depth = 0; f && depth < 160 && (names.length < 4 || open); depth++, f = f.return) {
     if (typeof f.type === "string") {
-      if (names.length < 2 && f.stateNode instanceof Element) hosts.push({ node: f.stateNode, key: f.key });
+      open = collecting();
+      if (open && f.stateNode instanceof Element) hosts.push({ node: f.stateNode, key: f.key });
       continue;
     }
     const last = hosts[hosts.length - 1];
-    if (names.length < 2 && last && last.key == null && f.key != null) last.key = f.key;
+    if (open && last && last.key == null && f.key != null) last.key = f.key;
     const n = componentName(f); if (n && !names.includes(n)) names.push(n);
   }
   const steps = hosts.map(({ node, key }) => {
@@ -91,7 +96,7 @@ export function sharedCallSite(owner: Element | null): string | undefined {
 export function staticSlotKey(key: unknown): string | undefined {
   if (typeof key !== "string") return undefined;
   const k = key.trim();
-  if (!k || k.length > 60 || !/[A-Za-z\u4e00-\u9fff]/.test(k) || /\d{2,}/.test(k) || /^[0-9a-f-]{16,}$/i.test(k)) return undefined;
+  if (!k || k.length > 60 || !/[A-Za-z\u4e00-\u9fff]/.test(k) || /\d{2,}/.test(k) || /^[A-Za-z]+[-_:#]\d+$/.test(k) || /^[0-9a-f-]{16,}$/i.test(k)) return undefined;
   return k;
 }
 
