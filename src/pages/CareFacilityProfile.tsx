@@ -22,7 +22,6 @@ import {
   useFacilityOwnershipClaims,
   useFacilityOwnershipDisputes,
   useCreateFacilityOwnershipClaim,
-  useUpdateFacilityOwnershipClaim,
 } from "@/hooks/use-care-data";
 import {
   FACILITY_TYPE_OPTIONS,
@@ -55,7 +54,6 @@ export default function CareFacilityProfile() {
   const { data: ownershipClaims } = useFacilityOwnershipClaims(id);
   const { data: ownershipDisputes } = useFacilityOwnershipDisputes(id);
   const createClaim = useCreateFacilityOwnershipClaim();
-  const decideClaim = useUpdateFacilityOwnershipClaim();
 
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
   const [claimIsDispute, setClaimIsDispute] = useState(false);
@@ -82,15 +80,6 @@ export default function CareFacilityProfile() {
       toast({ title: isZh ? "已提交，等待审核" : "Submitted for review" });
     } catch (err: any) {
       toast({ title: isZh ? "提交失败" : "Submit failed", description: err.message, variant: "destructive" });
-    }
-  };
-
-  const decide = async (claimId: string, status: "approved" | "rejected") => {
-    try {
-      await decideClaim.mutateAsync({ id: claimId, status });
-      toast({ title: isZh ? "已更新" : "Updated" });
-    } catch (err: any) {
-      toast({ title: isZh ? "操作失败" : "Action failed", description: err.message, variant: "destructive" });
     }
   };
 
@@ -316,7 +305,8 @@ export default function CareFacilityProfile() {
                         disabled={createReview.isPending || !id}
                         onClick={async () => {
                           try {
-                            await createReview.mutateAsync({ entity_id: id!, entity_type: "facility", rating: reviewRating, comment: reviewComment });
+                            if (!id) return;
+                            await createReview.mutateAsync({ entity_id: id, entity_type: "facility", rating: reviewRating, comment: reviewComment });
                             toast({ title: isZh ? "评价已提交！" : "Review submitted!" });
                             setReviewDialogOpen(false);
                             setReviewRating(5);
@@ -447,7 +437,7 @@ export default function CareFacilityProfile() {
                 {ownerMembers.length > 0 ? ownerMembers.map((member) => (
                   <div key={member.id} className="rounded-xl border p-3">
                     <div className="font-medium text-foreground">{member.profile?.full_name || member.profile?.email || member.user_id}</div>
-                    <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "Role not listed")}</div>
+                    <div className="text-muted-foreground">{member.role_label || (isZh ? "未填写角色" : "Role not listed")}</div>
                   </div>
                 )) : (
                   <div className="rounded-xl border p-3 text-muted-foreground">{isZh ? "当前没有所有者成员。" : "This facility has no owner member."}</div>
@@ -460,7 +450,7 @@ export default function CareFacilityProfile() {
                   {adminMembers.map((member) => (
                     <div key={member.id} className="rounded-xl border p-3">
                       <div className="font-medium text-foreground">{member.profile?.full_name || member.profile?.email || member.user_id}</div>
-                      <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "Role not listed")}</div>
+                      <div className="text-muted-foreground">{member.role_label || (isZh ? "未填写角色" : "Role not listed")}</div>
                     </div>
                   ))}
                 </div>
@@ -472,7 +462,7 @@ export default function CareFacilityProfile() {
                   {regularMembers.map((member) => (
                     <div key={member.id} className="rounded-xl border p-3">
                       <div className="font-medium text-foreground">{member.profile?.full_name || member.profile?.email || member.user_id}</div>
-                      <div className="text-muted-foreground">{member.role || (isZh ? "未填写角色" : "Role not listed")}</div>
+                      <div className="text-muted-foreground">{member.role_label || (isZh ? "未填写角色" : "Role not listed")}</div>
                     </div>
                   ))}
                 </div>
@@ -511,16 +501,6 @@ export default function CareFacilityProfile() {
                       </div>
                     )}
                     {claim.reply && <p className="text-xs text-muted-foreground">{isZh ? "审核回复：" : "Reply: "}{claim.reply}</p>}
-                    {facilityPermission?.canEdit && claim.status === "pending" && (
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => decide(claim.id, "approved")} disabled={decideClaim.isPending}>
-                          {isZh ? "通过" : "Approve"}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => decide(claim.id, "rejected")} disabled={decideClaim.isPending}>
-                          {isZh ? "驳回" : "Reject"}
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 ))
               ) : (
