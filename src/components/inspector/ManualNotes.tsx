@@ -9,7 +9,7 @@ import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
 import { isGeneratedNote, resolveSourceNote, sourceRef } from "@/features/inspector/source-notes";
-import { findAliasNote, findSameElementNote } from "@/features/inspector/route-key";
+import { findSameElementNote } from "@/features/inspector/route-key";
 import { readSource } from "@/features/inspector/live-index";
 import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
@@ -72,7 +72,9 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
       // The unified identity first; old line-based bindings only as a one-time carry-over.
       const current = findSameElementNote(map, noteKey);
       const old = legacyKey ? findSameElementNote(map, legacyKey) : undefined;
-      const existing = current || old || findAliasNote(map, alias);
+      // Never fall back to the alias (page + component names + tag): every <div> in one card shares it,
+      // so distinct elements would all show the same note.
+      const existing = current || old;
       const bySource = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? undefined :
         (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined);
       const n = bySource || existing;
