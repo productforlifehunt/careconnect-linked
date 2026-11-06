@@ -15,7 +15,7 @@ export const conflictReportSchema = z.object({
   comparedCodeNoteIds: z.array(z.string()),
   codeCompared: z.boolean(),
   findings: z.array(z.object({
-    kind: z.enum(['conflict', 'suspicion', 'redundancy', 'fallback', 'compatibility', 'missing_evidence']),
+    kind: z.enum(['conflict', 'suspicion', 'redundancy', 'fallback', 'compatibility', 'missing_evidence', 'incomplete']),
     title: z.string().min(1),
     noteIds: z.array(z.string()),
     evidence: z.string().min(1),
