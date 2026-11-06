@@ -1,3 +1,9 @@
+## Current request: Sitewide frontend loading speed (2026-11-06)
+- [ ] Optimize shared pending-read deduplication without extending data freshness or changing permissions.
+- [ ] Parallelize independent own-profile reads, share app-profile resolution, and defer inactive inspector/tool modules.
+- [ ] Remove care-only background work from standalone research/consent/sick sites.
+- [ ] Run regression tests and authenticated browser load checks across care, safety and standalone apps; report measured coverage, not an unverified fastest-possible claim.
+
 ## Current request: Actual-source three-way analysis (2026-11-06)
 - [x] Ensure preview and published page/element/manual analysis resolve and read actual current source and imported read/write helpers, without relying on preview source markers.
 - [x] Require server-read actual-code evidence; compare functional logic as the baseline against code and manual notes, with separate manual-only correction proposals; no notes-only fallback in the visible related-note action.
