@@ -1,3 +1,9 @@
+## Current request: Facility submission and delayed tab title (2026-11-06)
+- [x] Published researcher submission reproduced: CCT215 creates successfully, then direct WordPress REL249 POST returns HTTP500; ownership claim is never reached. No proxy on the failing request. Test facilities #9–14 were created during repeated diagnostics, not deleted or approved.
+- [x] Published Settings→Inbox navigation measured twice: URL changes in 0.09–0.11s, title within the next 1s observation; WordPress reads remain pending for 5–22s. Reported 20s browser-title delay not reproduced. Source confirms route-chunk readiness and SiteProvider title overwrite are distinct mechanisms.
+- [ ] REL249 configuration/500 root cause unresolved; GUI list initially empty, must wait for loaded state. No relation edits or code changes made.
+- [ ] Exhaustive tab navigation and title ownership correction not implemented; current ask is diagnosis.
+
 ## Current request: Every form input destination notes (2026-11-06)
 - [ ] Inventory all forms and trace each input and submit handler to actual storage, including nonpersistent inputs.
 - [ ] Read all existing form notes and saved bindings; identify missing, incomplete and manually verified records.
