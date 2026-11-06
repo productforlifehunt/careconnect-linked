@@ -86,6 +86,11 @@ export default function CareCircle() {
   // Without a group in the address, open the old ?group= one or the first of
   // mine, so the address always names the group on screen.
   useEffect(() => {
+    // Only on the bare list address: while leaving for another page this
+    // component can still see the new address and must not pull it back.
+    const bare = location.pathname.replace(/\/+$/, "");
+    if (bare !== base) return;
+    if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") !== base) return;
     if (pathGroup || groupsLoading) return;
     const target = legacyGroup || (!groupsFetching ? groups?.[0]?.id : null);
     if (!target) return;
@@ -93,7 +98,7 @@ export default function CareCircle() {
     rest.delete("group");
     const qs = rest.toString();
     navigate(`${groupHref(target)}${qs ? `?${qs}` : ""}`, { replace: true });
-  }, [pathGroup, legacyGroup, groupsLoading, groupsFetching, groups, searchParams, groupHref, navigate]);
+  }, [pathGroup, legacyGroup, groupsLoading, groupsFetching, groups, searchParams, groupHref, navigate, location.pathname, base]);
 
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [joinCodeOpen, setJoinCodeOpen] = useState(false);
