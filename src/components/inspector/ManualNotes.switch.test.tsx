@@ -26,6 +26,7 @@ it('a note shown for one element can never be saved onto the next selected eleme
   mocks.cached = false;
   view.rerender(<ManualNotes noteKey={CONTENT} scope="element" page="/cared-ones/46/notes" label="<span> 护理笔记1内容" />);
   await waitFor(() => expect(screen.getByText('读取失败', { exact: false })).toBeDefined());
+  console.log('DOM', document.body.textContent);
   expect(screen.queryByText(/#10531/)).toBeNull();
   fireEvent.change(screen.getByRole('textbox', { name: '' }) as HTMLElement, { target: { value: '写点东西' } });
   fireEvent.click(screen.getByRole('button', { name: '保存注释' }));
