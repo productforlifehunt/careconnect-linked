@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normaliseSitePath, siteInventory, siteTotals, splitSiteEvidence } from './site-analysis';
+import { normaliseSitePath, siteInventory, siteTotals, siteMarkdownReport, splitSiteEvidence } from './site-analysis';
 
 describe('whole-site inventory and evidence coverage', () => {
   it('keeps unbound routes, merges record instances, and includes page and element notes', () => {
@@ -31,6 +31,19 @@ describe('whole-site inventory and evidence coverage', () => {
     expect(siteTotals([], [{ page:'/', chunk:1, chunks:1, report }], 2).complete).toBe(false);
     expect(siteTotals([], [{ page:'/', chunk:1, chunks:1,error:'denied' }], 1).complete).toBe(false);
     expect(siteTotals([], [{ page:'/', chunk:1, chunks:1,report:{...report,findings:[{kind:'missing_evidence', title:'missing',noteIds:[],evidence:'missing code',verdict:'unknown',fix:'read code'}]} }], 1).complete).toBe(false);
-    expect(siteTotals([], [{ page:'/', chunk:1,chunks:1,report }],1).complete).toBe(true);
+    expect(siteTotals([{path:'/',files:[],noteIds:['1'],elementNotes:0,pageNotes:1}], [{ page:'/',noteId:'1', chunk:1,chunks:1,report }],1).complete).toBe(true);
+  });
+  it('does not claim complete when a root note has missing or duplicated source chunks', () => {
+    const pages = [{path:'/',files:[],noteIds:['1'],elementNotes:0,pageNotes:1}];
+    const report = {summary:'sample',comparedNoteIds:['1'],comparedCodeNoteIds:['1'],comparedPairs:[],codeCompared:true,findings:[]};
+    expect(siteTotals(pages,[{page:'/',noteId:'1',chunk:1,chunks:2,report}],1).complete).toBe(false);
+    expect(siteTotals(pages,[{page:'/',noteId:'1',chunk:1,chunks:2,report},{page:'/',noteId:'1',chunk:1,chunks:2,report}],2).complete).toBe(false);
+  });
+  it('downloadable report keeps evidence, verdict and unfinished-page status', () => {
+    const text = siteMarkdownReport([{path:'/inbox',files:[],noteIds:[],elementNotes:0,pageNotes:0}], [{page:'/group',noteId:'1',chunk:1,chunks:1,error:'403 denied'}],2);
+    expect(text).toContain('未完成，不能认定全站一致');
+    expect(text).toContain('## /inbox');
+    expect(text).toContain('尚未分析。');
+    expect(text).toContain('已返回 1/2');
   });
 });

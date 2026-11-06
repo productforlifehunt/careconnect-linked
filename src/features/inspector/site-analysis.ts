@@ -1,8 +1,7 @@
 import type { ConflictReport } from './conflict-report';
 
 export interface SiteBinding { key: string; id?: string | undefined; page?: string | undefined; source?: { file: string } | undefined; title?: string | undefined }
-export interface SitePage { path: string; files: string[]; noteIds: string[]; elementNotes: number; pageNotes: number }
-export interface SitePage { pageNoteIds?: string[] }
+export interface SitePage { path: string; files: string[]; noteIds: string[]; elementNotes: number; pageNotes: number; pageNoteIds?: string[] }
 export interface SiteResult { page: string; noteId?: string | undefined; chunk: number; chunks: number; report?: ConflictReport | undefined; error?: string | undefined }
 export const normaliseSitePath = (path: string) => {
   const [pathname, search = ''] = path.split('?');
@@ -51,5 +50,31 @@ export function splitSiteEvidence(sources: { file: string; text: string }[], max
 export function siteTotals(pages: SitePage[], results: SiteResult[], expected: number) {
   const completed = results.filter(r => r.report).length;
   const findings = results.flatMap(r => r.report?.findings || []);
-  return { pages: pages.length, processed: results.length, completed, expected, failures: results.filter(r => r.error).length, findings: findings.length, complete: expected > 0 && results.length === expected && completed === expected && !findings.some(f => f.kind === 'missing_evidence') };
+  const grouped = new Map<string, SiteResult[]>();
+  for (const result of results) { const key = `${result.page}|${result.noteId || 'unbound'}`; grouped.set(key, [...(grouped.get(key) || []), result]); }
+  const completeNotes = [...grouped.values()].filter(group => {
+    const first = group[0]; if (!first?.noteId) return false;
+    return group.length === first.chunks && new Set(group.map(r => r.chunk)).size === first.chunks && group.every(r => r.report && !r.error && !r.report.findings.some(f => f.kind === 'missing_evidence'));
+  }).length;
+  const boundNotes = pages.reduce((sum, page) => sum + page.noteIds.length, 0);
+  return { pages: pages.length, processed: results.length, completed, expected, completeNotes, boundNotes, failures: results.filter(r => r.error).length, findings: findings.length, complete: expected > 0 && results.length === expected && completed === expected && completeNotes === boundNotes && !findings.some(f => f.kind === 'missing_evidence') };
+}
+
+export function siteMarkdownReport(pages: SitePage[], results: SiteResult[], expected: number): string {
+  const totals = siteTotals(pages, results, expected);
+  const lines = ['# 全站读写冲突报告', `生成时间：${new Date().toISOString()}`, '', '范围：当前源代码、保存的整页与元素注释及各自直接 REL325 关联注释。不是逐页真实运行测试；未关联注释不作任意两两比较。', '', `页面范围 ${totals.pages}；已返回 ${totals.processed}/${totals.expected} 项；失败 ${totals.failures} 项；冲突或疑点 ${totals.findings} 项；证据完整的注释 ${totals.completeNotes}/${totals.boundNotes}。`, `完成状态：${totals.complete ? '本次静态核查范围已完成' : '未完成，不能认定全站一致'}`];
+  for (const page of pages) {
+    lines.push('', `## ${page.path}`, `整页绑定 ${page.pageNotes}；元素绑定 ${page.elementNotes}`);
+    const rows = results.filter(r => r.page === page.path);
+    if (!rows.length) lines.push('尚未分析。');
+    for (const row of rows) {
+      lines.push('', `### 注释 ${row.noteId ? `#${row.noteId}` : '未绑定'} · 代码分片 ${row.chunk}/${row.chunks}`);
+      if (row.error) lines.push(`未完成：${row.error}`);
+      if (row.report) {
+        lines.push(row.report.summary, `比对注释：${row.report.comparedNoteIds.map(id => `#${id}`).join('、')}；注释两两比较 ${row.report.comparedPairs.length} 组。`);
+        for (const [index, finding] of row.report.findings.entries()) lines.push('', `#### ${index + 1}. ${finding.title}（${finding.kind}）`, `涉及注释：${finding.noteIds.map(id => `#${id}`).join('、') || '无'}`, `证据：${finding.evidence}`, `判定：${finding.verdict}`, `建议：${finding.fix}`);
+      }
+    }
+  }
+  return lines.join('\n\n');
 }

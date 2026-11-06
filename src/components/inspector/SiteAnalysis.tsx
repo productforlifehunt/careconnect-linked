@@ -6,7 +6,7 @@ import { loadAllInspectorNotes } from '@/lib/inspector-notes.functions';
 import { analyzeSiteNote } from '@/lib/inspector-ai.functions';
 import { decodeNotes } from '@/features/inspector/notes-transport';
 import { discoverSitePages, buildSiteEvidence } from '@/features/inspector/site-evidence';
-import { siteTotals, type SitePage, type SiteResult } from '@/features/inspector/site-analysis';
+import { siteTotals, siteMarkdownReport, type SitePage, type SiteResult } from '@/features/inspector/site-analysis';
 import { ConflictReportView } from './ConflictReportView';
 import { readSource } from '@/features/inspector/live-index';
 
@@ -63,8 +63,8 @@ export function SiteAnalysis() {
     finally { setRunning(false); setPhase(stop.current ? '已停止；已返回结果保留' : '本轮处理已结束'); }
   };
   const download = () => {
-    const payload = JSON.stringify({ createdAt: new Date().toISOString(), scope: '全站源代码及保存注释；非真实运行测试。逐个根注释及全部直接REL325注释比较；非无关联全站注释任意两两比较。', totals, pages, results, remaining: work.current.slice(cursor.current).map(({ evidence: _evidence, ...task }) => task) }, null, 2);
-    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' })); const a = document.createElement('a'); a.href = url; a.download = '全站读写冲突报告.json'; a.click(); URL.revokeObjectURL(url);
+    const payload = siteMarkdownReport(pages, results, expected);
+    const url = URL.createObjectURL(new Blob([payload], { type: 'text/markdown;charset=utf-8' })); const a = document.createElement('a'); a.href = url; a.download = '全站读写冲突报告.md'; a.click(); URL.revokeObjectURL(url);
   };
   return <section className="space-y-3 text-xs">
     <div className="flex flex-wrap gap-2">
@@ -74,6 +74,7 @@ export function SiteAnalysis() {
       {results.length > 0 && <Button size="sm" variant="outline" onClick={download}><Download className="mr-1 h-4 w-4" />下载报告</Button>}
     </div>
     <p>全站 {totals.pages} 个页面范围；已返回 {totals.processed}/{totals.expected} 项，成功返回 {totals.completed} 项，失败 {totals.failures} 项，冲突或疑点 {totals.findings} 项。</p>
+    {expected > 0 && <p className={totals.complete ? 'text-foreground' : 'text-destructive'}>证据完整的注释 {totals.completeNotes}/{totals.boundNotes}；{totals.complete ? '本次静态核查范围已完成' : '未完成，不能认定全站一致'}。</p>}
     <p role="status">{phase}</p>
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <p className="text-muted-foreground">范围：全部页面代码、已绑定整页／元素注释及各自直接关联注释。未绑定页面、缺失代码和未实测状态列为未完成；无关联注释不作任意两两比较。逐项分析会产生 AI 费用。</p>
