@@ -30,7 +30,7 @@ export function InspectorGate() {
     return () => { clearInterval(t); window.removeEventListener("storage", check); inspectorNotesCache.reset(); };
   }, []);
   if (!researcher) return null;
-  if (!opened) return <div data-rw-inspector className="fixed right-2 top-16 z-[9999]">
+  if (!opened) return <div data-rw-inspector className="fixed right-2 top-16 z-[9999]" style={{ pointerEvents: "auto" }}>
     <Button size="sm" variant="outline" className="bg-background" onClick={() => { setInspectMode(true); setOpened(true); }}>
       <ScanSearch className="mr-1 h-3 w-3" />读写核对 / Inspect
     </Button>
