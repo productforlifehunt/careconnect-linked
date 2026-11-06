@@ -1,3 +1,10 @@
+## Current request: Every form input destination notes (2026-11-06)
+- [ ] Inventory all forms and trace each input and submit handler to actual storage, including nonpersistent inputs.
+- [ ] Read all existing form notes and saved bindings; identify missing, incomplete and manually verified records.
+- [ ] Complete unverified notes through /afresh GUI in numbered readable functional format; preserve existing correct text and verification state.
+- [ ] Add missing exact element associations without guessed source-line keys; refresh and read back each change.
+- [ ] Report exact note/form/association coverage and unresolved gaps, not sampled whole-site completion.
+
 ## Current request: AI, Inbox and Settings functional notes (2026-11-06)
 - [x] Rewrote both uploaded specifications and all four Settings-page tabs into three numbered, line-separated functional notes with purposes, data structure, field types and JetEngine parent/child directions. AI includes all seven uploaded entries plus inspector/overview/voice addendum; Inbox covers 16 uploaded cases and 26 source event families.
 - [x] Intended baseline and source-proven behavior/gaps are explicitly separated. Existing checked notes, app business code, business records and RELs were not modified. Live CCT324 form fields were inspected; other schema/channel deployment remains unverified.
