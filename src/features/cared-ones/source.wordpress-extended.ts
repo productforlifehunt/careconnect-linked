@@ -3,7 +3,8 @@ import { fetchWPUser, fetchWPUserProfile } from "@/features/shared/wp-users";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
-import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { dedupeRead, fetchRelChildrenMap, fetchRelChildrenOf } from "@/features/shared/rel-batch";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import {
   FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
   LOG_TYPE_AI as CAL_LOG_TYPE_AI, LOG_TYPE_HUMAN as CAL_LOG_TYPE_HUMAN,
@@ -398,21 +399,17 @@ const CHK_STATUS_LABEL: Record<string, string> = { b55: "checked", b56: "skipped
 
 export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   try {
-    const [checkins, logMap] = await Promise.all([
-      fetchCheckinsWordPress(caredOneId),
-      fetchRelChildrenMap(REL_CHECKIN_LOG),
-    ]);
+    const checkins = await fetchCheckinsWordPress(caredOneId);
     const nestedLogs = await Promise.all(checkins.map(async (checkin: any) => {
       try {
         const pid = String(normalizeWpObjectId(checkin.id));
-        const childIds = logMap.loaded
-          ? (logMap.get(pid) || []).map((c) => c.childId)
-          : ((await wordpressFetch<any[]>(`jet-rel/${REL_CHECKIN_LOG}/children/${pid}`)) || [])
-              .map((r: any) => String(r.child_object_id));
+        // Only this check-in's own logs: its REL191 children, then those rows in one IN read.
+        const childIds = (await fetchRelChildrenOf(REL_CHECKIN_LOG, pid)).map((c) => c.childId);
         if (!childIds.length) return [];
-        const logs = await Promise.all(childIds.map(async (childId) => {
+        const items = await readLinkedCCTRows(T.userLogEvent.slug, childIds);
+        const logs = await Promise.all(items.map(async (item: any) => {
+          const childId = String(item.id ?? item._ID);
           try {
-            const item = await wordpressCCTFetch<any>(T.userLogEvent.slug, { id: childId });
             const statusCode = String(item[F_LOGEVT.CHECK_TYPE] || "b55");
             return {
               id: String(item.id || item._ID || childId),

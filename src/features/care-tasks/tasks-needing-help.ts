@@ -58,8 +58,13 @@ function mapShared(t: any) {
 }
 
 /** Every task its owner shared out for help (a65 = b56 or b57). */
-export async function fetchHelpTasksWordPress(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined }): Promise<any[]> {
-  const rows = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 100 } });
+export async function fetchHelpTasksWordPress(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined; author?: number | undefined }): Promise<any[]> {
+  // WordPress returns only shared-out tasks (a65 IN needs-help/has-help), and only mine when asked.
+  const rows = await wordpressCCTFetch<any[]>(SLUG, { params: {
+    _limit: 100,
+    ...(filters?.author ? { cct_author_id: String(filters.author) } : {}),
+    _filters: JSON.stringify([{ field: F.TASK_HELP_STATUS, operator: "IN", value: [O.TASK_HELP_STATUS.TASK_NEEDS_HELP, O.TASK_HELP_STATUS.TASK_HAS_FOUND_HELP] }]),
+  } });
   if (!Array.isArray(rows)) throw new Error("Care tasks returned an invalid response");
   const shared = rows
     .filter((t: any) => {
@@ -89,7 +94,7 @@ export async function fetchMyHelpTasksWordPress(): Promise<any[]> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const me = Number(stored.user_id);
-  const all = await fetchHelpTasksWordPress();
+  const all = await fetchHelpTasksWordPress({ author: me });
   return all.filter((t: any) => numId(t.posted_by) === me);
 }
 

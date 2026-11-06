@@ -1,3 +1,4 @@
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 /**
  * Push notification tokens — JetEngine CCT 186 `users_notif_token`
  * Relation 189: users → user's notification token (1:M)
@@ -60,9 +61,7 @@ export async function fetchMyNotificationTokens(): Promise<NotificationToken[]> 
     if (!Array.isArray(links) || links.length === 0) return [];
     const ids = links.map((l: any) => String(l.child_object_id || "")).filter(Boolean);
     if (ids.length === 0) return [];
-    const all = await wordpressCCTFetch<any[]>(SLUG, { params: { _limit: 500 } });
-    const byId = new Map((Array.isArray(all) ? all : []).map((r: any) => [String(r.id ?? r._ID), r]));
-    const rows = ids.map((id) => byId.get(id)).filter(Boolean) as any[];
+    const rows = await readLinkedCCTRows(SLUG, ids);
     return filterAppScope("notificationToken", rows).map(decode);
 
   } catch {

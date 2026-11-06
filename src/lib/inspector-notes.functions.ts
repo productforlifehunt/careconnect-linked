@@ -22,6 +22,16 @@ export const loadAllInspectorNotes = createServerFn({ method: "POST" })
     try { return { compressedNotes: await encodeNotes(await readAllNotes()) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
   });
 
+/** Researcher-only: note picker search (names only, at most 60, searched on the WordPress side). */
+export const searchInspectorNotes = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ q: z.string().max(200), status: z.enum(["all", "verified", "unverified"]) }).parse(input))
+  .handler(async ({ data }) => {
+    const { verifyResearcher } = await import("./inspector-ai.server");
+    try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden", notes: [] }; }
+    const { searchNotes } = await import("./inspector-notes.server");
+    try { return { notes: await searchNotes(data.q, data.status) }; } catch (e) { return { error: e instanceof Error ? e.message : "搜索失败", notes: [] }; }
+  });
+
 /** Researcher-only: save (overwrite) the manual note for one element or page. */
 export const saveInspectorNote = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), id: z.string().regex(/^\d+$/).optional(), create: z.boolean().optional(), verified: z.boolean().optional(), text: z.string().max(100_000), source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input))

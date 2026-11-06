@@ -1,5 +1,5 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { fetchRelChildrenOf, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { R, T } from "@/integrations/wp-schema";
 
 /**
@@ -64,11 +64,10 @@ async function readComment(id: string): Promise<CommentRow> {
 /** Top-level comments of one parent plus their REL 142 replies (two levels). */
 export async function fetchCommentsWordPress(relationId: number, parentId: string): Promise<CommentRow[]> {
   assertCommentRelation(relationId);
-  const [top, replies] = await Promise.all([loadMap(relationId), loadMap(R.commentReplies)]);
-  const ids = (top.get(strip(parentId)) || []).map((c) => c.childId);
+  const ids = (await fetchRelChildrenOf(relationId, strip(parentId))).map((c) => c.childId);
   const comments = await Promise.all(ids.map(readComment));
   await Promise.all(comments.map(async (c) => {
-    const replyIds = (replies.get(c.id) || []).map((r) => r.childId);
+    const replyIds = (await fetchRelChildrenOf(R.commentReplies, c.id)).map((r) => r.childId);
     c.replies = (await Promise.all(replyIds.map(readComment))).sort((a, b) => a.created_at.localeCompare(b.created_at));
   }));
   return comments.sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -109,8 +108,7 @@ export async function updateCommentWordPress(id: string, content: string): Promi
 
 /** Deletes the comment and its REL 142 replies (the UI promises both). */
 export async function deleteCommentWordPress(id: string): Promise<void> {
-  const replies = await loadMap(R.commentReplies);
-  for (const r of replies.get(strip(id)) || []) {
+  for (const r of await fetchRelChildrenOf(R.commentReplies, strip(id))) {
     await wordpressCCTFetch(SLUG, { id: r.childId, method: "DELETE" });
   }
   await wordpressCCTFetch(SLUG, { id: strip(id), method: "DELETE" });

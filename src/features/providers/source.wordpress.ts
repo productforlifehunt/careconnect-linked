@@ -114,14 +114,9 @@ export interface ProviderFilters {
   serviceTypeSlugs?: string[] | undefined;
 }
 
-export async function fetchProvidersWordPress(filters?: ProviderFilters | undefined): Promise<Profile[]> {
-  try {
-    // Discovery is 100% dictionary-driven: CCT 258 (a59 is care provider,
-    // a60 provider is active) plus CCT 31 review aggregates. No WooCommerce
-    // and no Dokan calls happen before the buyer adds a service to the cart.
+/** Listed providers with their ratings — read once and shared; filters/sorting run on this list without re-downloading. */
+export async function fetchProviderDirectoryWordPress(): Promise<Profile[]> {
     const sourceProfiles = await fetchDictionaryProviderProfiles();
-
-    // Real rating aggregates from CCT 31 "Review" via relation 264.
     const ratingSummaries = new Map<string, { average: number | null; count: number }>();
     await Promise.all(
       sourceProfiles.map(async (p) => {
@@ -129,12 +124,20 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters | undefi
          ratingSummaries.set(uid, await fetchProviderRatingSummary(uid));
       }),
     );
-
-    let results: Profile[] = sourceProfiles.map((p) => {
+    return sourceProfiles.map((p) => {
       const numericId = String(p.id).replace(/^wp-/, "");
       const rating = ratingSummaries.get(numericId) || { average: null, count: 0 };
       return { ...p, rating_average: rating.average, rating_count: rating.count } as Profile;
     });
+}
+
+export async function fetchProvidersWordPress(filters?: ProviderFilters | undefined): Promise<Profile[]> {
+  return filterProviders(await fetchProviderDirectoryWordPress(), filters);
+}
+
+export function filterProviders(directory: Profile[], filters?: ProviderFilters | undefined): Profile[] {
+  try {
+    let results: Profile[] = [...directory];
     if (filters?.query) {
       const q = filters.query.toLowerCase();
       results = results.filter((p) => [p.full_name, p.user_name, p.bio, p.location, ...(p.specialty || [])].some((v) => String(v || "").toLowerCase().includes(q)));
@@ -188,7 +191,7 @@ export async function fetchProviderByIdWordPress(id: string): Promise<Profile | 
     // Profile page reads the same dictionary row as search (CCT 258), so the
     // card price and the profile price can never disagree, and no Dokan/Woo
     // store call happens before checkout.
-    const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { _limit: 200 } });
+    const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { cct_author_id: numericId, _limit: 20 } });
     const row = (Array.isArray(rows) ? rows : []).find(
       (r: any) => String(r.author_id || r.cct_author_id || r.user_id) === numericId,
     );

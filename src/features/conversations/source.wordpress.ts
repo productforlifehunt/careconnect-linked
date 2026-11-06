@@ -1,3 +1,4 @@
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
@@ -97,7 +98,7 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     // 2b) Fallback: scan chat_conversation CCT for sentinel chat_name
     const sentinel = `__group:${gid}`;
     try {
-      const all = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } });
+      const all = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 5, ...appScopeParams("chatConversation"), _filters: JSON.stringify([{ field: CF.CHAT_NAME, operator: "=", value: sentinel }]) } });
       const match = (Array.isArray(all) ? all : []).find(
         (c: any) => String(c[CF.CHAT_NAME] || "") === sentinel
       );
@@ -264,13 +265,44 @@ async function fetchLastMessageMap(): Promise<Map<string, LastMessage>> {
   return out;
 }
 
+/** The current user's own conversations only: REL137 parents of the user, then those rows by ID. */
+async function fetchMyConversationScope(myId: number) {
+  const parents = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/parents/${myId}`);
+  const ids = [...new Set((Array.isArray(parents) ? parents : []).map((r: any) => String(r.parent_object_id)).filter((v) => /^\d+$/.test(v)))];
+  const convos = filterAppScope("chatConversation", await readLinkedCCTRows(CONV, ids)).filter((c: any) => c[CF.CHAT_TYPE] !== CT.AI);
+  const members = new Map<string, number[]>();
+  const lastIds = new Map<string, string>();
+  await Promise.all(convos.map(async (c: any) => {
+    const id = String(c.id ?? c._ID);
+    const [m, msgs] = await Promise.all([
+      fetchConversationMemberIds(id),
+      wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${id}`).catch(() => []),
+    ]);
+    members.set(id, m);
+    // Newest message = highest row ID among this conversation's own messages.
+    const latest = (Array.isArray(msgs) ? msgs : []).map((r: any) => Number(r.child_object_id)).filter(Boolean).sort((a, b) => b - a)[0];
+    if (latest) lastIds.set(id, String(latest));
+  }));
+  const lastRows = await readLinkedCCTRows(MSG, [...lastIds.values()]);
+  const byMsg = new Map(lastRows.map((m: any) => [String(m.id ?? m._ID), m]));
+  const lastMessages = new Map<string, LastMessage>();
+  for (const [cid, mid] of lastIds) {
+    const best = byMsg.get(mid); if (!best) continue;
+    lastMessages.set(cid, { id: mid, sender_id: authorOf(best) ? `wp-${authorOf(best)}` : null, message_content: best[MF.CHAT_MESSAGE_TYPE] === MT.IMAGE ? "[Image]" : String(best[MF.CHAT_MESSAGE_CONTENT] || ""), created_at: best.created_at ?? best.cct_created ?? null });
+  }
+  return { convos, memberMap: { loaded: true, get: (id: string) => members.get(id) || [] }, lastMessages };
+}
+
 export async function fetchConversationsWordPress(currentUserId?: string | undefined): Promise<any[]> {
   try {
-    const [convos, memberMap, lastMessages] = await Promise.all([
-      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
-      fetchConversationMemberMap(),
-      fetchLastMessageMap(),
-    ]);
+    const mine = numId(currentUserId);
+    const [convos, memberMap, lastMessages] = mine
+      ? await fetchMyConversationScope(mine).then((r) => [r.convos, r.memberMap, r.lastMessages] as const)
+      : await Promise.all([
+          wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
+          fetchConversationMemberMap(),
+          fetchLastMessageMap(),
+        ]);
     if (!Array.isArray(convos)) return [];
     const myId = numId(currentUserId);
 
@@ -326,16 +358,9 @@ export async function fetchDirectMessagesWordPress(conversationId: string): Prom
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const messageIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
-    const bulk = messageIds.length <= 5
-      ? []
-      : await wordpressCCTFetch<any[]>(MSG, { params: { _limit: 500, _orderby: "cct_created", _order: "desc" } });
+    // Only this conversation's own message rows, by ID (JetEngine IN filter) — never the global message table.
     const byId = new Map<string, any>();
-    for (const m of Array.isArray(bulk) ? bulk : []) byId.set(String(m.id ?? m._ID), m);
-    const missing = messageIds.filter((id) => !byId.has(id));
-    const fetched = await Promise.all(
-      missing.map((mid) => wordpressCCTFetch<any>(MSG, { id: mid })),
-    );
-    for (const m of fetched) if (m) byId.set(String(m.id ?? m._ID), m);
+    for (const m of await readLinkedCCTRows(MSG, messageIds)) byId.set(String(m.id ?? m._ID), m);
     const msgs = messageIds.map((id) => byId.get(id)).filter(Boolean);
 
     return (msgs.filter(Boolean) as any[])
@@ -425,15 +450,16 @@ export async function startConversationWordPress(
 
   // Find existing direct conversation containing both members
   try {
-    const [convos, memberMap] = await Promise.all([
-      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } }),
-      fetchConversationMemberMap(),
-    ]);
-    if (Array.isArray(convos)) {
+    // Conversations both people are in (REL137 parents of each), then only those rows.
+    const parentsOf = async (u: number) => new Set(((await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/parents/${u}`)) || []).map((r: any) => String(r.parent_object_id)));
+    const [mine, theirs] = await Promise.all([parentsOf(me), parentsOf(other)]);
+    const shared = [...mine].filter((id) => theirs.has(id));
+    const convos = filterAppScope("chatConversation", await readLinkedCCTRows(CONV, shared));
+    {
       for (const c of convos) {
         if (c[CF.CHAT_TYPE] && c[CF.CHAT_TYPE] !== CT.ONE_TO_ONE) continue;
         const cid = String(c.id || c._ID);
-        const memberIds = memberMap.loaded ? (memberMap.get(cid) || []) : await fetchConversationMemberIds(cid);
+        const memberIds = await fetchConversationMemberIds(cid);
         if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
           return cid;
         }
