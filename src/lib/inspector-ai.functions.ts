@@ -34,7 +34,19 @@ export const explainReadWrite = createServerFn({ method: "POST" })
         relatedNotesREL325: [...new Map(related.map(r => [r.id, r])).values()].map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })),
       })));
     } catch (error) { return { error: `手动注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
-    const result = await explainInspection(`CCT324_MANUAL_NOTES (claims to verify, related notes read fresh; draft if indicated):\n${notes}\n\nEVIDENCE:\n${data.context}`, data.mode, undefined, noteIds, true);
+    let runtime: { page?: string | undefined };
+    try { runtime = z.object({ page: z.string().min(1).optional() }).parse(JSON.parse(data.context)); }
+    catch { return { error: '无法确定实际页面，三方核对未执行。', status: 422 }; }
+    if (!runtime.page) return { error: '缺少页面位置，不能仅核对笔记。', status: 422 };
+    const { readInspectionSource } = await import('./inspector-source.server');
+    const { formatSourceEvidence } = await import('@/features/inspector/source-evidence');
+    const source = await readInspectionSource({ page: runtime.page });
+    if (!source.files.length) return { error: source.omissions.join('；'), status: 422 };
+    const actualCode = formatSourceEvidence(source);
+    const result = await explainInspection(`SERVER_READ_ACTUAL_SOURCE (deployment source, not a UI summary):\n${actualCode}\nSOURCE_OMISSIONS:\n${JSON.stringify(source.omissions)}\n\nCCT324_MANUAL_NOTES (claims to verify, related notes read fresh; draft if indicated):\n${notes}\n\nEVIDENCE:\n${data.context}`, data.mode, undefined, noteIds, true);
+    if (result.report && source.omissions.length) {
+      for (const omission of source.omissions) result.report.findings.push({ kind: 'missing_evidence', title: '实际代码证据缺失', noteIds: [], evidence: omission, verdict: '三方核对不完整，不能认定一致', fix: '补齐实际代码依赖后重新分析，不修改已核对笔记。' });
+    }
     return result.report ? { ...result, report: attachCorrectionNotes(result.report, originals) } : result;
   });
 

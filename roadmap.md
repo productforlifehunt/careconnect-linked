@@ -1,3 +1,9 @@
+## Current request: Actual-source three-way analysis (2026-11-06)
+- [x] Ensure preview and published page/element/manual analysis resolve and read actual current source and imported read/write helpers, without relying on preview source markers.
+- [x] Require server-read actual-code evidence; compare functional logic as the baseline against code and manual notes, with separate manual-only correction proposals; no notes-only fallback in the visible related-note action.
+- [x] 76/76 inspector tests passed, including actual medicine/tips route-source traversal and authenticated handler inputs. Browser removed all source markers: actual route still matched and full frontend/helper source loaded; zero page errors. This is source discovery, not a real researcher AI generation or live published deployment check.
+- [ ] Real researcher AI click and actual published-site execution remain unverified; no authorized researcher session available in this sandbox. No production notes, relations or app business logic changed.
+
 ## Current request: Editable conflict suggestions (2026-11-06)
 - [x] Add full replacement note drafts with exact targets and functional-logic reference; prompt requires alternatives when actual code conflicts with functional logic. Shared report renderer exposes suggestions in all four existing analysis entry points.
 - [x] Allow manual edit and explicit confirmation to update exact existing CCT324 record; preserve verification and bindings, reject stale records and unknown model targets. Code proposals are editable/downloadable manual-only plans, never written to CCT324 or executed.

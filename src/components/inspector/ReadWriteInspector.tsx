@@ -342,20 +342,7 @@ export default function ReadWriteInspector() {
   const elementAliasKey = info ? elementAlias(pathname, info.components, info.tag, info.itemSlot) : "";
   const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();
-  const fitContext = (o: any): string => {
-    o.evidenceOmissions = [];
-    let out = JSON.stringify(o);
-    const cuts: Array<() => void> = [
-      () => { o.codeRefs = (o.codeRefs || []).slice(0, 30); },
-      () => { o.otherPageReads = (o.otherPageReads || []).map((r: any) => ({ ...r, rowSample: r.rowSample?.slice(0, 120) })); },
-      () => { o.liveRequests = (o.liveRequests || []).map((r: any) => ({ ...r, rowSample: r.rowSample?.slice(0, 400) })); },
-      () => { o.otherPageReads = (o.otherPageReads || []).slice(0, 40).map((r: any) => ({ target: r.target, endpoint: r.endpoint, returnedRows: r.returnedRows, callers: r.callers })); },
-      () => { o.codeRefs = []; },
-      () => { if (o.element) o.element.decisionLogic = (o.element.decisionLogic || []).map((d: any) => ({ ...d, code: String(d.code).slice(0, 600) })); },
-    ];
-    for (const [i, cut] of cuts.entries()) { if (out.length <= 58_000) break; cut(); o.evidenceOmissions.push(`容量限制：第${i + 1}级代码或数据样本缩减，不能认定完整一致`); out = JSON.stringify(o); }
-    return out;
-  };
+  const fitContext = (value: unknown): string => JSON.stringify(value);
   // The app's own cached query results for the hooks this element's logic calls (queryKey: ["inboxCounts"] …):
   // the exact values the screen computed from, so counts like "5" can be re-added from real data.
   const cachedResults = useCallback(() => {
@@ -365,7 +352,7 @@ export default function ReadWriteInspector() {
       return { queryKey: q.queryKey, status: q.state.status, length: Array.isArray(d) ? d.length : undefined, value: JSON.stringify(d ?? null, (_k, v) => v instanceof Map ? Object.fromEntries(v) : v instanceof Set ? [...v] : v).slice(0, 1500), size: d instanceof Map || d instanceof Set ? d.size : undefined };
     });
   }, [queryClient, logic]);
-  // The AI input is capped at 60k characters: shrink the least specific evidence first instead of cutting the JSON mid-way.
+  // Server re-reads full actual source for this page in preview and published builds; no evidence cap.
   const elementContext = useCallback(() => fitContext({
     manualNotes: { element: notes.element || null, page: notes.page || null },
     deterministicSummary: ((narrRef.current?.innerText || "") + "\n" + (summaryRef.current?.innerText || "")).slice(0, 7000) || null,
@@ -374,7 +361,7 @@ export default function ReadWriteInspector() {
     // Dictionary column names and option meanings for every table this element really read (b55 → "accepted").
     dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, fieldTypes: t.cct ? Object.fromEntries(Object.values(t.cct.f || {}).map((c) => [c, fieldType(t.cct, c) || "?"])) : undefined, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     page: path, uiLanguage: document.documentElement.lang || navigator.language, element: info && { tag: info.tag, text: info.text, sources: info.sources, components: info.components, link: info.link, handlers: info.handlers, shownValueExpression: logic ? decidingExpression(logic, info.text) : null,
-      decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), pageValueMatches: (info?.matches || []).slice(0, 12).map((m) => ({ related: realMatches.includes(m), sameCard: !!m.sameCard, target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, value: m.value, chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text) })), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
+      anchor: info.anchor, decisionLogic: (logic || []).map((st) => ({ title: st.title, at: `${st.file}:${st.line}`, code: st.code.join("\n"), fallbackLines: st.fallbacks.map((j) => st.line + j) })), props: info.props, unrelatedSameText: strayMatches.map((m) => m.target.label + " #" + m.row), pageValueMatches: (info?.matches || []).slice(0, 12).map((m) => ({ related: realMatches.includes(m), sameCard: !!m.sameCard, target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, value: m.value, chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text) })), fieldMatches: realMatches.map((m) => ({ chain: traceRow(m.row, m.request, pageRequests, path).map((x) => x.text), target: m.target.label, row: m.row, field: m.field, fieldName: m.fieldName, option: m.option, value: m.value })) },
     // Reads elsewhere on the page, not yet proven to feed this element; usable only when the element's code calls that fetch.
     otherPageReads: pageRequests.filter((r) => !relatedRequests.includes(r)).slice(0, 100).map((r) => ({ target: decodeEndpoint(r.method, r.endpoint).label, endpoint: r.endpoint, returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 300), callers: (r.callers || []).slice(0, 2) })),
     liveRequests: relatedRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), returnedRows: r.rows === undefined ? "not loaded" : Array.isArray(r.rows) ? r.rows.length : 1, rowSample: r.rows === undefined ? undefined : JSON.stringify(r.rows).slice(0, 800), callers: r.callers })),
@@ -442,11 +429,11 @@ export default function ReadWriteInspector() {
                 <section className="space-y-1 text-xs">
                   <div className="font-medium">元素 / Element: &lt;{info.tag}&gt; {info.text && <span className="text-muted-foreground">“{info.text.slice(0, 80)}”</span>}</div>
                   <div>组件 / Components: {info.components.join(" ← ") || "未识别 / unknown"}</div>
-                  <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
+                  <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "分析时从当前页面代码读取 / Resolved from deployment source during analysis"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
-                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, legacyKey, `page|${pathname}`]} /></div>
-                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} legacyKey={legacyKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!logic && !!closure} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!info} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, legacyKey, `page|${pathname}`]} /></div>
+                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} legacyKey={legacyKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!info} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
                 <section className="space-y-1" ref={summaryRef}>
@@ -493,7 +480,7 @@ export default function ReadWriteInspector() {
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={pageNarrRef}><ReadWriteNarrative scope="page" matches={[]} requests={pageRequests} refs={pageRefs} /></div>
                 <section className="space-y-1"><div className="text-xs font-medium">本页实际读写 / Live reads and writes on this page ({pageRequests.length})</div><RequestList requests={pageRequests} /></section>
-                <section className="space-y-1 text-xs"><div className="font-medium">本页用到的源文件 / Source files on this page ({pageFiles.length})</div><div className="break-all font-mono text-[10px] text-muted-foreground">{pageFiles.join(" · ") || "仅预览版可见 / only in the preview build"}</div></section>
+                <section className="space-y-1 text-xs"><div className="font-medium">本页用到的源文件 / Source files on this page ({pageFiles.length})</div><div className="break-all font-mono text-[10px] text-muted-foreground">{pageFiles.join(" · ") || "分析时从当前页面代码读取 / Resolved from deployment source during analysis"}</div></section>
                 <section><RefList refs={pageRefs} /></section>
                 </div>
               </>
