@@ -381,7 +381,7 @@ export default function ReadWriteInspector() {
 
   return (
     <div data-rw-inspector style={{ pointerEvents: "auto" }}>
-      {!on && <button type="button" onClick={toggle}
+      {!on && <button type="button" onClick={toggle} data-rw-inspector style={{ pointerEvents: "auto" }}
         className={`fixed right-3 top-16 z-[10000] flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium shadow-md ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
         <ScanSearch className="h-4 w-4" />读写核对 / Inspect
       </button>}
