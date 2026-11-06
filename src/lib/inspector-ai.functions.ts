@@ -34,7 +34,7 @@ export const explainReadWrite = createServerFn({ method: "POST" })
         relatedNotesREL325: [...new Map(related.map(r => [r.id, r])).values()].map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })),
       })));
     } catch (error) { return { error: `手动注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
-    let runtime: { page?: string };
+    let runtime: { page?: string | undefined };
     try { runtime = z.object({ page: z.string().min(1).optional() }).parse(JSON.parse(data.context)); }
     catch { return { error: '无法确定实际页面，三方核对未执行。', status: 422 }; }
     if (!runtime.page) return { error: '缺少页面位置，不能仅核对笔记。', status: 422 };
