@@ -283,44 +283,39 @@ export async function fetchMedicineLogsWordPress(medicineId: string): Promise<an
   return rows.filter(Boolean).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
+/** One schedule's own dose logs: its REL children, then those rows in one IN read — never the whole relation. */
+async function scheduleLogs(mid: string): Promise<any[]> {
+  const ids = (await fetchRelChildrenOf(REL_SCHEDULE_LOG, mid)).map((c) => c.childId);
+  const rows = await readLinkedCCTRows(LOG.slug, ids);
+  return rows.filter(isMedicineLogRow).map((l: any) => mapLog(l, mid, String(l.id ?? l._ID)));
+}
+
 /** All dose logs for every medicine schedule of this cared one, newest first. */
 export async function fetchAllMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
-  const [rows, logMap] = await Promise.all([
+  const [rows] = await Promise.all([
     fetchScheduleRows(caredOneId),
-    fetchRelChildrenMap(REL_SCHEDULE_LOG),
   ]);
   if (rows.length === 0) return [];
   const out: any[] = [];
   await Promise.all(rows.map(async (row: any) => {
     const mid = String(row.id || row._ID);
     const medName = row[FC.TITLE] || "";
-    const logs = logMap.loaded
-      ? (await Promise.all((logMap.get(mid) || []).map(async (c) => {
-          const l = await wordpressCCTFetch<any>(LOG.slug, { id: c.childId });
-          return isMedicineLogRow(l) ? mapLog(l, mid, c.childId) : null;
-        }))).filter(Boolean)
-      : await fetchMedicineLogsWordPress(mid);
+    const logs = await scheduleLogs(mid);
     logs.forEach((l: any) => out.push({ ...l, med_name: medName }));
   }));
   return out.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export async function fetchTodayMedicineLogsWordPress(caredOneId: string): Promise<any[]> {
-  const [rows, logMap] = await Promise.all([
+  const [rows] = await Promise.all([
     fetchScheduleRows(caredOneId),
-    fetchRelChildrenMap(REL_SCHEDULE_LOG),
   ]);
   if (rows.length === 0) return [];
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const out: any[] = [];
   await Promise.all(rows.map(async (row: any) => {
     const mid = String(row.id || row._ID);
-    const logs = logMap.loaded
-      ? (await Promise.all((logMap.get(mid) || []).map(async (c) => {
-          const l = await wordpressCCTFetch<any>(LOG.slug, { id: c.childId });
-          return isMedicineLogRow(l) ? mapLog(l, mid, c.childId) : null;
-        }))).filter(Boolean)
-      : await fetchMedicineLogsWordPress(mid);
+    const logs = await scheduleLogs(mid);
     // A log belongs to the day of the dose it answers (a88); a61 only when a88 is empty.
     const day = localDay();
     logs.forEach((l: any) => {
