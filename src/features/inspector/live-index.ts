@@ -3,14 +3,14 @@
  * current source files (no stored index, no cache), so the "what this code
  * reads/writes" view always matches the code as it is right now.
  */
-const LOADERS = import.meta.glob(["/src/**/*.{ts,tsx}", "!/src/routeTree.gen.ts", "!/src/integrations/wp-schema.ts", "!/src/features/inspector/**", "!/src/integrations/supabase/**", "!/src/**/*.test.{ts,tsx}"], { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
-const FILES = new Set(Object.keys(LOADERS).map((k) => k.replace(/^\/src\//, "")));
+const LOADERS = import.meta.glob(["/src/**/*.{ts,tsx}", "/supabase/functions/_shared/ai-prompts.ts", "!/src/routeTree.gen.ts", "!/src/integrations/wp-schema.ts", "!/src/features/inspector/**", "!/src/integrations/supabase/**", "!/src/**/*.test.{ts,tsx}"], { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
+const FILES = new Set(Object.keys(LOADERS).map((k) => k.replace(/^\/src\//, "").replace(/^\//, "")));
 
 export type LiveRef = [kind: string, key: string, method: string, line: number];
 export interface LiveEntry { i: string[]; r: LiveRef[] }
 
 export async function readSource(file: string): Promise<string | null> {
-  const key = `/src/${file}`;
+  const key = file.startsWith('supabase/') ? `/${file}` : `/src/${file}`;
   if (!LOADERS[key]) return null;
   if (import.meta.env.DEV) {
     // Bypass every cache: ask the dev server for the file as it is on disk now.

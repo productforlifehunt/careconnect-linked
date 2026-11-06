@@ -46,6 +46,7 @@ export async function gatherSourceEvidence(roots: string[], read: (file: string)
             const spec = match[1] || match[2];
             if (spec && /^(?:@\/|\.)/.test(spec) && !resolveImport(file, spec)
               && spec !== '@/integrations/wp-schema'
+              && !/features\/inspector\//.test(spec)
               && !/integrations\/supabase\//.test(spec)
               && !/\.(?:css|json|jpg|jpeg|png|webp|svg|woff2?)$/.test(spec)) {
               omissions.push(`未解析实际代码依赖：${file} → ${spec}`);

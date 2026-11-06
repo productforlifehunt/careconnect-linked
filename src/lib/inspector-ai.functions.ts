@@ -35,7 +35,7 @@ export const explainReadWrite = createServerFn({ method: "POST" })
       })));
     } catch (error) { return { error: `手动注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     let runtime: { page?: string };
-    try { runtime = JSON.parse(data.context); }
+    try { runtime = z.object({ page: z.string().min(1).optional() }).parse(JSON.parse(data.context)); }
     catch { return { error: '无法确定实际页面，三方核对未执行。', status: 422 }; }
     if (!runtime.page) return { error: '缺少页面位置，不能仅核对笔记。', status: 422 };
     const { readInspectionSource } = await import('./inspector-source.server');
