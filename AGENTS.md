@@ -42,3 +42,4 @@
 - The researcher read-write inspector (src/components/inspector, src/features/inspector) only observes: it records requests in wordpress-client (holding back every non-GET there while inspect mode is on) and only observes other fetches (store operations, app server functions by export/action), and its AI explanation server function re-verifies the researcher WP token; code references are re-read from current source on every click (no stored index), because a saved map drifts from the code.
 - Inspector notes: CCT324 body; private position config, not RELs; note↔note via REL325 (M:N, 数据字典 parent). Researcher-gated.
 - Emergency toggle uses shared flags to prevent permission drift.
+- WordPress runs on a 2-core server: polls stay at 15 s or slower and bulk reads use a few large parallel pages, because each WordPress request costs ~0.2 s of server CPU plus a long network round trip.
