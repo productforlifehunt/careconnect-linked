@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { streamChatCompletion, GatewayError } from '@lovable.dev/ai-gateway';
 import { CONFLICT_INSTRUCTIONS } from '@/features/inspector/conflict-prompt';
 import { validateConflictReport, type ConflictReport } from '@/features/inspector/conflict-report';
@@ -27,7 +28,7 @@ export async function explainInspection(context: string, _mode: "full" | "origin
     }
     if (!text.trim()) return { error: 'AI 没有返回内容，核查未完成。', status: 422 };
     try { return { report: validateConflictReport(text, noteIds, requireCode) }; }
-    catch { return { error: 'AI 返回的核查报告不完整或格式错误，不能认定一致；请重新分析。', status: 422 }; }
+    catch (e) { console.error('[inspector] report rejected', e, text.slice(0, 2000)); return { error: `AI 返回的核查报告格式错误，不能认定一致；请重新分析。原因：${e instanceof z.ZodError ? e.issues.slice(0, 3).map(i => `${i.path.join('.')} ${i.message}`).join('；') : e instanceof Error ? e.message : String(e)}`, status: 422 }; }
   } catch (error) {
     if (error instanceof GatewayError) return { error: error.message, status: error.httpStatus || 502 };
     return { error: error instanceof Error ? error.message : 'AI 分析暂不可用，核查未完成。', status: 502 };

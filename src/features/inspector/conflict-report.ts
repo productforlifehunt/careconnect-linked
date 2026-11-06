@@ -30,13 +30,18 @@ export type ConflictReport = z.infer<typeof conflictReportSchema>;
 /** A clean verdict requires complete pairwise and code coverage, never a percentage guess. */
 export function validateConflictReport(text: string, ids: string[], requireCode: boolean): ConflictReport {
   const json = text.trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
-  const report = conflictReportSchema.parse(JSON.parse(json));
+  const report = conflictReportSchema.parse(normalizeIds(JSON.parse(json)));
   const unique = [...new Set(ids)];
-  for (const finding of report.findings) for (const suggestion of finding.suggestions || []) {
-    if (suggestion.basisNoteIds.some(id => !unique.includes(id))) throw new Error('建议引用了未读取的笔记');
-    if (suggestion.target === 'code') {
-      if (suggestion.noteId !== null) throw new Error('代码建议不能指向笔记保存');
-    } else if (!suggestion.noteId || !unique.includes(suggestion.noteId) || !suggestion.title.trim()) throw new Error('建议目标不是本次核查的笔记');
+  const rejected: string[] = [];
+  for (const finding of report.findings) {
+    finding.suggestions = (finding.suggestions || []).filter(suggestion => {
+      let why = '';
+      if (suggestion.basisNoteIds.some(id => !unique.includes(id))) why = '引用了未读取的笔记';
+      else if (suggestion.target === 'code') { if (suggestion.noteId !== null) why = '代码建议指向了笔记'; }
+      else if (!suggestion.noteId || !unique.includes(suggestion.noteId) || !suggestion.title.trim()) why = '目标不是本次核查的笔记';
+      if (why) rejected.push(`「${finding.title}」的修改建议被拒绝：${why}`);
+      return !why;
+    });
   }
   const missing: string[] = unique.filter(id => !report.comparedNoteIds.includes(id)).map(id => `注释 #${id} 未完成比对`);
   if (unique.length === 0) missing.push('没有绑定注释，无法核对注释与代码');
@@ -48,7 +53,22 @@ export function validateConflictReport(text: string, ids: string[], requireCode:
       if (!report.comparedPairs.some(pair => pair.includes(a) && pair.includes(b))) missing.push(`注释 #${a} 与 #${b} 未完成逐对比对`);
     }
   }
+  for (const evidence of rejected) report.findings.push({ kind: 'missing_evidence', title: '修改建议无效', noteIds: [], evidence, verdict: '该建议未采用', fix: '重新分析以获取有效建议。' });
   if (requireCode && !report.codeCompared) missing.push('实际代码证据未完成比对');
   for (const evidence of missing) report.findings.push({ kind: 'missing_evidence', title: '核查不完整', noteIds: [], evidence, verdict: '证据不足，不能认定一致', fix: '补齐证据并重新分析；不要修改已核对注释。' });
   return report;
+}
+/** Models often write ids as numbers or "#6858" / "CCT324 #6858"; reduce to bare digit strings. */
+const ID_KEYS = new Set(['comparedNoteIds', 'comparedCodeNoteIds', 'noteIds', 'basisNoteIds', 'comparedPairs', 'noteId', 'id']);
+function cleanId(v: unknown): unknown {
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'string') { const m = v.match(/(\d+)\s*$/); return m ? m[1] : v; }
+  if (Array.isArray(v)) return v.map(cleanId);
+  return v;
+}
+function normalizeIds(v: unknown, key = ''): unknown {
+  if (ID_KEYS.has(key) && v !== null) return cleanId(v);
+  if (Array.isArray(v)) return v.map(x => normalizeIds(x, key === 'findings' || key === 'suggestions' || key === 'notes' ? '' : key));
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, normalizeIds(x, k)]));
+  return v;
 }
