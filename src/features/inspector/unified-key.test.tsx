@@ -34,7 +34,7 @@ describe("one element identity for editor preview and published site", () => {
     const pubKeys = [...pub.host.querySelectorAll("p")].map(pub.key);
     expect(devKeys).toEqual(pubKeys);
     for (const k of devKeys) expect(k).not.toMatch(/\.tsx|:\d+/);
-    expect(devKeys[0]).toBe("el|/care-circle/:id|StatCard<GroupHome|@button[Pending Tasks]>p0");
+    expect(devKeys[0]).toBe("el|/care-circle/:id|StatCard<GroupHome|@div0>section0>button[Pending Tasks]>p0");
     dev.done(); pub.done();
   });
   it("the three stat cards keep three different keys", async () => {
