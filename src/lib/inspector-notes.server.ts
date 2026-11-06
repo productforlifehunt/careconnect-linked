@@ -92,6 +92,18 @@ async function bindingIndex(): Promise<NoteBinding[]> {
   indexCache = { at: Date.now(), list };
   return list;
 }
+/** Picker search done by WordPress itself (name LIKE each word, or exact number): returns at most 60 names, never note bodies. */
+export async function searchNotes(q: string, status: 'all' | 'verified' | 'unverified'): Promise<{ id: string; title: string; verified: boolean }[]> {
+  const words = q.trim().replace(/^#/, '').split(/\s+/).filter(Boolean).slice(0, 6);
+  const filters: { field: string; operator: string; value: string }[] = [];
+  if (words.length === 1 && /^\d+$/.test(words[0]!)) filters.push({ field: '_ID', operator: '=', value: words[0]! });
+  else for (const w of words) filters.push({ field: 'a55', operator: 'LIKE', value: w });
+  if (status !== 'all') filters.push({ field: 'a58', operator: '=', value: status === 'verified' ? 'b55' : 'b56' });
+  const qs = `?_limit=60&_orderby=_ID&_order=desc${filters.length ? `&_filters=${encodeURIComponent(JSON.stringify(filters))}` : ''}`;
+  const rows = await wp(qs) as CCTRow[];
+  if (!Array.isArray(rows)) return [];
+  return rows.map(r => ({ id: String(r._ID), title: r.a55 || '', verified: r.a58 === 'b55' }));
+}
 export async function readNoteForKey(key: string): Promise<InspectorNote | null> {
   const { routePattern } = await import('@/features/inspector/route-key');
   let binding = await override(key);
