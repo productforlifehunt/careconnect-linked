@@ -1,3 +1,8 @@
+## Current request: One-click whole-site analysis (2026-11-06)
+- [ ] Add all-route inventory plus saved page/element bindings, deduplicate record paths, and analyse current source against each root note and its direct REL325 notes.
+- [ ] Show live page-by-page progress, red conflicts/suspicions, exact incomplete coverage, stop/resume, and downloadable report; never modify notes or verification flags.
+- [ ] Test inventory, batching/coverage and report controls; verify real researcher boundary and report exact live-page checks.
+
 ## Current request: Inspector exhaustive conflict analysis (2026-11-06)
 - [x] Compare actual code against the current manual note and every related note, and compare all note pairs; red findings include suspicion, redundant logic, fallback, compatibility and missing evidence. Validate per-note code coverage and all unordered note pairs; retain GPT-6 Luna.
 - [x] Manual-tab action compares current unsaved title/text with freshly read related notes and current element/page evidence; no save or verified-status change. Component flow test passes, stale draft results clear.
