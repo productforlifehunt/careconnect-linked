@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Keep real component names in the published build: the inspector finds saved notes by them,
+  // and minified names change on every publish.
+  vite: { build: { rolldownOptions: { output: { keepNames: true } } } },
 });

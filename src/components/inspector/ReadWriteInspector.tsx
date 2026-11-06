@@ -8,6 +8,7 @@ import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspec
 import { decodeEndpoint, codeRefs, fieldName, fieldType, optionName, relById, cctBySlug, type CodeRef } from "@/features/inspector/decode";
 import { ReadWriteNarrative } from "./ReadWriteNarrative";
 import { ManualNotes } from "./ManualNotes";
+import { elementAlias } from "@/features/inspector/route-key";
 import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
