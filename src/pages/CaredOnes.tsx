@@ -1,6 +1,7 @@
 import { maskEmail } from "@/lib/utils";
 import { PageSkeleton } from "@/components/PageSkeleton";
-import { useState, useMemo } from "react";
+import { Suspense, useState, useMemo } from "react";
+import { lazyRetry } from '@/lib/lazy-retry';
 import { useSearchParams, useParams, useNavigate } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,24 +30,29 @@ import {
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
-import LocationCard from "@/components/care/LocationCard";
 import { useTranslation } from "react-i18next";
 import { getStoredWPUser } from "@/services/wp-auth";
 
-import { MedicineCard } from "@/components/cared-ones/MedicineCard";
-import { CheckInCard } from "@/components/cared-ones/CheckInCard";
-import { TipsCard } from "@/components/cared-ones/TipsCard";
-import { CareTasksCard } from "@/components/cared-ones/CareTasksCard";
-import { CarePlanCard } from "@/components/cared-ones/CarePlanCard";
-import { NotesCard } from "@/components/cared-ones/NotesCard";
-import { EmergencyCard } from "@/components/cared-ones/EmergencyCard";
-import { DocumentsCard } from "@/components/cared-ones/DocumentsCard";
 import { EmergencyShareSetting } from "@/components/cared-ones/EmergencyShareSetting";
-import { InformationCardCard } from "@/components/cared-ones/InformationCardCard";
-import { FamilyVoiceCard } from "@/components/cared-ones/FamilyVoiceCard";
 import { pendingCareTasks } from "@/features/care-tasks/pending";
 
-function FeatureDetail({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
+const MedicineCard = lazyRetry(() => import('@/components/cared-ones/MedicineCard').then(m => ({ default: m.MedicineCard })), 'MedicineCard');
+const CheckInCard = lazyRetry(() => import('@/components/cared-ones/CheckInCard').then(m => ({ default: m.CheckInCard })), 'CheckInCard');
+const TipsCard = lazyRetry(() => import('@/components/cared-ones/TipsCard').then(m => ({ default: m.TipsCard })), 'TipsCard');
+const CareTasksCard = lazyRetry(() => import('@/components/cared-ones/CareTasksCard').then(m => ({ default: m.CareTasksCard })), 'CareTasksCard');
+const CarePlanCard = lazyRetry(() => import('@/components/cared-ones/CarePlanCard').then(m => ({ default: m.CarePlanCard })), 'CarePlanCard');
+const NotesCard = lazyRetry(() => import('@/components/cared-ones/NotesCard').then(m => ({ default: m.NotesCard })), 'NotesCard');
+const EmergencyCard = lazyRetry(() => import('@/components/cared-ones/EmergencyCard').then(m => ({ default: m.EmergencyCard })), 'EmergencyCard');
+const DocumentsCard = lazyRetry(() => import('@/components/cared-ones/DocumentsCard').then(m => ({ default: m.DocumentsCard })), 'DocumentsCard');
+const InformationCardCard = lazyRetry(() => import('@/components/cared-ones/InformationCardCard').then(m => ({ default: m.InformationCardCard })), 'InformationCardCard');
+const FamilyVoiceCard = lazyRetry(() => import('@/components/cared-ones/FamilyVoiceCard').then(m => ({ default: m.FamilyVoiceCard })), 'FamilyVoiceCard');
+const LocationCard = lazyRetry(() => import('@/components/care/LocationCard'), 'LocationCard');
+
+function FeatureDetail(props: { cardKey: string; caredOneId: string; caredOneName: string }) {
+  return <Suspense fallback={<PageSkeleton />}><FeatureContent {...props} /></Suspense>;
+}
+
+function FeatureContent({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
     case "medicine": return <MedicineCard caredOneId={caredOneId} />;
     case "checkin":
