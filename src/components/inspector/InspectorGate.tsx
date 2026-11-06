@@ -22,8 +22,8 @@ export function InspectorGate() {
       if (inside(e.target) || (e.type === "focusout" && inside(rel))) e.stopImmediatePropagation();
     };
     const evs = ["pointerdown", "mousedown", "touchstart", "focusin", "focusout"] as const;
-    evs.forEach((ev) => document.addEventListener(ev, guard, true));
-    return () => evs.forEach((ev) => document.removeEventListener(ev, guard, true));
+    evs.forEach((ev) => document.addEventListener(ev, guard));
+    return () => evs.forEach((ev) => document.removeEventListener(ev, guard));
   }, []);
   useEffect(() => {
     let session = "";
