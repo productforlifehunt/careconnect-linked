@@ -265,13 +265,44 @@ async function fetchLastMessageMap(): Promise<Map<string, LastMessage>> {
   return out;
 }
 
+/** The current user's own conversations only: REL137 parents of the user, then those rows by ID. */
+async function fetchMyConversationScope(myId: number) {
+  const parents = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/parents/${myId}`);
+  const ids = [...new Set((Array.isArray(parents) ? parents : []).map((r: any) => String(r.parent_object_id)).filter((v) => /^\d+$/.test(v)))];
+  const convos = filterAppScope("chatConversation", await readLinkedCCTRows(CONV, ids)).filter((c: any) => c[CF.CHAT_TYPE] !== CT.AI);
+  const members = new Map<string, number[]>();
+  const lastIds = new Map<string, string>();
+  await Promise.all(convos.map(async (c: any) => {
+    const id = String(c.id ?? c._ID);
+    const [m, msgs] = await Promise.all([
+      fetchConversationMemberIds(id),
+      wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${id}`).catch(() => []),
+    ]);
+    members.set(id, m);
+    // Newest message = highest row ID among this conversation's own messages.
+    const latest = (Array.isArray(msgs) ? msgs : []).map((r: any) => Number(r.child_object_id)).filter(Boolean).sort((a, b) => b - a)[0];
+    if (latest) lastIds.set(id, String(latest));
+  }));
+  const lastRows = await readLinkedCCTRows(MSG, [...lastIds.values()]);
+  const byMsg = new Map(lastRows.map((m: any) => [String(m.id ?? m._ID), m]));
+  const lastMessages = new Map<string, LastMessage>();
+  for (const [cid, mid] of lastIds) {
+    const best = byMsg.get(mid); if (!best) continue;
+    lastMessages.set(cid, { id: mid, sender_id: authorOf(best) ? `wp-${authorOf(best)}` : null, message_content: best[MF.CHAT_MESSAGE_TYPE] === MT.IMAGE ? "[Image]" : String(best[MF.CHAT_MESSAGE_CONTENT] || ""), created_at: best.created_at ?? best.cct_created ?? null });
+  }
+  return { convos, memberMap: { loaded: true, get: (id: string) => members.get(id) || [] }, lastMessages };
+}
+
 export async function fetchConversationsWordPress(currentUserId?: string | undefined): Promise<any[]> {
   try {
-    const [convos, memberMap, lastMessages] = await Promise.all([
-      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
-      fetchConversationMemberMap(),
-      fetchLastMessageMap(),
-    ]);
+    const mine = numId(currentUserId);
+    const [convos, memberMap, lastMessages] = mine
+      ? await fetchMyConversationScope(mine).then((r) => [r.convos, r.memberMap, r.lastMessages] as const)
+      : await Promise.all([
+          wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
+          fetchConversationMemberMap(),
+          fetchLastMessageMap(),
+        ]);
     if (!Array.isArray(convos)) return [];
     const myId = numId(currentUserId);
 
