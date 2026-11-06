@@ -1,7 +1,7 @@
 ## Current request: AI, Inbox and Settings functional notes (2026-11-06)
-- [ ] Rewrite uploaded AI and push specifications plus all Settings-page logic into three readable numbered functional notes, including CCT columns and JetEngine relation directions.
-- [ ] Distinguish intended rules from code-proven behavior and unresolved differences; preserve existing manually checked notes and business logic.
-- [ ] Save three CCT324 notes through the authorized WordPress subsite GUI and reopen each to verify exact text, names and record IDs.
+- [x] Rewrote both uploaded specifications and all four Settings-page tabs into three numbered, line-separated functional notes with purposes, data structure, field types and JetEngine parent/child directions. AI includes all seven uploaded entries plus inspector/overview/voice addendum; Inbox covers 16 uploaded cases and 26 source event families.
+- [x] Intended baseline and source-proven behavior/gaps are explicitly separated. Existing checked notes, app business code, business records and RELs were not modified. Live CCT324 form fields were inspected; other schema/channel deployment remains unverified.
+- [x] Saved through /afresh WordPress GUI: AI #10565 (26,349 characters), Inbox #10563 (38,757), Settings #10564 (13,087). Reopened each saved edit URL and asserted exact title, full text and No/manual-unverified state; inspected title/body screenshots. No page/element or REL325 association was requested or added in this task.
 
 ## Current request: Sitewide frontend loading speed (2026-11-06)
 - [x] Shared pending-read deduplication now lasts through slow completion, remains session-scoped, and invalidates on writes. Freshness TTLs unchanged.
