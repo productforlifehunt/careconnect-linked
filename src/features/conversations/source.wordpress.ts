@@ -319,15 +319,16 @@ export async function fetchConversationsWordPress(currentUserId?: string | undef
 
 export async function fetchDirectMessagesWordPress(conversationId: string): Promise<any[]> {
   try {
-    // Both halves leave at once: the relation rows (which messages belong to
-    // this conversation) and one bulk message read. No stage-two waterfall and
-    // no request-per-message N+1.
-    const [rels, bulk] = await Promise.all([
-      wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`),
-      wordpressCCTFetch<any[]>(MSG, { params: { _limit: 500, _orderby: "cct_created", _order: "desc" } }),
-    ]);
+    // First ask which messages belong to this conversation (a tiny reply).
+    // The big 500-message read only happens when the conversation actually has
+    // messages — an empty chat polled every few seconds used to download
+    // ~300 KB each time and kept the WordPress server busy.
+    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const messageIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
+    const bulk = messageIds.length <= 5
+      ? []
+      : await wordpressCCTFetch<any[]>(MSG, { params: { _limit: 500, _orderby: "cct_created", _order: "desc" } });
     const byId = new Map<string, any>();
     for (const m of Array.isArray(bulk) ? bulk : []) byId.set(String(m.id ?? m._ID), m);
     const missing = messageIds.filter((id) => !byId.has(id));

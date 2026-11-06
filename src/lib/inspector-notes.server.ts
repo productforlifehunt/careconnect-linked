@@ -105,8 +105,7 @@ async function readAllRows(): Promise<CCTRow[]> {
       for (const p of pages) rows.push(...p.rows);
     }
     // Rows added while reading land past the counted total; pick them up so nothing is missed.
-    for (let o = offsets.length ? offsets[offsets.length - 1]! + PAGE : PAGE; ; o += PAGE) {
-      if (o < first.total) continue;
+    for (let o = Math.ceil(first.total / PAGE) * PAGE; ; o += PAGE) {
       const tail = await readPage(o);
       rows.push(...tail.rows);
       if (tail.rows.length < PAGE) break;

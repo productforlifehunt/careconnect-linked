@@ -399,7 +399,9 @@ export function useGroupMessages(groupId: string | null) {
       return fetchDirectMessagesWordPress(convoId);
     },
     enabled: !!groupId,
-    refetchInterval: 5000,
+    // 15 s keeps the chat current without hammering the 2-core WordPress server.
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
   });
 }
 
