@@ -103,7 +103,7 @@ export async function readNoteForKey(key: string): Promise<InspectorNote | null>
   if (!binding?.id) return null;
   const row = await wp(`/${binding.id}`) as CCTRow;
   if (String(row._ID) !== binding.id) return null;
-  return { scope: 'element', page: '', label: row.a55, ...mapRow(row), ...binding, key };
+  return { ...mapRow(row), ...binding, key };
 }
 async function storeBinding(binding: NoteBinding) {
   indexCache = undefined;
