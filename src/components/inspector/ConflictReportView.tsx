@@ -11,7 +11,7 @@ export function ConflictReportView({ report }: { report: ConflictReport }) {
     {report.findings.map((finding, i) => <div key={i} className="space-y-1 border-t border-destructive/30 pt-2 whitespace-pre-wrap break-words">
       <p className="font-semibold">{i + 1}. {finding.title}</p>
       {finding.noteIds.length > 0 && <p>涉及注释：{finding.noteIds.map(id => `#${id}`).join('、')}</p>}
-      <p>证据：{finding.evidence}</p><p>判定：{finding.verdict}</p><p>需要修改：{finding.fix}</p>
+      <p>证据：{finding.evidence}</p><p>判定：{finding.verdict}</p><p>建议修改或补充：{finding.fix}</p>
       {finding.suggestions?.map((suggestion, j) => <CorrectionEditor key={`${i}-${j}`} suggestion={suggestion} original={report.notes?.find(note => note.id === suggestion.noteId)} />)}
     </div>)}
   </div>;

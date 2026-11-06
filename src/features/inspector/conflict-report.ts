@@ -39,7 +39,7 @@ export function validateConflictReport(text: string, ids: string[], requireCode:
       if (suggestion.basisNoteIds.some(id => !unique.includes(id))) why = '引用了未读取的笔记';
       else if (suggestion.target === 'code') { if (suggestion.noteId !== null) why = '代码建议指向了笔记'; }
       else if (!suggestion.noteId || !unique.includes(suggestion.noteId) || !suggestion.title.trim()) why = '目标不是本次核查的笔记';
-      if (why) rejected.push(`「${finding.title}」的修改建议被拒绝：${why}`);
+      if (why) rejected.push(`「${finding.title}」的建议修改或补充被拒绝：${why}`);
       return !why;
     });
   }
@@ -53,7 +53,7 @@ export function validateConflictReport(text: string, ids: string[], requireCode:
       if (!report.comparedPairs.some(pair => pair.includes(a) && pair.includes(b))) missing.push(`注释 #${a} 与 #${b} 未完成逐对比对`);
     }
   }
-  for (const evidence of rejected) report.findings.push({ kind: 'missing_evidence', title: '修改建议无效', noteIds: [], evidence, verdict: '该建议未采用', fix: '重新分析以获取有效建议。' });
+  for (const evidence of rejected) report.findings.push({ kind: 'missing_evidence', title: '建议修改或补充无效', noteIds: [], evidence, verdict: '该建议未采用', fix: '重新分析以获取有效建议。' });
   if (requireCode && !report.codeCompared) missing.push('实际代码证据未完成比对');
   for (const evidence of missing) report.findings.push({ kind: 'missing_evidence', title: '核查不完整', noteIds: [], evidence, verdict: '证据不足，不能认定一致', fix: '补齐证据并重新分析；不要修改已核对注释。' });
   return report;
