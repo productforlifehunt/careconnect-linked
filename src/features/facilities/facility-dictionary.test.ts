@@ -21,7 +21,7 @@ describe("uploaded facility dictionary", () => {
     expect(m.cct.mock.calls[1]).toMatchObject(["ownership_claim", { body: { a57: "b55", a58: "b56" } }]);
     expect(m.cct.mock.calls[1]?.[1].body.a55).toContain("CEO");
     expect(m.fetch.mock.calls.some(([path]) => path === "jet-rel/249")).toBe(false);
-    expect(m.fetch.mock.calls).toContainEqual(["jet-rel/291", { method: "POST", body: { parent_id: 21501, child_id: 28801, context: "parent", store_items_type: "update" } }]);
+    expect(m.fetch.mock.calls).toContainEqual(["jet-rel/291", { method: "POST", body: { parent_id: 21501, child_id: 28801, context: "child", store_items_type: "update" } }]);
   });
 
   it("claim authentication is checked before creating any facility", async () => {

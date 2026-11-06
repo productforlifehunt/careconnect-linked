@@ -290,7 +290,7 @@ export async function createFacilityOwnershipClaimWordPress(input: {
   if (!claimId) throw new Error("Ownership claim was not created");
   await wordpressFetch(`jet-rel/${REL_FACILITY_CLAIM}`, {
     method: "POST",
-    body: { parent_id: fid, child_id: claimId, context: "parent", store_items_type: "update" },
+    body: { parent_id: fid, child_id: claimId, context: "child", store_items_type: "update" },
   });
   return { id: String(claimId) };
 }
