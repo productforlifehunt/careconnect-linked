@@ -72,14 +72,18 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
       if (!live || session !== (getWPToken() || "")) return;
       // The unified identity first; old line-based bindings only as a one-time carry-over.
       const current = findSameElementNote(map, noteKey);
-      const existing = current || (legacyKey ? findSameElementNote(map, legacyKey) : undefined) || findAliasNote(map, alias);
-      const n = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? existing :
-        (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined) || existing;
+      const old = legacyKey ? findSameElementNote(map, legacyKey) : undefined;
+      const existing = current || old || findAliasNote(map, alias);
+      const bySource = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? undefined :
+        (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined);
+      const n = bySource || existing;
       if (!live || session !== (getWPToken() || "")) return;
-      // Found only under an old key: bind the same CCT324 note to the unified identity so the published site finds it too.
+      // Found only under the exact old key or its verified source block: bind the same CCT324 note to the unified
+      // identity so the published site finds it too. Alias matches are too loose to carry over automatically.
       // Only the location binding is added; the note's name, content and checked state are untouched.
-      if (!current && n?.id && scope === "element") {
-        void select({ data: { key: noteKey, id: n.id, scope, page, label, ...(alias ? { alias } : {}) } })
+      const carry = current ? undefined : (bySource || old);
+      if (carry?.id && scope === "element") {
+        void select({ data: { key: noteKey, id: carry.id, scope, page, label, ...(alias ? { alias } : {}) } })
           .then((r) => { if (r.note && session === (getWPToken() || "")) inspectorNotesCache.put(session, r.note); })
           .catch(() => undefined);
       }
