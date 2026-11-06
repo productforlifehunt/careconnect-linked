@@ -18,5 +18,5 @@ it('no relation IDs means no CCT request', async () => {
 });
 it('rejects an ignored filter instead of accepting another user row', async () => {
   cct.mockResolvedValue([{ id: '999' }]);
-  await expect(readLinkedCCTRows('users_extended_prof', ['144'])).rejects.toThrow('unrelated rows');
+  await expect(readLinkedCCTRows('users_extended_prof', ['144', '145'])).rejects.toThrow('unrelated rows');
 });

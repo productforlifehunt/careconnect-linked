@@ -13,6 +13,11 @@ export function linkedRowParams(ids: string[]) {
 export async function readLinkedCCTRows(slug: string, ids: string[]): Promise<any[]> {
   const clean = [...new Set(ids.filter(id => /^\d+$/.test(id)))].sort((a, b) => Number(a) - Number(b));
   if (!clean.length) return [];
+  if (clean.length === 1) return dedupeRead(`cct-row:${slug}:${clean[0]}`, async () => {
+    const row = await wordpressCCTFetch<any>(slug, { id: clean[0] });
+    if (!row || String(row.id ?? row._ID) !== clean[0]) throw new Error('CCT item read returned an unrelated row.');
+    return [row];
+  });
   return dedupeRead(`linked-cct:${slug}:${clean.join(',')}`, async () => {
     const batches: string[][] = [];
     for (let offset = 0; offset < clean.length; offset += 100) batches.push(clean.slice(offset, offset + 100));

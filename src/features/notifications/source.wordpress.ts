@@ -10,6 +10,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { getCurrentUserId } from "@/features/shared/current-user";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 
 const SLUG = T.notification.slug;
 const F = T.notification.f;
@@ -74,9 +75,7 @@ export async function fetchNotificationsWordPress(): Promise<any[]> {
     if (!Array.isArray(links) || links.length === 0) return [];
     const ids = links.map((l: any) => String(l.child_object_id || "")).filter(Boolean);
     if (ids.length === 0) return [];
-    const raw = (await Promise.all([...new Set(ids)].map((id) =>
-      wordpressCCTFetch<any>(SLUG, { id }),
-    ))).filter(Boolean);
+    const raw = await readLinkedCCTRows(SLUG, ids);
     if (raw.length === 0) return [];
 
 
