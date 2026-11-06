@@ -33,3 +33,17 @@ describe("stat cards without source tags (preview build)", () => {
     expect(vals.map((p) => inspectElement(p, []).itemSlot)).toEqual(["Pending Tasks", "Members", "Cared Ones"]);
   });
 });
+
+describe("one component used from several places", () => {
+  it("adds the use site only when the same line is used from more than one place", async () => {
+    const { inspectElement } = await import("./inspect-dom");
+    document.body.innerHTML = `
+      <div data-tsd-source="/src/pages/A.tsx:10"><p data-tsd-source="/src/components/Stat.tsx:5">1</p></div>
+      <div data-tsd-source="/src/pages/A.tsx:20"><p data-tsd-source="/src/components/Stat.tsx:5">2</p></div>
+      <div data-tsd-source="/src/pages/A.tsx:30"><p data-tsd-source="/src/components/Once.tsx:5">3</p></div>`;
+    const ps = [...document.querySelectorAll("p")];
+    const a = inspectElement(ps[0]!, []).callSite, b = inspectElement(ps[1]!, []).callSite;
+    expect(a).toBeTruthy(); expect(b).toBeTruthy(); expect(a).not.toBe(b);
+    expect(inspectElement(ps[2]!, []).callSite).toBeUndefined();
+  });
+});
