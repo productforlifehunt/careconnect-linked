@@ -4,6 +4,7 @@ export const conflictReportSchema = z.object({
   summary: z.string().min(1),
   comparedNoteIds: z.array(z.string()),
   comparedPairs: z.array(z.tuple([z.string(), z.string()])),
+  comparedCodeNoteIds: z.array(z.string()),
   codeCompared: z.boolean(),
   findings: z.array(z.object({
     kind: z.enum(['conflict', 'suspicion', 'redundancy', 'fallback', 'compatibility', 'missing_evidence']),
@@ -22,6 +23,8 @@ export function validateConflictReport(text: string, ids: string[], requireCode:
   const report = conflictReportSchema.parse(JSON.parse(json));
   const unique = [...new Set(ids)];
   const missing: string[] = unique.filter(id => !report.comparedNoteIds.includes(id)).map(id => `注释 #${id} 未完成比对`);
+  if (unique.length === 0) missing.push('没有绑定注释，无法核对注释与代码');
+  if (requireCode) for (const id of unique) if (!report.comparedCodeNoteIds.includes(id)) missing.push(`实际代码与注释 #${id} 未完成比对`);
   for (let i = 0; i < unique.length; i++) {
     for (let j = i + 1; j < unique.length; j++) {
       const a = unique[i], b = unique[j];
