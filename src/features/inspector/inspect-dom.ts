@@ -170,6 +170,20 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
       for (let fb = fiberOf(n), i = 0; fb && fb !== parentFiber && i < 8; fb = fb.return, i++) if (fb.key != null) { itemSlot = staticSlotKey(fb.key); break; }
     }
   }
+  // Preview/published builds carry no data-tsd-source, so list items are found from React keys instead:
+  // the nearest ancestor rendered with its own key among same-tag keyed siblings is the list item.
+  if (itemIndex < 0) {
+    const ownKey = (n: Element): unknown => {
+      const parentFiber = n.parentElement ? fiberOf(n.parentElement) : null;
+      for (let fb = fiberOf(n), i = 0; fb && fb !== parentFiber && i < 8; fb = fb.return, i++) if (fb.key != null) return fb.key;
+      return null;
+    };
+    for (let n: Element | null = el, depth = 0; n && n.parentElement && depth < 8; n = n.parentElement, depth++) {
+      const key = ownKey(n); if (key == null) continue;
+      const sibs = [...n.parentElement.children].filter((c) => c.tagName === n!.tagName && ownKey(c) != null);
+      if (sibs.length > 1) { itemIndex = sibs.indexOf(n); itemSlot = staticSlotKey(key); break; }
+    }
+  }
   const around = cardText.toLowerCase();
   // A handler is written in the nearest component that also has its own source file on the element chain.
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
