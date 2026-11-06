@@ -72,7 +72,41 @@ async function override(key: string): Promise<NoteBinding | undefined> {
   }
   return data ? JSON.parse(await data.text()) as NoteBinding : undefined;
 }
+/** Fast single-element lookup: one binding file, then the binding index, then one CCT324 row — never all 10k notes. */
+let indexCache: { at: number; list: NoteBinding[] } | undefined;
+async function bindingIndex(): Promise<NoteBinding[]> {
+  if (indexCache && Date.now() - indexCache.at < 60_000) return indexCache.list;
+  const storage = client().storage.from(BUCKET);
+  const files: { name: string }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await storage.list('bindings', { limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } });
+    if (result.error) throw new Error('无法读取固定选择，请重试。');
+    files.push(...result.data);
+    if (result.data.length < 1000) break;
+  }
+  const overrides = await Promise.all(files.filter(f => f.name.endsWith('.json')).map(async f => {
+    const r = await storage.download(`bindings/${f.name}`);
+    return r.data ? JSON.parse(await r.data.text()) as NoteBinding : undefined;
+  }));
+  const list = [...(await configuration()), ...overrides.filter((b): b is NoteBinding => !!b)];
+  indexCache = { at: Date.now(), list };
+  return list;
+}
+export async function readNoteForKey(key: string): Promise<InspectorNote | null> {
+  const { routePattern } = await import('@/features/inspector/route-key');
+  let binding = await override(key);
+  if (!binding) {
+    const list = await bindingIndex();
+    const pattern = routePattern(key);
+    binding = [...list].reverse().find(b => b.key === key) || (pattern ? [...list].reverse().find(b => routePattern(b.key) === pattern) : undefined);
+  }
+  if (!binding?.id) return null;
+  const row = await wp(`/${binding.id}`) as CCTRow;
+  if (String(row._ID) !== binding.id) return null;
+  return { scope: 'element', page: '', label: row.a55, ...mapRow(row), ...binding, key };
+}
 async function storeBinding(binding: NoteBinding) {
+  indexCache = undefined;
   const { error } = await client().storage.from(BUCKET).upload(`bindings/${await hash(binding.key)}.json`, new Blob([JSON.stringify(binding)], { type: 'application/json' }), { upsert: true, contentType: 'application/json' });
   if (error) throw new Error('注释已写入，但固定选择未保存，请重试；不要再次新建。');
 }

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { loadAllInspectorNotes, saveInspectorNote, selectInspectorNote } from "@/lib/inspector-notes.functions";
+import { loadAllInspectorNotes, loadInspectorNotes, saveInspectorNote, selectInspectorNote } from "@/lib/inspector-notes.functions";
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
@@ -21,7 +21,7 @@ import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { Sparkles } from 'lucide-react';
 
 export function ManualNotes({ noteKey, scope, page, label, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
-  const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
+  const load = useServerFn(loadAllInspectorNotes); const loadOne = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
@@ -87,7 +87,14 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
     if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
-      inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
+      // Show this element's note right away from a single-note read; the full list (for "选择其他注释") loads behind it.
+      let full = false;
+      loadOne({ data: { keys: [noteKey] } }).then((r) => {
+        if (full || !live || !('notes' in r)) return;
+        const m = new Map((r.notes as CCTNote[]).map((n) => [noteKey, n]));
+        void apply(m as unknown as Awaited<ReturnType<typeof inspectorNotesCache.load>>);
+      }).catch(() => {});
+      inspectorNotesCache.load(session, () => load()).then((m) => { full = true; return apply(m); }).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
   }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
