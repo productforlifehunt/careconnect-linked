@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ verify:vi.fn(), read:vi.fn(), update:vi.fn() }));
-vi.mock('@tanstack/react-start', () => ({ createServerFn:() => ({ inputValidator:() => ({ handler:(fn:unknown) => fn }) }) }));
+vi.mock('@tanstack/react-start', () => ({ createServerFn:() => ({ handler:(fn:unknown) => fn, inputValidator:() => ({ handler:(fn:unknown) => fn }) }) }));
 vi.mock('@tanstack/react-start/server', () => ({ getRequestHeader:() => 'test-session' }));
 vi.mock('./inspector-ai.server', () => ({ verifyResearcher:mocks.verify }));
 vi.mock('./inspector-notes.server', () => ({ readNoteById:mocks.read,updatePlainNote:mocks.update }));
