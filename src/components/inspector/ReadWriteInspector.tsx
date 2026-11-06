@@ -148,7 +148,6 @@ function AiExplain({ build, mode = "full", label, ready = true, noteKeys }: { bu
     setState({ loading: true });
     try {
       const context = build();
-      if (context.length > 60_000) throw new Error('证据超过分析容量，未执行不完整分析。');
       const res = await explain({ data: { context, mode, ...(noteKeys ? { noteKeys } : {}) } });
       setState(res.report ? { report: res.report } : { error: res.error || "失败 / failed" });
     } catch (e) { setState({ error: e instanceof Error ? e.message : String(e) }); }
