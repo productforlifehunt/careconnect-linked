@@ -4,7 +4,7 @@ vi.mock('@tanstack/react-start', () => ({ createServerFn: () => ({ inputValidato
 vi.mock('@tanstack/react-start/server', () => ({ getRequestHeader: () => 'test-session' }));
 vi.mock('./inspector-ai.server', () => ({ verifyResearcher: mocks.verify, explainInspection: mocks.explain }));
 vi.mock('./inspector-source.server', () => ({ readInspectionSource: mocks.source }));
-vi.mock('./inspector-notes.server', () => ({ readCCTNoteForKey: mocks.note, readRelatedNotes: mocks.related }));
+vi.mock('./inspector-notes.server', () => ({ readCCTNoteForKey: mocks.note, readNoteById: mocks.note, readRelatedNotes: mocks.related }));
 import { explainReadWrite } from './inspector-ai.functions';
 const invoke = () => (explainReadWrite as unknown as (args: { data: { context: string; noteKeys: string[] } }) => Promise<{ error?: string }>)({ data: { context: JSON.stringify({ page: '/cared-ones/46/medicine', files: [], codeRefs: [] }), noteKeys: ['page|/cared-ones/46/medicine'] } });
 afterEach(() => vi.resetAllMocks());
