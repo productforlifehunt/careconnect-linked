@@ -17,7 +17,8 @@
  */
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
-import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { fetchRelChildrenMap, fetchRelChildrenOf } from "@/features/shared/rel-batch";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import {
   FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
   LOG_TYPE_AI, LOG_TYPE_HUMAN, CAL,
