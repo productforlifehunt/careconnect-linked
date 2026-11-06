@@ -1,13 +1,14 @@
 ## Current request: One-click whole-site analysis (2026-11-06)
-- [ ] Add all-route inventory plus saved page/element bindings, deduplicate record paths, and analyse current source against each root note and its direct REL325 notes.
-- [ ] Show live page-by-page progress, red conflicts/suspicions, exact incomplete coverage, stop/resume, and downloadable report; never modify notes or verification flags.
-- [ ] Test inventory, batching/coverage and report controls; verify real researcher boundary and report exact live-page checks.
+- [x] Add route-source inventory plus saved page/element bindings, deduplicate record paths while preserving __site, and analyse current source against each root, page notes and their direct REL325 notes. Discovery currently yields 107 route scopes (35 standalone site paths), not a verified exhaustive live-page count.
+- [x] Show live page-by-page progress, red conflicts/suspicions, exact incomplete coverage, stop/resume, and downloadable Markdown report; never modify notes or verification flags. All chunks for each root must return code evidence before counting it complete.
+- [x] Focused tests 17/17 pass; latest build OK. Real challenged and test1 accounts both denied researcher-only action (403), no impersonation. Real test1 screenshots: /care-circle/22, /inbox, /cared-ones/46/tips loaded after 30-second wait, zero page errors; earlier 10-second loading observations do not establish broken functionality.
+- [ ] Real researcher full-site button/report end-to-end remains blocked by role: both permitted test accounts are non-researcher. No actual whole-site AI run performed. Route aliases/dynamic dependencies are not exhaustively verified; page-source closure currently yields dozens of chunks per root, so full-run expense/time can be substantial. Report marks missing evidence, never claims runtime coverage.
 
 ## Current request: Inspector exhaustive conflict analysis (2026-11-06)
 - [x] Compare actual code against the current manual note and every related note, and compare all note pairs; red findings include suspicion, redundant logic, fallback, compatibility and missing evidence. Validate per-note code coverage and all unordered note pairs; retain GPT-6 Luna.
 - [x] Manual-tab action compares current unsaved title/text with freshly read related notes and current element/page evidence; no save or verified-status change. Component flow test passes, stale draft results clear.
 - [x] Code verification: both ordinary discussions and wishes use useCareGroupPosts → CCT202 care_group_post, through REL226; CCT16 in the supplied screenshot is a stale-note conflict, not actual blessing storage. Live model three-note sample finds conflict and checks all 3 pairs. Focused tests 39/39 pass; build OK. Challenged real account is correctly denied researcher-only analysis (403), no page errors.
-- [ ] Real researcher manual/AI tab end-to-end click and layout remain unverified: supplied test account is not researcher; no account impersonation or guessing. Cared-one page screenshot still shows loading after 12 seconds; not reported as loaded. No WordPress notes or relations modified.
+- [ ] Real researcher manual/AI tab end-to-end click and layout remain unverified: supplied test accounts are not researcher; no account impersonation or guessing. Later test1 30-second check loads care tips; previous short loading observation is not a confirmed failure. No WordPress notes or relations modified.
 
 ## Current request: Remove unread numeric prompts and add page back navigation (2026-11-05)
 - [x] Remove unread/request numeric badges from care header, bottom navigation, inbox main tabs and location tabs; preserve read-state filter counts and actual unread data.

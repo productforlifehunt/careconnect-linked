@@ -54,7 +54,7 @@ export function siteTotals(pages: SitePage[], results: SiteResult[], expected: n
   for (const result of results) { const key = `${result.page}|${result.noteId || 'unbound'}`; grouped.set(key, [...(grouped.get(key) || []), result]); }
   const completeNotes = [...grouped.values()].filter(group => {
     const first = group[0]; if (!first?.noteId) return false;
-    return group.length === first.chunks && new Set(group.map(r => r.chunk)).size === first.chunks && group.every(r => r.report && !r.error && !r.report.findings.some(f => f.kind === 'missing_evidence'));
+    return group.length === first.chunks && new Set(group.map(r => r.chunk)).size === first.chunks && group.every(r => r.chunks === first.chunks && r.chunk >= 1 && r.chunk <= first.chunks && r.report?.codeCompared && r.report.comparedCodeNoteIds.includes(first.noteId || '') && !r.error && !r.report.findings.some(f => f.kind === 'missing_evidence'));
   }).length;
   const boundNotes = pages.reduce((sum, page) => sum + page.noteIds.length, 0);
   return { pages: pages.length, processed: results.length, completed, expected, completeNotes, boundNotes, failures: results.filter(r => r.error).length, findings: findings.length, complete: expected > 0 && results.length === expected && completed === expected && completeNotes === boundNotes && !findings.some(f => f.kind === 'missing_evidence') };

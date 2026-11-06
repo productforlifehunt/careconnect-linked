@@ -45,7 +45,5 @@ export async function buildSiteEvidence(page: SitePage, read: (file: string) => 
   }
   if (!sources.length) omissions.push('没有当前源代码证据');
   omissions.push('本次为全站源代码与保存注释核查，未逐页执行真实账户输入、弹窗、提交和定时任务；不代表运行状态已测试。');
-  // A file header plus line numbers preserves exact citations without repeating long paths on every line.
-  const compact = sources.sort((a,b) => a.file.localeCompare(b.file)).map(source => ({ file: source.file, text: source.text }));
-  return { chunks: splitSiteEvidence(compact), omissions: [...new Set(omissions)], files: sources.length };
+  return { chunks: splitSiteEvidence(sources.sort((a,b) => a.file.localeCompare(b.file))), omissions: [...new Set(omissions)], files: sources.length };
 }
