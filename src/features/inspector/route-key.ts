@@ -4,6 +4,22 @@ export function routePattern(key: string): string | undefined {
   if (parts[0] !== "el" || !parts[1] || !/\/\d+(?=\/|$)/.test(parts[1])) return undefined;
   return ["el", parts[1].replace(/\/\d+(?=\/|$)/g, "/:id"), ...parts.slice(2)].join("|");
 }
+/**
+ * Build-independent second key for an element: page pattern + the app's own component names + tag + slot.
+ * The main key holds a source line (preview) or component names (published), which differ between the two
+ * builds and shift when code above changes; this one is saved with every binding so the note is found again.
+ */
+export function elementAlias(pathname: string, components: string[], tag: string, slot?: string): string {
+  const names = components.filter((n) => n.length >= 3).slice(0, 6);
+  if (!names.length) return "";
+  return ["al", pathname.replace(/\/\d+(?=\/|$)/g, "/:id"), names.join("<"), tag + (slot ? `|${slot}` : "")].join("|");
+}
+export function findAliasNote<T extends { alias?: string | undefined }>(notes: Map<string, T>, alias: string): T | undefined {
+  if (!alias) return undefined;
+  let found: T | undefined;
+  for (const v of notes.values()) if (v.alias === alias) found = v; // later bindings (newer saves) win
+  return found;
+}
 export function findSameElementNote<T>(notes: Map<string, T>, key: string): T | undefined {
   const exact = notes.get(key);
   if (exact) return exact;

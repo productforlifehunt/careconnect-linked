@@ -8,6 +8,18 @@ export interface SourceAnnotation {
   locked?: boolean | undefined;
   verified?: boolean | undefined;
   source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined;
+  alias?: string | undefined;
+}
+
+/** Source reference saved with a binding so the note survives line shifts ("components/x.tsx:12" + tag). */
+export async function sourceRef(source: string, tag: string, read: (file: string) => Promise<string | null>) {
+  const match = source.match(/^(.*?):(\d+)(?::\d+)?$/);
+  if (!match || !match[1]) return undefined;
+  const text = await read(match[1]);
+  const line = Number(match[2]);
+  const at = text?.split("\n")[line - 1];
+  if (at === undefined || !at.trim()) return undefined;
+  return { file: match[1], line, endLine: line, tag: tag.slice(0, 60), digest: await sourceDigest(at) };
 }
 
 export async function sourceDigest(text: string): Promise<string> {

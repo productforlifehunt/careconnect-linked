@@ -8,8 +8,8 @@ import { loadAllInspectorNotes, saveInspectorNote, selectInspectorNote } from "@
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
-import { isGeneratedNote, resolveSourceNote } from "@/features/inspector/source-notes";
-import { findSameElementNote } from "@/features/inspector/route-key";
+import { isGeneratedNote, resolveSourceNote, sourceRef } from "@/features/inspector/source-notes";
+import { findAliasNote, findSameElementNote } from "@/features/inspector/route-key";
 import { readSource } from "@/features/inspector/live-index";
 import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ import { ConflictReportView } from './ConflictReportView';
 import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { Sparkles } from 'lucide-react';
 
-export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
+export function ManualNotes({ noteKey, alias = "", scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
@@ -70,7 +70,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     const session = getWPToken() || "";
     const apply = async (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
       if (!live || session !== (getWPToken() || "")) return;
-      const existing = findSameElementNote(map, noteKey);
+      const existing = findSameElementNote(map, noteKey) || findAliasNote(map, alias);
       const n = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? existing :
         (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined) || existing;
       if (!live || session !== (getWPToken() || "")) return;
@@ -87,13 +87,19 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
-  }, [noteKey, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, alias, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Saved with every binding: source line digest (preview) and build-independent alias, so a refresh, a code edit or the published site still finds this note. */
+  const stableAnchor = async () => {
+    const ref = source && tag ? await sourceRef(source, tag, readSource).catch(() => undefined) : undefined;
+    return { ...(ref ? { source: ref } : {}), ...(alias ? { alias } : {}) };
+  };
   const doSave = async () => {
     if (stale) return;
     const session = getWPToken() || "";
     const key = noteKey;
     setState((s) => ({ ...s, saving: true, error: undefined }));
-    const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, create: creating, verified, text } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
+    const anchor = await stableAnchor();
+    const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, create: creating, verified, text, ...anchor } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
     if (session !== (getWPToken() || "")) return;
     if ("note" in r && r.note) {
       inspectorNotesCache.put(session, r.note);
@@ -109,7 +115,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     const key = noteKey; const session = getWPToken() || '';
     setState(s => ({ ...s, saving: true, error: undefined }));
     try {
-      const result = await select({ data: { key, id: choice, scope, page, label } });
+      const result = await select({ data: { key, id: choice, scope, page, label, ...(await stableAnchor()) } });
       if (session !== (getWPToken() || '') || activeKey.current !== key) return;
       if (!result.note) throw new Error(result.error || '选择未保存');
       inspectorNotesCache.put(session, result.note);

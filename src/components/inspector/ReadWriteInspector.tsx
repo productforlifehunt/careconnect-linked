@@ -8,6 +8,7 @@ import { getRecorded, subscribeRecorder, clearRecorded, inspectModeOn, setInspec
 import { decodeEndpoint, codeRefs, fieldName, fieldType, optionName, relById, cctBySlug, type CodeRef } from "@/features/inspector/decode";
 import { ReadWriteNarrative } from "./ReadWriteNarrative";
 import { ManualNotes } from "./ManualNotes";
+import { elementAlias } from "@/features/inspector/route-key";
 import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
@@ -333,6 +334,7 @@ export default function ReadWriteInspector() {
   const pathname = path.split("?")[0]!;
   // Fixed list slots (stat cards drawn by one JSX line) get their own note; data rows of one list share theirs.
   const elementKey = info ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}${info.itemSlot ? `|${info.itemSlot}` : ""}` : "";
+  const elementAliasKey = info ? elementAlias(pathname, info.components, info.tag, info.itemSlot) : "";
   const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();
   const fitContext = (o: any): string => {
@@ -439,7 +441,7 @@ export default function ReadWriteInspector() {
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
                 <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, `page|${pathname}`]} /></div>
-                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!logic && !!closure} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
+                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!logic && !!closure} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
                 <section className="space-y-1" ref={summaryRef}>

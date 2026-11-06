@@ -3,7 +3,7 @@ import { bindCCTNotes, type CCTNote, type NoteBinding } from '@/features/inspect
 
 /** Researcher manual notes for inspected elements/pages: one private JSON file per scope key. */
 const BUCKET = "inspector-notes";
-export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string | undefined; title?: string | undefined; locked?: boolean | undefined; verified?: boolean | undefined; source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined }
+export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string | undefined; title?: string | undefined; locked?: boolean | undefined; verified?: boolean | undefined; source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined; alias?: string | undefined }
 
 function client() {
   const url = process.env["SUPABASE_URL"] || ""; const key = process.env["SUPABASE_SERVICE_ROLE_KEY"] || "";
@@ -162,7 +162,7 @@ export async function writeNote(note: Omit<InspectorNote, 'updatedAt'> & { creat
   }
   const row = await wp(`/${id}`) as CCTRow;
   if (row.a56 !== note.text || row.a55 !== (note.title || note.label) || (row.a58 === 'b55') !== !!note.verified) throw new Error('保存后的内容核对不一致。');
-  const binding: NoteBinding = { key: note.key, id, scope: note.scope, page: note.page, label: note.label, ...(note.source ? { source: note.source } : {}), locked: true };
+  const binding: NoteBinding = { key: note.key, id, scope: note.scope, page: note.page, label: note.label, ...(note.source ? { source: note.source } : {}), ...(note.alias ? { alias: note.alias } : {}), locked: true };
   await storeBinding(binding);
   return { ...mapRow(row), ...binding };
 }

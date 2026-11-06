@@ -9,6 +9,7 @@ export interface NoteBinding {
   label: string;
   locked?: boolean | undefined;
   source?: SourceAnnotation['source'];
+  alias?: string | undefined;
 }
 export interface CCTNote extends SourceAnnotation {
   id: string;
