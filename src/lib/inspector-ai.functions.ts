@@ -4,7 +4,7 @@ import { z } from "zod";
 
 /** Researcher-only AI explanation of an inspected element or page. */
 export const explainReadWrite = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ context: z.string().min(2).max(60_000), mode: z.enum(["full", "origin"]).optional(), scope: z.enum(['page', 'element']).optional(), noteKeys: z.array(z.string().max(2000)).max(2).optional(), noteId: z.string().regex(/^\d+$/).optional(), draft: z.object({ title: z.string().max(240), text: z.string().max(100_000) }).optional() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ context: z.string().min(2).max(60_000), mode: z.enum(["full", "origin"]).optional(), scope: z.enum(['page', 'element']).optional(), noteKeys: z.array(z.string().max(2000)).max(3).optional(), noteId: z.string().regex(/^\d+$/).optional(), draft: z.object({ title: z.string().max(240), text: z.string().max(100_000) }).optional() }).parse(input))
   .handler(async ({ data }) => {
     const { verifyResearcher, explainInspection } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); }
@@ -16,10 +16,14 @@ export const explainReadWrite = createServerFn({ method: "POST" })
     const originals: import('@/features/inspector/conflict-report').ReportNote[] = [];
     try {
       const { readCCTNoteForKey, readRelatedNotes, readNoteById } = await import("./inspector-notes.server");
-      const found = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
+      const all = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
         const note = data.noteId ? await readNoteById(data.noteId) : await readCCTNoteForKey(key);
         return { key: data.noteId && data.scope === 'page' ? 'page|current-selection' : key, note, related: note ? await readRelatedNotes(note.id) : [] };
       }));
+      // Element identity + its old line-based key describe one element: keep one entry (the bound one).
+      const elements = all.filter((f) => !f.key.startsWith('page|'));
+      const element = elements.find((f) => f.note) || elements[0];
+      const found = all.filter((f) => f.key.startsWith('page|') || f === element);
       noteIds = [...new Set(found.flatMap(({note, related}) => [...(note ? [note.id] : []), ...related.map(r => r.id)]))];
       for (const { key, note, related } of found) {
         if (note) originals.push({ ...note, role: noteRole(note.title, key.startsWith('page|') ? 'page_note' : 'element_note') });

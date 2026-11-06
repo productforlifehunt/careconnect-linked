@@ -22,7 +22,7 @@ import { ConflictReportView } from './ConflictReportView';
 import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { Sparkles } from 'lucide-react';
 
-export function ManualNotes({ noteKey, alias = "", scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
+export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
@@ -70,10 +70,23 @@ export function ManualNotes({ noteKey, alias = "", scope, page, label, source, t
     const session = getWPToken() || "";
     const apply = async (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
       if (!live || session !== (getWPToken() || "")) return;
-      const existing = findSameElementNote(map, noteKey) || findAliasNote(map, alias);
-      const n = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? existing :
-        (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined) || existing;
+      // The unified identity first; old line-based bindings only as a one-time carry-over.
+      const current = findSameElementNote(map, noteKey);
+      const old = legacyKey ? findSameElementNote(map, legacyKey) : undefined;
+      const existing = current || old || findAliasNote(map, alias);
+      const bySource = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? undefined :
+        (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined);
+      const n = bySource || existing;
       if (!live || session !== (getWPToken() || "")) return;
+      // Found only under the exact old key or its verified source block: bind the same CCT324 note to the unified
+      // identity so the published site finds it too. Alias matches are too loose to carry over automatically.
+      // Only the location binding is added; the note's name, content and checked state are untouched.
+      const carry = current ? undefined : (bySource || old);
+      if (carry?.id && scope === "element") {
+        void select({ data: { key: noteKey, id: carry.id, scope, page, label, ...(alias ? { alias } : {}) } })
+          .then((r) => { if (r.note && session === (getWPToken() || "")) inspectorNotesCache.put(session, r.note); })
+          .catch(() => undefined);
+      }
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
       setCatalogue(noteCatalogue(map)); setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
       setVerified(!!(n as CCTNote | undefined)?.verified); setSavedVerified(!!(n as CCTNote | undefined)?.verified);
@@ -87,7 +100,7 @@ export function ManualNotes({ noteKey, alias = "", scope, page, label, source, t
       inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
-  }, [noteKey, alias, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, legacyKey, alias, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   /** Saved with every binding: source line digest (preview) and build-independent alias, so a refresh, a code edit or the published site still finds this note. */
   const stableAnchor = async () => {
     const ref = source && tag ? await sourceRef(source, tag, readSource).catch(() => undefined) : undefined;
