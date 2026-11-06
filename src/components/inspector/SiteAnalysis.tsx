@@ -8,6 +8,7 @@ import { decodeNotes } from '@/features/inspector/notes-transport';
 import { discoverSitePages, buildSiteEvidence } from '@/features/inspector/site-evidence';
 import { siteTotals, type SitePage, type SiteResult } from '@/features/inspector/site-analysis';
 import { ConflictReportView } from './ConflictReportView';
+import { readSource } from '@/features/inspector/live-index';
 
 interface Work { page: string; noteId?: string; evidence: string; chunk: number; chunks: number; omissions: string[] }
 export function SiteAnalysis() {
@@ -41,10 +42,15 @@ export function SiteAnalysis() {
         if (response.error) throw new Error(response.error);
         const bindings = response.compressedNotes ? await decodeNotes(response.compressedNotes) : response.notes || [];
         const inventory = await discoverSitePages(bindings); setPages(inventory);
+        const sourceReads = new Map<string, Promise<string | null>>();
+        const readForRun = (file: string) => {
+          const existing = sourceReads.get(file); if (existing) return existing;
+          const pending = readSource(file); sourceReads.set(file, pending); return pending;
+        };
         for (const page of inventory) {
           if (stop.current) { work.current = []; throw new Error('清单准备已停止；尚未执行 AI，可重新开始。'); }
           setPhase(`读取当前代码：${page.path}`);
-          const evidence = await buildSiteEvidence(page);
+          const evidence = await buildSiteEvidence(page, readForRun);
           if (!page.noteIds.length) work.current.push({ page: page.path, evidence: '', chunk: 1, chunks: 1, omissions: evidence.omissions });
           else for (const noteId of page.noteIds) for (const [index, text] of (evidence.chunks.length ? evidence.chunks : ['无代码证据']).entries()) {
             work.current.push({ page: page.path, noteId, evidence: text, chunk: index + 1, chunks: Math.max(1, evidence.chunks.length), omissions: [...evidence.omissions, ...(evidence.chunks.length > 1 ? [`当前只提供 ${index + 1}/${evidence.chunks.length} 代码分片；单项不代表整页核查完成。`] : [])] });

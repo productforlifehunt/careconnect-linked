@@ -3,7 +3,12 @@ import type { ConflictReport } from './conflict-report';
 export interface SiteBinding { key: string; id?: string | undefined; page?: string | undefined; source?: { file: string } | undefined; title?: string | undefined }
 export interface SitePage { path: string; files: string[]; noteIds: string[]; elementNotes: number; pageNotes: number }
 export interface SiteResult { page: string; noteId?: string | undefined; chunk: number; chunks: number; report?: ConflictReport | undefined; error?: string | undefined }
-export const normaliseSitePath = (path: string) => path.split('?')[0]?.replace(/\/\d+(?=\/|$)/g, '/:id').replace(/\$[\w]+/g, ':id').replace(/:[\w]+/g, ':id').replace(/\/$/, '') || '/';
+export const normaliseSitePath = (path: string) => {
+  const [pathname, search = ''] = path.split('?');
+  const site = new URLSearchParams(search).get('__site');
+  const normal = pathname?.replace(/\/\d+(?=\/|$)/g, '/:id').replace(/\$[\w]+/g, ':id').replace(/:[\w]+/g, ':id').replace(/\/$/, '') || '/';
+  return normal + (site ? `?__site=${encodeURIComponent(site)}` : '');
+};
 
 /** Route source and explicit bindings both contribute; unbound routes must remain visible. */
 export function siteInventory(routes: { path: string; files: string[] }[], bindings: SiteBinding[]): SitePage[] {

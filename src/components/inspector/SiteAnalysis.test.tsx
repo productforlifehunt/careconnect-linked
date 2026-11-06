@@ -17,7 +17,7 @@ it('one click processes all page roots and leaves unbound pages red without extr
   await waitFor(() => expect(mocks.analyze).toHaveBeenCalledTimes(2));
   await waitFor(() => expect(screen.getByText(/已返回 3\/3 项/)).toBeDefined());
   expect(mocks.analyze.mock.calls.map(call => call[0].data.noteId)).toEqual(['1','3']);
-  expect(screen.getByText('缺少页面注释')).toBeDefined();
+  expect(screen.getByText(/此页面没有绑定的整页或元素注释/)).toBeDefined();
 });
 it('pauses on failure, continues remaining work only, and never automatically retries a billed attempt', async () => {
   mocks.load.mockResolvedValue({notes:[]});
