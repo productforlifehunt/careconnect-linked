@@ -98,7 +98,7 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
     // 2b) Fallback: scan chat_conversation CCT for sentinel chat_name
     const sentinel = `__group:${gid}`;
     try {
-      const all = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } });
+      const all = await wordpressCCTFetch<any[]>(CONV, { params: { _limit: 5, ...appScopeParams("chatConversation"), _filters: JSON.stringify([{ field: CF.CHAT_NAME, operator: "=", value: sentinel }]) } });
       const match = (Array.isArray(all) ? all : []).find(
         (c: any) => String(c[CF.CHAT_NAME] || "") === sentinel
       );
@@ -450,15 +450,16 @@ export async function startConversationWordPress(
 
   // Find existing direct conversation containing both members
   try {
-    const [convos, memberMap] = await Promise.all([
-      wordpressCCTFetch<any[]>(CONV, { params: { _limit: 500, ...appScopeParams("chatConversation") } }),
-      fetchConversationMemberMap(),
-    ]);
-    if (Array.isArray(convos)) {
+    // Conversations both people are in (REL137 parents of each), then only those rows.
+    const parentsOf = async (u: number) => new Set(((await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/parents/${u}`)) || []).map((r: any) => String(r.parent_object_id)));
+    const [mine, theirs] = await Promise.all([parentsOf(me), parentsOf(other)]);
+    const shared = [...mine].filter((id) => theirs.has(id));
+    const convos = filterAppScope("chatConversation", await readLinkedCCTRows(CONV, shared));
+    {
       for (const c of convos) {
         if (c[CF.CHAT_TYPE] && c[CF.CHAT_TYPE] !== CT.ONE_TO_ONE) continue;
         const cid = String(c.id || c._ID);
-        const memberIds = memberMap.loaded ? (memberMap.get(cid) || []) : await fetchConversationMemberIds(cid);
+        const memberIds = await fetchConversationMemberIds(cid);
         if (memberIds.length === 2 && memberIds.includes(me) && memberIds.includes(other)) {
           return cid;
         }

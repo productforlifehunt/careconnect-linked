@@ -188,7 +188,7 @@ export async function fetchProviderByIdWordPress(id: string): Promise<Profile | 
     // Profile page reads the same dictionary row as search (CCT 258), so the
     // card price and the profile price can never disagree, and no Dokan/Woo
     // store call happens before checkout.
-    const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { _limit: 200 } });
+    const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { cct_author_id: numericId, _limit: 20 } });
     const row = (Array.isArray(rows) ? rows : []).find(
       (r: any) => String(r.author_id || r.cct_author_id || r.user_id) === numericId,
     );
