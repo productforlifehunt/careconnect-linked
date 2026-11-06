@@ -100,3 +100,31 @@ export const analyzeSiteNote = createServerFn({ method: 'POST' })
       return result.report ? { ...result, report: attachCorrectionNotes(result.report, notes) } : result;
     } catch (error) { return { error: error instanceof Error ? error.message : '全站分析读取失败', status: 502 }; }
   });
+
+/** Researcher-only dialog about one suggestion. Related notes and code are re-read on the server; nothing is saved. */
+export const chatAboutCorrection = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({
+    page: z.string().min(1).max(2000),
+    target: z.enum(['page_note', 'element_note', 'functional_note', 'code']),
+    noteId: z.string().regex(/^\d+$/).nullable(),
+    basisNoteIds: z.array(z.string().regex(/^\d+$/)).max(50),
+    reason: z.string(), draftTitle: z.string(), draftText: z.string(),
+    messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1) })).min(1).max(60),
+  }).parse(input))
+  .handler(async ({ data }) => {
+    const { verifyResearcher, chatCorrection } = await import('./inspector-ai.server');
+    try { await verifyResearcher(getRequestHeader('X-WP-Token') || ''); }
+    catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden' }; }
+    try {
+      const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
+      const current = data.noteId ? await readNoteById(data.noteId) : null;
+      const related = data.noteId ? await readRelatedNotes(data.noteId) : [];
+      const basis = await Promise.all(data.basisNoteIds.filter(id => !related.some(r => r.id === id)).map(id => readNoteById(id).catch(() => null)));
+      const baseline = [...related, ...basis.filter((n): n is NonNullable<typeof n> => !!n)];
+      const { readInspectionSource } = await import('./inspector-source.server');
+      const { formatSourceEvidence } = await import('@/features/inspector/source-evidence');
+      const source = await readInspectionSource({ page: data.page });
+      const context = `SERVER_READ_ACTUAL_SOURCE:\n${source.files.length ? formatSourceEvidence(source) : '（未读取到实际代码）'}\nSOURCE_OMISSIONS:${JSON.stringify(source.omissions)}\n\nBASELINE_RELATED_NOTES（视为正确）:\n${JSON.stringify(baseline.map(n => ({ cct: `CCT324 #${n.id}`, a55: n.title, a56: n.text })))}\n\nCURRENT_NOTE（被修改对象）:\n${JSON.stringify(current ? { cct: `CCT324 #${current.id}`, a55: current.title, a56: current.text } : null)}\n\nSUGGESTION（target=${data.target}）原因：${data.reason}\n当前编辑框名字：${data.draftTitle}\n当前编辑框正文：\n${data.draftText}`;
+      return await chatCorrection(context, data.messages);
+    } catch (error) { return { error: error instanceof Error ? error.message : '读取失败' }; }
+  });
