@@ -340,7 +340,9 @@ export default function ReadWriteInspector() {
   // Old line-based key, read only to carry earlier bindings over to the new identity.
   // Old line-based key only when it really names a source line; without one it is just component names + tag,
   // shared by every element of that card.
-  const legacyKey = info?.sources[0] ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}${info.itemSlot ? `|${info.itemSlot}` : ""}` : "";
+  const legacyKey = info?.anchor.names[0]?.startsWith("scope:")
+    ? ["el", pathname.replace(/\/\d+(?=\/|$)/g, "/:id"), info.anchor.names.join("<"), `@${info.anchor.path}`].join("|")
+    : info?.sources[0] ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}${info.itemSlot ? `|${info.itemSlot}` : ""}` : "";
   const elementAliasKey = info ? elementAlias(pathname, info.components, info.tag, info.itemSlot) : "";
   const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();

@@ -78,6 +78,8 @@ export function stableAnchor(el: Element): { names: string[]; path: string } {
 
 /** The element note key used by both builds; record ids in the page path are folded to :id. */
 export function stableElementKey(pathname: string, anchor: { names: string[]; path: string }): string {
+  // Named scopes (AI chat dialog, settings form) are the same element on every page: never page-bound.
+  if (anchor.names[0]?.startsWith("scope:")) return ["el", "*", anchor.names.join("<"), `@${anchor.path}`].join("|");
   return ["el", pathname.replace(/\/\d+(?=\/|$)/g, "/:id"), anchor.names.join("<"), `@${anchor.path}`].join("|");
 }
 
