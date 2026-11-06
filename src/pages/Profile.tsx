@@ -216,7 +216,7 @@ export default function Profile() {
 
           <Card className="border-transparent card-elevated">
             <CardHeader><CardTitle>{t("profile.personalInfo")}</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent data-inspector-scope="settings-personal-form" className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div><Label>{t("common.fullName")}</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
                 <div><Label>{t("common.email")}</Label><Input value={email} disabled className="opacity-60" /></div>
