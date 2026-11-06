@@ -45,7 +45,7 @@ it('dialog reply can be placed into the editor but never saves by itself', async
   fireEvent.change(screen.getByLabelText('对 AI 说'),{target:{value:'再补上推送'}});
   fireEvent.click(screen.getByRole('button',{name:'发送'}));
   await screen.findByText('已补上推送写入');
-  expect(mocks.chat.mock.calls[0][0].data.messages).toEqual([{role:'user',content:'再补上推送'}]);
+  expect(mocks.chat.mock.calls[0]?.[0]?.data.messages).toEqual([{role:'user',content:'再补上推送'}]);
   fireEvent.click(screen.getByRole('button',{name:'放进上面的编辑框'}));
   expect((screen.getByLabelText('建议修改或补充完整正文') as HTMLTextAreaElement).value).toBe('补齐后的完整正文');
   expect(mocks.submit).not.toHaveBeenCalled();
