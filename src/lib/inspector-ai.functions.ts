@@ -4,7 +4,7 @@ import { z } from "zod";
 
 /** Researcher-only AI explanation of an inspected element or page. */
 export const explainReadWrite = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ context: z.string().min(2).max(60_000), mode: z.enum(["full", "origin"]).optional(), scope: z.enum(['page', 'element']).optional(), noteKeys: z.array(z.string().max(2000)).max(3).optional(), noteId: z.string().regex(/^\d+$/).optional(), draft: z.object({ title: z.string().max(240), text: z.string().max(100_000) }).optional() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ context: z.string().min(2), mode: z.enum(["full", "origin"]).optional(), scope: z.enum(['page', 'element']).optional(), noteKeys: z.array(z.string().max(2000)).max(3).optional(), noteId: z.string().regex(/^\d+$/).optional(), draft: z.object({ title: z.string().max(240), text: z.string() }).optional() }).parse(input))
   .handler(async ({ data }) => {
     const { verifyResearcher, explainInspection } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); }
@@ -60,7 +60,7 @@ export const checkNoteConflicts = createServerFn({ method: "POST" })
 
 /** One bounded part of a site audit. Every call verifies WP identity and re-reads CCT324 + REL325. */
 export const analyzeSiteNote = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => z.object({ page: z.string().max(500), noteId: z.string().regex(/^\d+$/), pageNoteIds: z.array(z.string().regex(/^\d+$/)).max(100).optional(), evidence: z.string().min(1).max(40_000), chunk: z.number().int().min(1), chunks: z.number().int().min(1), omissions: z.array(z.string().max(1000)).max(1000) }).refine(v => v.chunk <= v.chunks).parse(input))
+  .inputValidator((input: unknown) => z.object({ page: z.string().max(500), noteId: z.string().regex(/^\d+$/), pageNoteIds: z.array(z.string().regex(/^\d+$/)).max(100).optional(), evidence: z.string().min(1), chunk: z.number().int().min(1), chunks: z.number().int().min(1), omissions: z.array(z.string().max(1000)).max(1000) }).refine(v => v.chunk <= v.chunks).parse(input))
   .handler(async ({ data }) => {
     const { verifyResearcher, explainInspection } = await import('./inspector-ai.server');
     try { await verifyResearcher(getRequestHeader('X-WP-Token') || ''); }
@@ -84,7 +84,6 @@ export const analyzeSiteNote = createServerFn({ method: 'POST' })
       for (const match of evidenceText.matchAll(/\bR\.([A-Za-z_]\w*)/g)) { const relation = relations[match[1] || '']; if (relation) relIds.add(String(relation)); }
       const dictionary = { cct: Object.fromEntries(Object.entries(WP.cct).filter(([id]) => cctIds.has(id))), rel: Object.fromEntries(Object.entries(WP.rel).filter(([id]) => relIds.has(id))) };
       const context = JSON.stringify({ page: data.page, analysis: '全站分析中的一项；逐对比较当前元素、整页主注释和它们所有直接关联注释；注释的用途与当前代码不一致也要明确指出，不自动裁决需求', sourceChunk: data.chunk, sourceChunks: data.chunks, evidenceOmissions: data.omissions, notes, dictionary, source: data.evidence });
-      if (context.length > 120_000) return { error: '当前注释和所有关联注释超过分析容量，未截断、未执行；此项未完成。', status: 422 };
       const result = await explainInspection(context, 'full', undefined, notes.map(n => n.id), true);
       return result.report ? { ...result, report: attachCorrectionNotes(result.report, notes) } : result;
     } catch (error) { return { error: error instanceof Error ? error.message : '全站分析读取失败', status: 502 }; }
