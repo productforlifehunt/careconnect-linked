@@ -1,6 +1,7 @@
 import { getWPToken, wpEnsureFreshToken, wpRefreshToken } from "@/services/wp-auth";
 import { buildWPUrl, buildWPHeaders } from "@/lib/wp-url";
 import { recordRequest, attachResponse, InspectorWriteBlocked } from "@/features/inspector/recorder";
+import { createReadCache } from './read-cache';
 
 export interface WordPressFetchOptions {
   method?: string | undefined;
@@ -17,7 +18,7 @@ export interface WordPressFetchOptions {
  * the cache, so nothing stale is served after a mutation.
  */
 const GET_TTL_MS = 4000;
-const getCache = new Map<string, { at: number; promise: Promise<Response> }>();
+const getCache = createReadCache<Response>();
 
 if (typeof window !== "undefined") {
   window.addEventListener("wp-write", () => getCache.clear());
@@ -77,20 +78,14 @@ export async function wordpressFetchRaw(endpoint: string, options: WordPressFetc
   let response: Response;
   try {
     if (method === "GET") {
-      const key = `${url}|${token ? "auth" : "guest"}`;
-      const hit = getCache.get(key);
-      const now = Date.now();
-      let inflight: Promise<Response>;
-      if (hit && now - hit.at < GET_TTL_MS) {
-        inflight = hit.promise;
-      } else {
-        inflight = fetch(url, { method, headers }).catch((err) => {
-          getCache.delete(key);
-          throw err;
-        });
-        getCache.set(key, { at: now, promise: inflight });
-      }
-      response = (await inflight).clone();
+      const key = `${url}|${token || "guest"}`;
+      response = (await getCache.read(key, async () => {
+        const result = await fetch(url, { method, headers });
+        // Settle only after bytes arrive: late callers share a slow download too.
+        await result.clone().arrayBuffer();
+        if (!result.ok) getCache.clear(key);
+        return result;
+      }, GET_TTL_MS)).clone();
     } else {
       response = await fetch(url, {
         method,

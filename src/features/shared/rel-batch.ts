@@ -9,16 +9,16 @@
  * `jet-rel/<id>/children/<parentId>` request per row (the N+1 pattern).
  */
 import { wordpressFetch } from "@/features/shared/wordpress-client";
+import { createReadCache } from './read-cache';
+import { getWPToken } from '@/services/wp-auth';
 
 export interface RelChild {
   childId: string;
   meta: Record<string, any> | null;
 }
 
-type CacheEntry = { at: number; promise: Promise<any> };
-
 const READ_TTL_MS = 8000;
-const cache = new Map<string, CacheEntry>();
+const cache = createReadCache<any>();
 
 if (typeof window !== "undefined") {
   // Writes go through wordpressFetchRaw, which emits "wp-write".
@@ -32,23 +32,13 @@ if (typeof window !== "undefined") {
  * Failed reads are never cached.
  */
 export function dedupeRead<T>(key: string, fn: () => Promise<T>, ttlMs = READ_TTL_MS): Promise<T> {
-  const hit = cache.get(key);
-  const now = Date.now();
-  if (hit && now - hit.at < ttlMs) return hit.promise as Promise<T>;
-  const promise = fn().catch((err) => {
-    cache.delete(key);
-    throw err;
-  });
-  cache.set(key, { at: now, promise });
-  return promise;
+  const owner = typeof window === 'undefined' ? '' : getWPToken() || 'guest';
+  return cache.read(`${owner}|${key}`, fn, ttlMs) as Promise<T>;
 }
 
 /** Drops cached reads whose key contains `fragment` (call after a write). */
 export function invalidateRead(fragment?: string | undefined) {
-  if (!fragment) { cache.clear(); return; }
-  for (const key of Array.from(cache.keys())) {
-    if (key.includes(fragment)) cache.delete(key);
-  }
+  cache.clear(fragment);
 }
 
 /**

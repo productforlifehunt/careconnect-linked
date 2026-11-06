@@ -24,6 +24,7 @@ import { getCurrentUserId } from "@/features/shared/current-user";
 import type { CalendarEvent, CalendarEventType } from "./types";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, isInAppScope } from "@/features/shared/app-scope";
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 
 const SLUG = T.calendarEvent.slug;
 const REL_USER_EVENT = R.userCalendarEvents;
@@ -145,8 +146,10 @@ export async function fetchCalendarEventsForUserWordPress(userIdInput: string | 
   const userId = normalizeWPUserId(userIdInput);
   if (!userId) return [];
   try {
-    const ownedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/children/${userId}`);
-    const invitedRels: any[] = await wordpressFetch<any[]>(`jet-rel/${REL_EVENT_INVITEES}/parents/${userId}`);
+    const [ownedRels, invitedRels] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${REL_USER_EVENT}/children/${userId}`),
+      wordpressFetch<any[]>(`jet-rel/${REL_EVENT_INVITEES}/parents/${userId}`),
+    ]);
     const ownedIds: string[] = (Array.isArray(ownedRels) ? ownedRels : [])
       .map((r: any) => String(r?.child_object_id ?? r?._ID ?? r?.id ?? "").replace(/^wp-/, ""))
       .filter(Boolean);
@@ -155,7 +158,7 @@ export async function fetchCalendarEventsForUserWordPress(userIdInput: string | 
       .filter(Boolean);
     const allIds = Array.from(new Set([...ownedIds, ...invitedIds]));
     if (allIds.length === 0) return [];
-    const rows = await Promise.all(allIds.map((id) => wordpressCCTFetch<any>(SLUG, { id }).catch(() => null)));
+    const rows = await readLinkedCCTRows(SLUG, allIds);
     // Drop events belonging to the other apps sharing this CCT.
     return rows
       .filter((r): r is any => Boolean(r) && isInAppScope("calendarEvent", r))

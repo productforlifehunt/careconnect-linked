@@ -1,3 +1,11 @@
+## Current request: Sitewide frontend loading speed (2026-11-06)
+- [x] Shared pending-read deduplication now lasts through slow completion, remains session-scoped, and invalidates on writes. Freshness TTLs unchanged.
+- [x] Independent own-profile reads run together; app-profile resolution is shared. GUI-documented/live-read-verified native IN batches reduce 15 own profile reads to one; notifications/groups/calendar use the same linked-ID helper. Inspector catalogue and cared-one tools load on demand.
+- [x] Location sharing does not run on researcher/ESM/consent/sick sites. Emergency/care sharing intervals unchanged.
+- [x] Authenticated cared-one list prefetch overlaps onboarding without rendering children early. Full suite 481/481 passed before the final calendar change; subsequent 17/17 targeted regressions including calendar passed. Latest preview build OK.
+- [x] Researcher browser opened seven care routes, six sub-app entries and mobile; real notes title/content readback passed, mobile has no overflow or page errors. Seven-route heading checks are not complete data-load timings. Cold tips heading took 15.4s and 25.5s in two later runs versus 32.8s before native batching, not a controlled statistical benchmark.
+- [ ] Exhaustive every-page/all-operation performance coverage and fastest-possible claim remain unverified; current frontend improvements are not published. WordPress single-request response delays remain and server configuration was not changed.
+
 ## Current request: Actual-source three-way analysis (2026-11-06)
 - [x] Ensure preview and published page/element/manual analysis resolve and read actual current source and imported read/write helpers, without relying on preview source markers.
 - [x] Require server-read actual-code evidence; compare functional logic as the baseline against code and manual notes, with separate manual-only correction proposals; no notes-only fallback in the visible related-note action.

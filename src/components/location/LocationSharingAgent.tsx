@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { getCurrentPosition } from "@/lib/geolocation";
+import { useSite } from '@/contexts/SiteContext';
 
 const SHARE_EVERY_MS = 3 * 60 * 1000;
 const POLL_EVERY_MS = 30 * 1000;
@@ -15,12 +16,14 @@ const POLL_EVERY_MS = 30 * 1000;
  */
 export function LocationSharingAgent() {
   const { isAuthenticated } = useAuth();
+  const site = useSite();
+  const careSite = !['researcher', 'esm_survey', 'consent', 'sick'].includes(site.id);
   const qc = useQueryClient();
   const lastShare = useRef(0);
   const busy = useRef(false);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !careSite) return;
     let stopped = false;
 
     const tick = async () => {
@@ -73,7 +76,7 @@ export function LocationSharingAgent() {
     tick();
     const id = window.setInterval(tick, POLL_EVERY_MS);
     return () => { stopped = true; window.clearInterval(id); };
-  }, [isAuthenticated, qc]);
+  }, [isAuthenticated, careSite, qc]);
 
   return null;
 }

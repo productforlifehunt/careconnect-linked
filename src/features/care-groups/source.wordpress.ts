@@ -7,6 +7,7 @@ import { fetchWPUserProfile } from "@/features/shared/wp-users";
 import { dedupeRead } from "@/features/shared/rel-batch";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { randomJoinCode } from "./join-link";
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
 const REL_GROUP_MEMBER = R.careGroupMembers; // M:M  care_group → users
@@ -43,9 +44,7 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
   ));
   if (myGroupIds.length === 0) return [];
 
-  const groups = await Promise.all(myGroupIds.map((id) =>
-    dedupeRead(`cct-row:${T.careGroup.slug}:${id}`, () => wordpressCCTFetch<any>(T.careGroup.slug, { id })),
-  ));
+  const groups = await readLinkedCCTRows(T.careGroup.slug, myGroupIds);
 
   return groups.filter(Boolean).map((g: any) => ({
     id: String(g.id || g._ID || ""),

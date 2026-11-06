@@ -35,6 +35,10 @@ function toRecord(u: any): WPUserRecord {
  * batch are reused, so one batched request covers the whole screen.
  */
 const userRecordCache = new Map<number, WPUserRecord>();
+let userCacheGeneration = 0;
+if (typeof window !== 'undefined') {
+  window.addEventListener('wp-write', () => { userRecordCache.clear(); userCacheGeneration++; });
+}
 
 /**
  * Micro-batching queue — reads people straight from WordPress.
@@ -53,6 +57,7 @@ function enqueueUserIds(ids: number[]): Promise<void> {
     pendingBatch = new Promise<void>((resolve, reject) => {
       setTimeout(async () => {
         const batch = Array.from(pendingIds);
+        const generation = userCacheGeneration;
         pendingIds = new Set();
         pendingBatch = null;
         try {
@@ -62,6 +67,7 @@ function enqueueUserIds(ids: number[]): Promise<void> {
           if (!Array.isArray(rows)) {
             throw new Error("Could not read WordPress users");
           }
+          if (generation !== userCacheGeneration) throw new Error('Account or user data changed; retry the read.');
           for (const u of rows) {
             const rec = toRecord(u);
             userRecordCache.set(rec.id, rec);
@@ -283,8 +289,8 @@ export async function fetchWPUserProfile(id: number | string): Promise<WPUserPro
 }
 
 export async function fetchWPUserProfiles(ids: Array<number | string>): Promise<WPUserProfile[]> {
-  const users = await fetchWPUsers(ids);
-  return Promise.all(Array.from(users.keys()).map((id) => fetchWPUserProfile(id)));
+  const clean = [...new Set(ids.map(id => Number(String(id).replace(/^wp-/, ''))).filter(id => Number.isFinite(id) && id > 0))];
+  return Promise.all(clean.map(id => fetchWPUserProfile(id)));
 }
 
 /**

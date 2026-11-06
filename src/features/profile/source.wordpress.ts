@@ -70,17 +70,19 @@ function serializeRoleList(roles: string[] | null | undefined): string {
 
 export async function fetchMyProfileWordPress(): Promise<Profile | null> {
   try {
-    const wpProfile = await getWordPressFeature<Profile>("profile_me");
+    const [wpProfile, appName, cct] = await Promise.all([
+      getWordPressFeature<Profile>("profile_me"),
+      fetchMyAppUserName(),
+      findOwnRow(R.userProfile2Rel, CCT_SLUG),
+    ]);
     if (!wpProfile) return null;
 
     // Display name lives ONLY in this app's own column on CCT 151
     // (a556 ChallengeD / a557 CareCNC) — never the shared WP user name.
-    wpProfile.full_name = await fetchMyAppUserName();
+    wpProfile.full_name = appName;
 
     // Resolved through Relation 259 (one-to-one). A cct_author_id query filter
     // is ignored by JetEngine on this route and returns another user's row.
-    const cct: any = await findOwnRow(R.userProfile2Rel, CCT_SLUG);
-
     if (cct) {
       wpProfile.general_user_role = parseCheckboxList(cct[F.GENERAL_USER_ROLE]) || wpProfile.general_user_role;
       wpProfile.is_care_provider = yesNoToBool(cct[F.IS_PAID_CARE_PROVIDER]);

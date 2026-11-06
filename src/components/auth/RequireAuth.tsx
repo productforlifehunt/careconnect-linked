@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "@/lib/router-compat";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { currentAppId, fetchOnboardingDone } from "@/features/shared/app-profile";
@@ -9,6 +10,16 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   const app = currentAppId();
+  const queryClient = useQueryClient();
+
+  // Start the ownership-scoped person list while onboarding is checked, but
+  // keep the same render/redirect gate. No hidden child component is mounted.
+  useEffect(() => {
+    if (!isAuthenticated || !location.pathname.startsWith('/cared-ones')) return;
+    void import('@/features/cared-ones/source.wordpress').then(({ fetchUserCaredOnesWordPress }) =>
+      queryClient.prefetchQuery({ queryKey: ['userCaredOnes'], queryFn: fetchUserCaredOnesWordPress }),
+    ).catch(() => {});
+  }, [isAuthenticated, location.pathname, queryClient]);
 
   // Onboarding is per sub-app: finished or skipped once, then never again.
   const { data: onboarded, isLoading: checkingOnboarding } = useQuery({
