@@ -174,9 +174,11 @@ export function useCareFacilities(filters?: {
   area?: "china" | "global" | undefined;
 }) {
   return useQuery({
-    queryKey: ["facilities", filters],
-    queryFn: async () => {
-      const raw = await fetchCareFacilitiesWordPress();
+    // One read shared by every keystroke/filter; typing only re-filters the already loaded list.
+    queryKey: ["facilities"],
+    queryFn: fetchCareFacilitiesWordPress,
+    staleTime: 60_000,
+    select: (raw) => {
       let results = dedupeFacilities(raw as unknown as CareFacility[]);
       if (filters?.query) {
         const q = filters.query.toLowerCase();
