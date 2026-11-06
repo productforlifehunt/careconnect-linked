@@ -34,7 +34,7 @@ export function validateConflictReport(text: string, ids: string[], requireCode:
   const unique = [...new Set(ids)];
   const rejected: string[] = [];
   for (const finding of report.findings) {
-    finding.suggestions = (finding.suggestions || []).filter(suggestion => {
+    if (finding.suggestions) finding.suggestions = finding.suggestions.filter(suggestion => {
       let why = '';
       if (suggestion.basisNoteIds.some(id => !unique.includes(id))) why = '引用了未读取的笔记';
       else if (suggestion.target === 'code') { if (suggestion.noteId !== null) why = '代码建议指向了笔记'; }
