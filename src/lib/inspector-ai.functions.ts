@@ -42,3 +42,20 @@ export const checkNoteConflicts = createServerFn({ method: "POST" })
     } catch (error) { return { error: `注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     return compareNotes(payload);
   });
+
+/** One bounded part of a site audit. Every call verifies WP identity and re-reads CCT324 + REL325. */
+export const analyzeSiteNote = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({ page: z.string().max(500), noteId: z.string().regex(/^\d+$/), evidence: z.string().min(1).max(40_000), chunk: z.number().int().min(1), chunks: z.number().int().min(1), omissions: z.array(z.string().max(1000)).max(1000) }).refine(v => v.chunk <= v.chunks).parse(input))
+  .handler(async ({ data }) => {
+    const { verifyResearcher, explainInspection } = await import('./inspector-ai.server');
+    try { await verifyResearcher(getRequestHeader('X-WP-Token') || ''); }
+    catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden', status: 403 }; }
+    try {
+      const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
+      const [note, related] = await Promise.all([readNoteById(data.noteId), readRelatedNotes(data.noteId)]);
+      const notes = [...new Map([note, ...related].map(n => [n.id, { id: n.id, title: n.title, text: n.text }])).values()];
+      const context = JSON.stringify({ page: data.page, analysis: '全站分析中的一项；注释的用途与当前代码不一致也要明确指出，不自动裁决需求', sourceChunk: data.chunk, sourceChunks: data.chunks, evidenceOmissions: data.omissions, notes, source: data.evidence });
+      if (context.length > 120_000) return { error: '当前注释和所有关联注释超过分析容量，未截断、未执行；此项未完成。', status: 422 };
+      return explainInspection(context, 'full', undefined, notes.map(n => n.id), true);
+    } catch (error) { return { error: error instanceof Error ? error.message : '全站分析读取失败', status: 502 }; }
+  });

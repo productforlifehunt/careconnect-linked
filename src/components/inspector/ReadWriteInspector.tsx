@@ -17,6 +17,7 @@ import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { ConflictReportView } from './ConflictReportView';
 import type { ConflictReport } from '@/features/inspector/conflict-report';
+import { SiteAnalysis } from './SiteAnalysis';
 
 /** Text that comes from the signed-in account saved at login (no request on this page). */
 function accountMatches(text: string): string[] {
@@ -26,7 +27,7 @@ function accountMatches(text: string): string[] {
   return Object.entries(me).filter(([k, v]) => typeof v === "string" && v.length >= 2 && !/token/i.test(k) && low.includes(v.toLowerCase())).map(([k, v]) => `${k} = “${String(v).slice(0, 60)}”`);
 }
 
-type Tab = "element" | "page";
+type Tab = "element" | "page" | "site";
 type Sub = "rw" | "ai" | "notes";
 
 function useRecorded(): RecordedRequest[] {
@@ -412,13 +413,13 @@ export default function ReadWriteInspector() {
             <Button size="sm" variant="ghost" onClick={clearRecorded} aria-label="清空记录 / Clear"><Trash2 className="h-4 w-4" /></Button>
           </div>
           <div className="flex gap-1 border-b border-border p-2 text-xs">
-            {(["element", "page"] as Tab[]).map((t) => (
-              <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-md px-2 py-1 ${tab === t ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"}`}>
-                {t === "element" ? "元素 / Element" : "整页 / Page"}
-              </button>
+            {(["element", "page", "site"] as Tab[]).map((t) => (
+              <Button key={t} size="sm" variant={tab === t ? "secondary" : "ghost"} onClick={() => setTab(t)}>
+                {t === "element" ? "元素 / Element" : t === "page" ? "整页 / Page" : "全站 / Site"}
+              </Button>
             ))}
           </div>
-          <div className="flex gap-1 border-b border-border p-2 text-xs">
+          <div className={tab === "site" ? "hidden" : "flex gap-1 border-b border-border p-2 text-xs"}>
             {(["rw", "ai", "notes"] as Sub[]).map((t) => (
               <button key={t} type="button" onClick={() => setSub(t)} className={`rounded-md border px-2 py-1 ${sub === t ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}>
                 {t === "rw" ? "读写分析" : t === "ai" ? "AI 分析" : `手动注释${(tab === "element" ? notes.element : notes.page) ? " ●" : ""}`}
@@ -426,6 +427,7 @@ export default function ReadWriteInspector() {
             ))}
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto p-3 text-sm" style={{ zoom: scale }}>
+            <div className={tab === "site" ? "" : "hidden"}><SiteAnalysis /></div>
             {interact && <p className="rounded-md bg-muted p-2 text-xs">浏览模式：可以正常点击和跳转。要查看某个元素，切回「选择」。 / Browse mode: navigate freely.</p>}
             {tab === "element" && !info && <p className="text-xs text-muted-foreground">在「选择」模式下点页面上任意元素。 / In Select mode, click any element on the page.</p>}
             {tab === "element" && info && (
