@@ -1,3 +1,8 @@
+## Current request: AI, Inbox and Settings functional notes (2026-11-06)
+- [ ] Rewrite uploaded AI and push specifications plus all Settings-page logic into three readable numbered functional notes, including CCT columns and JetEngine relation directions.
+- [ ] Distinguish intended rules from code-proven behavior and unresolved differences; preserve existing manually checked notes and business logic.
+- [ ] Save three CCT324 notes through the authorized WordPress subsite GUI and reopen each to verify exact text, names and record IDs.
+
 ## Current request: Sitewide frontend loading speed (2026-11-06)
 - [x] Shared pending-read deduplication now lasts through slow completion, remains session-scoped, and invalidates on writes. Freshness TTLs unchanged.
 - [x] Independent own-profile reads run together; app-profile resolution is shared. GUI-documented/live-read-verified native IN batches reduce 15 own profile reads to one; notifications/groups/calendar use the same linked-ID helper. Inspector catalogue and cared-one tools load on demand.
