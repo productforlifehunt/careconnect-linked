@@ -76,15 +76,53 @@ async function storeBinding(binding: NoteBinding) {
   const { error } = await client().storage.from(BUCKET).upload(`bindings/${await hash(binding.key)}.json`, new Blob([JSON.stringify(binding)], { type: 'application/json' }), { upsert: true, contentType: 'application/json' });
   if (error) throw new Error('注释已写入，但固定选择未保存，请重试；不要再次新建。');
 }
+/**
+ * Reads every CCT324 row in a few large pages fetched side by side.
+ * The old loop asked for 500 rows at a time, one after another (20+ round trips in a row),
+ * which kept the small WordPress server busy for half a minute on every inspector load.
+ */
+const PAGE = 1000;
+const PARALLEL = 3;
+async function readPage(offset: number): Promise<{ rows: CCTRow[]; total: number | null }> {
+  const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
+  if (!user || !password) throw new Error('注释写入未配置。');
+  const response = await fetch(`${CCT_BASE}?_limit=${PAGE}&_offset=${offset}&_orderby=_ID&_order=asc`, { headers: { Authorization: `Basic ${btoa(`${user}:${password}`)}` } });
+  if (!response.ok) throw new Error(`注释读取或保存失败（${response.status}），请重试。`);
+  const result = await response.json();
+  if (!Array.isArray(result)) throw new Error('注释列表返回异常。');
+  const header = Number(response.headers.get('Jet-Query-Total'));
+  return { rows: result as CCTRow[], total: Number.isFinite(header) && header > 0 ? header : null };
+}
+async function readAllRows(): Promise<CCTRow[]> {
+  const first = await readPage(0);
+  if (first.rows.length < PAGE) return first.rows;
+  const rows: CCTRow[] = [...first.rows];
+  if (first.total) {
+    const offsets: number[] = [];
+    for (let o = PAGE; o < first.total; o += PAGE) offsets.push(o);
+    for (let i = 0; i < offsets.length; i += PARALLEL) {
+      const pages = await Promise.all(offsets.slice(i, i + PARALLEL).map(readPage));
+      for (const p of pages) rows.push(...p.rows);
+    }
+    // Rows added while reading land past the counted total; pick them up so nothing is missed.
+    for (let o = Math.ceil(first.total / PAGE) * PAGE; ; o += PAGE) {
+      const tail = await readPage(o);
+      rows.push(...tail.rows);
+      if (tail.rows.length < PAGE) break;
+    }
+  } else {
+    for (let o = PAGE; ; o += PAGE) {
+      const page = await readPage(o);
+      rows.push(...page.rows);
+      if (page.rows.length < PAGE) break;
+    }
+  }
+  return [...new Map(rows.map(r => [String(r._ID), r])).values()];
+}
+
 export async function readAllNotes(): Promise<InspectorNote[]> {
   const bindings = await configuration();
-  const rows: CCTRow[] = [];
-  for (let offset = 0; ; offset += 500) {
-    const result = await wp(`?_limit=500&_offset=${offset}&_orderby=_ID&_order=asc`);
-    if (!Array.isArray(result)) throw new Error('注释列表返回异常。');
-    rows.push(...result as CCTRow[]);
-    if (result.length < 500) break;
-  }
+  const rows = await readAllRows();
   // Independent location files avoid lost updates between unrelated elements.
   const storage = client().storage.from(BUCKET);
   const files: { name: string }[] = [];
