@@ -48,11 +48,13 @@ const InformationCardCard = lazyRetry(() => import('@/components/cared-ones/Info
 const FamilyVoiceCard = lazyRetry(() => import('@/components/cared-ones/FamilyVoiceCard').then(m => ({ default: m.FamilyVoiceCard })), 'FamilyVoiceCard');
 const LocationCard = lazyRetry(() => import('@/components/care/LocationCard'), 'LocationCard');
 
+// The tool is rendered directly by FeatureDetail (no extra named wrapper): saved inspector notes
+// identify elements by the component names around them (…CarePlanCard<FeatureDetail…).
 function FeatureDetail(props: { cardKey: string; caredOneId: string; caredOneName: string }) {
-  return <Suspense fallback={<PageSkeleton />}><FeatureContent {...props} /></Suspense>;
+  return <Suspense fallback={<PageSkeleton />}>{featureContent(props)}</Suspense>;
 }
 
-function FeatureContent({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
+function featureContent({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
     case "medicine": return <MedicineCard caredOneId={caredOneId} />;
     case "checkin":
