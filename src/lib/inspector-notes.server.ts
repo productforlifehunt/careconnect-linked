@@ -223,7 +223,7 @@ export async function unlinkNotes(parent: string, child: string): Promise<void> 
 export function relationDirection(current: { id: string; title: string }, other: { id: string; title: string }): { parent: string; child: string } {
   return { parent: current.id, child: other.id };
 }
-export async function readNoteById(id: string): Promise<{ id: string; title: string; text: string }> { const row = await wp(`/${id}`) as CCTRow; if (String(row._ID) !== id) throw new Error('所选注释不存在。'); return { id, title: row.a55 || '', text: row.a56 || '' }; }
+export async function readNoteById(id: string): Promise<{ id: string; title: string; text: string; verified: boolean }> { const row = await wp(`/${id}`) as CCTRow; if (String(row._ID) !== id) throw new Error('所选注释不存在。'); return { id, title: row.a55 || '', text: row.a56 || '', verified: row.a58 === 'b55' }; }
 export async function noteTitle(id: string): Promise<string> { return (await readNoteById(id)).title; }
 export async function createPlainNote(title: string, text: string): Promise<string> {
   const result = await wp('', 'POST', { a55: title, a56: text, cct_status: 'publish' }) as number | string | { item_id?: number; _ID?: number };
