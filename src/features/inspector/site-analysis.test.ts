@@ -10,9 +10,14 @@ describe('whole-site inventory and evidence coverage', () => {
       { key: 'cct|999', id: '999' },
     ]);
     expect(pages).toHaveLength(2);
-    expect(pages[0]).toEqual({ path: '/care-circle/:id', files: ['routes/group.tsx','components/Count.tsx'], noteIds: ['1','2'], elementNotes: 2, pageNotes: 1 });
+    expect(pages[0]).toEqual({ path: '/care-circle/:id', files: ['routes/group.tsx','components/Count.tsx'], noteIds: ['1','2'], pageNoteIds: ['1'], elementNotes: 2, pageNotes: 1 });
     expect(pages[1]?.noteIds).toEqual([]);
     expect(normaliseSitePath('/care-circle/:groupId/')).toBe('/care-circle/:id');
+  });
+  it('never merges different standalone sites sharing the same URL pathname', () => {
+    const pages = siteInventory([{path:'/?__site=notchsafety', files:['safety.tsx']},{path:'/?__site=esm_survey', files:['survey.tsx']}], []);
+    expect(pages).toHaveLength(2);
+    expect(pages.map(p => p.path)).toEqual(['/?__site=esm_survey','/?__site=notchsafety']);
   });
   it('includes all source lines exactly once across chunks with file and line evidence', () => {
     const chunks = splitSiteEvidence([{ file: 'a.ts', text: 'first\nsecond\nthird' }], 20);

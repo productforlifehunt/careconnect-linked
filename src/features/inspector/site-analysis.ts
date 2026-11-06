@@ -2,6 +2,7 @@ import type { ConflictReport } from './conflict-report';
 
 export interface SiteBinding { key: string; id?: string | undefined; page?: string | undefined; source?: { file: string } | undefined; title?: string | undefined }
 export interface SitePage { path: string; files: string[]; noteIds: string[]; elementNotes: number; pageNotes: number }
+export interface SitePage { pageNoteIds?: string[] }
 export interface SiteResult { page: string; noteId?: string | undefined; chunk: number; chunks: number; report?: ConflictReport | undefined; error?: string | undefined }
 export const normaliseSitePath = (path: string) => {
   const [pathname, search = ''] = path.split('?');
@@ -27,7 +28,7 @@ export function siteInventory(routes: { path: string; files: string[] }[], bindi
     if (!path) continue;
     const page = get(path);
     if (binding.id) page.noteIds.push(binding.id);
-    if (parts[0] === 'page') page.pageNotes++; else page.elementNotes++;
+    if (parts[0] === 'page') { page.pageNotes++; if (binding.id) page.pageNoteIds = [...new Set([...(page.pageNoteIds || []), binding.id])]; } else page.elementNotes++;
     const file = binding.source?.file || (parts[0] === 'el' ? parts[2]?.replace(/:\d+(?::\d+)?$/, '') : undefined);
     if (file && /\.(ts|tsx)$/.test(file)) page.files.push(file.replace(/^\/?src\//, ''));
   }

@@ -10,7 +10,7 @@ import { siteTotals, type SitePage, type SiteResult } from '@/features/inspector
 import { ConflictReportView } from './ConflictReportView';
 import { readSource } from '@/features/inspector/live-index';
 
-interface Work { page: string; noteId?: string; evidence: string; chunk: number; chunks: number; omissions: string[] }
+interface Work { page: string; noteId?: string; pageNoteIds?: string[]; evidence: string; chunk: number; chunks: number; omissions: string[] }
 export function SiteAnalysis() {
   const load = useServerFn(loadAllInspectorNotes); const analyze = useServerFn(analyzeSiteNote);
   const [pages, setPages] = useState<SitePage[]>([]); const [results, setResults] = useState<SiteResult[]>([]);
@@ -53,7 +53,7 @@ export function SiteAnalysis() {
           const evidence = await buildSiteEvidence(page, readForRun);
           if (!page.noteIds.length) work.current.push({ page: page.path, evidence: '', chunk: 1, chunks: 1, omissions: evidence.omissions });
           else for (const noteId of page.noteIds) for (const [index, text] of (evidence.chunks.length ? evidence.chunks : ['无代码证据']).entries()) {
-            work.current.push({ page: page.path, noteId, evidence: text, chunk: index + 1, chunks: Math.max(1, evidence.chunks.length), omissions: [...evidence.omissions, ...(evidence.chunks.length > 1 ? [`当前只提供 ${index + 1}/${evidence.chunks.length} 代码分片；单项不代表整页核查完成。`] : [])] });
+            work.current.push({ page: page.path, noteId, pageNoteIds: page.pageNoteIds || [], evidence: text, chunk: index + 1, chunks: Math.max(1, evidence.chunks.length), omissions: [...evidence.omissions, ...(evidence.chunks.length > 1 ? [`当前只提供 ${index + 1}/${evidence.chunks.length} 代码分片；单项不代表整页核查完成。`] : [])] });
           }
         }
         setExpected(work.current.length);
@@ -78,7 +78,7 @@ export function SiteAnalysis() {
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <p className="text-muted-foreground">范围：全部页面代码、已绑定整页／元素注释及各自直接关联注释。未绑定页面、缺失代码和未实测状态列为未完成；无关联注释不作任意两两比较。逐项分析会产生 AI 费用。</p>
     {pages.map(page => <details key={page.path} className="border-b border-border pb-2">
-      <summary className="cursor-pointer break-words">{page.path} · 整页绑定 {page.pageNotes} · 元素绑定 {page.elementNotes} · 已返回 {results.filter(r => r.page === page.path).length} 项</summary>
+      <summary className={`cursor-pointer break-words ${results.some(r => r.page === page.path && (r.error || r.report?.findings.length)) ? 'text-destructive' : ''}`}>{page.path} · 整页绑定 {page.pageNotes} · 元素绑定 {page.elementNotes} · 已返回 {results.filter(r => r.page === page.path).length} 项 · 冲突或疑点 {results.filter(r => r.page === page.path).reduce((sum, r) => sum + (r.report?.findings.length || (r.error ? 1 : 0)), 0)}</summary>
       <div className="mt-2 space-y-2">{results.filter(r => r.page === page.path).map((result, index) => <div key={index}>
         <p>注释 {result.noteId ? `#${result.noteId}` : '未绑定'} · 代码分片 {result.chunk}/{result.chunks}</p>
         {result.error && <p role="alert" className="text-destructive">{result.error}</p>}
