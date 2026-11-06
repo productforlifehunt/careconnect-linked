@@ -136,7 +136,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild><Button variant="outline" size="sm" disabled={state.loading || state.saving}><ChevronsUpDown className="mr-1 h-3 w-3" />选择其他注释</Button></PopoverTrigger>
           <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={e => e.preventDefault()}>
-            <NoteSearchList onPick={(n) => { setChoice(n.id); setPicked(n); setOpen(false); }} />
+            <NoteSearchList onClose={() => setOpen(false)} onPick={(n) => { setChoice(n.id); setPicked(n); setOpen(false); }} />
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" disabled={!ready || !choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
