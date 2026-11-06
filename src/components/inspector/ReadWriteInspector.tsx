@@ -15,6 +15,8 @@ import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
 import { OriginSummary } from "./OriginSummary";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import { getStoredWPUser } from "@/services/wp-auth";
+import { ConflictReportView } from './ConflictReportView';
+import type { ConflictReport } from '@/features/inspector/conflict-report';
 
 /** Text that comes from the signed-in account saved at login (no request on this page). */
 function accountMatches(text: string): string[] {
@@ -139,19 +141,21 @@ function RefList({ refs }: { refs: CodeRef[] }) {
 
 function AiExplain({ build, mode = "full", label, ready = true, noteKeys }: { build: () => string; mode?: "full" | "origin"; label?: string; ready?: boolean; noteKeys?: string[] }) {
   const explain = useServerFn(explainReadWrite);
-  const [state, setState] = useState<{ loading?: boolean; text?: string; error?: string }>({});
+  const [state, setState] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const run = async () => {
     setState({ loading: true });
     try {
-      const res = await explain({ data: { context: build().slice(0, 60_000), mode, ...(noteKeys ? { noteKeys } : {}) } });
-      setState(res.text ? { text: res.text } : { error: res.error || "失败 / failed" });
+      const context = build();
+      if (context.length > 60_000) throw new Error('证据超过分析容量，未执行不完整分析。');
+      const res = await explain({ data: { context, mode, ...(noteKeys ? { noteKeys } : {}) } });
+      setState(res.report ? { report: res.report } : { error: res.error || "失败 / failed" });
     } catch (e) { setState({ error: e instanceof Error ? e.message : String(e) }); }
   };
   return (
     <div className="space-y-2 rounded-md border border-primary/40 p-2">
       <Button size="sm" variant="outline" onClick={run} disabled={state.loading || !ready}><Sparkles className="mr-1 h-4 w-4" />{!ready ? "等这页数据和代码读完… / Loading evidence…" : state.loading ? "AI 解读中… / Explaining…" : (label || "AI 解读 / Explain with AI")}</Button>
       {state.error && <p className="text-xs text-destructive">{state.error}</p>}
-      {state.text && <div className="max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-2 text-xs">{state.text}</div>}
+      {state.report && <ConflictReportView report={state.report} />}
     </div>
   );
 }
@@ -331,6 +335,7 @@ export default function ReadWriteInspector() {
   const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();
   const fitContext = (o: any): string => {
+    o.evidenceOmissions = [];
     let out = JSON.stringify(o);
     const cuts: Array<() => void> = [
       () => { o.codeRefs = (o.codeRefs || []).slice(0, 30); },
@@ -340,7 +345,7 @@ export default function ReadWriteInspector() {
       () => { o.codeRefs = []; },
       () => { if (o.element) o.element.decisionLogic = (o.element.decisionLogic || []).map((d: any) => ({ ...d, code: String(d.code).slice(0, 600) })); },
     ];
-    for (const cut of cuts) { if (out.length <= 58_000) break; cut(); out = JSON.stringify(o); }
+    for (const [i, cut] of cuts.entries()) { if (out.length <= 58_000) break; cut(); o.evidenceOmissions.push(`容量限制：第${i + 1}级代码或数据样本缩减，不能认定完整一致`); out = JSON.stringify(o); }
     return out;
   };
   // The app's own cached query results for the hooks this element's logic calls (queryKey: ["inboxCounts"] …):
@@ -369,13 +374,13 @@ export default function ReadWriteInspector() {
   }), [path, info, relatedRequests, elementRefs, logic, realMatches, strayMatches, pageRequests, cachedResults, notes]);
 
 
-  const pageContext = useCallback(() => JSON.stringify({
+  const pageContext = useCallback(() => fitContext({
     page: path, files: pageFiles, manualNotes: { page: notes.page || null },
     descriptiveSummary: pageNarrRef.current?.innerText.slice(0, 8000) || null,
     dictionary: Object.fromEntries([...new Map(pageRequests.map((r) => { const t = decodeEndpoint(r.method, r.endpoint); const d = (t.cct || t.rel) as { f?: Record<string, string>; opt?: Record<string, Record<string, string>> } | undefined; return [t.label.replace(/\s*#\d+$/, "").replace(/ (?:parents|children) of \d+$/, ""), d ? { columns: d.f, fieldTypes: t.cct ? Object.fromEntries(Object.values(t.cct.f || {}).map((c) => [c, fieldType(t.cct, c) || "?"])) : undefined, options: d.opt } : null] as const; }).filter(([, d]) => d)).entries()].slice(0, 30)),
     liveRequests: pageRequests.map((r) => ({ method: r.method, endpoint: r.endpoint, target: decodeEndpoint(r.method, r.endpoint).label, blocked: r.blocked, body: describeBody(r), fields: returnedFields(r), callers: r.callers })),
     codeRefs: pageRefs.slice(0, 150).map((r) => ({ kind: r.kind, label: r.label, file: `${r.file}:${r.line}`, snippet: r.snippet })),
-  }).slice(0, 60_000), [path, pageFiles, pageRequests, pageRefs, notes]);
+  }), [path, pageFiles, pageRequests, pageRefs, notes]);
 
   return (
     <div data-rw-inspector style={{ pointerEvents: "auto" }}>
@@ -432,7 +437,7 @@ export default function ReadWriteInspector() {
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
                 <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, `page|${pathname}`]} /></div>
-                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
+                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!logic && !!closure} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
                 <section className="space-y-1" ref={summaryRef}>
@@ -475,7 +480,7 @@ export default function ReadWriteInspector() {
             {tab === "page" && (
               <>
                 <div className="text-xs">页面 / Page: <span className="font-mono">{path}</span></div>
-                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`p-${pathname}`} build={pageContext} label="生成整页 AI 分析 / Generate page AI analysis" noteKeys={[`page|${pathname}`]} /></div>
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`p-${pathname}`} build={pageContext} ready={pageRefs.length > 0} label="生成整页 AI 分析 / Generate page AI analysis" noteKeys={[`page|${pathname}`]} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={pageNarrRef}><ReadWriteNarrative scope="page" matches={[]} requests={pageRequests} refs={pageRefs} /></div>
                 <section className="space-y-1"><div className="text-xs font-medium">本页实际读写 / Live reads and writes on this page ({pageRequests.length})</div><RequestList requests={pageRequests} /></section>
@@ -484,7 +489,7 @@ export default function ReadWriteInspector() {
                 </div>
               </>
             )}
-            {on && <div className={tab === "page" && sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>}
+            {on && <div className={tab === "page" && sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} buildEvidence={pageContext} evidenceReady={pageRefs.length > 0} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>}
           </div>
         </div>
       )}

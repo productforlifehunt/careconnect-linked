@@ -17,10 +17,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { NoteSearchList } from './NoteSearchList';
 import { ChevronsUpDown, Plus, Lock } from 'lucide-react';
 import { RelatedNotes } from './RelatedNotes';
+import { explainReadWrite } from '@/lib/inspector-ai.functions';
+import { ConflictReportView } from './ConflictReportView';
+import type { ConflictReport } from '@/features/inspector/conflict-report';
+import { Sparkles } from 'lucide-react';
 
-export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void }) {
+export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
+  const analyze = useServerFn(explainReadWrite);
+  const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
+  useEffect(() => { setAi({}); }, [noteKey, titleSafePlaceholder]);
   const [catalogue, setCatalogue] = useState<CCTNote[]>([]);
   const [selected, setSelected] = useState<string>();
   const [creating, setCreating] = useState(false);
