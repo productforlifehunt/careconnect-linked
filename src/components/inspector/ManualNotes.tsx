@@ -59,7 +59,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     try {
       const context = buildEvidence();
       if (context.length > 60_000) throw new Error('证据超过分析容量，未执行不完整分析。');
-      const result = await analyze({ data: { context, noteId: selected, draft: { title, text } } });
+      const result = await analyze({ data: { context, scope, noteId: selected, draft: { title, text } } });
       if (activeRevision.current !== current) return;
       setAi(result.report ? { report: result.report } : { error: result.error || '分析失败，核查未完成。' });
     } catch (error) { if (activeRevision.current === current) setAi({ error: String(error) }); }

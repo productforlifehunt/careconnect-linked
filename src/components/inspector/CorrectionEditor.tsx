@@ -9,7 +9,7 @@ import { getWPToken } from '@/services/wp-auth';
 import type { Correction, ReportNote } from '@/features/inspector/conflict-report';
 
 const labels = { page_note: '整页笔记', element_note: '元素笔记', functional_note: '功能逻辑笔记', code: '页面逻辑代码' };
-export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion: Correction; original?: ReportNote; onSaved?: (note: ReportNote) => void }) {
+export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion: Correction; original?: ReportNote | undefined; onSaved?: (note: ReportNote) => void }) {
   const submit = useServerFn(submitNoteCorrection);
   const [title, setTitle] = useState(suggestion.title);
   const [text, setText] = useState(suggestion.text);
