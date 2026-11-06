@@ -9,7 +9,7 @@ describe('deployment-compatible actual route source', () => {
     expect(result.files.some(source => source.file === 'features/schedules/calendar-schedule.ts')).toBe(true);
     const code = result.files.map(source => source.text).join('\n');
     expect(code).toContain('scheduleTimeColumns');
-    expect(code).toContain('REL191');
+    expect(code).toContain('R.medicineScheduleLogs');
     expect(result.files.length).toBeGreaterThan(3);
   }, 30_000);
 
