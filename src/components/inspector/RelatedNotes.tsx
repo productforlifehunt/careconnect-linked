@@ -10,7 +10,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { NoteSearchList } from "./NoteSearchList";
 import { linkRelatedNote, listRelatedNotes, unlinkRelatedNote, updateRelatedNote } from "@/lib/inspector-notes.functions";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
-import type { CCTNote } from "@/features/inspector/cct-notes";
 import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { ConflictReportView } from './ConflictReportView';
 

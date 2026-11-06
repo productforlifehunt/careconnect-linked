@@ -9,7 +9,7 @@ import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
 import { findSameElementNote } from "@/features/inspector/route-key";
-import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
+import { type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { NoteSearchList, type NotePick } from './NoteSearchList';
