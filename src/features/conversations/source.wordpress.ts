@@ -1,3 +1,4 @@
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
@@ -326,16 +327,9 @@ export async function fetchDirectMessagesWordPress(conversationId: string): Prom
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${numId(conversationId)}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
     const messageIds = rels.map((r: any) => String(r.child_object_id)).filter(Boolean);
-    const bulk = messageIds.length <= 5
-      ? []
-      : await wordpressCCTFetch<any[]>(MSG, { params: { _limit: 500, _orderby: "cct_created", _order: "desc" } });
+    // Only this conversation's own message rows, by ID (JetEngine IN filter) — never the global message table.
     const byId = new Map<string, any>();
-    for (const m of Array.isArray(bulk) ? bulk : []) byId.set(String(m.id ?? m._ID), m);
-    const missing = messageIds.filter((id) => !byId.has(id));
-    const fetched = await Promise.all(
-      missing.map((mid) => wordpressCCTFetch<any>(MSG, { id: mid })),
-    );
-    for (const m of fetched) if (m) byId.set(String(m.id ?? m._ID), m);
+    for (const m of await readLinkedCCTRows(MSG, messageIds)) byId.set(String(m.id ?? m._ID), m);
     const msgs = messageIds.map((id) => byId.get(id)).filter(Boolean);
 
     return (msgs.filter(Boolean) as any[])
