@@ -32,3 +32,9 @@ describe('actual source in preview and published analysis', () => {
     expect(result.omissions).toContain('没有实际源代码，三方核对未执行。');
   });
 });
+it('matches un-nested and pathless route ids to their URL', async () => {
+  const { matchesSourceRoute } = await import('./source-evidence');
+  expect(matchesSourceRoute('/care-circle_/$groupId', '/care-circle/28')).toBe(true);
+  expect(matchesSourceRoute('/_authenticated/dashboard', '/dashboard')).toBe(true);
+  expect(matchesSourceRoute('/care-circle', '/care-circle/28')).toBe(false);
+});

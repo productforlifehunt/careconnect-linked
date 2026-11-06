@@ -16,7 +16,8 @@ export function matchesSourceRoute(pattern: string, page: string): boolean {
   const path = page.split('?')[0]?.replace(/\/$/, '') || '/';
   const route = pattern.replace(/\/$/, '') || '/';
   if (route === '/$') return false;
-  const parts = route.split('/').map(part => part.startsWith('$') || part.startsWith(':')
+  // Pathless layout segments (_auth) vanish from the URL; a trailing _ only un-nests (care-circle_).
+  const parts = route.split('/').filter(part => !part.startsWith('_')).map(part => part.replace(/_$/, '')).map(part => part.startsWith('$') || part.startsWith(':')
     ? '[^/]+' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return new RegExp(`^${parts.join('/')}$`).test(path);
 }
