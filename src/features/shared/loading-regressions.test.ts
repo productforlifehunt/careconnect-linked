@@ -14,7 +14,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   window.dispatchEvent(new Event('wp-write'));
   mocks.fetch.mockResolvedValue([{ child_object_id: 151 }]);
-  mocks.cct.mockResolvedValue({ id: '151', a01: 'challenged', a55: 'Care name' });
+  mocks.cct.mockResolvedValue([{ id: '151', a01: 'challenged', a55: 'Care name' }]);
 });
 afterEach(() => window.dispatchEvent(new Event('wp-write')));
 

@@ -31,6 +31,7 @@ import { T, R } from "@/integrations/wp-schema";
 import { currentAppScope, type AppScope } from "@/features/shared/app-scope";
 import { linkOwnRow } from "@/features/shared/own-profile-row";
 import { dedupeRead } from './rel-batch';
+import { readLinkedCCTRows } from './cct-rows';
 
 const SLUG = T.userProfile.slug;
 const REL = R.userProfileRel;
@@ -105,10 +106,7 @@ async function childRowIds(userId: number): Promise<string[]> {
 }
 
 async function readRows(ids: string[]): Promise<any[]> {
-  const rows = await Promise.all(
-    ids.map((id) => wordpressCCTFetch<any>(SLUG, { id }).catch(() => null)),
-  );
-  return rows.filter(Boolean);
+  return readLinkedCCTRows(SLUG, ids);
 }
 
 const rowId = (row: any) => String(row?._ID ?? row?.id ?? "");
