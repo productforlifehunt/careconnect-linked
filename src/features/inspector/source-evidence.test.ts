@@ -11,13 +11,9 @@ describe('actual source in preview and published analysis', () => {
   });
   it('includes actual frontend code and imported read/write helpers, not only endpoint snippets', async () => {
     const source: Record<string, string> = {
-      'pages/CaredOnes.tsx': 'import { scheduleTimeColumns } from "@/features/schedules/time-columns";\nconst selected = "medicine";',
-      'features/schedules/time-columns.ts': 'export const scheduleTimeColumns = { start: "a57", end: "a58", recurrence: "a66" };',
+      'pages/CaredOnes.tsx': 'import { scheduleTimeColumns } from "@/features/schedules/calendar-schedule";\nconst selected = "medicine";',
+      'features/schedules/calendar-schedule.ts': 'export const scheduleTimeColumns = { start: "a57", end: "a58", recurrence: "a66" };',
     };
-    // Use an existing resolvable dependency name from the real registry.
-    const { resolveImport } = await import('./live-index');
-    const dependency = resolveImport('pages/CaredOnes.tsx', '@/features/schedules/time-columns');
-    if (dependency) source[dependency] = source['features/schedules/time-columns.ts'] || '';
     const result = await gatherSourceEvidence(['pages/CaredOnes.tsx'], async file => source[file] ?? null);
     expect(result.files.some(file => file.file === 'pages/CaredOnes.tsx')).toBe(true);
     expect(formatSourceEvidence(result)).toContain('const selected = "medicine"');

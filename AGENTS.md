@@ -42,3 +42,5 @@
 - The researcher read-write inspector (src/components/inspector, src/features/inspector) only observes: it records requests in wordpress-client (holding back every non-GET there while inspect mode is on) and only observes other fetches (store operations, app server functions by export/action), and its AI explanation server function re-verifies the researcher WP token; code references are re-read from current source on every click (no stored index), because a saved map drifts from the code.
 - Inspector notes: CCT324 body; private position config, not RELs; note↔note via REL325 (M:N, 数据字典 parent). Researcher-gated.
 - Emergency toggle uses shared flags to prevent permission drift.
+
+- Inspector AI source evidence is resolved from the current route and read server-side from deployment-bundled source in both preview and production; UI source tags are optional hints, never prerequisites, because actual code must participate in every three-way audit.
