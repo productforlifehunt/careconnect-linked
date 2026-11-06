@@ -17,7 +17,7 @@ import { ConflictReportView } from './ConflictReportView';
 type Related = { id: string; title: string; text: string; side: "parent" | "child"; verified: boolean };
 type Edit = { title: string; text: string; verified: boolean };
 
-export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue: CCTNote[] }) {
+export function RelatedNotes({ noteId }: { noteId: string }) {
   const list = useServerFn(listRelatedNotes); const link = useServerFn(linkRelatedNote);
   const unlink = useServerFn(unlinkRelatedNote); const update = useServerFn(updateRelatedNote);
   const [edits, setEdits] = useState<Record<string, Edit>>({}); const compare = useServerFn(explainReadWrite);
@@ -84,7 +84,7 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
         <Popover open={pick} onOpenChange={setPick}>
           <PopoverTrigger asChild><Button size="sm" variant="outline" disabled={busy}><Link2 className="mr-1 h-3 w-3" />关联已有注释</Button></PopoverTrigger>
           <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-            <NoteSearchList notes={catalogue.filter((c) => !linked.has(c.id))} onPick={(c) => { setPick(false); void run(() => link({ data: { id: noteId, otherId: c.id } })); }} />
+            <NoteSearchList exclude={new Set([...linked, noteId])} onPick={(c) => { setPick(false); void run(() => link({ data: { id: noteId, otherId: c.id } })); }} />
           </PopoverContent>
         </Popover>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => setDraft({ title: "", text: "" })}><Plus className="mr-1 h-3 w-3" />新建关联注释</Button>

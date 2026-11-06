@@ -1,29 +1,31 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import type { CCTNote } from "@/features/inspector/cct-notes";
+import { searchInspectorNotes } from "@/lib/inspector-notes.functions";
+
+export type NotePick = { id: string; title: string; verified: boolean };
+export type NoteSearch = (q: string, status: "all" | "verified" | "unverified") => Promise<NotePick[]>;
 
 /**
- * Fast note picker: plain text box, simple contains-match on name or number, at most 60 rows shown.
- * Thousands of notes stay smooth because nothing is fuzzy-scored and the list never renders them all;
- * Chinese input is matched only after the typed characters are committed.
+ * Note picker: WordPress itself searches the names (or exact number) and returns at most 60 rows,
+ * so nothing ever downloads the whole note table just to type into this box.
  */
-export function NoteSearchList({ notes, onPick }: { notes: CCTNote[]; onPick: (n: CCTNote) => void }) {
+export function NoteSearchList({ onPick, exclude, search }: { onPick: (n: NotePick) => void; exclude?: Set<string>; search?: NoteSearch }) {
+  const remote = useServerFn(searchInspectorNotes);
+  const run: NoteSearch = search ?? (async (q, status) => { const r = await remote({ data: { q, status } }); if ("error" in r && r.error) throw new Error(r.error); return r.notes; });
   const [text, setText] = useState("");
   const [status, setStatus] = useState<"all" | "verified" | "unverified">("all");
   const [composing, setComposing] = useState(false);
   const [committed, setCommitted] = useState("");
-  const query = useDeferredValue(composing ? committed : text);
-  const index = useMemo(() => notes.map((n) => ({ n, hay: `${n.title} #${n.id} ${n.id}`.toLowerCase() })), [notes]);
-  const results = useMemo(() => {
-    const words = query.trim().toLowerCase().replace(/^#/, "").split(/\s+/).filter(Boolean);
-    const out: CCTNote[] = [];
-    for (const { n, hay } of index) {
-      if (status === "verified" && !n.verified) continue;
-      if (status === "unverified" && n.verified) continue;
-      if (words.every((w) => hay.includes(w))) { out.push(n); if (out.length >= 60) break; }
-    }
-    return out;
-  }, [index, query, status]);
+  const [found, setFound] = useState<{ loading: boolean; rows: NotePick[]; error?: string }>({ loading: true, rows: [] });
+  const query = composing ? committed : text;
+  useEffect(() => {
+    let live = true;
+    setFound((f) => ({ ...f, loading: true }));
+    const t = setTimeout(() => { run(query, status).then((rows) => live && setFound({ loading: false, rows })).catch((e) => live && setFound({ loading: false, rows: [], error: String(e) })); }, query ? 300 : 0);
+    return () => { live = false; clearTimeout(t); };
+  }, [query, status]); // eslint-disable-line react-hooks/exhaustive-deps
+  const results = found.rows.filter((n) => !exclude?.has(n.id));
   return (
     <div className="flex flex-col">
       <div role="group" aria-label="核对状态筛选" className="flex gap-1 border-b border-border p-2">
@@ -49,14 +51,14 @@ export function NoteSearchList({ notes, onPick }: { notes: CCTNote[]; onPick: (n
         className="h-10 w-full border-b border-border bg-transparent px-3 text-sm outline-none"
       />
       <div className="max-h-72 overflow-y-auto overscroll-contain p-1">
-        {results.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">没有找到注释</p> :
+        {found.loading && results.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">搜索中…</p> : found.error ? <p className="py-6 text-center text-sm text-destructive">{found.error}</p> : results.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">没有找到注释</p> :
           results.map((n) => (
             <Button key={n.id} type="button" variant="ghost" onClick={() => onPick(n)} className="flex h-auto w-full justify-start gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-normal">
               <span className="min-w-0 truncate">{n.title} · #{n.id}</span>
               <span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground">{n.verified ? "已手动核对" : "未手动核对"}</span>
             </Button>
           ))}
-        {results.length >= 60 && <p className="px-2 py-1 text-xs text-muted-foreground">只显示前 60 条，请输入更多字缩小范围</p>}
+        {results.length >= 60 && <p className="px-2 py-1 text-xs text-muted-foreground">只显示最新 60 条，请输入更多字缩小范围</p>}
       </div>
     </div>
   );
