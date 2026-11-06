@@ -18,7 +18,7 @@ it('compares the current unsaved draft with code and does not save or change ver
   fireEvent.change(screen.getByDisplayValue('已保存的说明'), { target: { value:'我正在编辑的说明' } });
   fireEvent.click(screen.getByRole('button', { name:'AI 分析：注释、关联注释与实际读写' }));
   await waitFor(() => expect(screen.getByRole('alert')).toBeDefined());
-  expect(mocks.analyze).toHaveBeenCalledWith({ data: { context:'{"codeRefs":[{"snippet":"read CCT202"}]}',noteId:'1',draft:{title:'群组逻辑',text:'我正在编辑的说明'} } });
+  expect(mocks.analyze).toHaveBeenCalledWith({ data: { context:'{"codeRefs":[{"snippet":"read CCT202"}]}',scope:'page',noteId:'1',draft:{title:'群组逻辑',text:'我正在编辑的说明'} } });
   expect(mocks.save).not.toHaveBeenCalled();
   expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true');
   fireEvent.change(screen.getByDisplayValue('我正在编辑的说明'), { target:{value:'再次修改'} });

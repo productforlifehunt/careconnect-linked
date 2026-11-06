@@ -1,0 +1,40 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+const mocks = vi.hoisted(() => ({ submit: vi.fn(), put:vi.fn() }));
+vi.mock('@tanstack/react-start', () => ({ useServerFn:(fn:unknown) => fn }));
+vi.mock('@/lib/inspector-notes.functions', () => ({ submitNoteCorrection:mocks.submit }));
+vi.mock('@/features/inspector/notes-cache', () => ({ inspectorNotesCache:{put:mocks.put} }));
+vi.mock('@/services/wp-auth', () => ({ getWPToken:() => 'test-session' }));
+import { CorrectionEditor } from './CorrectionEditor';
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
+const original = { id:'6855',title:'信息卡片功能逻辑',text:'原完整正文',verified:true,role:'functional_note' as const };
+const suggestion = { target:'functional_note' as const,noteId:'6855',basisNoteIds:['6855'],reason:'代码与需求冲突，供手动选择',title:'信息卡片的数据逻辑',text:'新的完整正文' };
+it('requires explicit confirmation and submits edited full content to exact existing ID preserving verification', async () => {
+  mocks.submit.mockResolvedValue({note:{...original,title:'手改标题',text:'我手动编辑的完整正文'}});
+  render(<CorrectionEditor suggestion={suggestion} original={original} />);
+  expect(mocks.submit).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('修改建议标题'),{target:{value:'手改标题'}});
+  fireEvent.change(screen.getByLabelText('修改建议完整正文'),{target:{value:'我手动编辑的完整正文'}});
+  fireEvent.click(screen.getByRole('button',{name:'提交修改到 #6855'}));
+  expect(mocks.submit).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'确认提交修改'}));
+  await waitFor(() => expect(mocks.submit).toHaveBeenCalledWith({data:{id:'6855',title:'手改标题',text:'我手动编辑的完整正文',expected:{title:original.title,text:original.text,verified:true},confirmVerified:true}}));
+  await waitFor(() => expect(mocks.put).toHaveBeenCalled());
+});
+it('code proposals never submit to CCT324 and missing originals cannot save', () => {
+  const {unmount} = render(<CorrectionEditor suggestion={{...suggestion,target:'code',noteId:null}} />);
+  expect(screen.queryByRole('button',{name:/提交修改/})).toBeNull();
+  expect(mocks.submit).not.toHaveBeenCalled();
+  unmount();
+  render(<CorrectionEditor suggestion={suggestion} />);
+  expect(screen.getByRole('button',{name:/提交修改/}).hasAttribute('disabled')).toBe(true);
+});
+it('shows stale-save refusal and retains editable suggestion without reporting success', async () => {
+  mocks.submit.mockResolvedValue({error:'这条笔记在分析后已改变，未保存。'});
+  render(<CorrectionEditor suggestion={suggestion} original={original} />);
+  fireEvent.click(screen.getByRole('button',{name:'提交修改到 #6855'}));
+  fireEvent.click(screen.getByRole('button',{name:'确认提交修改'}));
+  await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('未保存'));
+  expect(mocks.put).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('修改建议完整正文').hasAttribute('disabled')).toBe(false);
+});

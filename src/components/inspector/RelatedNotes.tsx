@@ -28,13 +28,19 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
   const [draft, setDraft] = useState<{ title: string; text: string } | null>(null);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const active = useRef(noteId); active.current = noteId;
+  const [correctionRevision, setCorrectionRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setCorrectionRevision(value => value + 1);
+    window.addEventListener('inspector-note-corrected', refresh);
+    return () => window.removeEventListener('inspector-note-corrected', refresh);
+  }, []);
 
   useEffect(() => {
     let live = true; setState({ loading: true }); setNotes([]); setOpen({}); setEdits({}); setAi({}); setDraft(null);
     list({ data: { id: noteId } }).then((r) => { if (!live) return; setNotes(r.notes); setState({ error: r.error }); })
       .catch((e) => live && setState({ error: String(e) }));
     return () => { live = false; };
-  }, [noteId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteId, correctionRevision]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>): Promise<boolean> => {
     const id = noteId; setState({ busy: true });

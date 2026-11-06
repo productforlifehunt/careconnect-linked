@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { ConflictReport } from '@/features/inspector/conflict-report';
+import { CorrectionEditor } from './CorrectionEditor';
 
 export function ConflictReportView({ report }: { report: ConflictReport }) {
   const bad = report.findings.length > 0;
@@ -11,6 +12,7 @@ export function ConflictReportView({ report }: { report: ConflictReport }) {
       <p className="font-semibold">{i + 1}. {finding.title}</p>
       {finding.noteIds.length > 0 && <p>涉及注释：{finding.noteIds.map(id => `#${id}`).join('、')}</p>}
       <p>证据：{finding.evidence}</p><p>判定：{finding.verdict}</p><p>需要修改：{finding.fix}</p>
+      {finding.suggestions?.map((suggestion, j) => <CorrectionEditor key={`${i}-${j}`} suggestion={suggestion} original={report.notes?.find(note => note.id === suggestion.noteId)} />)}
     </div>)}
   </div>;
 }

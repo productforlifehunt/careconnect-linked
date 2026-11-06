@@ -1,3 +1,9 @@
+## Current request: Editable conflict suggestions (2026-11-06)
+- [x] Add full replacement note drafts with exact targets and functional-logic reference; prompt requires alternatives when actual code conflicts with functional logic. Shared report renderer exposes suggestions in all four existing analysis entry points.
+- [x] Allow manual edit and explicit confirmation to update exact existing CCT324 record; preserve verification and bindings, reject stale records and unknown model targets. Code proposals are editable/downloadable manual-only plans, never written to CCT324 or executed.
+- [x] Focused 20/20 tests pass (49 inspector regressions plus 3 handler tests also passed across prior runs); latest build OK. Browser fixture edit → exact #6855 confirmation → cancel passed with zero page errors. Fixture is not authenticated production note persistence.
+- [ ] Real researcher generation → manual edit → submit → refresh readback remains unverified; no real WordPress note changed in this request, no usable researcher session available. AI model adherence to the new suggestion prompt has not been exercised with real analysis.
+
 ## Current request: One-click whole-site analysis (2026-11-06)
 - [x] Add route-source inventory plus saved page/element bindings, deduplicate record paths while preserving __site, and analyse current source against each root, page notes and their direct REL325 notes. Discovery currently yields 107 route scopes (35 standalone site paths), not a verified exhaustive live-page count.
 - [x] Show live page-by-page progress, red conflicts/suspicions, exact incomplete coverage, stop/resume, and downloadable Markdown report; never modify notes or verification flags. All chunks for each root must return code evidence before counting it complete.

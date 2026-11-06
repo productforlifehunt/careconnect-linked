@@ -42,6 +42,21 @@ export const selectInspectorNote = createServerFn({ method: 'POST' })
   });
 
 const noteId = z.string().regex(/^\d+$/);
+/** Explicit user submission to one existing record; never creates bindings or relations. */
+export const submitNoteCorrection = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({ id: noteId, title: z.string().trim().min(1).max(240), text: z.string().min(1).max(100_000), expected: z.object({ title: z.string(), text: z.string(), verified: z.boolean() }), confirmVerified: z.boolean() }).parse(input))
+  .handler(async ({ data }) => {
+    const denied = await researcherOnly(); if (denied) return { error: denied };
+    try {
+      const s = await import('./inspector-notes.server');
+      const { assertUnchangedNote } = await import('@/features/inspector/corrections');
+      const current = await s.readNoteById(data.id);
+      assertUnchangedNote(current, data.expected);
+      if (current.verified && !data.confirmVerified) throw new Error('这条笔记已手动核对，请先明确确认修改。');
+      await s.updatePlainNote(data.id, data.title, data.text, current.verified);
+      return { note: await s.readNoteById(data.id) };
+    } catch (e) { return { error: e instanceof Error ? e.message : '提交失败，未确认保存。' }; }
+  });
 async function researcherOnly(): Promise<string | undefined> {
   const { verifyResearcher } = await import('./inspector-ai.server');
   try { await verifyResearcher(getRequestHeader('X-WP-Token') || ''); return undefined; } catch (e) { return e instanceof Error ? e.message : 'Forbidden'; }
