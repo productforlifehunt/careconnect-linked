@@ -20,7 +20,7 @@ import { ConflictReportView } from './ConflictReportView';
 import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { Sparkles } from 'lucide-react';
 
-export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
+export function ManualNotes({ noteKey, scope, page, label, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
@@ -85,7 +85,7 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
     }
     return () => { live = false; };
   }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
-  const stableAnchor = async () => ({});
+  const stableAnchor = async (): Promise<Record<string, never>> => ({});
   const doSave = async () => {
     if (stale) return;
     const session = getWPToken() || "";
