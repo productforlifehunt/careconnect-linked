@@ -35,6 +35,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
   const [text, setText] = useState(""); const [saved, setSaved] = useState(""); const [state, setState] = useState<{ loading?: boolean; saving?: boolean; error?: string | undefined; at?: string | undefined }>({ loading: true });
   const [retry, setRetry] = useState(0);
   const [verified, setVerified] = useState(false); const [savedVerified, setSavedVerified] = useState(false);
+  const [stale, setStale] = useState(false);
   const activeKey = useRef(noteKey); activeKey.current = noteKey;
   const revision = `${noteKey}|${selected}|${title}|${text}`;
   const activeRevision = useRef(revision); activeRevision.current = revision;
@@ -45,7 +46,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       const note = (event as CustomEvent<{ id: string; title: string; text: string; verified: boolean }>).detail;
       const current = correctionState.current;
       if (note.id !== current.selected) return;
-      if (current.text !== current.saved || current.title !== current.savedTitle) { setState({ error: '此笔记已通过修改建议保存；这里仍有未保存的旧编辑，请重新读取后再编辑。' }); return; }
+      if (current.text !== current.saved || current.title !== current.savedTitle) { setStale(true); setState({ error: '此笔记已通过修改建议保存；这里仍有未保存的旧编辑，请重新读取后再编辑。' }); return; }
       setText(note.text); setSaved(note.text); setTitle(note.title); setSavedTitle(note.title); setVerified(note.verified); setSavedVerified(note.verified); onChange?.(note.text);
     };
     window.addEventListener('inspector-note-corrected', updated);
@@ -77,6 +78,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       setCatalogue(noteCatalogue(map)); setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
       setVerified(!!(n as CCTNote | undefined)?.verified); setSavedVerified(!!(n as CCTNote | undefined)?.verified);
       setCreating(false);
+      setStale(false);
     };
     const cached = inspectorNotesCache.peek(session);
     if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
@@ -87,6 +89,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
     return () => { live = false; };
   }, [noteKey, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const doSave = async () => {
+    if (stale) return;
     const session = getWPToken() || "";
     const key = noteKey;
     setState((s) => ({ ...s, saving: true, error: undefined }));
@@ -131,7 +134,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
       <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={8} disabled={state.loading} placeholder={state.loading ? "读取中…" : "写下这里应该怎么读写、怎么判定…"} />
       <label className="flex items-center gap-2"><Switch checked={verified} onCheckedChange={setVerified} disabled={state.loading || state.saving} aria-label="已手动核对" /><span>{verified ? '已手动核对' : '未手动核对'}</span>{verified !== savedVerified && <span className="text-muted-foreground">（未保存）</span>}</label>
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={doSave} disabled={state.loading || state.saving || !title.trim() || (selected !== undefined && text === saved && title === savedTitle && verified === savedVerified)}>{state.saving ? "保存中…" : "保存注释"}</Button>
+        <Button size="sm" onClick={doSave} disabled={stale || state.loading || state.saving || !title.trim() || (selected !== undefined && text === saved && title === savedTitle && verified === savedVerified)}>{state.saving ? "保存中…" : "保存注释"}</Button>
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>

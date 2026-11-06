@@ -70,7 +70,7 @@ export const analyzeSiteNote = createServerFn({ method: 'POST' })
         const [note, related] = await Promise.all([readNoteById(id), readRelatedNotes(id)]);
         collected.push({ ...note, role: noteRole(note.title, data.pageNoteIds?.includes(id) ? 'page_note' : 'element_note') }, ...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
       }
-      const notes = [...new Map(collected.map(n => [n.id, n])).values()];
+      const notes = attachCorrectionNotes({ summary: '正在准备', comparedNoteIds: [], comparedPairs: [], comparedCodeNoteIds: [], codeCompared: false, findings: [] }, collected).notes || [];
       const { WP, R, T } = await import('@/integrations/wp-schema');
       const evidenceText = data.evidence + '\n' + notes.map(n => n.text).join('\n');
       const cctIds = new Set([...evidenceText.matchAll(/CCT\s*([0-9]+)|cct\[["']([0-9]+)["']\]/gi)].map(m => m[1] || m[2]));
