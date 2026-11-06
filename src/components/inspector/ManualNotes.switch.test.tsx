@@ -6,7 +6,7 @@ const CONTENT = 'el|/cared-ones/:id/notes|CardContent<Card<NotesCard|@div[*]>spa
 const mocks = vi.hoisted(() => ({ save: vi.fn(), select: vi.fn(), cached: true }));
 vi.mock('@tanstack/react-start', () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock('@/lib/inspector-ai.functions', () => ({ explainReadWrite: vi.fn() }));
-vi.mock('@/lib/inspector-notes.functions', () => ({ loadAllInspectorNotes: vi.fn(), saveInspectorNote: mocks.save, selectInspectorNote: mocks.select }));
+vi.mock('@/lib/inspector-notes.functions', () => ({ loadAllInspectorNotes: vi.fn(), loadInspectorNotes: vi.fn(() => new Promise(() => {})), saveInspectorNote: mocks.save, selectInspectorNote: mocks.select }));
 vi.mock('@/services/wp-auth', () => ({ getWPToken: () => 'test-session' }));
 vi.mock('@/features/inspector/notes-cache', () => ({ inspectorNotesCache: {
   // Only the title element is bound to #10531; the content element has no note of its own.

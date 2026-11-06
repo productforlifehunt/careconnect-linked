@@ -8,8 +8,8 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { verifyResearcher } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden", notes: [] }; }
-    const { readAllNotes } = await import("./inspector-notes.server");
-    try { return { notes: (await readAllNotes()).filter(note => data.keys.includes(note.key)) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
+    const { readNoteForKey } = await import("./inspector-notes.server");
+    try { return { notes: (await Promise.all(data.keys.map(readNoteForKey))).filter(n => !!n) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
   });
 
 /** Researcher-only: read every saved note in one call (the inspector caches them in the browser). */
