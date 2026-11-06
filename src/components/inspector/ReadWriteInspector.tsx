@@ -435,7 +435,7 @@ export default function ReadWriteInspector() {
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
                 <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!info} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, legacyKey, `page|${pathname}`]} /></div>
-                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} legacyKey={legacyKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!info} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
+                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes key={elementKey} noteKey={elementKey} legacyKey={legacyKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!info} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
                 <section className="space-y-1" ref={summaryRef}>
@@ -487,7 +487,7 @@ export default function ReadWriteInspector() {
                 </div>
               </>
             )}
-            {on && <div className={tab === "page" && sub === "notes" ? "" : "hidden"}><ManualNotes noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} buildEvidence={pageContext} evidenceReady={pageRefsDone} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>}
+            {on && <div className={tab === "page" && sub === "notes" ? "" : "hidden"}><ManualNotes key={`page|${pathname}`} noteKey={`page|${pathname}`} scope="page" page={pathname} label={pathname} buildEvidence={pageContext} evidenceReady={pageRefsDone} onChange={(t) => setNotes((n) => ({ ...n, page: t }))} /></div>}
           </div>
         </div>
       )}

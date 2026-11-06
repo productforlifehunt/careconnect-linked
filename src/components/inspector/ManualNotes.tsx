@@ -34,6 +34,9 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
   const [retry, setRetry] = useState(0);
   const [verified, setVerified] = useState(false); const [savedVerified, setSavedVerified] = useState(false);
   const [stale, setStale] = useState(false);
+  // The element whose saved note is currently shown; save/lock are refused for any other element.
+  const [loadedFor, setLoadedFor] = useState<string>();
+  const ready = loadedFor === noteKey;
   const activeKey = useRef(noteKey); activeKey.current = noteKey;
   const revision = `${noteKey}|${selected}|${title}|${text}`;
   const activeRevision = useRef(revision); activeRevision.current = revision;
@@ -65,6 +68,8 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
   useEffect(() => {
     let live = true;
     const session = getWPToken() || "";
+    // Clear everything from the previously selected element first, so its note can never be saved onto this one.
+    setLoadedFor(undefined); setSelected(undefined); setChoice(undefined); setCreating(false); setText(''); setSaved(''); setTitle(label.slice(0,240)); setSavedTitle(''); setVerified(false); setSavedVerified(false);
     const apply = async (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
       if (!live || session !== (getWPToken() || "")) return;
       // Only the visible-element identity (page + component names + markup position), identical in preview
@@ -76,6 +81,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       setVerified(!!(n as CCTNote | undefined)?.verified); setSavedVerified(!!(n as CCTNote | undefined)?.verified);
       setCreating(false);
       setStale(false);
+      setLoadedFor(noteKey);
     };
     const cached = inspectorNotesCache.peek(session);
     if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
@@ -87,7 +93,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
   }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const stableAnchor = async (): Promise<Record<string, never>> => ({});
   const doSave = async () => {
-    if (stale) return;
+    if (stale || !ready) return;
     const session = getWPToken() || "";
     const key = noteKey;
     setState((s) => ({ ...s, saving: true, error: undefined }));
@@ -104,7 +110,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
     } else if (activeKey.current === key) setState({ error: r.error || "保存失败" });
   };
   const lockChoice = async () => {
-    if (!choice) return;
+    if (!choice || !ready) return;
     const key = noteKey; const session = getWPToken() || '';
     setState(s => ({ ...s, saving: true, error: undefined }));
     try {
@@ -125,7 +131,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
             <NoteSearchList notes={catalogue} onPick={(n) => { setChoice(n.id); setOpen(false); }} />
           </PopoverContent>
         </Popover>
-        <Button variant="outline" size="sm" disabled={!choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
+        <Button variant="outline" size="sm" disabled={!ready || !choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
         <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setCreating(true);setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setVerified(false);setSavedVerified(false);setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
       </div>
       {choice && choice !== selected && <p>待锁定：{catalogue.find(n=>n.id===choice)?.title} · #{choice} · {catalogue.find(n=>n.id===choice)?.verified ? "已手动核对" : "未手动核对"}</p>}
@@ -133,7 +139,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={8} disabled={state.loading} placeholder={state.loading ? "读取中…" : "写下这里应该怎么读写、怎么判定…"} />
       <label className="flex items-center gap-2"><Switch checked={verified} onCheckedChange={setVerified} disabled={state.loading || state.saving} aria-label="已手动核对" /><span>{verified ? '已手动核对' : '未手动核对'}</span>{verified !== savedVerified && <span className="text-muted-foreground">（未保存）</span>}</label>
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={doSave} disabled={stale || state.loading || state.saving || !title.trim() || (selected !== undefined && text === saved && title === savedTitle && verified === savedVerified)}>{state.saving ? "保存中…" : "保存注释"}</Button>
+        <Button size="sm" onClick={doSave} disabled={!ready || stale || state.loading || state.saving || !title.trim() || (selected !== undefined && text === saved && title === savedTitle && verified === savedVerified)}>{state.saving ? "保存中…" : "保存注释"}</Button>
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
