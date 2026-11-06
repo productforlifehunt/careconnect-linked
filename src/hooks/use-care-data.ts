@@ -5,7 +5,7 @@ import { inboxCounts } from "@/features/inbox/counts";
 import { currentAppId } from "@/features/shared/app-profile";
 
 // ─── Feature source modules (backend-specific) ─────────────
-import { fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
+import { fetchProviderDirectoryWordPress, filterProviders, fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
 import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
 import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress, createCareGroupWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
@@ -149,8 +149,11 @@ export function useProviders(filters?: {
   serviceTypeSlugs?: string[] | undefined;
 }) {
   return useQuery({
-    queryKey: ["providers", filters],
-    queryFn: () => fetchProvidersWordPress(filters),
+    // One directory read shared by every keystroke/filter; typing only re-filters it.
+    queryKey: ["providers"],
+    queryFn: fetchProviderDirectoryWordPress,
+    staleTime: 60_000,
+    select: (list) => filterProviders(list, filters),
   });
 }
 
