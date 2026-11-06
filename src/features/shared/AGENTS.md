@@ -2,3 +2,4 @@
 - Own app-profile resolution is shared by account and app, and independent own-profile sources start together; all ownership remains JetEngine-relation based.
 - Linked CCT batches use JetEngine's GUI-documented `_filters` IN syntax only after relation IDs resolve, and reject any unrequested row; this reduces per-row requests without unscoped private reads.
 - Cared-one tools and the inspector catalogue load on demand, not on unrelated page startup; this keeps heavy feature code and private note reads off the critical path.
+- Authenticated cared-one pages prefetch the REL219-scoped person list alongside onboarding checks without rendering children early; this removes an avoidable waterfall while keeping redirects unchanged.
