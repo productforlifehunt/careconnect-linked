@@ -1,1 +1,0 @@
-- WordPress polls stay at 15 s or slower and bulk reads use a few large parallel pages, because the WordPress server has only 2 cores and each request adds a long network round trip.
