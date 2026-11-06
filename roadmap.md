@@ -1,3 +1,8 @@
+## Current request: AI dialog / Settings element recognition and Inbox note scope (2026-11-06)
+- [ ] Reproduce dialog/form element binding failures; ensure preview and published builds share stable visible-element identity.
+- [ ] Correct Inbox #10563 in-place through /afresh GUI, removing unrelated setting/schema material while retaining every inbox/push event.
+- [ ] Verify dialog and settings selection → explicit note binding → reload readback; run inspector regressions and report deployment state.
+
 ## Current request: Correct facility implementation and notes against uploaded dictionary (2026-11-06)
 - [ ] Verify CCT215 fields and REL249/291 settings in /afresh GUI against the uploaded facility dictionary; preserve all IDs and records.
 - [ ] Correct facility submission, checkbox membership serialization and approval-only ownership behavior; add and run regression tests.
