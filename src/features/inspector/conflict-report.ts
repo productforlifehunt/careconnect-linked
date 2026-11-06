@@ -7,7 +7,7 @@ export const correctionSchema = z.object({
   reason: z.string().min(1), title: z.string(), text: z.string().min(1),
 });
 export type Correction = z.infer<typeof correctionSchema>;
-export type ReportNote = { id: string; title: string; text: string; verified: boolean; role: 'page_note' | 'element_note' | 'functional_note' | 'related_note'; current?: boolean };
+export type ReportNote = { id: string; title: string; text: string; verified: boolean; role: 'page_note' | 'element_note' | 'functional_note' | 'related_note'; current?: boolean | undefined };
 export const conflictReportSchema = z.object({
   summary: z.string().min(1),
   comparedNoteIds: z.array(z.string()),
