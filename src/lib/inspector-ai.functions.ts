@@ -16,10 +16,14 @@ export const explainReadWrite = createServerFn({ method: "POST" })
     const originals: import('@/features/inspector/conflict-report').ReportNote[] = [];
     try {
       const { readCCTNoteForKey, readRelatedNotes, readNoteById } = await import("./inspector-notes.server");
-      const found = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
+      const all = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
         const note = data.noteId ? await readNoteById(data.noteId) : await readCCTNoteForKey(key);
         return { key: data.noteId && data.scope === 'page' ? 'page|current-selection' : key, note, related: note ? await readRelatedNotes(note.id) : [] };
       }));
+      // Element identity + its old line-based key describe one element: keep one entry (the bound one).
+      const elements = all.filter((f) => !f.key.startsWith('page|'));
+      const element = elements.find((f) => f.note) || elements[0];
+      const found = all.filter((f) => f.key.startsWith('page|') || f === element);
       noteIds = [...new Set(found.flatMap(({note, related}) => [...(note ? [note.id] : []), ...related.map(r => r.id)]))];
       for (const { key, note, related } of found) {
         if (note) originals.push({ ...note, role: noteRole(note.title, key.startsWith('page|') ? 'page_note' : 'element_note') });
