@@ -26,5 +26,12 @@ it('uses server-read originals and disallows changing functional notes as elemen
   const report = { summary:'核对', comparedNoteIds:['6855'],comparedPairs:[],comparedCodeNoteIds:['6855'],codeCompared:true,findings:[{kind:'conflict' as const,title:'冲突',noteIds:['6855'],evidence:'证据',verdict:'待确认',fix:'手动改',suggestions:[{target:'element_note' as const,noteId:'6855',basisNoteIds:['6855'],reason:'理由',title:'标题',text:'完整正文'}]}] };
   const result = attachCorrectionNotes(report,[note]);
   expect(result.findings[0]?.suggestions).toEqual([]);
-  expect(result.notes).toEqual([note]);
+  expect(result.notes).toEqual([{ ...note, current: false }]);
+});
+it('never targets a related note; only the current page/element note may be changed', () => {
+  const report = { summary:'核对', comparedNoteIds:['1','2'],comparedPairs:[],comparedCodeNoteIds:['1','2'],codeCompared:true,findings:[{kind:'conflict' as const,title:'冲突',noteIds:['1','2'],evidence:'证据',verdict:'待确认',fix:'手动改',suggestions:[
+    {target:'functional_note' as const,noteId:'2',basisNoteIds:['2'],reason:'理由',title:'功能逻辑',text:'改关联'},
+    {target:'element_note' as const,noteId:'1',basisNoteIds:['2'],reason:'理由',title:'元素',text:'改当前'}]}] };
+  const notes = [{ id:'1', title:'元素', text:'x', verified:false, role:'element_note' as const, current:true }, { id:'2', title:'功能逻辑', text:'y', verified:true, role:'functional_note' as const }];
+  expect(attachCorrectionNotes(report, notes).findings[0]?.suggestions?.map(s => s.noteId)).toEqual(['1']);
 });

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { streamChatCompletion, GatewayError } from '@lovable.dev/ai-gateway';
-import { CONFLICT_INSTRUCTIONS } from '@/features/inspector/conflict-prompt';
+import { CONFLICT_INSTRUCTIONS, CORRECTION_CHAT_INSTRUCTIONS } from '@/features/inspector/conflict-prompt';
 import { validateConflictReport, type ConflictReport } from '@/features/inspector/conflict-report';
 
 const BASE = "https://app.challenged-dementia.com/afresh/wp-json";
@@ -45,4 +45,28 @@ export async function compareNotes(payload: string) {
   const data = JSON.parse(payload) as { note: { cct: string }; related: { cct: string }[] };
   const ids = [...new Set([data.note, ...data.related].map(n => n.cct.replace('CCT324 #', '')))];
   return explainInspection(payload, 'full', CONFLICT_INSTRUCTIONS + '\n此次只提供注释文字，必须标记 codeCompared=false 并列出缺少代码证据的疑点；仍逐对比对全部注释。', ids, true);
+}
+
+/** One reply in the correction dialog; never saves anything. */
+export async function chatCorrection(context: string, messages: { role: 'user' | 'assistant'; content: string }[]): Promise<{ reply?: string; title?: string; text?: string; error?: string }> {
+  let lastError = 'AI 暂不可用，请重试。';
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const stream = await streamChatCompletion({
+        model: MODEL,
+        messages: [{ role: 'system', content: CORRECTION_CHAT_INSTRUCTIONS }, { role: 'user', content: context }, ...messages],
+        reasoning_effort: 'low',
+        response_format: { type: 'json_object' },
+      }, { maxRetries: 0 });
+      let out = ''; let finish: string | null = null;
+      for await (const event of stream) for (const choice of event.choices) { out += choice.delta.content || ''; if (choice.finish_reason) finish = choice.finish_reason; }
+      if (finish !== 'stop') { lastError = `AI 回复中途中断（第 ${attempt} 次）。`; continue; }
+      const parsed = z.object({ reply: z.string().min(1), title: z.string().optional().default(''), text: z.string().optional().default('') }).parse(JSON.parse(out));
+      return parsed;
+    } catch (error) {
+      lastError = error instanceof Error ? `${error.message}（第 ${attempt} 次）` : lastError;
+      if (error instanceof GatewayError && error.httpStatus && error.httpStatus < 500 && error.httpStatus !== 429) break;
+    }
+  }
+  return { error: lastError };
 }

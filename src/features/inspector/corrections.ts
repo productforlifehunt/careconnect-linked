@@ -4,18 +4,20 @@ export function noteRole(title: string, fallback: ReportNote['role']): ReportNot
   return /功能逻辑|数据逻辑/.test(title) ? 'functional_note' : fallback;
 }
 
-/** Only server-read records, never model-invented originals, may become save targets. */
+/** Only server-read current page/element notes (never related notes, which are the trusted baseline) may become save targets. */
 export function attachCorrectionNotes(report: ConflictReport, notes: ReportNote[]): ConflictReport {
   const records = new Map<string, ReportNote>();
   for (const note of notes) {
-    const current = records.get(note.id);
-    if (!current || current.role === 'related_note' || note.role === 'functional_note') records.set(note.id, note);
+    const prev = records.get(note.id);
+    const isCurrent = !!(note.current || prev?.current);
+    if (!prev || prev.role === 'related_note' || note.role === 'functional_note') records.set(note.id, { ...note, current: isCurrent });
+    else records.set(note.id, { ...prev, current: isCurrent });
   }
   const trusted = [...records.values()];
   return { ...report, notes: trusted, findings: report.findings.map(finding => ({ ...finding, suggestions: (finding.suggestions || []).filter(suggestion => {
     if (suggestion.target === 'code') return suggestion.noteId === null;
     const note = trusted.find(note => note.id === suggestion.noteId);
-    return !!note && note.role === suggestion.target;
+    return !!note && !!note.current && note.role === suggestion.target;
   }) })) };
 }
 

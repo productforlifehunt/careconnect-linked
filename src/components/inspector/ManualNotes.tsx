@@ -46,7 +46,7 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
       const note = (event as CustomEvent<{ id: string; title: string; text: string; verified: boolean }>).detail;
       const current = correctionState.current;
       if (note.id !== current.selected) return;
-      if (current.text !== current.saved || current.title !== current.savedTitle) { setStale(true); setState({ error: '此笔记已通过修改建议保存；这里仍有未保存的旧编辑，请重新读取后再编辑。' }); return; }
+      if (current.text !== current.saved || current.title !== current.savedTitle) { setStale(true); setState({ error: '此笔记已通过“建议修改或补充”保存；这里仍有未保存的旧编辑，请重新读取后再编辑。' }); return; }
       setText(note.text); setSaved(note.text); setTitle(note.title); setSavedTitle(note.title); setVerified(note.verified); setSavedVerified(note.verified); onChange?.(note.text);
     };
     window.addEventListener('inspector-note-corrected', updated);

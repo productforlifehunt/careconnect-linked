@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ submit: vi.fn(), put:vi.fn() }));
+const mocks = vi.hoisted(() => ({ submit: vi.fn(), put:vi.fn(), chat: vi.fn() }));
 vi.mock('@tanstack/react-start', () => ({ useServerFn:(fn:unknown) => fn }));
 vi.mock('@/lib/inspector-notes.functions', () => ({ submitNoteCorrection:mocks.submit }));
+vi.mock('@/lib/inspector-ai.functions', () => ({ chatAboutCorrection:mocks.chat }));
 vi.mock('@/features/inspector/notes-cache', () => ({ inspectorNotesCache:{put:mocks.put} }));
 vi.mock('@/services/wp-auth', () => ({ getWPToken:() => 'test-session' }));
 import { CorrectionEditor } from './CorrectionEditor';
@@ -13,8 +14,8 @@ it('requires explicit confirmation and submits edited full content to exact exis
   mocks.submit.mockResolvedValue({note:{...original,title:'手改标题',text:'我手动编辑的完整正文'}});
   render(<CorrectionEditor suggestion={suggestion} original={original} />);
   expect(mocks.submit).not.toHaveBeenCalled();
-  fireEvent.change(screen.getByLabelText('修改建议标题'),{target:{value:'手改标题'}});
-  fireEvent.change(screen.getByLabelText('修改建议完整正文'),{target:{value:'我手动编辑的完整正文'}});
+  fireEvent.change(screen.getByLabelText('建议修改或补充标题'),{target:{value:'手改标题'}});
+  fireEvent.change(screen.getByLabelText('建议修改或补充完整正文'),{target:{value:'我手动编辑的完整正文'}});
   fireEvent.click(screen.getByRole('button',{name:'提交修改到 #6855'}));
   expect(mocks.submit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button',{name:'确认提交修改'}));
@@ -36,5 +37,16 @@ it('shows stale-save refusal and retains editable suggestion without reporting s
   fireEvent.click(screen.getByRole('button',{name:'确认提交修改'}));
   await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('未保存'));
   expect(mocks.put).not.toHaveBeenCalled();
-  expect(screen.getByLabelText('修改建议完整正文').hasAttribute('disabled')).toBe(false);
+  expect(screen.getByLabelText('建议修改或补充完整正文').hasAttribute('disabled')).toBe(false);
+});
+it('dialog reply can be placed into the editor but never saves by itself', async () => {
+  mocks.chat.mockResolvedValue({ reply:'已补上推送写入', title:'补齐标题', text:'补齐后的完整正文' });
+  render(<CorrectionEditor suggestion={suggestion} original={original} />);
+  fireEvent.change(screen.getByLabelText('对 AI 说'),{target:{value:'再补上推送'}});
+  fireEvent.click(screen.getByRole('button',{name:'发送'}));
+  await screen.findByText('已补上推送写入');
+  expect(mocks.chat.mock.calls[0]?.[0]?.data.messages).toEqual([{role:'user',content:'再补上推送'}]);
+  fireEvent.click(screen.getByRole('button',{name:'放进上面的编辑框'}));
+  expect((screen.getByLabelText('建议修改或补充完整正文') as HTMLTextAreaElement).value).toBe('补齐后的完整正文');
+  expect(mocks.submit).not.toHaveBeenCalled();
 });

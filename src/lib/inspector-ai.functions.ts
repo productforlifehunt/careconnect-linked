@@ -26,7 +26,7 @@ export const explainReadWrite = createServerFn({ method: "POST" })
       const found = all.filter((f) => f.key.startsWith('page|') || f === element);
       noteIds = [...new Set(found.flatMap(({note, related}) => [...(note ? [note.id] : []), ...related.map(r => r.id)]))];
       for (const { key, note, related } of found) {
-        if (note) originals.push({ ...note, role: noteRole(note.title, key.startsWith('page|') ? 'page_note' : 'element_note') });
+        if (note) originals.push({ ...note, current: true, role: noteRole(note.title, key.startsWith('page|') ? 'page_note' : 'element_note') });
         originals.push(...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
       }
       notes = JSON.stringify(found.map(({ key, note, related }) => ({
@@ -63,7 +63,7 @@ export const checkNoteConflicts = createServerFn({ method: "POST" })
     try {
       const { readNoteById, readRelatedNotes } = await import("./inspector-notes.server");
       const [note, related] = await Promise.all([readNoteById(data.id), readRelatedNotes(data.id)]);
-      originals = [{ ...note, role: noteRole(note.title, 'element_note') }, ...related.map(r => ({ ...r, role: noteRole(r.title, 'related_note') }))];
+      originals = [{ ...note, current: true, role: noteRole(note.title, 'element_note') }, ...related.map(r => ({ ...r, role: noteRole(r.title, 'related_note') }))];
       payload = JSON.stringify({ note: { cct: `CCT324 #${data.id}`, role: originals[0]?.role, a55: note.title, a56: note.text }, related: related.map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })) });
     } catch (error) { return { error: `注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     const result = await compareNotes(payload);
@@ -84,7 +84,7 @@ export const analyzeSiteNote = createServerFn({ method: 'POST' })
       const collected: import('@/features/inspector/conflict-report').ReportNote[] = [];
       for (const id of rootIds) {
         const [note, related] = await Promise.all([readNoteById(id), readRelatedNotes(id)]);
-        collected.push({ ...note, role: noteRole(note.title, data.pageNoteIds?.includes(id) ? 'page_note' : 'element_note') }, ...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
+        collected.push({ ...note, current: true, role: noteRole(note.title, data.pageNoteIds?.includes(id) ? 'page_note' : 'element_note') }, ...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
       }
       const notes = attachCorrectionNotes({ summary: '正在准备', comparedNoteIds: [], comparedPairs: [], comparedCodeNoteIds: [], codeCompared: false, findings: [] }, collected).notes || [];
       const { WP, R, T } = await import('@/integrations/wp-schema');
@@ -99,4 +99,32 @@ export const analyzeSiteNote = createServerFn({ method: 'POST' })
       const result = await explainInspection(context, 'full', undefined, notes.map(n => n.id), true);
       return result.report ? { ...result, report: attachCorrectionNotes(result.report, notes) } : result;
     } catch (error) { return { error: error instanceof Error ? error.message : '全站分析读取失败', status: 502 }; }
+  });
+
+/** Researcher-only dialog about one suggestion. Related notes and code are re-read on the server; nothing is saved. */
+export const chatAboutCorrection = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({
+    page: z.string().min(1).max(2000),
+    target: z.enum(['page_note', 'element_note', 'functional_note', 'code']),
+    noteId: z.string().regex(/^\d+$/).nullable(),
+    basisNoteIds: z.array(z.string().regex(/^\d+$/)).max(50),
+    reason: z.string(), draftTitle: z.string(), draftText: z.string(),
+    messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1) })).min(1).max(60),
+  }).parse(input))
+  .handler(async ({ data }) => {
+    const { verifyResearcher, chatCorrection } = await import('./inspector-ai.server');
+    try { await verifyResearcher(getRequestHeader('X-WP-Token') || ''); }
+    catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden' }; }
+    try {
+      const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
+      const current = data.noteId ? await readNoteById(data.noteId) : null;
+      const related = data.noteId ? await readRelatedNotes(data.noteId) : [];
+      const basis = await Promise.all(data.basisNoteIds.filter(id => !related.some(r => r.id === id)).map(id => readNoteById(id).catch(() => null)));
+      const baseline = [...related, ...basis.filter((n): n is NonNullable<typeof n> => !!n)];
+      const { readInspectionSource } = await import('./inspector-source.server');
+      const { formatSourceEvidence } = await import('@/features/inspector/source-evidence');
+      const source = await readInspectionSource({ page: data.page });
+      const context = `SERVER_READ_ACTUAL_SOURCE:\n${source.files.length ? formatSourceEvidence(source) : '（未读取到实际代码）'}\nSOURCE_OMISSIONS:${JSON.stringify(source.omissions)}\n\nBASELINE_RELATED_NOTES（视为正确）:\n${JSON.stringify(baseline.map(n => ({ cct: `CCT324 #${n.id}`, a55: n.title, a56: n.text })))}\n\nCURRENT_NOTE（被修改对象）:\n${JSON.stringify(current ? { cct: `CCT324 #${current.id}`, a55: current.title, a56: current.text } : null)}\n\nSUGGESTION（target=${data.target}）原因：${data.reason}\n当前编辑框名字：${data.draftTitle}\n当前编辑框正文：\n${data.draftText}`;
+      return await chatCorrection(context, data.messages);
+    } catch (error) { return { error: error instanceof Error ? error.message : '读取失败' }; }
   });
