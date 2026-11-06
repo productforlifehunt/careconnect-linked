@@ -7,7 +7,7 @@ export const correctionSchema = z.object({
   reason: z.string().min(1), title: z.string(), text: z.string().min(1),
 });
 export type Correction = z.infer<typeof correctionSchema>;
-export type ReportNote = { id: string; title: string; text: string; verified: boolean; role: 'page_note' | 'element_note' | 'functional_note' | 'related_note' };
+export type ReportNote = { id: string; title: string; text: string; verified: boolean; role: 'page_note' | 'element_note' | 'functional_note' | 'related_note'; current?: boolean };
 export const conflictReportSchema = z.object({
   summary: z.string().min(1),
   comparedNoteIds: z.array(z.string()),
@@ -23,7 +23,7 @@ export const conflictReportSchema = z.object({
     fix: z.string().min(1),
     suggestions: z.array(correctionSchema).optional(),
   })),
-  notes: z.array(z.object({ id: z.string(), title: z.string(), text: z.string(), verified: z.boolean(), role: z.enum(['page_note', 'element_note', 'functional_note', 'related_note']) })).optional(),
+  notes: z.array(z.object({ id: z.string(), title: z.string(), text: z.string(), verified: z.boolean(), role: z.enum(['page_note', 'element_note', 'functional_note', 'related_note']), current: z.boolean().optional() })).optional(),
 });
 export type ConflictReport = z.infer<typeof conflictReportSchema>;
 
