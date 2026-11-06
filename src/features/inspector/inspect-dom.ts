@@ -51,7 +51,7 @@ export function stableAnchor(el: Element): { names: string[]; path: string } {
     }
     const last = hosts[hosts.length - 1];
     if (open && last && last.key == null && f.key != null) last.key = f.key;
-    const n = componentName(f); if (n && !names.includes(n)) names.push(n);
+    const n = componentName(f); if (n && !names.includes(n) && names.length < 4) names.push(n);
   }
   const steps = hosts.map(({ node, key }) => {
     const tag = node.tagName.toLowerCase();
