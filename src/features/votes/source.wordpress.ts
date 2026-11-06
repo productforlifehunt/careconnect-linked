@@ -10,7 +10,7 @@
  * CCT column — no custom user/vote link is invented.
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { fetchRelChildrenOf, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { getCurrentUserId } from "@/features/shared/current-user";
 import { R, T } from "@/integrations/wp-schema";
 
@@ -66,11 +66,10 @@ async function loadRelation(relationId: number) {
 
 export async function fetchVoteSummaries(relationId: number, parentIds: string[]): Promise<Record<string, VoteSummary>> {
   assertRelation(relationId);
-  const map = await loadRelation(relationId);
   const me = getCurrentUserId() ? strip(getCurrentUserId()!) : null;
   const out: Record<string, VoteSummary> = {};
   await Promise.all(parentIds.map(async (pid) => {
-    const children = map.get(strip(pid)) || [];
+    const children = await fetchRelChildrenOf(relationId, strip(pid));
     const rows = await fetchVoteRows(children.map((c) => c.childId));
     out[pid] = summarize(rows, me);
   }));

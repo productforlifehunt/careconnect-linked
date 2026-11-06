@@ -1,3 +1,4 @@
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 /**
  * Reviews — JetEngine CCT 31 "Review" (a55 title, a56 content, a57 rating)
  * attached to its parent through JetEngine relations only:
@@ -66,23 +67,9 @@ async function fetchReviewIndex(): Promise<Map<string, any>> {
 }
 
 async function fetchReviewRows(parentId: number, relId: number): Promise<any[]> {
-  // Whole-relation map + whole-CCT index: a marketplace page of N providers
-  // costs 2 requests instead of one relation call plus one row call per review.
-  const relMap = await fetchRelChildrenMap(relId);
-  let ids: number[];
-  if (relMap.loaded) {
-    ids = (relMap.get(String(parentId)) || []).map((c) => Number(c.childId)).filter(Boolean);
-  } else {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${relId}/children/${parentId}`);
-    ids = (Array.isArray(rels) ? rels : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
-  }
-  if (ids.length === 0) return [];
-  const index = await fetchReviewIndex();
-  const rows = await Promise.all(
-    ids.map(async (id) => index.get(String(id)) ?? (await wordpressCCTFetch<any>(REVIEW.slug, { id }))),
-  );
-  return rows.filter(Boolean);
-
+  // Only this entity's own reviews: its relation children, then those rows by ID.
+  const ids = (await fetchRelChildrenOf(relId, parentId)).map((c) => c.childId);
+  return readLinkedCCTRows(REVIEW.slug, ids);
 }
 
 async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {

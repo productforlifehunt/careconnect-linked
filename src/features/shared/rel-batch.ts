@@ -78,6 +78,15 @@ export function fetchRelChildrenMap(relationId: number | string): Promise<RelChi
 }
 
 
+/** Children of ONE parent only (`/jet-rel/<rel>/children/<parent>`); never downloads the whole relation. */
+export function fetchRelChildrenOf(relationId: number | string, parentId: number | string): Promise<RelChild[]> {
+  return dedupeRead(`rel-of:${relationId}:${parentId}`, async () => {
+    const rows = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${parentId}`);
+    if (!Array.isArray(rows)) throw new Error(`Could not read JetEngine relation ${relationId}`);
+    return rows.map((c: any) => ({ childId: String(c?.child_object_id ?? ''), meta: c?.meta && typeof c.meta === 'object' ? c.meta : null })).filter((c) => c.childId);
+  });
+}
+
 /** One request per relation → Map<childId, parentIds[]> (reverse direction). */
 export function fetchRelParentsMap(relationId: number | string): Promise<Map<string, string[]>> {
   return dedupeRead(`rel-parents:${relationId}`, async () => {
