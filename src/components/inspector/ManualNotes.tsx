@@ -14,7 +14,7 @@ import { readSource } from "@/features/inspector/live-index";
 import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { NoteSearchList } from './NoteSearchList';
 import { ChevronsUpDown, Plus, Lock } from 'lucide-react';
 import { RelatedNotes } from './RelatedNotes';
 
@@ -86,7 +86,7 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild><Button variant="outline" size="sm" disabled={state.loading || state.saving}><ChevronsUpDown className="mr-1 h-3 w-3" />选择其他注释</Button></PopoverTrigger>
           <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={e => e.preventDefault()}>
-            <Command><CommandInput placeholder="搜索注释名字或编号" /><CommandList><CommandEmpty>没有找到注释</CommandEmpty>{catalogue.map(n => <CommandItem key={n.id} value={`${n.title} ${n.id}`} onSelect={() => {setChoice(n.id);setOpen(false);}}><span className="min-w-0 truncate">{n.title} · #{n.id}</span><span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground">{n.verified ? "已手动核对" : "未手动核对"}</span></CommandItem>)}</CommandList></Command>
+            <NoteSearchList notes={catalogue} onPick={(n) => { setChoice(n.id); setOpen(false); }} />
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" disabled={!choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>

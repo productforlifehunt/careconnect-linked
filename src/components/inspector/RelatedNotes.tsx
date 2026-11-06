@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { NoteSearchList } from "./NoteSearchList";
 import { linkRelatedNote, listRelatedNotes, unlinkRelatedNote, updateRelatedNote } from "@/lib/inspector-notes.functions";
 import { checkNoteConflicts } from "@/lib/inspector-ai.functions";
 import type { CCTNote } from "@/features/inspector/cct-notes";
@@ -76,9 +76,7 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
         <Popover open={pick} onOpenChange={setPick}>
           <PopoverTrigger asChild><Button size="sm" variant="outline" disabled={busy}><Link2 className="mr-1 h-3 w-3" />关联已有注释</Button></PopoverTrigger>
           <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-            <Command><CommandInput placeholder="搜索注释名字或编号" /><CommandList><CommandEmpty>没有找到注释</CommandEmpty>
-              {catalogue.filter((c) => !linked.has(c.id)).map((c) => <CommandItem key={c.id} value={`${c.title} ${c.id}`} onSelect={() => { setPick(false); void run(() => link({ data: { id: noteId, otherId: c.id } })); }}><span className="min-w-0 truncate">{c.title} · #{c.id}</span><span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground">{c.verified ? "已手动核对" : "未手动核对"}</span></CommandItem>)}
-            </CommandList></Command>
+            <NoteSearchList notes={catalogue.filter((c) => !linked.has(c.id))} onPick={(c) => { setPick(false); void run(() => link({ data: { id: noteId, otherId: c.id } })); }} />
           </PopoverContent>
         </Popover>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => setDraft({ title: "", text: "" })}><Plus className="mr-1 h-3 w-3" />新建关联注释</Button>
