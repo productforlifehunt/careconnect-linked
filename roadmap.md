@@ -1,3 +1,9 @@
+## Current request: Correct facility implementation and notes against uploaded dictionary (2026-11-06)
+- [ ] Verify CCT215 fields and REL249/291 settings in /afresh GUI against the uploaded facility dictionary; preserve all IDs and records.
+- [ ] Correct facility submission, checkbox membership serialization and approval-only ownership behavior; add and run regression tests.
+- [ ] Correct every identified facility note in-place through /afresh GUI and verify full saved text without changing bindings or verification state.
+- [ ] Verify signed-in facility submit and persisted pending claim through the UI; report exact remaining gaps and deployment state.
+
 ## Current request: Facility submission and delayed tab title (2026-11-06)
 - [x] Published researcher submission reproduced: CCT215 creates successfully, then direct WordPress REL249 POST returns HTTP500; ownership claim is never reached. No proxy on the failing request. Test facilities #9–14 were created during repeated diagnostics, not deleted or approved.
 - [x] Published Settings→Inbox navigation measured twice: URL changes in 0.09–0.11s, title within the next 1s observation; WordPress reads remain pending for 5–22s. Reported 20s browser-title delay not reproduced. Source confirms route-chunk readiness and SiteProvider title overwrite are distinct mechanisms.
