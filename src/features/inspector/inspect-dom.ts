@@ -20,6 +20,46 @@ export interface ElementInfo {
   itemIndex: number;       // position among siblings rendered by the same JSX line (list items), -1 if none
   itemSlot?: string | undefined; // React key of that list item when it names a fixed item ("Pending Tasks"), not a data row id
   callSite?: string | undefined;  // where the shared component was used, only when the same JSX line is used from several places on this page
+  anchor: { names: string[]; path: string }; // build-independent identity: same in editor preview and published site
+}
+
+function componentName(f: any): string {
+  const type = f?.type;
+  if (!(typeof type === "function" || (type && typeof type === "object" && (type.render || type.type)))) return "";
+  const name = type.displayName || type.name || type.render?.name || type.type?.name || "";
+  return name && !SKIP_COMPONENTS.test(name) ? name : "";
+}
+
+/**
+ * One identity for an element in every build: the app's own component names around it plus its position
+ * in the rendered markup of the nearest two components (tag + n-th of that tag; list items by fixed slot
+ * key, data rows as "*" so one list's rows share a note). No source file, no line number, no build marker.
+ */
+export function stableAnchor(el: Element): { names: string[]; path: string } {
+  const names: string[] = [];
+  const hosts: Array<{ node: Element; key: unknown }> = [];
+  let f = fiberOf(el);
+  for (let depth = 0; f && depth < 120 && names.length < 4; depth++, f = f.return) {
+    if (typeof f.type === "string") {
+      if (names.length < 2 && f.stateNode instanceof Element) hosts.push({ node: f.stateNode, key: f.key });
+      continue;
+    }
+    const last = hosts[hosts.length - 1];
+    if (names.length < 2 && last && last.key == null && f.key != null) last.key = f.key;
+    const n = componentName(f); if (n && !names.includes(n)) names.push(n);
+  }
+  const steps = hosts.map(({ node, key }) => {
+    const tag = node.tagName.toLowerCase();
+    if (key != null) return `${tag}[${staticSlotKey(key) ?? "*"}]`;
+    const sibs = node.parentElement ? [...node.parentElement.children].filter((c) => c.tagName === node.tagName && !c.closest("[data-rw-inspector]")) : [node];
+    return `${tag}${Math.max(0, sibs.indexOf(node))}`;
+  });
+  return { names, path: steps.reverse().slice(-20).join(">") };
+}
+
+/** The element note key used by both builds; record ids in the page path are folded to :id. */
+export function stableElementKey(pathname: string, anchor: { names: string[]; path: string }): string {
+  return ["el", pathname.replace(/\/\d+(?=\/|$)/g, "/:id"), anchor.names.join("<"), `@${anchor.path}`].join("|");
 }
 
 function fileOf(src: string): string { return normalizeFile(src.split(":")[0]!); }
@@ -217,7 +257,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex, itemSlot, callSite: sharedCallSite(firstTagged) };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex, itemSlot, callSite: sharedCallSite(firstTagged), anchor: stableAnchor(el) };
 }
 
 function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] {
