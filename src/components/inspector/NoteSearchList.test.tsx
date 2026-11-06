@@ -28,20 +28,20 @@ describe("NoteSearchList", () => {
   });
   it("searches only verified notes, including matches beyond the first 60", async () => {
     render(<NoteSearchList notes={notes} onPick={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "已核对", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "已核对" }));
     await act(async () => { fireEvent.change(screen.getByPlaceholderText("搜索注释名字或编号"), { target: { value: "#17998" } }); });
     expect(screen.getByRole("button", { name: /#17998/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "未核对", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "未核对" }));
     expect(screen.queryByRole("button", { name: /#17998/ })).toBeNull();
   });
   it("searches only unverified notes and restores all without clearing the query", async () => {
     render(<NoteSearchList notes={notes} onPick={vi.fn()} />);
     await act(async () => { fireEvent.change(screen.getByPlaceholderText("搜索注释名字或编号"), { target: { value: "#17999" } }); });
-    fireEvent.click(screen.getByRole("button", { name: "未核对", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "未核对" }));
     expect(screen.getByRole("button", { name: /#17999/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "已核对", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "已核对" }));
     expect(screen.queryByRole("button", { name: /#17999/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "全部", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "全部" }));
     expect(screen.getByRole("button", { name: /#17999/ })).toBeTruthy();
   });
 });
