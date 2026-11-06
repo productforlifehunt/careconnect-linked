@@ -42,3 +42,13 @@
 - The researcher read-write inspector (src/components/inspector, src/features/inspector) only observes: it records requests in wordpress-client (holding back every non-GET there while inspect mode is on) and only observes other fetches (store operations, app server functions by export/action), and its AI explanation server function re-verifies the researcher WP token; code references are re-read from current source on every click (no stored index), because a saved map drifts from the code.
 - Inspector notes: CCT324 body; private position config, not RELs; note↔note via REL325 (M:N, 数据字典 parent). Researcher-gated.
 - Emergency toggle uses shared flags to prevent permission drift.
+
+## Lovable ↔ Draftbit sync compatibility (must keep)
+
+- Keep TanStack Start file routes in `src/routes/` with `createFileRoute`; do not add a second router or manually edit `src/routeTree.gen.ts`.
+- Keep internal navigation on TanStack Router or the shared `src/lib/router-compat.tsx` shim; use real route paths and preserve existing deep links.
+- Keep page UI in normal React components with inspectable DOM elements and stable `data-testid` values where tests or visual tooling depend on them.
+- Keep browser data access in feature sources/hooks and server-only credentials in `createServerFn` handlers, `src/routes/api`, or `.server` modules; never expose secrets through `VITE_*` variables.
+- Keep environment variable names documented by usage, but never commit `.env` or replace generated Supabase files under `src/integrations/supabase/`.
+- Keep `vite.config.ts` compatible with the shared Lovable TanStack config: do not duplicate its plugins, hard-code sandbox hosts, or assume optional plugin hooks exist.
+- Keep changes runnable in both Lovable and Draftbit previews; prefer additive, framework-native changes and preserve SSR-safe imports for browser-only libraries.
