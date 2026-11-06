@@ -25,6 +25,7 @@ export function validateConflictReport(text: string, ids: string[], requireCode:
   for (let i = 0; i < unique.length; i++) {
     for (let j = i + 1; j < unique.length; j++) {
       const a = unique[i], b = unique[j];
+      if (a === undefined || b === undefined) continue;
       if (!report.comparedPairs.some(pair => pair.includes(a) && pair.includes(b))) missing.push(`注释 #${a} 与 #${b} 未完成逐对比对`);
     }
   }
