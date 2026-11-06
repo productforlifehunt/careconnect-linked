@@ -108,6 +108,7 @@ export function AICompanionChatDialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
         <DialogPrimitive.Content
+          data-inspector-scope="ai-chat-dialog"
           className="fixed inset-x-3 top-16 bottom-[4.5rem] md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[440px] md:h-[640px] rounded-2xl z-50 bg-background flex flex-col shadow-2xl overflow-hidden border"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b">

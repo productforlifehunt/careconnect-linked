@@ -36,6 +36,20 @@ function componentName(f: any): string {
  * key, data rows as "*" so one list's rows share a note). No source file, no line number, no build marker.
  */
 export function stableAnchor(el: Element): { names: string[]; path: string } {
+  // Named visible UI scopes survive portals, wrapper changes outside the scope and minified
+  // component names. Descendants retain their complete DOM position, never their text/value.
+  const scope = el.closest("[data-inspector-scope]");
+  const scopeName = scope?.getAttribute("data-inspector-scope");
+  if (scope && scopeName) {
+    const steps: string[] = [];
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const tag = node.tagName.toLowerCase();
+      if (node === scope) { steps.push(tag); break; }
+      const siblings = node.parentElement ? [...node.parentElement.children].filter(c => c.tagName === node.tagName && !c.closest("[data-rw-inspector]")) : [node];
+      steps.push(`${tag}${siblings.indexOf(node)}`);
+    }
+    return { names: [`scope:${scopeName}`], path: steps.reverse().join(">") };
+  }
   const names: string[] = [];
   const hosts: Array<{ node: Element; key: unknown }> = [];
   let f = fiberOf(el);
