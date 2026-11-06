@@ -13,6 +13,18 @@ const ReadWriteInspector = lazyRetry(() => import("./ReadWriteInspector"), "Read
 export function InspectorGate() {
   const [researcher, setResearcher] = useState(isResearcherAccount());
   const [opened, setOpened] = useState(inspectModeOn());
+  // Clicks/focus inside the inspector (including this launcher) never count as "outside" for an open pop-up,
+  // so opening the inspector does not close the dialog the researcher wants to inspect.
+  useEffect(() => {
+    const inside = (n: EventTarget | null) => n instanceof Element && !!n.closest("[data-rw-inspector]");
+    const guard = (e: Event) => {
+      const rel = (e as FocusEvent).relatedTarget ?? null;
+      if (inside(e.target) || (e.type === "focusout" && inside(rel))) e.stopImmediatePropagation();
+    };
+    const evs = ["pointerdown", "mousedown", "touchstart", "focusin", "focusout"] as const;
+    evs.forEach((ev) => document.addEventListener(ev, guard, true));
+    return () => evs.forEach((ev) => document.removeEventListener(ev, guard, true));
+  }, []);
   useEffect(() => {
     let session = "";
     const check = () => {
