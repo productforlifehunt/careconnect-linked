@@ -156,7 +156,7 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
-      <Button size="sm" variant="outline" disabled={state.loading || state.saving || ai.loading || !selected || !buildEvidence || !evidenceReady} onClick={analyzeNotes}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? 'AI 分析中…' : 'AI 分析：注释、关联注释与实际读写'}</Button>
+      <Button size="sm" variant="outline" disabled={state.loading || state.saving || ai.loading || !selected || !buildEvidence || !evidenceReady} onClick={analyzeNotes}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? 'AI 分析中…' : !evidenceReady ? '等这页数据和代码读完…' : 'AI 分析：注释、关联注释与实际读写'}</Button>
       {ai.error && <p role="alert" className="text-destructive">{ai.error}</p>}
       {ai.report && <ConflictReportView report={ai.report} />}
       {selected && !creating ? <RelatedNotes noteId={selected} catalogue={catalogue} /> : !state.loading && <p className="rounded-md border p-2 text-muted-foreground">关联注释：这个元素还没有自己的注释。先写好并点"保存注释"（或用"选择其他注释"再"锁定选择"），下面就会出现"关联已有注释"（可搜索名字或编号）和"新建关联注释"。</p>}
