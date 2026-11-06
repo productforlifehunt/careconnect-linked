@@ -1,3 +1,8 @@
+## Current request: Editable conflict suggestions (2026-11-06)
+- [ ] Add full replacement note drafts with exact targets and functional-logic reference; explicit alternatives when actual code conflicts with functional logic.
+- [ ] Allow manual edit and explicit submit to the existing CCT324 record; preserve verification and bindings, reject stale records. Code proposals are manual-only, never written to CCT324 or executed.
+- [ ] Test routing, stale-save protection, manual confirmation and shared report entry points; report real-account verification limits.
+
 ## Current request: One-click whole-site analysis (2026-11-06)
 - [x] Add route-source inventory plus saved page/element bindings, deduplicate record paths while preserving __site, and analyse current source against each root, page notes and their direct REL325 notes. Discovery currently yields 107 route scopes (35 standalone site paths), not a verified exhaustive live-page count.
 - [x] Show live page-by-page progress, red conflicts/suspicions, exact incomplete coverage, stop/resume, and downloadable Markdown report; never modify notes or verification flags. All chunks for each root must return code evidence before counting it complete.
