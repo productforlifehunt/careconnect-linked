@@ -15,24 +15,30 @@ export async function verifyResearcher(token: string): Promise<void> {
 }
 
 export async function explainInspection(context: string, _mode: "full" | "origin" = "full", system?: string, noteIds: string[] = [], requireCode = true): Promise<{ report?: ConflictReport; error?: string; status?: number }> {
-  try {
-    const stream = await streamChatCompletion({
-      model: MODEL,
-      messages: [{ role: 'system', content: system || CONFLICT_INSTRUCTIONS }, { role: 'user', content: context }],
-      reasoning_effort: 'low',
-      response_format: { type: 'json_object' },
-    }, { maxRetries: 0 });
-    let text = '';
-    for await (const event of stream) {
-      for (const choice of event.choices) text += choice.delta.content || '';
+  let lastError = 'AI 分析暂不可用，核查未完成。'; let lastStatus = 502;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const stream = await streamChatCompletion({
+        model: MODEL,
+        messages: [{ role: 'system', content: system || CONFLICT_INSTRUCTIONS }, { role: 'user', content: context }],
+        reasoning_effort: 'low',
+        response_format: { type: 'json_object' },
+      }, { maxRetries: 0 });
+      let text = ''; let finish: string | null = null;
+      for await (const event of stream) {
+        for (const choice of event.choices) { text += choice.delta.content || ''; if (choice.finish_reason) finish = choice.finish_reason; }
+      }
+      if (finish !== 'stop') { lastError = `AI 输出在中途中断（第 ${attempt} 次，结束原因：${finish ?? '连接中断'}），核查未完成。`; lastStatus = 502; continue; }
+      if (!text.trim()) { lastError = 'AI 没有返回内容，核查未完成。'; lastStatus = 422; continue; }
+      try { return { report: validateConflictReport(text, noteIds, requireCode) }; }
+      catch (e) { console.error('[inspector] report rejected', e, text.slice(0, 2000)); lastError = `AI 返回的核查报告格式错误，不能认定一致；请重新分析。原因：${e instanceof z.ZodError ? e.issues.slice(0, 3).map(i => `${i.path.join('.')} ${i.message}`).join('；') : e instanceof Error ? e.message : String(e)}`; lastStatus = 422; }
+    } catch (error) {
+      lastError = error instanceof Error ? `${error.message}（第 ${attempt} 次）` : lastError;
+      lastStatus = error instanceof GatewayError ? (error.httpStatus || 502) : 502;
+      if (error instanceof GatewayError && error.httpStatus && error.httpStatus < 500 && error.httpStatus !== 429) break;
     }
-    if (!text.trim()) return { error: 'AI 没有返回内容，核查未完成。', status: 422 };
-    try { return { report: validateConflictReport(text, noteIds, requireCode) }; }
-    catch (e) { console.error('[inspector] report rejected', e, text.slice(0, 2000)); return { error: `AI 返回的核查报告格式错误，不能认定一致；请重新分析。原因：${e instanceof z.ZodError ? e.issues.slice(0, 3).map(i => `${i.path.join('.')} ${i.message}`).join('；') : e instanceof Error ? e.message : String(e)}`, status: 422 }; }
-  } catch (error) {
-    if (error instanceof GatewayError) return { error: error.message, status: error.httpStatus || 502 };
-    return { error: error instanceof Error ? error.message : 'AI 分析暂不可用，核查未完成。', status: 502 };
   }
+  return { error: lastError, status: lastStatus };
 }
 
 export async function compareNotes(payload: string) {
