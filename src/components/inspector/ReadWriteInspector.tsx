@@ -9,7 +9,7 @@ import { decodeEndpoint, codeRefs, fieldName, fieldType, optionName, relById, cc
 import { ReadWriteNarrative } from "./ReadWriteNarrative";
 import { ManualNotes } from "./ManualNotes";
 import { elementAlias } from "@/features/inspector/route-key";
-import { inspectElement, pageSourceFiles, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
+import { inspectElement, pageSourceFiles, stableElementKey, type ElementInfo, type FieldMatch } from "@/features/inspector/inspect-dom";
 import { traceLogic, decidingExpression, type LogicStep } from "@/features/inspector/logic-trace";
 import { importClosure } from "@/features/inspector/live-index";
 import { traceRow, ownerFile, INFRA } from "@/features/inspector/provenance";
@@ -333,7 +333,10 @@ export default function ReadWriteInspector() {
   const pageNarrRef = useRef<HTMLDivElement | null>(null);
   const pathname = path.split("?")[0]!;
   // Fixed list slots (stat cards drawn by one JSX line) get their own note; data rows of one list share theirs.
-  const elementKey = info ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}${info.itemSlot ? `|${info.itemSlot}` : ""}` : "";
+  // One identity in the editor preview and the published site: component names + markup position, never source lines.
+  const elementKey = info ? stableElementKey(pathname, info.anchor) : "";
+  // Old line-based key, read only to carry earlier bindings over to the new identity.
+  const legacyKey = info ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}${info.itemSlot ? `|${info.itemSlot}` : ""}` : "";
   const elementAliasKey = info ? elementAlias(pathname, info.components, info.tag, info.itemSlot) : "";
   const elementLabel = info ? `<${info.tag}> ${info.text.slice(0, 60)} · ${info.components[0] || ""}` : "";
   const queryClient = useQueryClient();
@@ -440,8 +443,8 @@ export default function ReadWriteInspector() {
                   <div className="break-all font-mono text-[10px]">源文件 / Source: {info.sources.join(" ← ") || "仅预览版可见 / only in the preview build"}</div>
                   {info.link && <div>跳转 / Goes to: <span className="font-mono">{info.link}</span></div>}
                 </section>
-                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, `page|${pathname}`]} /></div>
-                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!logic && !!closure} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
+                <div className={sub === "ai" ? "" : "hidden"}><AiExplain key={`o-${elementKey}-${info.text}`} build={elementContext} mode="origin" ready={!!logic && !!closure} label="生成 AI 分析 / Generate AI analysis" noteKeys={[elementKey, legacyKey, `page|${pathname}`]} /></div>
+                <div className={sub === "notes" ? "" : "hidden"} data-note-key={elementKey} data-note-label={elementLabel}><ManualNotes noteKey={elementKey} legacyKey={legacyKey} alias={elementAliasKey} scope="element" page={pathname} label={elementLabel} source={info.itemSlot || info.callSite ? undefined : info.sources[0]} tag={info.tag} buildEvidence={elementContext} evidenceReady={!!logic && !!closure} onChange={(t) => setNotes((n) => ({ ...n, element: t }))} /></div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
                 <div ref={narrRef}><ReadWriteNarrative scope="element" text={info.text} matches={realMatches} requests={relatedRequests} refs={elementRefs} handlers={info.handlers} /></div>
                 <section className="space-y-1" ref={summaryRef}>
