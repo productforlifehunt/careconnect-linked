@@ -19,6 +19,32 @@ export interface ElementInfo {
   card: string;            // text of the surrounding card/row
   itemIndex: number;       // position among siblings rendered by the same JSX line (list items), -1 if none
   itemSlot?: string | undefined; // React key of that list item when it names a fixed item ("Pending Tasks"), not a data row id
+  callSite?: string | undefined;  // where the shared component was used, only when the same JSX line is used from several places on this page
+}
+
+function fileOf(src: string): string { return normalizeFile(src.split(":")[0]!); }
+
+/** First ancestor source in a different file than `own`: the place that used this component. */
+function useSiteOf(node: Element, own: string): string | undefined {
+  for (let n: Element | null = node.parentElement; n; n = n.parentElement) {
+    const s = n.getAttribute("data-tsd-source");
+    if (s && fileOf(s) !== own && !fileOf(s).startsWith("components/ui/")) return fileOf(s) + ":" + (s.split(":")[1] || "");
+  }
+  return undefined;
+}
+
+/**
+ * A reusable component (stat card, toggle row) rendered from several places shares one JSX line,
+ * so the place that used it is added to the note key — but only when this page really uses that line
+ * from more than one place, so single-use components keep their existing notes.
+ */
+export function sharedCallSite(owner: Element | null): string | undefined {
+  const raw = owner?.getAttribute("data-tsd-source"); if (!owner || !raw) return undefined;
+  const own = fileOf(raw);
+  const mine = useSiteOf(owner, own); if (!mine) return undefined;
+  const sites = new Set<string>();
+  document.querySelectorAll(`[data-tsd-source="${CSS.escape(raw)}"]`).forEach((n) => { if (!n.closest("[data-rw-inspector]")) sites.add(useSiteOf(n, own) || ""); });
+  return sites.size > 1 ? mine : undefined;
 }
 
 /** A list item's React key names a fixed slot (stat card label) rather than a data row (post id, uuid). */
@@ -108,8 +134,10 @@ function matchValues(text: string, requests: RecordedRequest[]): FieldMatch[] {
 
 export function inspectElement(el: Element, requests: RecordedRequest[]): ElementInfo {
   const sources: string[] = [];
+  let firstTagged: Element | null = null;
   for (let n: Element | null = el; n && sources.length < 12; n = n.parentElement) {
     const s = n.getAttribute("data-tsd-source");
+    if (s && !firstTagged) firstTagged = n;
     if (s) { const f = normalizeFile(s.split(":")[0]!) + ":" + (s.split(":")[1] || ""); if (!sources.includes(f)) sources.push(f); }
   }
   const components: string[] = [];
@@ -189,7 +217,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex, itemSlot };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex, itemSlot, callSite: sharedCallSite(firstTagged) };
 }
 
 function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] {
