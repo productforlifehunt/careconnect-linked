@@ -8,9 +8,7 @@ import { loadAllInspectorNotes, saveInspectorNote, selectInspectorNote } from "@
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
-import { isGeneratedNote, resolveSourceNote, sourceRef } from "@/features/inspector/source-notes";
 import { findSameElementNote } from "@/features/inspector/route-key";
-import { readSource } from "@/features/inspector/live-index";
 import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -69,25 +67,10 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
     const session = getWPToken() || "";
     const apply = async (map: Awaited<ReturnType<typeof inspectorNotesCache.load>>) => {
       if (!live || session !== (getWPToken() || "")) return;
-      // The unified identity first; old line-based bindings only as a one-time carry-over.
-      const current = findSameElementNote(map, noteKey);
-      const old = legacyKey ? findSameElementNote(map, legacyKey) : undefined;
-      // Never fall back to the alias (page + component names + tag): every <div> in one card shares it,
-      // so distinct elements would all show the same note.
-      const existing = current || old;
-      const bySource = existing?.locked || (existing?.text && !isGeneratedNote(existing.text)) ? undefined :
-        (source && tag ? await resolveSourceNote(map, source, tag, readSource) : undefined);
-      const n = bySource || existing;
+      // Only the visible-element identity (page + component names + markup position), identical in preview
+      // and published builds. No source line, no alias, no carry-over: different elements never share a note.
+      const n = findSameElementNote(map, noteKey);
       if (!live || session !== (getWPToken() || "")) return;
-      // Found only under the exact old key or its verified source block: bind the same CCT324 note to the unified
-      // identity so the published site finds it too. Alias matches are too loose to carry over automatically.
-      // Only the location binding is added; the note's name, content and checked state are untouched.
-      const carry = current ? undefined : (bySource || old);
-      if (carry?.id && scope === "element") {
-        void select({ data: { key: noteKey, id: carry.id, scope, page, label, ...(alias ? { alias } : {}) } })
-          .then((r) => { if (r.note && session === (getWPToken() || "")) inspectorNotesCache.put(session, r.note); })
-          .catch(() => undefined);
-      }
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
       setCatalogue(noteCatalogue(map)); setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
       setVerified(!!(n as CCTNote | undefined)?.verified); setSavedVerified(!!(n as CCTNote | undefined)?.verified);
@@ -101,12 +84,8 @@ export function ManualNotes({ noteKey, legacyKey = "", alias = "", scope, page, 
       inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
-  }, [noteKey, legacyKey, alias, source, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
-  /** Saved with every binding: source line digest (preview) and build-independent alias, so a refresh, a code edit or the published site still finds this note. */
-  const stableAnchor = async () => {
-    const ref = source && tag ? await sourceRef(source, tag, readSource).catch(() => undefined) : undefined;
-    return { ...(ref ? { source: ref } : {}), ...(alias ? { alias } : {}) };
-  };
+  }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stableAnchor = async () => ({});
   const doSave = async () => {
     if (stale) return;
     const session = getWPToken() || "";
