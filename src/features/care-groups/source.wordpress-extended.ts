@@ -63,24 +63,8 @@ async function fetchRelatedCctItems(relationId: number, parentId: string, cctSlu
   const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${normalizedParentId}`);
   if (!Array.isArray(rels) || rels.length === 0) return [];
   const childIds = rels.map((r: any) => String(r.child_object_id || "")).filter(Boolean);
-  // Beyond a few children, one list request beats N per-id requests (the old
-  // N+1 made the care-circle feed take ~20s to appear).
-  if (childIds.length > 3) {
-    try {
-      const all = await wordpressCCTFetch<any[]>(cctSlug);
-      if (Array.isArray(all)) {
-        const wanted = new Set(childIds);
-        const byId = new Map(all.map((it: any) => [String(it.id), it]));
-        const hits = childIds.map((cid) => byId.get(cid)).filter(Boolean);
-        if (hits.length === wanted.size) return hits;
-      }
-    } catch { /* fall through to per-id fetch */ }
-  }
-  const items = await Promise.all(childIds.map(async (childId) => {
-    try {
-      return await wordpressCCTFetch(cctSlug, { id: childId });
-    } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
-  }));
+  // Only this group's own rows, by ID in one JetEngine IN read — never the whole CCT.
+  const items = await readLinkedCCTRows(cctSlug, childIds);
   return items.filter(Boolean);
 }
 
@@ -661,7 +645,8 @@ async function resolveInviteByToken(token: string): Promise<{
 }> {
   const trimmed = (token || "").trim();
   if (!trimmed) throw new Error("Invalid invite link");
-  const invites = await wordpressCCTFetch<any[]>(T.careGroupInvite.slug, { params: { _limit: 500 } });
+  // WordPress finds the token itself (a55 = token); case-insensitive match is re-checked below.
+  const invites = await wordpressCCTFetch<any[]>(T.careGroupInvite.slug, { params: { _limit: 20, _filters: JSON.stringify([{ field: F_INVITE.TOKEN, operator: "LIKE", value: trimmed }]) } });
   if (!Array.isArray(invites)) throw new Error("Invalid invite link");
   const lower = trimmed.toLowerCase();
   const match = invites.find((i: any) => String(i[F_INVITE.TOKEN] || "").trim().toLowerCase() === lower);
