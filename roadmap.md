@@ -1,3 +1,9 @@
+## Current request: Inspector exhaustive conflict analysis (2026-11-06)
+- [x] Compare actual code against the current manual note and every related note, and compare all note pairs; red findings include suspicion, redundant logic, fallback, compatibility and missing evidence. Validate per-note code coverage and all unordered note pairs; retain GPT-6 Luna.
+- [x] Manual-tab action compares current unsaved title/text with freshly read related notes and current element/page evidence; no save or verified-status change. Component flow test passes, stale draft results clear.
+- [x] Code verification: both ordinary discussions and wishes use useCareGroupPosts → CCT202 care_group_post, through REL226; CCT16 in the supplied screenshot is a stale-note conflict, not actual blessing storage. Live model three-note sample finds conflict and checks all 3 pairs. Focused tests 39/39 pass; build OK. Challenged real account is correctly denied researcher-only analysis (403), no page errors.
+- [ ] Real researcher manual/AI tab end-to-end click and layout remain unverified: supplied test account is not researcher; no account impersonation or guessing. Cared-one page screenshot still shows loading after 12 seconds; not reported as loaded. No WordPress notes or relations modified.
+
 ## Current request: Remove unread numeric prompts and add page back navigation (2026-11-05)
 - [x] Remove unread/request numeric badges from care header, bottom navigation, inbox main tabs and location tabs; preserve read-state filter counts and actual unread data.
 - [x] Add shared back arrow at the start of every care and safety page's main content, never in the brand header; direct entry without app history returns home.

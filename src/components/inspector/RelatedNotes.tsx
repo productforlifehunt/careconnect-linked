@@ -11,6 +11,8 @@ import { NoteSearchList } from "./NoteSearchList";
 import { linkRelatedNote, listRelatedNotes, unlinkRelatedNote, updateRelatedNote } from "@/lib/inspector-notes.functions";
 import { checkNoteConflicts } from "@/lib/inspector-ai.functions";
 import type { CCTNote } from "@/features/inspector/cct-notes";
+import type { ConflictReport } from '@/features/inspector/conflict-report';
+import { ConflictReportView } from './ConflictReportView';
 
 type Related = { id: string; title: string; text: string; side: "parent" | "child"; verified: boolean };
 type Edit = { title: string; text: string; verified: boolean };
@@ -24,7 +26,7 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
   const [state, setState] = useState<{ loading?: boolean; busy?: boolean; error?: string | undefined }>({ loading: true });
   const [pick, setPick] = useState(false);
   const [draft, setDraft] = useState<{ title: string; text: string } | null>(null);
-  const [ai, setAi] = useState<{ loading?: boolean; text?: string; error?: string }>({});
+  const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const active = useRef(noteId); active.current = noteId;
 
   useEffect(() => {
@@ -82,9 +84,9 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
         <Button size="sm" variant="outline" disabled={busy} onClick={() => setDraft({ title: "", text: "" })}><Plus className="mr-1 h-3 w-3" />新建关联注释</Button>
         <Button size="sm" variant="outline" disabled={busy || !notes.length || ai.loading} onClick={async () => {
           const id = noteId; setAi({ loading: true });
-          try { const r = await compare({ data: { id } }); if (active.current === id) setAi(r.text ? { text: r.text } : { error: r.error || "失败" }); }
+          try { const r = await compare({ data: { id } }); if (active.current === id) setAi(r.report ? { report: r.report } : { error: r.error || "失败" }); }
           catch (e) { if (active.current === id) setAi({ error: String(e) }); }
-        }}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? "AI 比较中…" : "AI 分析与相关注释冲突"}</Button>
+        }}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? "AI 比较中…" : "AI 仅比对已保存注释文字"}</Button>
       </div>
       {draft && (
         <div className="space-y-2 rounded border p-2">
@@ -98,7 +100,7 @@ export function RelatedNotes({ noteId, catalogue }: { noteId: string; catalogue:
       )}
       {state.error && <p className="text-destructive">{state.error}</p>}
       {ai.error && <p className="text-destructive">{ai.error}</p>}
-      {ai.text && <div className="max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-2">{ai.text}</div>}
+      {ai.report && <ConflictReportView report={ai.report} />}
     </div>
   );
 }

@@ -17,10 +17,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { NoteSearchList } from './NoteSearchList';
 import { ChevronsUpDown, Plus, Lock } from 'lucide-react';
 import { RelatedNotes } from './RelatedNotes';
+import { explainReadWrite } from '@/lib/inspector-ai.functions';
+import { ConflictReportView } from './ConflictReportView';
+import type { ConflictReport } from '@/features/inspector/conflict-report';
+import { Sparkles } from 'lucide-react';
 
-export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void }) {
+export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
+  const analyze = useServerFn(explainReadWrite);
+  const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const [catalogue, setCatalogue] = useState<CCTNote[]>([]);
   const [selected, setSelected] = useState<string>();
   const [creating, setCreating] = useState(false);
@@ -30,6 +36,21 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
   const [retry, setRetry] = useState(0);
   const [verified, setVerified] = useState(false); const [savedVerified, setSavedVerified] = useState(false);
   const activeKey = useRef(noteKey); activeKey.current = noteKey;
+  const revision = `${noteKey}|${selected}|${title}|${text}`;
+  const activeRevision = useRef(revision); activeRevision.current = revision;
+  useEffect(() => { setAi({}); }, [revision]);
+  const analyzeNotes = async () => {
+    if (!buildEvidence || !selected) return;
+    const current = revision;
+    setAi({ loading: true });
+    try {
+      const context = buildEvidence();
+      if (context.length > 60_000) throw new Error('证据超过分析容量，未执行不完整分析。');
+      const result = await analyze({ data: { context, noteId: selected, draft: { title, text } } });
+      if (activeRevision.current !== current) return;
+      setAi(result.report ? { report: result.report } : { error: result.error || '分析失败，核查未完成。' });
+    } catch (error) { if (activeRevision.current === current) setAi({ error: String(error) }); }
+  };
   useEffect(() => {
     let live = true;
     const session = getWPToken() || "";
@@ -101,6 +122,9 @@ export function ManualNotes({ noteKey, scope, page, label, source, tag, onChange
         {text !== saved && <span className="text-muted-foreground">有未保存的修改</span>}
         {text === saved && state.at && <span className="text-muted-foreground">已保存 {new Date(state.at).toLocaleString()}</span>}
       </div>
+      <Button size="sm" variant="outline" disabled={state.loading || state.saving || ai.loading || !selected || !buildEvidence || !evidenceReady} onClick={analyzeNotes}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? 'AI 分析中…' : 'AI 分析：注释、关联注释与实际读写'}</Button>
+      {ai.error && <p role="alert" className="text-destructive">{ai.error}</p>}
+      {ai.report && <ConflictReportView report={ai.report} />}
       {selected && !creating ? <RelatedNotes noteId={selected} catalogue={catalogue} /> : !state.loading && <p className="rounded-md border p-2 text-muted-foreground">关联注释：这个元素还没有自己的注释。先写好并点"保存注释"（或用"选择其他注释"再"锁定选择"），下面就会出现"关联已有注释"（可搜索名字或编号）和"新建关联注释"。</p>}
       {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => {inspectorNotesCache.reset();setRetry((n) => n + 1);}}>重新读取</Button></div>}
     </div>
