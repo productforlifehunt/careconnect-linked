@@ -1,3 +1,8 @@
+## Current request: Inspector exhaustive conflict analysis (2026-11-06)
+- [ ] Compare actual code against the current manual note and every related note, and compare all note pairs; flag even suspicion, redundant logic, fallback and compatibility in red.
+- [ ] Add manual-tab AI analysis using current unsaved text plus freshly read related notes and actual element/page evidence; preserve all saved/verified notes.
+- [ ] Verify group discussion CCT202 versus blessing CCT16; run focused tests and report real-session verification limits.
+
 ## Current request: Remove unread numeric prompts and add page back navigation (2026-11-05)
 - [x] Remove unread/request numeric badges from care header, bottom navigation, inbox main tabs and location tabs; preserve read-state filter counts and actual unread data.
 - [x] Add shared back arrow at the start of every care and safety page's main content, never in the brand header; direct entry without app history returns home.
