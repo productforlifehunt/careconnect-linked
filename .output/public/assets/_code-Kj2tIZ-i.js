@@ -1,0 +1,1 @@
+import{t as e}from"./JoinGroup-B6q-bD_K.js";var t=e;export{t as component};

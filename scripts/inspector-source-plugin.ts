@@ -34,7 +34,7 @@ export function inspectorSourcePlugin(): Plugin {
         if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
           const tag = node.tagName.getText(source);
           if (
-            /^[a-z][\w-]*$/.test(tag) &&
+            /^[A-Za-z][\w-]*$/.test(tag) &&
             !node.attributes.properties.some(
               (p) =>
                 ts.isJsxAttribute(p) &&
@@ -76,7 +76,8 @@ export function inspectorSourcePlugin(): Plugin {
         const unique = counts.get(`${edit.line}:${edit.tag}`) === 1;
         code =
           code.slice(0, edit.pos) +
-          ` data-inspector-id=${JSON.stringify(edit.identity)} data-inspector-source=${JSON.stringify(`${edit.value}:${unique ? "1" : "0"}`)}` +
+          (code.slice(edit.pos).split(/\/?>/, 1)[0]?.includes("data-inspector-id") ? "" : ` data-inspector-id=${JSON.stringify(edit.identity)}`) +
+          ` data-inspector-source=${JSON.stringify(`${edit.value}:${unique ? "1" : "0"}`)}` +
           code.slice(edit.pos);
       }
       return { code, map: null };

@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{r as t}from"./SiteContext-BCoTHudW.js";import{t as n}from"./NotFound-D6tg104r.js";var r=e();function SiteFeature({name:e,children:i}){let{features:a}=t();return a[e]?(0,r.jsx)(r.Fragment,{children:i}):(0,r.jsx)(n,{})}export{SiteFeature as t};

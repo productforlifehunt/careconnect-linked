@@ -1,4 +1,0 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/shared-note-DdOWuTJJ.js
-var shared_note_default = "export interface SharedNote { t: string; c: string; s?: string | undefined; p?: string | undefined }\n\nconst toB64Url = (s: string) =>\n  btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");\n\nexport function encodeSharedNote(n: SharedNote): string {\n  return `${window.location.origin}/share/note?d=${toB64Url(JSON.stringify(n))}`;\n}\n\nexport function decodeSharedNote(d: string): SharedNote | null {\n  try {\n    const b = atob(d.replace(/-/g, \"+\").replace(/_/g, \"/\"));\n    const obj = JSON.parse(new TextDecoder().decode(Uint8Array.from(b, (ch) => ch.charCodeAt(0))));\n    return obj && typeof obj.t === \"string\" && typeof obj.c === \"string\" ? obj : null;\n  } catch {\n    return null;\n  }\n}\n";
-//#endregion
-export { shared_note_default as default };
