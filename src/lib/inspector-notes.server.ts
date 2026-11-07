@@ -49,8 +49,9 @@ type CCTRow = { _ID: string | number; a55: string; a56: string; a58?: string; a5
 const CCT_BASE = 'https://app.challenged-dementia.com/afresh/wp-json/jet-cct/manual_notes';
 async function wp(path = '', method = 'GET', body?: unknown): Promise<unknown> {
   const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
-  if (!user || !password) throw new Error('注释写入未配置。');
-  const response = await fetch(CCT_BASE + path, { method, headers: { Authorization: `Basic ${btoa(`${user}:${password}`)}`, 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (user && password) headers.Authorization = `Basic ${btoa(`${user}:${password}`)}`;
+  const response = await fetch(CCT_BASE + path, { method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   if (!response.ok) throw new Error(`注释读取或保存失败（${response.status}），请重试。`);
   return response.json();
 }
@@ -129,8 +130,9 @@ const PAGE = 1000;
 const PARALLEL = 3;
 async function readPage(offset: number): Promise<{ rows: CCTRow[]; total: number | null }> {
   const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
-  if (!user || !password) throw new Error('注释写入未配置。');
-  const response = await fetch(`${CCT_BASE}?_limit=${PAGE}&_offset=${offset}&_orderby=_ID&_order=asc`, { headers: { Authorization: `Basic ${btoa(`${user}:${password}`)}` } });
+  const headers: Record<string, string> = {};
+  if (user && password) headers.Authorization = `Basic ${btoa(`${user}:${password}`)}`;
+  const response = await fetch(`${CCT_BASE}?_limit=${PAGE}&_offset=${offset}&_orderby=_ID&_order=asc`, { headers });
   if (!response.ok) throw new Error(`注释读取或保存失败（${response.status}），请重试。`);
   const result = await response.json();
   if (!Array.isArray(result)) throw new Error('注释列表返回异常。');
