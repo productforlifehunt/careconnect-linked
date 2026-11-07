@@ -1,0 +1,4 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/label-3XwwNjCE.js
+var label_default = "import * as React from \"react\";\nimport * as LabelPrimitive from \"@radix-ui/react-label\";\nimport { cva, type VariantProps } from \"class-variance-authority\";\n\nimport { cn } from \"@/lib/utils\";\n\nconst labelVariants = cva(\"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70\");\n\nconst Label = React.forwardRef<\n  React.ElementRef<typeof LabelPrimitive.Root>,\n  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> & VariantProps<typeof labelVariants>\n>(({ className, ...props }, ref) => (\n  <LabelPrimitive.Root ref={ref} className={cn(labelVariants(), className)} {...props} />\n));\nLabel.displayName = LabelPrimitive.Root.displayName;\n\nexport { Label };\n";
+//#endregion
+export { label_default as default };

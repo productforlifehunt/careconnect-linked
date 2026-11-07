@@ -1,0 +1,4 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/care-circle_._groupId-36XDs3gt.js
+var care_circle__$groupId_default = "import { createFileRoute } from \"@tanstack/react-router\";\nimport CareCircle from \"@/pages/CareCircle\";\nimport { RequireAuth } from \"@/components/auth/RequireAuth\";\n\nfunction RouteCareGroupPage() {\n  return <RequireAuth><CareCircle /></RequireAuth>;\n}\n\n/**\n * A care group's home page — also the one link the group shares.\n * No head() here, like /care-circle: signed-out visitors are sent to sign-in\n * during the first render, and a head change at that moment crashed the\n * sign-in page (blank form).\n */\nexport const Route = createFileRoute(\"/care-circle_/$groupId\")({\n  component: RouteCareGroupPage,\n});\n";
+//#endregion
+export { care_circle__$groupId_default as default };

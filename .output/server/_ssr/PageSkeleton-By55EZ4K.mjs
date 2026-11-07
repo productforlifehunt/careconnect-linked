@@ -1,0 +1,4 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/PageSkeleton-By55EZ4K.js
+var PageSkeleton_default = "import { Skeleton } from \"@/components/ui/skeleton\";\n\nexport function PageSkeleton() {\n  return (\n    <div className=\"max-w-6xl mx-auto px-4 py-6 space-y-6\">\n      <div className=\"space-y-2\">\n        <Skeleton className=\"h-8 w-48\" />\n        <Skeleton className=\"h-4 w-72\" />\n      </div>\n      <div className=\"grid grid-cols-2 lg:grid-cols-4 gap-4\">\n        {[1, 2, 3, 4].map(i => (\n          <Skeleton key={i} className=\"h-24 rounded-xl\" />\n        ))}\n      </div>\n      <div className=\"space-y-4\">\n        {[1, 2, 3].map(i => (\n          <Skeleton key={i} className=\"h-32 rounded-xl\" />\n        ))}\n      </div>\n    </div>\n  );\n}\n";
+//#endregion
+export { PageSkeleton_default as default };

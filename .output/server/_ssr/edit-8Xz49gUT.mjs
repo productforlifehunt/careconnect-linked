@@ -1,0 +1,24 @@
+import "../_runtime.mjs";
+import { B as require_jsx_runtime } from "../_libs/@radix-ui/react-alert-dialog+[...].mjs";
+import { t as RequireAuth } from "./RequireAuth-ZXtI8ZPo.mjs";
+import { t as SiteFeature } from "./SiteFeature-Diz6swln.mjs";
+import { t as CareFacilityForm } from "./CareFacilityForm-B0bCQ-i8.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/edit-8Xz49gUT.js
+var import_jsx_runtime = require_jsx_runtime();
+function RouteFacilitiesIdEditPage() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SiteFeature, {
+		"data-inspector-id": "routes/facilities/$id/edit/RouteFacilitiesIdEditPage/SiteFeature/0",
+		"data-inspector-source": "routes/facilities/$id/edit.tsx:5:10:15ef1a0a73331b4382f164d350c4fdd8d7882198842431663d0fddddb711886d:1",
+		name: "facilities",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RequireAuth, {
+			"data-inspector-id": "routes/facilities/$id/edit/RouteFacilitiesIdEditPage/RequireAuth/0",
+			"data-inspector-source": "routes/facilities/$id/edit.tsx:5:41:15ef1a0a73331b4382f164d350c4fdd8d7882198842431663d0fddddb711886d:1",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CareFacilityForm, {
+				"data-inspector-id": "routes/facilities/$id/edit/RouteFacilitiesIdEditPage/CareFacilityForm/0",
+				"data-inspector-source": "routes/facilities/$id/edit.tsx:5:54:15ef1a0a73331b4382f164d350c4fdd8d7882198842431663d0fddddb711886d:1"
+			})
+		})
+	});
+}
+//#endregion
+export { RouteFacilitiesIdEditPage as component };
