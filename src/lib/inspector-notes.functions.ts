@@ -368,9 +368,10 @@ export const listRelatedNotes = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const denied = await researcherOnly();
     if (denied) return { error: denied, notes: [] };
+    const token = getRequestHeader("X-WP-Token") || "";
     const { readRelatedNotes } = await import("./inspector-notes.server");
     try {
-      return { notes: await readRelatedNotes(data.id) };
+      return { notes: await readRelatedNotes(data.id, token) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "读取失败", notes: [] };
     }
@@ -396,21 +397,22 @@ export const linkRelatedNote = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const denied = await researcherOnly();
     if (denied) return { error: denied };
+    const token = getRequestHeader("X-WP-Token") || "";
     const s = await import("./inspector-notes.server");
     try {
-      const currentTitle = await s.noteTitle(data.id);
+      const currentTitle = await s.noteTitle(data.id, token);
       const otherId =
         data.otherId ||
-        (await s.createPlainNote(data.create!.title, data.create!.text));
+        (await s.createPlainNote(data.create!.title, data.create!.text, token));
       const otherTitle = data.otherId
-        ? await s.noteTitle(otherId)
+        ? await s.noteTitle(otherId, token)
         : data.create!.title;
       const { parent, child } = s.relationDirection(
         { id: data.id, title: currentTitle },
         { id: otherId, title: otherTitle },
       );
       try {
-        await s.linkNotes(parent, child);
+        await s.linkNotes(parent, child, token);
       } catch (e) {
         if (data.create)
           throw new Error(
@@ -418,7 +420,7 @@ export const linkRelatedNote = createServerFn({ method: "POST" })
           );
         throw e;
       }
-      return { notes: await s.readRelatedNotes(data.id) };
+      return { notes: await s.readRelatedNotes(data.id, token) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "关联失败" };
     }
@@ -434,10 +436,11 @@ export const unlinkRelatedNote = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const denied = await researcherOnly();
     if (denied) return { error: denied };
+    const token = getRequestHeader("X-WP-Token") || "";
     const s = await import("./inspector-notes.server");
     try {
-      await s.unlinkNotes(data.parent, data.child);
-      return { notes: await s.readRelatedNotes(data.id) };
+      await s.unlinkNotes(data.parent, data.child, token);
+      return { notes: await s.readRelatedNotes(data.id, token) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "取消关联失败" };
     }
@@ -459,6 +462,7 @@ export const updateRelatedNote = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const denied = await researcherOnly();
     if (denied) return { error: denied };
+    const token = getRequestHeader("X-WP-Token") || "";
     const s = await import("./inspector-notes.server");
     try {
       await s.updatePlainNote(
@@ -466,8 +470,9 @@ export const updateRelatedNote = createServerFn({ method: "POST" })
         data.title,
         data.text,
         data.verified,
+        token,
       );
-      return { notes: await s.readRelatedNotes(data.id) };
+      return { notes: await s.readRelatedNotes(data.id, token) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "保存失败" };
     }

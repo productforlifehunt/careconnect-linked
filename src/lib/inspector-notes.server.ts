@@ -116,7 +116,12 @@ type CCTRow = {
 };
 const CCT_BASE =
   "https://app.challenged-dementia.com/afresh/wp-json/jet-cct/manual_notes";
-async function wp(path = "", method = "GET", body?: unknown): Promise<unknown> {
+async function wp(
+  path = "",
+  method = "GET",
+  body?: unknown,
+  token?: string,
+): Promise<unknown> {
   const user = process.env["WP_ADMIN_USER"];
   const password = process.env["WP_ADMIN_APP_PASSWORD"];
   const headers: Record<string, string> = {
@@ -124,6 +129,7 @@ async function wp(path = "", method = "GET", body?: unknown): Promise<unknown> {
   };
   if (user && password)
     headers["Authorization"] = `Basic ${btoa(`${user}:${password}`)}`;
+  else if (token) headers["Authorization"] = `Bearer ${token}`;
   const response = await fetch(CCT_BASE + path, {
     method,
     headers,
@@ -480,14 +486,19 @@ async function rel(
   path = "",
   method = "GET",
   body?: unknown,
+  token?: string,
 ): Promise<unknown> {
   const user = process.env["WP_ADMIN_USER"];
   const password = process.env["WP_ADMIN_APP_PASSWORD"];
-  if (!user || !password) throw new Error("注释关联未配置。");
+  if (!user && !password && !token) throw new Error("注释关联未配置。");
+  const authorization =
+    user && password
+      ? `Basic ${btoa(`${user}:${password}`)}`
+      : `Bearer ${token}`;
   const response = await fetch(REL_BASE + path, {
     method,
     headers: {
-      Authorization: `Basic ${btoa(`${user}:${password}`)}`,
+      Authorization: authorization,
       "Content-Type": "application/json",
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -506,8 +517,9 @@ export interface RelatedNote {
 async function relIds(
   side: "parents" | "children",
   id: string,
+  token?: string,
 ): Promise<string[]> {
-  const rows = await rel(`/${side}/${id}`);
+  const rows = await rel(`/${side}/${id}`, "GET", undefined, token);
   if (!Array.isArray(rows)) throw new Error("注释关联返回异常。");
   return rows
     .map((r: { parent_object_id?: unknown; child_object_id?: unknown }) =>
@@ -516,10 +528,13 @@ async function relIds(
     .filter((v) => /^\d+$/.test(v));
 }
 /** Parent (REL325 父) and children (REL325 子) of one CCT324 note, read fresh with their a55/a56. */
-export async function readRelatedNotes(id: string): Promise<RelatedNote[]> {
+export async function readRelatedNotes(
+  id: string,
+  token?: string,
+): Promise<RelatedNote[]> {
   const [parents, children] = await Promise.all([
-    relIds("parents", id),
-    relIds("children", id),
+    relIds("parents", id, token),
+    relIds("children", id, token),
   ]);
   const entries: [string, "parent" | "child"][] = [
     ...parents.map((p) => [p, "parent"] as [string, "parent"]),
@@ -527,7 +542,7 @@ export async function readRelatedNotes(id: string): Promise<RelatedNote[]> {
   ];
   return Promise.all(
     entries.map(async ([nid, side]) => {
-      const row = (await wp(`/${nid}`)) as CCTRow;
+      const row = (await wp(`/${nid}`, "GET", undefined, token)) as CCTRow;
       return {
         id: nid,
         title: row.a55 || "",
@@ -544,13 +559,15 @@ export async function updatePlainNote(
   title: string,
   text: string,
   verified: boolean,
+  token?: string,
 ): Promise<void> {
-  await wp(`/${id}`, "POST", {
-    a55: title,
-    a56: text,
-    a58: verified ? "b55" : "b56",
-  });
-  const row = (await wp(`/${id}`)) as CCTRow;
+  await wp(
+    `/${id}`,
+    "POST",
+    { a55: title, a56: text, a58: verified ? "b55" : "b56" },
+    token,
+  );
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (
     String(row._ID) !== id ||
     row.a55 !== title ||
@@ -560,41 +577,56 @@ export async function updatePlainNote(
     throw new Error("保存后的内容核对不一致。");
 }
 /** Many to many: adding a link never removes the note's other links. */
-export async function linkNotes(parent: string, child: string): Promise<void> {
+export async function linkNotes(
+  parent: string,
+  child: string,
+  token?: string,
+): Promise<void> {
   if (parent === child) throw new Error("不能把注释关联到它自己。");
   const [p, c] = await Promise.all([
-    wp(`/${parent}`) as Promise<CCTRow>,
-    wp(`/${child}`) as Promise<CCTRow>,
+    wp(`/${parent}`, "GET", undefined, token) as Promise<CCTRow>,
+    wp(`/${child}`, "GET", undefined, token) as Promise<CCTRow>,
   ]);
   if (String(p._ID) !== parent || String(c._ID) !== child)
     throw new Error("所选注释不存在。");
-  const before = await relIds("parents", child);
+  const before = await relIds("parents", child, token);
   if (
     before.includes(parent) ||
-    (await relIds("parents", parent)).includes(child)
+    (await relIds("parents", parent, token)).includes(child)
   )
     return;
-  await rel("", "POST", {
-    parent_id: Number(parent),
-    child_id: Number(child),
-    context: "child",
-    store_items_type: "update",
-  });
-  const after = await relIds("parents", child);
+  await rel(
+    "",
+    "POST",
+    {
+      parent_id: Number(parent),
+      child_id: Number(child),
+      context: "child",
+      store_items_type: "update",
+    },
+    token,
+  );
+  const after = await relIds("parents", child, token);
   if (!after.includes(parent) || before.some((id) => !after.includes(id)))
     throw new Error("关联保存后核对不一致。");
 }
 export async function unlinkNotes(
   parent: string,
   child: string,
+  token?: string,
 ): Promise<void> {
-  await rel("", "POST", {
-    parent_id: Number(parent),
-    child_id: Number(child),
-    context: "child",
-    store_items_type: "disconnect",
-  });
-  if ((await relIds("parents", child)).includes(parent))
+  await rel(
+    "",
+    "POST",
+    {
+      parent_id: Number(parent),
+      child_id: Number(child),
+      context: "child",
+      store_items_type: "disconnect",
+    },
+    token,
+  );
+  if ((await relIds("parents", child, token)).includes(parent))
     throw new Error("取消关联后核对不一致。");
 }
 /** REL325 is shown without parent/child, so the current note is stored as parent (titles no longer mark note kinds). */
@@ -606,8 +638,9 @@ export function relationDirection(
 }
 export async function readNoteById(
   id: string,
+  token?: string,
 ): Promise<{ id: string; title: string; text: string; verified: boolean }> {
-  const row = (await wp(`/${id}`)) as CCTRow;
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== id) throw new Error("所选注释不存在。");
   return {
     id,
