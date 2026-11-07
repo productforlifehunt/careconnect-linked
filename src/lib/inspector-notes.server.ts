@@ -649,18 +649,20 @@ export async function readNoteById(
     verified: row.a58 === "b55",
   };
 }
-export async function noteTitle(id: string): Promise<string> {
-  return (await readNoteById(id)).title;
+export async function noteTitle(id: string, token?: string): Promise<string> {
+  return (await readNoteById(id, token)).title;
 }
 export async function createPlainNote(
   title: string,
   text: string,
+  token?: string,
 ): Promise<string> {
-  const result = (await wp("", "POST", {
-    a55: title,
-    a56: text,
-    cct_status: "publish",
-  })) as number | string | { item_id?: number; _ID?: number };
+  const result = (await wp(
+    "",
+    "POST",
+    { a55: title, a56: text, cct_status: "publish" },
+    token,
+  )) as number | string | { item_id?: number; _ID?: number };
   const id = String(
     typeof result === "number" || typeof result === "string"
       ? result
@@ -668,7 +670,7 @@ export async function createPlainNote(
   );
   if (!/^\d+$/.test(id))
     throw new Error("没有返回新注释编号，请重新读取列表，勿重复新建。");
-  const row = (await wp(`/${id}`)) as CCTRow;
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (row.a55 !== title || row.a56 !== text)
     throw new Error("保存后的内容核对不一致。");
   return id;

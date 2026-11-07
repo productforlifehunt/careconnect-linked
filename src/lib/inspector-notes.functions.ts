@@ -336,16 +336,17 @@ export const submitNoteCorrection = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const denied = await researcherOnly();
     if (denied) return { error: denied };
+    const token = getRequestHeader("X-WP-Token") || "";
     try {
       const s = await import("./inspector-notes.server");
       const { assertUnchangedNote } =
         await import("@/features/inspector/corrections");
-      const current = await s.readNoteById(data.id);
+      const current = await s.readNoteById(data.id, token);
       assertUnchangedNote(current, data.expected);
       if (current.verified && !data.confirmVerified)
         throw new Error("这条笔记已手动核对，请先明确确认修改。");
-      await s.updatePlainNote(data.id, data.title, data.text, current.verified);
-      return { note: await s.readNoteById(data.id) };
+      await s.updatePlainNote(data.id, data.title, data.text, current.verified, token);
+      return { note: await s.readNoteById(data.id, token) };
     } catch (e) {
       return {
         error: e instanceof Error ? e.message : "提交失败，未确认保存。",
