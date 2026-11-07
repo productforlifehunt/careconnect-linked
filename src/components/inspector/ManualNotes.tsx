@@ -48,7 +48,7 @@ export function ManualNotes({
   evidenceReady = false,
 }: {
   noteKey: string;
-  priorKey?: string;
+  priorKey?: string | undefined;
   legacyKey?: string | undefined;
   legacySourceKey?: string | undefined;
   legacyKeys?: string[];
@@ -257,9 +257,10 @@ export function ManualNotes({
           return apply(
             new Map(n ? [[noteKey, n]] : []) as Parameters<typeof apply>[0],
             {
-              warning: "warning" in r ? r.warning : undefined,
-              migrationCandidates:
-                "migrationCandidates" in r ? r.migrationCandidates : undefined,
+              ...( "warning" in r && r.warning ? { warning: r.warning } : {}),
+              ...( "migrationCandidates" in r && r.migrationCandidates?.length
+                ? { migrationCandidates: r.migrationCandidates }
+                : {}),
             },
           );
         })
