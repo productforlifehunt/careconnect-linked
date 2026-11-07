@@ -1,13 +1,13 @@
 # Draftbit 全量复刻核查清单
 
-依据：原代码静态核查及 Draftbit GUI；没有扫描原 App。页面存在不代表功能已完成。当前 Draftbit 25 个页面（原24页加 HowItWorks）；不以页面数量计算完成率。
+依据：原代码静态核查及 Draftbit GUI；没有扫描原 App。页面存在不代表功能已完成。当前 Draftbit 26 个页面（原24页加 HowItWorks、TrustSafety）；不以页面数量计算完成率。
 
 ## 页面缺项（别名不重复建页）
 - [ ] Onboarding：引导与角色选择。
 - [ ] ResetPassword：恢复状态、密码确认、错误与提交。
 - [ ] Articles + ArticlePost：文章列表与详情。
 - [ ] AccompanieD、AwareD、CareD、CopeD、SafeD：五个内容列表，共用 ChallengedArticleDetail。
-- [ ] TrustSafety。
+- [ ] TrustSafety：原英文统计及七项安全/反馈正文、共用页头和返回已保存回读；分项卡片、图标、联系按钮、双语和真实运行未完成。
 - [ ] 搜索细分、CaregiverProfile、CareFacilityProfile、CareFacilityForm 新建/编辑、BecomeCaregiver、Favorites、ProviderDashboard。
 - [ ] TasksNeedingHelp（不是被护理者 Tasks）。
 - [ ] Cart、OrderConfirmation；结账与订单操作按现有 Woo/Dokan 实现。
@@ -16,7 +16,7 @@
 - [ ] ESM：Today、Screening、LogEntry、HourlyLog、DailyLog、Entries、Help、Me。
 - [ ] Researcher：登录、参与者、问卷、访谈及全部录音/档案操作。
 - [ ] Consent 单页与 Sick 单图片微站。
-- [ ] HowItWorks：已建页、原文和共用页头；CTA、菜单入口、双语及真实运行核验未完成。
+- [ ] HowItWorks：原文、共用页头、Find CTA和独立 More 入口已保存并回读；Web/iOS预览截图有正文；实际按钮点按、双语及完整布局未完成。
 
 ## 已有页面中的功能缺项
 - [ ] Meds/Checks：多时段、复发、按次记录、编辑回填、提醒、失败状态和实际读写；CCT187 a57/a58/a66/a68/a69；CCT161 a88，REL190/191/173，不使用 a90。
