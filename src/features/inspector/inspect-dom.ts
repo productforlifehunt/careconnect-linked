@@ -48,6 +48,29 @@ function componentName(f: any): string {
  * key, data rows as "*" so one list's rows share a note). No source file, no line number, no build marker.
  */
 export function stableAnchor(el: Element): { names: string[]; path: string } {
+  const id = el.getAttribute("data-inspector-id");
+  if (id) {
+    const previous = markupAnchor(el);
+    const scope = el.closest("[data-inspector-scope]")?.getAttribute("data-inspector-scope");
+    const slots = previous.path.match(/\[[^\]]+\]/g) || [];
+    const contexts: string[] = [];
+    const owner = id.split("/").slice(0, -2).join("/");
+    for (let n = el.parentElement; n && contexts.length < 3; n = n.parentElement) {
+      const parentId = n.getAttribute("data-inspector-id");
+      if (parentId && parentId.split("/").slice(0, -2).join("/") !== owner) contexts.push(parentId);
+      if (n.hasAttribute("data-inspector-scope")) break;
+    }
+    return { names: scope ? [`scope:${scope}`] : ["visible-slot"], path: [id, ...contexts, ...slots].join("<") };
+  }
+  return markupAnchor(el);
+}
+
+export function inspectorTarget(el: Element): Element {
+  return el.closest('button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="switch"], [role="combobox"], [contenteditable="true"]') || el;
+}
+
+/** Previous identity retained for uniquely confirmed old bindings. */
+export function markupAnchor(el: Element): { names: string[]; path: string } {
   // Named visible UI scopes survive portals, wrapper changes outside the scope and minified
   // component names. Descendants retain their complete DOM position, never their text/value.
   const scope = el.closest("[data-inspector-scope]");

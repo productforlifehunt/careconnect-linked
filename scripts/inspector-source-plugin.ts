@@ -27,7 +27,8 @@ export function inspectorSourcePlugin(): Plugin {
       );
       const lines = code.split("\n");
       const name = relative(root, file).split(sep).join("/");
-      const edits: { pos: number; value: string; line: number; tag: string }[] =
+      const slots = new Map<string, number>();
+      const edits: { pos: number; value: string; line: number; tag: string; identity: string }[] =
         [];
       const visit = (node: ts.Node) => {
         if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
@@ -47,11 +48,18 @@ export function inspectorSourcePlugin(): Plugin {
               .update(lines[position.line] || "")
               .digest("hex");
             const value = `${name}:${position.line + 1}:${position.character + 1}:${digest}`;
+            let owner: ts.Node | undefined = node.parent;
+            while (owner && !ts.isFunctionDeclaration(owner) && !ts.isVariableDeclaration(owner)) owner = owner.parent;
+            const ownerName = owner && "name" in owner && owner.name ? (owner.name as ts.Node).getText(source) : "module";
+            const slot = `${name.replace(/\.tsx$/, "")}/${ownerName}/${tag}`;
+            const ordinal = slots.get(slot) || 0;
+            slots.set(slot, ordinal + 1);
             edits.push({
               pos: node.tagName.end,
               value,
               line: position.line,
               tag,
+              identity: `${slot}/${ordinal}`,
             });
           }
         }
@@ -68,7 +76,7 @@ export function inspectorSourcePlugin(): Plugin {
         const unique = counts.get(`${edit.line}:${edit.tag}`) === 1;
         code =
           code.slice(0, edit.pos) +
-          ` data-inspector-source=${JSON.stringify(`${edit.value}:${unique ? "1" : "0"}`)}` +
+          ` data-inspector-id=${JSON.stringify(edit.identity)} data-inspector-source=${JSON.stringify(`${edit.value}:${unique ? "1" : "0"}`)}` +
           code.slice(edit.pos);
       }
       return { code, map: null };
