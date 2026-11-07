@@ -563,6 +563,8 @@
 - [x] 2026-11-03: 其余 19 页逐页预览实点：18 页问号→问答、机器人→普通对话均通过；Meds 页直接打开落到登录页，仍未实点
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
+- [x] 2026-11-07 09:34 continuation: Contacts native Disabled binding = textInputValue → And(compareTo=textAreaValue) → Negate, saved and independently re-read after reload. Note input native multiline=true, numberOfLines=2, saved and re-read after reload. This verifies editor configuration only, not runtime button behavior.
+- [~] 2026-11-07 continuation: Native Web Preview still displays Updating… on Contacts and disables the preview toggle; actual form submission remains unverified. Additional field-label copies produced duplicated subtrees and were fully removed; reload asserts exactly one each of all nine original form controls. Relationship/detail/address/note separate labels and contact detail view remain unfinished. No original app, WordPress notes or relations touched.
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
