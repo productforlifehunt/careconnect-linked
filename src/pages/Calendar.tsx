@@ -131,6 +131,13 @@ export default function CalendarPage() {
         `components/pages/Calendar/toolbar/${slot}`,
       );
     }
+    root.querySelectorAll<HTMLElement>(".fc-list-day[data-date]").forEach((day) => {
+      const date = day.dataset.date;
+      if (!date) return;
+      day.querySelectorAll<HTMLElement>(".fc-list-day-text, .fc-list-day-side-text").forEach((link) => {
+        link.setAttribute("data-inspector-id", `components/pages/Calendar/day/${date}`);
+      });
+    });
   };
 
   const markCalendarDay = (arg: { el: HTMLElement }) => {
@@ -265,10 +272,9 @@ export default function CalendarPage() {
           dayCellDidMount={markCalendarDay}
           dayHeaderDidMount={markCalendarWeekday}
           eventDidMount={(arg) => {
-            arg.el.setAttribute(
-              "data-inspector-id",
-              `components/pages/Calendar/event/${arg.event.id}`,
-            );
+            const identity = `components/pages/Calendar/event/${arg.event.id}`;
+            arg.el.setAttribute("data-inspector-id", identity);
+            arg.el.querySelector("a")?.setAttribute("data-inspector-id", identity);
           }}
           dateClick={openCreate}
           eventClick={(info) => {
