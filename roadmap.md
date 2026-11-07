@@ -563,6 +563,10 @@
 - [x] 2026-11-03: 其余 19 页逐页预览实点：18 页问号→问答、机器人→普通对话均通过；Meds 页直接打开落到登录页，仍未实点
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
+- [~] 2026-11-07 11:03 continuation: Tasks location display added (a59, hidden when empty); date row hidden when a61 empty. Mark-done visible only a66=b55; undo visible only a66=b56. Reload verified both EqualTo conditions. Added manual Refresh control refetching Cared One Task Links (no navigation, no polling); confirmed workflow after reload. Removed redundant showDelete action; delete workflow now only DEL_SLUG and DEL_ID. Edit date hydration uses built-in ParseDate; time-only hydration still unverified.
+- [x] 2026-11-07 continuation: Actual Draftbit Web Preview opened Add Task modal; screenshot confirms only Add Task button (not Save changes), title/description/place/time/date fields and X. Preview still shows Updating intermittently; no actual task write/delete tested. Automatic refresh after confirmed deletion remains unfinished; manual Refresh is not equivalent.
+- [~] 2026-11-07 continuation: Groups Share button added, visible/conditional on existing SEL_GROUP; native Open Share Dialog shares https://careconnect-linked.lovable.app/care-circle/{{groupId}}, groupId=SEL_GROUP. Share label/icon configured and reload verified full URL and bindings, no join code in URL. Native phone share not tested; this shares the original group's existing canonical address, not a new backup deep-link.
+- [ ] Remaining: task detail dialog, automatic deletion refresh, optional date/time parity, real authenticated create/edit/delete/status readbacks; group onboarding/settings/14 sections, voices, location, ecommerce, bilingual and missing screens below. No original-app browser scan, no original code/notes/relations changed.
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
