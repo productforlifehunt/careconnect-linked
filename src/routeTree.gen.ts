@@ -52,6 +52,7 @@ import { Route as SearchCaregiverRouteImport } from './routes/search-caregiver'
 import { Route as SearchLocalCaregiverRouteImport } from './routes/search-local-caregiver'
 import { Route as SearchRemoteCaregiverRouteImport } from './routes/search-remote-caregiver'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SyncTestDraftbitRouteImport } from './routes/sync-test-draftbit'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as TrustSafetyRouteImport } from './routes/trust-safety'
 import { Route as WelcomeRouteImport } from './routes/welcome'
@@ -299,6 +300,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SyncTestDraftbitRoute = SyncTestDraftbitRouteImport.update({
+  id: '/sync-test-draftbit',
+  path: '/sync-test-draftbit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -499,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/search-local-caregiver': typeof SearchLocalCaregiverRoute
   '/search-remote-caregiver': typeof SearchRemoteCaregiverRoute
   '/settings': typeof SettingsRoute
+  '/sync-test-draftbit': typeof SyncTestDraftbitRoute
   '/tasks': typeof TasksRoute
   '/trust-safety': typeof TrustSafetyRoute
   '/welcome': typeof WelcomeRoute
@@ -575,6 +582,7 @@ export interface FileRoutesByTo {
   '/search-local-caregiver': typeof SearchLocalCaregiverRoute
   '/search-remote-caregiver': typeof SearchRemoteCaregiverRoute
   '/settings': typeof SettingsRoute
+  '/sync-test-draftbit': typeof SyncTestDraftbitRoute
   '/tasks': typeof TasksRoute
   '/trust-safety': typeof TrustSafetyRoute
   '/welcome': typeof WelcomeRoute
@@ -652,6 +660,7 @@ export interface FileRoutesById {
   '/search-local-caregiver': typeof SearchLocalCaregiverRoute
   '/search-remote-caregiver': typeof SearchRemoteCaregiverRoute
   '/settings': typeof SettingsRoute
+  '/sync-test-draftbit': typeof SyncTestDraftbitRoute
   '/tasks': typeof TasksRoute
   '/trust-safety': typeof TrustSafetyRoute
   '/welcome': typeof WelcomeRoute
@@ -730,6 +739,7 @@ export interface FileRouteTypes {
     | '/search-local-caregiver'
     | '/search-remote-caregiver'
     | '/settings'
+    | '/sync-test-draftbit'
     | '/tasks'
     | '/trust-safety'
     | '/welcome'
@@ -806,6 +816,7 @@ export interface FileRouteTypes {
     | '/search-local-caregiver'
     | '/search-remote-caregiver'
     | '/settings'
+    | '/sync-test-draftbit'
     | '/tasks'
     | '/trust-safety'
     | '/welcome'
@@ -882,6 +893,7 @@ export interface FileRouteTypes {
     | '/search-local-caregiver'
     | '/search-remote-caregiver'
     | '/settings'
+    | '/sync-test-draftbit'
     | '/tasks'
     | '/trust-safety'
     | '/welcome'
@@ -959,6 +971,7 @@ export interface RootRouteChildren {
   SearchLocalCaregiverRoute: typeof SearchLocalCaregiverRoute
   SearchRemoteCaregiverRoute: typeof SearchRemoteCaregiverRoute
   SettingsRoute: typeof SettingsRoute
+  SyncTestDraftbitRoute: typeof SyncTestDraftbitRoute
   TasksRoute: typeof TasksRoute
   TrustSafetyRoute: typeof TrustSafetyRoute
   WelcomeRoute: typeof WelcomeRoute
@@ -1295,6 +1308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sync-test-draftbit': {
+      id: '/sync-test-draftbit'
+      path: '/sync-test-draftbit'
+      fullPath: '/sync-test-draftbit'
+      preLoaderRoute: typeof SyncTestDraftbitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tasks': {
       id: '/tasks'
       path: '/tasks'
@@ -1559,6 +1579,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchLocalCaregiverRoute: SearchLocalCaregiverRoute,
   SearchRemoteCaregiverRoute: SearchRemoteCaregiverRoute,
   SettingsRoute: SettingsRoute,
+  SyncTestDraftbitRoute: SyncTestDraftbitRoute,
   TasksRoute: TasksRoute,
   TrustSafetyRoute: TrustSafetyRoute,
   WelcomeRoute: WelcomeRoute,
