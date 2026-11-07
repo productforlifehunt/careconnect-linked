@@ -594,3 +594,6 @@
 - [x] 2026-11-03 群组页底部加 Fetch 4（Get Group，groupId=SEL_GROUP）+ 文字 gCode："Join code: {{a58}}  Group page: careconnect-linked.lovable.app/care-circle/{{_ID}}"（未测；加入码只显示不进链接）
 - [x] 2026-11-03 加入码改为只给群主/管理员看（对照原版 GroupSettingsTab 仅 isAdmin 可见）：Fetch 5(Get Group) 移入成员列表，显示条件=本人(child_object_id==USER_ID)；gCode 条件 a56 Includes b56（群主），gCode 2 条件 JsonStringify(a56)==JsonStringify(["b57"])（纯管理员，避免群主+管理员重复显示）。未测。
 - [ ] AI分析：已测首页/被护理者/群组/收件箱/通知/社区约33个值；剩：群组日历/相册/子群组/邀请、被护理者紧急联系人、个人资料、亲友声音空状态；群任务额外个人任务查询是否多余待核实
+
+- [x] 2026-11-07 续做 GUI 安全核验：十个护理工具标题/空态/表单文字逐个回读。Voices 新增仍复制 emergency_contact 写入及关联/更新动作；已仅在 Draftbit GUI 删除三条错误 API 动作，刷新后 0 条 API 写入，保留关闭弹窗动作；真实 WP 记录/笔记/REL 未动。
+- [~] 2026-11-07 声音服务正文变量修正为 Draftbit 能解析的裸 {{caredOneId}}，新增 familyVoices ObjectArray 页面变量；试建读取与赋值发现原生字段接线未完成且源接口要求字符串，未进行真实成功测试，已撤回页面 focus 两条动作与列表改源，刷新确认 focus=0。服务仅配置保存，不是功能完成。全量复刻仍未完成；群组、电商、定位、双语、声音录音/复刻及全流程验证待做。
