@@ -409,6 +409,12 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
       if (cancelled || !mapRef.current) return;
       if (!leafletMapRef.current) {
         const map = Lx.map(mapRef.current, { zoomControl: true, attributionControl: false });
+        const zoomIn = mapRef.current.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-in");
+        const zoomOut = mapRef.current.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-out");
+        zoomIn?.setAttribute("data-inspector-id", "location-map/zoom-in");
+        zoomIn?.setAttribute("aria-label", isZh ? "放大地图" : "Zoom in map");
+        zoomOut?.setAttribute("data-inspector-id", "location-map/zoom-out");
+        zoomOut?.setAttribute("aria-label", isZh ? "缩小地图" : "Zoom out map");
         Lx.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
         leafletMapRef.current = map;
         mapReadyRef.current = true;
@@ -674,7 +680,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
 
       {/* ─── Map (always visible on map tabs) ─── */}
       <div style={{ display: isMapTab ? "block" : "none" }} className="relative">
-        <div ref={mapRef} className={`leaflet-container ${readOnly ? "h-56" : "h-[350px]"} w-full rounded-md overflow-hidden bg-muted`} />
+        <div ref={mapRef} data-inspector-scope={`care-location-map:${caredOneId}`} className={`leaflet-container ${readOnly ? "h-56" : "h-[350px]"} w-full rounded-md overflow-hidden bg-muted`} />
         {activeTab === "location" && currentLocation?.latitude && (
           <Button variant="outline" size="sm" className="absolute top-2 right-2 z-[1000] shadow-md bg-background/90 backdrop-blur-sm" asChild>
             <a href={`https://www.google.com/maps?q=${currentLocation.latitude},${currentLocation.longitude}`} target="_blank" rel="noopener noreferrer">
