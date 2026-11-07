@@ -1,3 +1,11 @@
+## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
+- [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
+- [x] Draftbit GUI: both Assistant and shared AssistantFabs API condition now uses real Trim. Runtime three-space submission sends zero AI requests in both paths; ordinary request still produces an AI response.
+- [x] Draftbit GUI: both paths clear composer after a successful response only; runtime input values read empty, modal hello reply screenshot inspected. Response-after-clear timing still differs from original send-start clearing.
+- [x] GUI-created AI_MESSAGES=[] and AI_BUSY=false App variables; not wired and not claimed as multiturm. Trial incomplete append action removed. Existing API/reply actions preserved; no WordPress notes/relations or original app code modified.
+- [ ] Implement and verify every remaining AI checklist item: real transcript/multi-turn, authorized saved threads/select/rename/restore, context, voice/modes/calls, guide/settings, task completion and all independent AI workflows.
+- [ ] Finish groups, Woo/Dokan commerce, location and all other replica checklist gaps; no justified overall completion percentage exists.
+
 ## Current request: Migrate inspector position bindings to existing CCT324 a59 (2026-11-07)
 - [x] Snapshotted legacy manifest (6,519 bindings), overrides (148 files), effective bindings (6,663), all 10,480 notes and all 35 REL325 links; preserved pre-existing a59 metadata.
 - [x] Active position reads/writes use only CCT324 a59 inspectorBindings; exact keys and existing numeric-route behavior retained. No automatic source-key remapping or REL325 writes.

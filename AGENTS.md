@@ -1,4 +1,22 @@
 
+<!-- LOVABLE:BEGIN -->
+## Shared-repository preservation rules (user requirement, 2026-11-07)
+
+These replace the older TanStack-specific architecture notes below as the user's requested repository-preservation policy. Higher-priority platform restrictions still apply: disclose conflicts, never silently migrate.
+
+- Shared target: `productforlifehunt/careconnect-linked`, branch `draftbit`; never switch branches or overwrite Draftbit's latest changes without authorization, because both editors share business work.
+- Preserve the inspected React Router 7 framework mode (`src/app`, existing route config); no unsolicited TanStack migration, `react-router-dom`, or second router, because the repository structure is authoritative evidence of what currently exists.
+- Follow existing page organization, server-action interfaces, login/authorization, styles and declared package manager (currently Yarn 4); extend existing patterns, not a parallel implementation, because duplicate systems drift.
+- Preserve Draftbit element identification, visual-editor integration and optional plugin-hook existence checks; do not edit platform-generated files, because both previews depend on those safeguards.
+- Declare every required dependency so both environments can install it, including repository-local package paths; no Draftbit-temporary-only dependencies, because local availability is not portable installation evidence.
+- Verify synchronization with Draftbit's latest saved revision before business-code edits; disclose the exact evidence or inability to verify, because local sandbox Git state is not proof of the configured sync branch.
+- Resolve conflicts preserving both sides' business changes; never overwrite a new structure wholesale with an old template, because that can silently delete features.
+- After implementation edits, check types, relevant tests and real preview; dependency/router/server-configuration changes also require production-package verification. Use platform-permitted checks and explicitly report any blocked verification, because unperformed checks cannot support a completion claim.
+- Never claim Draftbit compatibility without opening and checking Draftbit; report only observed results, because source inspection is not cross-platform runtime verification.
+- If platform requirements conflict with this structure or workflow, state the conflict and impact before proceeding; do not silently migrate, remove features or bypass permissions, because preserving work and authorization is mandatory.
+
+<!-- LOVABLE:END -->
+
 - Interview audio and transcript archives live in the private `interview-audio` bucket; existing Raw archives and separate Edited archives never overwrite each other. Fresh generation never reads either archive; only the WordPress-verified researcher saves archives, with Raw saving limited to a complete run and Edited saving explicit manual corrections.
 - Research participant display overrides are private research-file metadata, not account changes or participant/interview relations; both research lists use one explicit-code comparator, and display renames never alter questionnaire roles or answers.
 - Participant and interview read-only recruitment sources share RecruitmentSourceDetails, keeping disclosure behavior consistent without changing saved metadata or researcher editing.
