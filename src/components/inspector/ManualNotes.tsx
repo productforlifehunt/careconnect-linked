@@ -28,8 +28,24 @@ import { ConflictReportView } from "./ConflictReportView";
 import type { ConflictReport } from "@/features/inspector/conflict-report";
 import { Sparkles } from "lucide-react";
 
+type MigrationCandidate = {
+  key: string;
+  id: string;
+  title: string;
+  label: string;
+  reason: string;
+};
+
+type OneLoad = {
+  note: CCTNote | null;
+  warning?: string;
+  migrationCandidates?: MigrationCandidate[];
+};
+
 /** Per-element read cache for this browser session; cleared on save/lock/retry so it never shows stale bindings. */
-const oneCache = new Map<string, CCTNote | null>();
+const oneCache = new Map<string, OneLoad>();
+/** Deduplicate overlapping reads while recorder updates cause the inspector to render again. */
+const onePending = new Map<string, Promise<OneLoad>>();
 
 export function ManualNotes({
   noteKey,
@@ -230,41 +246,55 @@ export function ManualNotes({
     };
     // Old scoped positions are equivalent across pages. Source-based recovery requires an exact,
     // unique build fingerprint and never downloads the full catalogue.
-    const hit = oneCache.get(`${session}|${noteKey}`);
+    const cacheKey = `${session}|${noteKey}`;
+    const hit = oneCache.get(cacheKey);
     if (hit !== undefined)
       void apply(
-        new Map(hit ? [[noteKey, hit]] : []) as Parameters<typeof apply>[0],
+        new Map(hit.note ? [[noteKey, hit.note]] : []) as Parameters<typeof apply>[0],
+        hit,
       );
     else {
       setText("");
       setSaved("");
       onChange?.("");
       const keys = [noteKey];
-      loadOne({
-        data: {
-          keys,
-          priorKey,
-          priorLabel: label,
-          page,
-          ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
-          ...(legacy.length ? { legacy } : {}),
-          ...(alias ? { alias } : {}),
-        },
-      })
-        .then((r) => {
-          if ("error" in r && r.error) throw new Error(r.error);
-          const n = (r.notes as CCTNote[])[0] || null;
-          if (n) oneCache.set(`${session}|${noteKey}`, n);
-          return apply(
-            new Map(n ? [[noteKey, n]] : []) as Parameters<typeof apply>[0],
-            {
+      let pending = onePending.get(cacheKey);
+      if (!pending) {
+        pending = loadOne({
+          data: {
+            keys,
+            priorKey,
+            priorLabel: label,
+            page,
+            ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
+            ...(legacy.length ? { legacy } : {}),
+            ...(alias ? { alias } : {}),
+          },
+        })
+          .then((r) => {
+            if ("error" in r && r.error) throw new Error(r.error);
+            const result: OneLoad = {
+              note: (r.notes as CCTNote[])[0] || null,
               ...( "warning" in r && r.warning ? { warning: r.warning } : {}),
               ...( "migrationCandidates" in r && r.migrationCandidates?.length
                 ? { migrationCandidates: r.migrationCandidates }
                 : {}),
-            },
-          );
-        })
+            };
+            oneCache.set(cacheKey, result);
+            return result;
+          })
+          .finally(() => {
+            if (onePending.get(cacheKey) === pending) onePending.delete(cacheKey);
+          });
+        onePending.set(cacheKey, pending);
+      }
+      pending
+        .then((result) =>
+          apply(
+            new Map(result.note ? [[noteKey, result.note]] : []) as Parameters<typeof apply>[0],
+            result,
+          ),
+        )
         .catch((e) => live && setState({ error: String(e) }));
     }
     return () => {
