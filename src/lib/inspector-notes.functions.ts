@@ -27,18 +27,34 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
     } catch (e) {
       return { error: e instanceof Error ? e.message : "Forbidden", notes: [] };
     }
-    const { readNoteForKey, readNoteForFingerprint } =
+    const { readNoteForKey, readNoteForFingerprint, rebindRecoveredNote } =
       await import("./inspector-notes.server");
     try {
       const notes = (await Promise.all(data.keys.map(readNoteForKey))).filter(
         (n) => !!n,
       );
+      let warning: string | undefined;
       if (!notes.length && data.legacy) {
         const { matchingLegacyLabel } =
           await import("@/features/inspector/legacy-match");
         const old = await readNoteForKey(data.legacy.key);
-        if (old && matchingLegacyLabel(old.label, data.legacy.label))
-          notes.push({ ...old, key: data.keys[0]! });
+        if (old && matchingLegacyLabel(old.label, data.legacy.label)) {
+          const recovered = { ...old, key: data.keys[0]! };
+          try {
+            notes.push(
+              await rebindRecoveredNote(
+                recovered,
+                data.keys[0]!,
+                "element",
+                data.page || "",
+                data.legacy.label,
+              ),
+            );
+          } catch (error) {
+            notes.push(recovered);
+            warning = `已读回 CCT324 #${old.id}，但 a59 关联没有写入：${error instanceof Error ? error.message : String(error)}`;
+          }
+        }
       }
       if (!notes.length && data.fingerprint && data.tag && data.page) {
         const recovered = await readNoteForFingerprint(
@@ -47,9 +63,24 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
           data.tag,
           data.page,
         );
-        if (recovered) notes.push(recovered);
+        if (recovered) {
+          try {
+            notes.push(
+              await rebindRecoveredNote(
+                recovered,
+                data.keys[0]!,
+                "element",
+                data.page,
+                recovered.label || "",
+              ),
+            );
+          } catch (error) {
+            notes.push(recovered);
+            warning = `已读回 CCT324 #${recovered.id}，但 a59 关联没有写入：${error instanceof Error ? error.message : String(error)}`;
+          }
+        }
       }
-      return { notes };
+      return { notes, ...(warning ? { warning } : {}) };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "读取失败", notes: [] };
     }

@@ -262,6 +262,29 @@ export async function readNoteForFingerprint(
   if (!found) return null;
   return { ...mapRow(found.row), ...found.binding, key };
 }
+
+/** Add the newly resolved stable position to a CCT note without changing its text or check state. */
+export async function rebindRecoveredNote(
+  note: InspectorNote,
+  key: string,
+  scope: "element" | "page",
+  page: string,
+  label: string,
+): Promise<InspectorNote> {
+  if (!note.id) throw new Error("恢复的注释缺少 CCT 编号，未修改关联。");
+  const binding: NoteBinding = {
+    key,
+    id: note.id,
+    scope,
+    page,
+    label,
+    ...(note.source ? { source: note.source } : {}),
+    ...(note.alias ? { alias: note.alias } : {}),
+    locked: true,
+  };
+  await storeBinding(binding);
+  return { ...note, ...binding };
+}
 async function writeBindingsOnly(
   row: CCTRow,
   bindings: NoteBinding[],
