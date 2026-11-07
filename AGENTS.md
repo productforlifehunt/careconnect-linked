@@ -42,3 +42,9 @@
 - The researcher read-write inspector (src/components/inspector, src/features/inspector) only observes: it records requests in wordpress-client (holding back every non-GET there while inspect mode is on) and only observes other fetches (store operations, app server functions by export/action), and its AI explanation server function re-verifies the researcher WP token; code references are re-read from current source on every click (no stored index), because a saved map drifts from the code.
 - Inspector notes: CCT324 body; private position config, not RELs; note↔note via REL325 (M:N, 数据字典 parent). Researcher-gated.
 - Emergency toggle uses shared flags to prevent permission drift.
+
+## Draftbit branch synchronization (must keep)
+
+- This connected app reads, pulls, and saves only the `draftbit` branch of `productforlifehunt/careconnect-linked`; never switch to or write `main` or any other remote branch.
+- Treat `origin/draftbit` as authoritative during synchronization. Preserve the prior working branch as the local backup, resolve conflicts in favor of the latest `draftbit` functionality, and never push the old workspace back.
+- Before saving, verify the active branch and both read and write targets are `draftbit`; do not commit generated build output, `.env`, credentials, WordPress data, or database changes.
