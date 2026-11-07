@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./CaredOnes-Bq54cZSy.js";import{t as n}from"./RequireAuth-ClND2NrE.js";var r=e();function RouteCaredOnesPersonidPage(){return(0,r.jsx)(n,{children:(0,r.jsx)(t,{})})}export{RouteCaredOnesPersonidPage as component};

@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./RequireAuth-C131DGSv.js";import{t as n}from"./Onboarding-CTI34vDq.js";var r=e();function RouteOnboardingPage(){return(0,r.jsx)(t,{children:(0,r.jsx)(n,{})})}export{RouteOnboardingPage as component};

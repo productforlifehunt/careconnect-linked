@@ -1,0 +1,1 @@
+import{t as e}from"./JoinGroup-yc2LUswo.js";var t=e;export{t as component};

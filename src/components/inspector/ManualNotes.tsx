@@ -109,6 +109,7 @@ export function ManualNotes({
   activeRevision.current = revision;
   const correctionState = useRef({ selected, title, text, savedTitle, saved });
   correctionState.current = { selected, title, text, savedTitle, saved };
+  const legacyKeysKey = legacyKeys?.join("\u0000") || "";
   useEffect(() => {
     const updated = (event: Event) => {
       const note = (
@@ -182,7 +183,7 @@ export function ManualNotes({
     setSavedVerified(false);
     setState({ loading: true });
     const uniqueLegacyKeys = [
-      ...(legacyKeys || []),
+      ...(legacyKeysKey ? legacyKeysKey.split("\u0000") : []),
       legacyKey,
       legacySourceKey,
     ].filter((key): key is string => !!key && key !== noteKey);
@@ -269,7 +270,7 @@ export function ManualNotes({
     return () => {
       live = false;
     };
-  }, [noteKey, priorKey, legacyKey, legacySourceKey, legacyKeys, alias, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, priorKey, legacyKey, legacySourceKey, legacyKeysKey, alias, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const stableAnchor = async () => {
     const match = fingerprint?.match(/^([^:]+):(\d+):\d+:([0-9a-f]{64}):1$/);
     if (!match || !tag) return {};

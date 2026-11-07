@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./SearchResults-BQ5pYyu_.js";import{t as n}from"./SiteFeature-ByX4mXF7.js";var r=e();function RouteSearchLocalCaregiverPage(){return(0,r.jsx)(n,{name:`paidCaregivers`,children:(0,r.jsx)(t,{})})}export{RouteSearchLocalCaregiverPage as component};

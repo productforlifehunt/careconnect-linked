@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./CareCircle-CuSLNM7n.js";import{t as n}from"./RequireAuth-ClND2NrE.js";var r=e();function RouteCareCirclePage(){return(0,r.jsx)(n,{children:(0,r.jsx)(t,{})})}export{RouteCareCirclePage as component};
