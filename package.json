@@ -6,8 +6,8 @@
   "packageManager": "yarn@4.18.1",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "react-router build",
+    "build:dev": "react-router build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
