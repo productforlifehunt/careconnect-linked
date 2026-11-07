@@ -1356,7 +1356,7 @@ export default function ReadWriteInspector() {
                       info.anchor.names[0]?.startsWith("scope:") ||
                       !info.sources[0]
                         ? undefined
-                        : legacyKey
+                        : `el|${pathname}|${info.sources[0]}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}`
                     }
                     fingerprint={fingerprint}
                     alias={elementAliasKey}

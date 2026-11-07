@@ -37,7 +37,15 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
       if (!notes.length && data.legacy) {
         const { matchingLegacyLabel } =
           await import("@/features/inspector/legacy-match");
-        const old = await readNoteForKey(data.legacy.key);
+        const candidates = [data.legacy.key];
+        const legacyParts = data.legacy.key.split("|");
+        if (legacyParts[0] === "el" && legacyParts.length > 3)
+          candidates.push(legacyParts.slice(0, -1).join("|"));
+        let old: Awaited<ReturnType<typeof readNoteForKey>> = null;
+        for (const candidate of [...new Set(candidates)]) {
+          old = await readNoteForKey(candidate);
+          if (old) break;
+        }
         if (old && matchingLegacyLabel(old.label, data.legacy.label)) {
           const recovered = { ...old, key: data.keys[0]! };
           try {
