@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./Profile-BcykLvav.js";import{t as n}from"./RequireAuth-D8ZOzvHR.js";var r=e();function RouteSettingsPage(){return(0,r.jsx)(n,{children:(0,r.jsx)(t,{})})}export{RouteSettingsPage as component};

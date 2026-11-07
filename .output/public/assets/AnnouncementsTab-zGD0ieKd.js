@@ -1,0 +1,110 @@
+var e=`import { R } from "@/integrations/wp-schema";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Pin, Megaphone, Loader2 } from "lucide-react";
+import { PostActions } from "../PostActions";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
+import { CommentsSection } from "@/components/comments/CommentsSection";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+
+interface AnnouncementsTabProps {
+  announcements: any[];
+  announcementsLoading?: boolean | undefined;
+  activeGroupId: string | null;
+  userId: string | undefined;
+  isAdmin: boolean;
+  memberCategories: any[];
+  members?: any[] | undefined;
+  createPost: any;
+  onEditPost: (post: any) => void;
+  onTogglePin: (post: any) => void;
+  onDeletePost: (id: string) => void;
+}
+
+export function AnnouncementsTab({
+  announcements, announcementsLoading, activeGroupId, userId, isAdmin, memberCategories, members,
+  createPost, onEditPost, onTogglePin, onDeletePost,
+}: AnnouncementsTabProps) {
+  const { toast } = useToast();
+  const { i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const Z = (cn: string, en: string) => (isCN ? cn : en);
+  const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
+  const [scheduledAt, setScheduledAt] = useState("");
+
+  return (
+    <div>
+      {isAdmin && (
+        <Card className="border-transparent card-elevated mb-4">
+          <CardContent className="p-4">
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={Z("公告标题……", "Announcement title...")} className="mb-2" />
+            <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={Z("撰写一条公告……", "Write an announcement...")} className="mb-3" rows={2} />
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground">{Z("定时发布（可选，留空立即发布）", "Publish later (optional — leave empty to post now)")}</label>
+              <Input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} />
+            </div>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
+              <Button variant="coral" size="sm" onClick={() => {
+                if (!content.trim() || !activeGroupId) return;
+                createPost.mutate(
+                  {
+                    group_id: activeGroupId,
+                    content,
+                    type: "announcement",
+                    title: title || undefined,
+                    scheduled_at: scheduledAt ? scheduledAt.replace("T", " ") + ":00" : null,
+                    subgroupIds: visibility.subgroupIds,
+                    visibilityUserIds: visibility.userIds,
+                    hiddenSubgroupIds: visibility.hiddenSubgroupIds,
+                    hiddenUserIds: visibility.hiddenUserIds,
+                  },
+                  {
+                    onSuccess: () => {
+                      setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY); setScheduledAt("");
+                      toast({ title: scheduledAt ? Z("公告已排期发布", "Announcement scheduled") : Z("公告已发布！", "Announcement posted!") });
+                    },
+                  }
+                );
+              }} disabled={!content.trim() || createPost.isPending}>
+                <Megaphone className="h-3.5 w-3.5 mr-1" /> {Z("发布", "Post")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      <div className="space-y-3">
+        {(announcements || []).map((a: any) => (
+          <Card key={a.id} className={\`border-transparent card-elevated \${a.is_pinned ? "border-l-4 border-l-primary" : ""}\`}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                {a.is_pinned && <Pin className="h-3.5 w-3.5 text-primary" />}
+                <span className="text-sm font-medium text-foreground">{a.author?.full_name || ""}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{formatDate(a.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
+                <PostActions post={a} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
+              </div>
+              {a.is_scheduled && (
+                <p className="text-xs text-primary mb-1">{Z("已排期，将于 ", "Scheduled for ")}{formatDateTime(a.scheduled_at, isCN ? "zh-CN" : "en")}{Z(" 发布（仅你可见）", " (only you can see it now)")}</p>
+              )}
+              {a.title && <h4 className="font-semibold text-foreground mb-1">{a.title}</h4>}
+              <p className="text-sm text-muted-foreground">{a.content}</p>
+              <CommentsSection relationId={R.careGroupPostComments} parentId={a.id} compact />
+            </CardContent>
+          </Card>
+        ))}
+        {announcementsLoading && (announcements || []).length === 0 && (
+          <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        )}
+        {!announcementsLoading && (announcements || []).length === 0 && <p className="text-center py-12 text-muted-foreground">{Z("暂无公告。", "No announcements yet.")}</p>}
+      </div>
+    </div>
+  );
+}
+`;export{e as default};

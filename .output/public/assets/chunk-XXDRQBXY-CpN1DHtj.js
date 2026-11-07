@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./chunk-Y2CYZVJY-CUaGfQly.js";import{t}from"./d3-selection-D2h7Y91O.js";var n=e((e,n)=>{let r;return n===`sandbox`&&(r=t(`#i`+e)),t(n===`sandbox`?r.nodes()[0].contentDocument.body:`body`).select(`[id="${e}"]`)},`getDiagramElement`);export{n as t};

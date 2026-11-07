@@ -1,0 +1,130 @@
+var e=`import { ReactNode } from "react";
+import { useLocation, useNavigate } from "@/lib/router-compat";
+import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, MessageCircle} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { BrandMark } from "@/components/BrandMark";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { PageBackButton } from "@/components/layout/PageBackButton";
+
+/**
+ * NotchSafety app shell — one persistent header on every screen and one
+ * navigation model that scales from phone (bottom bar) to tablet/desktop
+ * (inline top nav). Family-locator vocabulary only.
+ */
+export function SafetyShell({ children }: { children: ReactNode }) {
+  const { i18n } = useTranslation();
+  const zh = i18n.language?.startsWith("zh");
+  const L = (cn: string, en: string) => (zh ? cn : en);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+
+  const tabs = [
+    { url: "/map", label: L("地图", "Map"), icon: MapPin },
+    { url: "/places", label: L("地点", "Places"), icon: Home },
+    { url: "/inbox", label: L("收件箱", "Inbox"), icon: MessageCircle },
+
+    
+    { url: "/circle", label: L("圈子", "Circle"), icon: Users },
+    { url: "/me", label: L("我的", "Me"), icon: UserIcon },
+  ];
+
+  const isActive = (url: string) => location.pathname === url || location.pathname.startsWith(url + "/");
+  const bare = location.pathname === "/" || location.pathname.startsWith("/auth") || location.pathname.startsWith("/join");
+
+  return (
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16">
+          <button
+            type="button"
+            onClick={() => navigate(isAuthenticated ? "/map" : "/")}
+            className="flex shrink-0 items-center gap-2"
+            aria-label={L("诺驰安全首页", "Notch Safety home")}
+          >
+            <span className="hidden sm:flex">
+              <BrandMark size={28} showWordmark />
+            </span>
+            <span className="flex sm:hidden">
+              <BrandMark size={28} />
+            </span>
+          </button>
+
+
+          <div className="ml-auto flex items-center gap-1">
+            {isAuthenticated && (
+              <Button
+                variant={isActive("/assistant") ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => navigate("/assistant")}
+                aria-label={L("安全助手", "Safety assistant")}
+              >
+                <Sparkles className="h-5 w-5" />
+              </Button>
+            )}
+            {isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate("/inbox")}
+                aria-label={L("收件箱", "Inbox")}
+              >
+                <Bell className="h-5 w-5" />
+              </Button>
+            )}
+            <LanguageSwitcher />
+            {isAuthenticated ? (
+              <Button variant="ghost" size="icon" onClick={() => navigate("/me")} aria-label={L("我的", "Me")}>
+                <UserIcon className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => navigate("/auth")}>
+                {L("登录", "Sign in")}
+              </Button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className={\`w-full flex-1 \${bare ? "" : "px-0 pb-20 md:px-4"}\`}>
+        <div className="px-4 pt-2">
+          <PageBackButton />
+        </div>
+        {children}
+      </main>
+
+      {isAuthenticated && !bare && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)]"
+          aria-label={L("底部导航", "Bottom navigation")}
+        >
+          <div className="flex w-full">
+            {tabs.map((tab) => {
+              const active = isActive(tab.url);
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.url}
+                  type="button"
+                  onClick={() => navigate(tab.url)}
+                  aria-current={active ? "page" : undefined}
+                  className={\`flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-[10px] font-medium transition-colors \${
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }\`}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="w-full truncate text-center leading-tight">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+    </div>
+  );
+}
+`;export{e as default};

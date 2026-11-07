@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./chunk-Y2CYZVJY-CUaGfQly.js";function populateCommonDb(e,t){e.accDescr&&t.setAccDescription?.(e.accDescr),e.accTitle&&t.setAccTitle?.(e.accTitle),e.title&&t.setDiagramTitle?.(e.title)}e(populateCommonDb,`populateCommonDb`);export{populateCommonDb as t};

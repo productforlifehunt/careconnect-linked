@@ -1,0 +1,1 @@
+import{t as e}from"./NotFound-D6tg104r.js";var t=e;export{t as component};

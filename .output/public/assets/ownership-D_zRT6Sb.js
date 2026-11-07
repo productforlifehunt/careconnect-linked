@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";function isPostAuthor(e,t){let normalize=e=>String(e??``).trim().replace(/^wp-/,``),n=normalize(e),r=normalize(t);return/^\d+$/.test(n)&&Number(n)>0&&Number(n)===Number(r)}export{isPostAuthor as t};
