@@ -23,7 +23,7 @@ import { Sparkles } from 'lucide-react';
 /** Per-element read cache for this browser session; cleared on save/lock/retry so it never shows stale bindings. */
 const oneCache = new Map<string, CCTNote | null>();
 
-export function ManualNotes({ noteKey, scope, page, label, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
+export function ManualNotes({ noteKey, legacyKey, fingerprint, scope, page, label, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; fingerprint?: string | undefined; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const loadOne = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
@@ -86,12 +86,14 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       setStale(false);
       setLoadedFor(noteKey);
     };
-    // Only this element's own bound note is read (one binding + one CCT324 row); the full table is never downloaded here.
+    // Old scoped positions are equivalent across pages. Source-based recovery requires an exact,
+    // unique build fingerprint and never downloads the full catalogue.
     const hit = oneCache.get(`${session}|${noteKey}`);
     if (hit !== undefined) void apply(new Map(hit ? [[noteKey, hit]] : []) as Parameters<typeof apply>[0]);
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
-      loadOne({ data: { keys: [noteKey] } }).then((r) => {
+      const keys = [noteKey, ...(legacyKey && legacyKey !== noteKey ? [legacyKey] : [])];
+      loadOne({ data: { keys, ...(fingerprint && tag ? { fingerprint, tag } : {}) } }).then((r) => {
         if ('error' in r && r.error) throw new Error(r.error);
         const n = (r.notes as CCTNote[])[0] || null;
         oneCache.set(`${session}|${noteKey}`, n);
@@ -99,7 +101,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       }).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
-  }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, legacyKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const stableAnchor = async (): Promise<Record<string, never>> => ({});
   const doSave = async () => {
     if (stale || !ready) return;
