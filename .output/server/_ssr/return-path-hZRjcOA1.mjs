@@ -1,0 +1,4 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/return-path-hZRjcOA1.js
+var return_path_default = "/**\n * Where to go after signing in / finishing app onboarding.\n * Only same-site paths (\"/care-circle/28\") are accepted, never \"//host\" or\n * full URLs, so a crafted link cannot send someone to another website.\n */\nexport function safeNextPath(raw: string | null | undefined): string | null {\n  const value = String(raw ?? \"\").trim();\n  if (!value.startsWith(\"/\") || value.startsWith(\"//\") || value.startsWith(\"/\\\\\")) return null;\n  if (value.startsWith(\"/auth\") || value.startsWith(\"/onboarding\")) return null;\n  return value;\n}\n\nexport function withNext(path: string, next: string | null | undefined): string {\n  const safe = safeNextPath(next);\n  return safe ? `${path}?next=${encodeURIComponent(safe)}` : path;\n}\n";
+//#endregion
+export { return_path_default as default };

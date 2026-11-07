@@ -1,0 +1,4 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/counts-BH5MpTf5.js
+var counts_default = "export function inboxCounts(\n  notifications: readonly { is_read?: boolean }[] = [],\n  conversations: readonly { unread_count?: unknown }[] = [],\n) {\n  const unreadNotifications = notifications.filter((n) => !n.is_read).length;\n  // Conversation source exposes one unread flag per thread, not message volume.\n  const unreadMessages = conversations.filter((c) => Number(c.unread_count) > 0).length;\n  return {\n    unreadNotifications,\n    unreadMessages,\n    unread: unreadNotifications + unreadMessages,\n    total: notifications.length + conversations.length,\n    read: notifications.length + conversations.length - unreadNotifications - unreadMessages,\n  };\n}";
+//#endregion
+export { counts_default as default };

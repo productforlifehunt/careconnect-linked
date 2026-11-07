@@ -23,7 +23,7 @@ import { Sparkles } from 'lucide-react';
 /** Per-element read cache for this browser session; cleared on save/lock/retry so it never shows stale bindings. */
 const oneCache = new Map<string, CCTNote | null>();
 
-export function ManualNotes({ noteKey, legacyKey, fingerprint, scope, page, label, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; fingerprint?: string | undefined; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
+export function ManualNotes({ noteKey, legacyKey, legacySourceKey, fingerprint, scope, page, label, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; legacySourceKey?: string; alias?: string; fingerprint?: string | undefined; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const loadOne = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
@@ -93,7 +93,7 @@ export function ManualNotes({ noteKey, legacyKey, fingerprint, scope, page, labe
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
       const keys = [noteKey, ...(legacyKey && legacyKey !== noteKey ? [legacyKey] : [])];
-      loadOne({ data: { keys, ...(fingerprint && tag ? { fingerprint, tag } : {}) } }).then((r) => {
+      loadOne({ data: { keys, ...(fingerprint && tag ? { fingerprint, tag } : {}), ...(legacySourceKey && fingerprint ? { legacy: { key: legacySourceKey, label } } : {}) } }).then((r) => {
         if ('error' in r && r.error) throw new Error(r.error);
         const n = (r.notes as CCTNote[])[0] || null;
         oneCache.set(`${session}|${noteKey}`, n);
@@ -101,7 +101,7 @@ export function ManualNotes({ noteKey, legacyKey, fingerprint, scope, page, labe
       }).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
-  }, [noteKey, legacyKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, legacyKey, legacySourceKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const stableAnchor = async (): Promise<Record<string, never>> => ({});
   const doSave = async () => {
     if (stale || !ready) return;
