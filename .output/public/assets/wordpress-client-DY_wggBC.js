@@ -1,0 +1,1 @@
+import{i as e}from"./wordpress-client-BeA2_prj.js";export{e as wordpressFetch};

@@ -1,0 +1,138 @@
+var e=`import { R } from "@/integrations/wp-schema";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useSite } from "@/contexts/SiteContext";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ListTodo, Users, Heart } from "lucide-react";
+import { PostActions } from "../PostActions";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "../VisibilityPicker";
+import { CommentsSection } from "@/components/comments/CommentsSection";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+
+interface HomeTabProps {
+  pendingTasksCount: number;
+  membersCount: number;
+  caredOnesCount: number;
+  statsLoading?: boolean | undefined;
+  allPosts: any[];
+  activeGroupId: string | null;
+  userId: string | undefined;
+  isAdmin: boolean;
+  memberCategories: any[];
+  members?: any[] | undefined;
+  createPost: any;
+  onEditPost: (post: any) => void;
+  onTogglePin: (post: any) => void;
+  onDeletePost: (id: string) => void;
+  onNavigateTab?: ((tab: string) => void) | undefined;
+}
+
+export function HomeTab({
+  pendingTasksCount, membersCount, caredOnesCount, statsLoading,
+  allPosts, activeGroupId, userId, isAdmin, memberCategories, members,
+  createPost, onEditPost, onTogglePin, onDeletePost, onNavigateTab,
+}: HomeTabProps) {
+
+  const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+  const isCN = i18n.language?.startsWith("zh");
+  const site = useSite();
+  const [content, setContent] = useState("");
+  const [postType, setPostType] = useState("discussion");
+  const [title, setTitle] = useState("");
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
+
+  const addPost = () => {
+    if (!content.trim() || !activeGroupId) return;
+    createPost.mutate(
+      {
+        group_id: activeGroupId,
+        content,
+        type: postType,
+        title: title || undefined,
+        subgroupIds: visibility.subgroupIds,
+        visibilityUserIds: visibility.userIds,
+                    hiddenSubgroupIds: visibility.hiddenSubgroupIds,
+                    hiddenUserIds: visibility.hiddenUserIds,
+      },
+      {
+        onSuccess: () => {
+          setContent(""); setTitle(""); setVisibility(EMPTY_VISIBILITY);
+          toast({ title: isCN ? "已发布！" : "Posted!" });
+        },
+      }
+    );
+  };
+
+  return (
+    <div>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+        {[
+          { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo, tab: "tasks" },
+          { label: isCN ? "成员" : "Members", value: membersCount, icon: Users, tab: "members" },
+          { label: isCN ? "被护理者" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart, tab: "cared-ones" },
+        ].map(s => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => onNavigateTab?.(s.tab)}
+            className="text-left rounded-xl border border-transparent card-elevated p-3 sm:p-4 flex items-center gap-2 hover:border-primary/30 transition-colors"
+          >
+            <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+            <div className="min-w-0">
+              {statsLoading
+                ? <div className="h-5 sm:h-7 w-8 rounded-sm bg-muted animate-pulse" aria-label="loading" />
+                : <p className="text-base sm:text-xl font-bold text-foreground leading-tight">{s.value}</p>}
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight break-words">{s.label}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <Card className="border-transparent card-elevated mb-6">
+        <CardContent className="p-4">
+          <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={isCN ? "与团队分享一条更新…" : "Share an update with your care team..."} className="mb-3" rows={2} />
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
+              <Select value={postType} onValueChange={setPostType}>
+                <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="discussion">{isCN ? "讨论" : "Discussion"}</SelectItem>
+                  <SelectItem value="announcement">{isCN ? "公告" : "Announcement"}</SelectItem>
+                  <SelectItem value="wish">{isCN ? "祝福" : "Well Wish"}</SelectItem>
+                </SelectContent>
+              </Select>
+              <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
+            </div>
+            <Button variant="coral" size="sm" onClick={addPost} disabled={!content.trim() || createPost.isPending}>{isCN ? "发布" : "Post"}</Button>
+          </div>
+        </CardContent>
+      </Card>
+      <div className="space-y-3">
+        {(allPosts || []).slice(0, 5).map((p: any) => (
+          <Card key={p.id} className="border-transparent card-elevated">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">{(p.author?.full_name || "?")[0]}</div>
+                <span className="text-sm font-medium text-foreground">{p.author?.full_name || (isCN ? "成员" : "Member")}</span>
+                <Badge variant="outline" className="text-xs ml-auto">{isCN ? ({ discussion: "讨论", announcement: "公告", wish: "祝福" } as any)[p.type] || p.type : p.type}</Badge>
+                <span className="text-xs text-muted-foreground">{formatDate(p.created_at, isCN ? "zh-CN" : "en", { month: "short", day: "numeric" })}</span>
+                <PostActions post={p} userId={userId} isAdmin={isAdmin} onEdit={onEditPost} onTogglePin={onTogglePin} onDelete={onDeletePost} />
+              </div>
+              {p.title && <p className="font-medium text-sm text-foreground mb-1">{p.title}</p>}
+              <p className="text-sm text-muted-foreground">{p.content}</p>
+              <CommentsSection relationId={R.careGroupPostComments} parentId={p.id} compact />
+            </CardContent>
+          </Card>
+        ))}
+        {(allPosts || []).length === 0 && <p className="text-center py-8 text-muted-foreground">{isCN ? "还没有动态。在上方分享第一条吧！" : "No posts yet. Share an update above!"}</p>}
+      </div>
+    </div>
+  );
+}
+`;export{e as default};

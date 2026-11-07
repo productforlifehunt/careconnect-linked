@@ -1,0 +1,1 @@
+import{t as e}from"./Index-DTC5IOpq.js";var t=e;export{t as component};

@@ -1,0 +1,91 @@
+var e=`import { useState, useEffect } from "react";
+import { useNavigate } from "@/lib/router-compat";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { wpChangePassword } from "@/services/wp-auth";
+import { useTranslation } from "react-i18next";
+import { Heart, Loader2 } from "lucide-react";
+
+export default function ResetPassword() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
+
+  useEffect(() => {
+    // Password reset is managed via WordPress
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) setIsRecovery(true);
+  }, []);
+
+  const handleReset = async () => {
+    if (!password || password.length < 8) {
+      toast({ title: t("resetPw.passwordMinLength"), variant: "destructive" });
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast({ title: t("resetPw.passwordsMismatch"), variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      await wpChangePassword(password);
+      toast({ title: t("resetPw.passwordUpdated", "Password Updated"), description: t("resetPw.passwordUpdatedDesc", "Your password has been changed successfully.") });
+      navigate("/auth");
+    } catch (err: any) {
+      toast({ title: t("resetPw.resetFailed"), description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isRecovery) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md border-transparent card-elevated">
+          <CardContent className="p-6 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <h1 className="text-lg font-semibold text-foreground">{t("resetPw.verifyingLink")}</h1>
+            <p className="text-xs text-muted-foreground mt-2">{t("resetPw.linkExpired")}</p>
+            <Button variant="outline" className="mt-4" onClick={() => navigate("/auth")}>{t("resetPw.backToSignIn")}</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md border-transparent card-elevated">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 rounded-xl hero-gradient flex items-center justify-center mb-3">
+            <Heart className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">{t("resetPw.title")}</h1>
+          <CardDescription>{t("resetPw.subtitle")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>{t("resetPw.newPassword")}</Label>
+            <PasswordInput value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleReset()} />
+          </div>
+          <div>
+            <Label>{t("resetPw.confirmPassword")}</Label>
+            <PasswordInput value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleReset()} />
+          </div>
+          <Button variant="coral" className="w-full" onClick={handleReset} disabled={loading}>
+            {loading ? t("resetPw.updating") : t("resetPw.updatePassword")}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+`;export{e as default};

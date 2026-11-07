@@ -1,0 +1,752 @@
+var e=`import { R } from "@/integrations/wp-schema";
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "@/lib/router-compat";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
+import { CommentsSection } from "@/components/comments/CommentsSection";
+import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
+import { useAddToCart } from "@/hooks/use-cart";
+import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage, getAvailabilityConflictMessage } from "@/features/calendar/booking-availability";
+import { createCareBookingProduct } from "@/services/care-booking-product";
+import { clearCart } from "@/services/woocommerce-api";
+import { CARE_SERVICE_TYPES, careServiceTypeLabel, deliveryModeLabel } from "@/lib/care-service-types";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+
+const TIME_STEP_MINUTES = 30;
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours! * 60 + minutes!;
+}
+
+function minutesToTime(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return \`\${String(hours).padStart(2, "0")}:\${String(minutes).padStart(2, "0")}\`;
+}
+
+function formatTimeLabel(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(2026, 0, 1, hours, minutes));
+}
+
+function getDurationHours(start: string, end: string) {
+  if (!start || !end) return 0;
+  const diffMinutes = timeToMinutes(end) - timeToMinutes(start);
+  return diffMinutes > 0 ? diffMinutes / 60 : 0;
+}
+
+interface CareBookingOption {
+  key: string;
+  serviceSlug: string;
+  label: string;
+  delivery: "in-person" | "remote";
+  rate: number;
+  unit: "hour" | "visit";
+}
+
+export default function CaregiverProfile() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
+  const { isAuthenticated, user } = useAuth();
+  const { data: caregiver, isLoading } = useProvider(id);
+  const { data: reviews } = useProviderReviews(id);
+  const reviewCount = (reviews || []).length;
+  const reviewAverage = reviewCount
+    ? (reviews || []).reduce((sum: number, r: any) => sum + (Number(r.rating) || 0), 0) / reviewCount
+    : null;
+  const { data: savedProviders } = useSavedProviders();
+  const toggleSaved = useToggleSavedProvider();
+  const createReview = useCreateReview();
+  const startConversation = useStartConversation();
+  const addToCart = useAddToCart();
+
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("");
+  const [bookingEndTime, setBookingEndTime] = useState("");
+  const [bookingNotes, setBookingNotes] = useState("");
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [availabilityWarning, setAvailabilityWarning] = useState("");
+  const [recurringPattern, setRecurringPattern] = useState("none");
+  const [deliveryResourceId, setDeliveryResourceId] = useState<string>("");
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+
+  const { data: availability } = useProviderAvailability(id ?? null);
+  const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
+
+  /**
+   * Bookable services come from the caregiver's dictionary record (CCT 258):
+   * a68 service types, a65 delivery modes, and the four published rates
+   * (a66 in-person/hr, a67 remote/hr, a69 remote check-in, a70 remote
+   * medication reminder). WooCommerce is not queried here — a product is
+   * created only when this client adds a service to the cart.
+   */
+  const bookingOptions = useMemo(() => {
+    if (!caregiver) return [] as CareBookingOption[];
+    const offered = new Set(caregiver.service_type_slugs || []);
+    const modes = new Set(caregiver.service_location_slugs || []);
+    const rateInPerson = Number(caregiver.care_provider_hourly_rate_in_person) || 0;
+    const rateRemote = Number(caregiver.care_provider_hourly_rate_remote) || 0;
+    const rateCheckin = Number(caregiver.care_provider_rate_remote_checkin) || 0;
+    const rateMedicine = Number(caregiver.care_provider_rate_remote_medicine) || 0;
+
+    const options: CareBookingOption[] = [];
+    for (const service of CARE_SERVICE_TYPES) {
+      if (!offered.has(service.slug)) continue;
+      const label = isZh ? service.zh : service.en;
+
+      if (service.slug === "remote-checkin") {
+        if (rateCheckin > 0) options.push({ key: service.slug, serviceSlug: service.slug, label, delivery: "remote", rate: rateCheckin, unit: "visit" });
+        continue;
+      }
+      if (service.slug === "remote-medicine-supervision") {
+        if (rateMedicine > 0) options.push({ key: service.slug, serviceSlug: service.slug, label, delivery: "remote", rate: rateMedicine, unit: "visit" });
+        continue;
+      }
+
+      const deliveries: ("in-person" | "remote")[] = service.delivery
+        ? [service.delivery]
+        : (["in-person", "remote"] as const).filter((m) => modes.has(m));
+
+      for (const delivery of deliveries) {
+        const rate = delivery === "remote" ? rateRemote : rateInPerson;
+        if (rate <= 0) continue;
+        options.push({
+          key: \`\${service.slug}:\${delivery}\`,
+          serviceSlug: service.slug,
+          label: service.delivery ? label : \`\${label} · \${delivery === "remote" ? (isZh ? "远程" : "Remote") : (isZh ? "上门" : "In-person")}\`,
+          delivery,
+          rate,
+          unit: "hour",
+        });
+      }
+    }
+    return options;
+  }, [caregiver, isZh]);
+
+  // Auto-select first delivery option when dialog opens
+  useEffect(() => {
+    if (bookingDialogOpen && !deliveryResourceId && bookingOptions.length > 0) {
+      setDeliveryResourceId(bookingOptions[0]!.key);
+    }
+  }, [bookingDialogOpen, deliveryResourceId, bookingOptions]);
+
+  const selectedResource = bookingOptions.find((o) => o.key === deliveryResourceId);
+  const availabilityPreview = useMemo(() => {
+    const weekdayLabels = isZh
+      ? ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+      : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    // Show every published weekly window — truncating the list made days the
+    // booking form actually accepts (e.g. Fri/Sat) look unavailable.
+    return (availability || [])
+      .filter((slot: any) => slot.is_available && typeof slot.day_of_week === "number" && slot.start_time && slot.end_time)
+      .sort((a: any, b: any) => a.day_of_week - b.day_of_week || String(a.start_time).localeCompare(String(b.start_time)))
+      .map((slot: any) => ({
+        label: \`\${weekdayLabels[slot.day_of_week]} \${slot.start_time}–\${slot.end_time}\`,
+      }));
+  }, [availability, isZh]);
+  // The chosen dictionary option carries its own published rate.
+  const effectiveRate = Number(selectedResource?.rate || 0);
+  const bookingTypeLabel = selectedResource?.label || "";
+
+  const availableTimeRanges = useMemo(() => {
+    if (!bookingDate) return [];
+
+    const dayOfWeek = new Date(\`\${bookingDate}T12:00:00\`).getDay();
+    const specificSlots = (availability || []).filter((slot: any) => slot.specific_date === bookingDate);
+    const candidateSlots = specificSlots.length > 0
+      ? specificSlots.filter((slot: any) => slot.is_available && slot.start_time && slot.end_time)
+      : (availability || []).filter(
+          (slot: any) =>
+            slot.day_of_week === dayOfWeek && slot.is_available && slot.start_time && slot.end_time,
+        );
+
+    // No invented window: if the provider published no availability for this
+    // date, there is nothing bookable and the UI must say so.
+    if (candidateSlots.length === 0) return [];
+
+
+    return candidateSlots.sort(
+      (a: any, b: any) => String(a.start_time).localeCompare(String(b.start_time)),
+    );
+  }, [availability, bookingDate]);
+
+  const startTimeOptions = useMemo(() => {
+    const options = new Set<string>();
+
+    availableTimeRanges.forEach((slot: any) => {
+      const slotStart = timeToMinutes(String(slot.start_time));
+      const slotEnd = timeToMinutes(String(slot.end_time));
+      for (let minutes = slotStart; minutes + TIME_STEP_MINUTES <= slotEnd; minutes += TIME_STEP_MINUTES) {
+        options.add(minutesToTime(minutes));
+      }
+    });
+
+    return Array.from(options).sort();
+  }, [availableTimeRanges]);
+
+  const endTimeOptions = useMemo(() => {
+    if (!bookingTime) return [];
+
+    const selectedStartMinutes = timeToMinutes(bookingTime);
+    const options = new Set<string>();
+
+    availableTimeRanges.forEach((slot: any) => {
+      const slotStart = timeToMinutes(String(slot.start_time));
+      const slotEnd = timeToMinutes(String(slot.end_time));
+      if (selectedStartMinutes < slotStart || selectedStartMinutes >= slotEnd) return;
+
+      for (
+        let minutes = selectedStartMinutes + TIME_STEP_MINUTES;
+        minutes <= slotEnd;
+        minutes += TIME_STEP_MINUTES
+      ) {
+        options.add(minutesToTime(minutes));
+      }
+    });
+
+    return Array.from(options).sort();
+  }, [availableTimeRanges, bookingTime]);
+
+  useEffect(() => {
+    if (bookingTime && !startTimeOptions.includes(bookingTime)) {
+      setBookingTime("");
+    }
+  }, [bookingTime, startTimeOptions]);
+
+  useEffect(() => {
+    if (bookingEndTime && !endTimeOptions.includes(bookingEndTime)) {
+      setBookingEndTime("");
+    }
+  }, [bookingEndTime, endTimeOptions]);
+
+  useEffect(() => {
+    if (!bookingTime && startTimeOptions.length > 0) {
+      setBookingTime(startTimeOptions[0]!);
+    }
+  }, [bookingTime, startTimeOptions]);
+
+  useEffect(() => {
+    if (!bookingEndTime && endTimeOptions.length > 0) {
+      setBookingEndTime(endTimeOptions[0]!);
+    }
+  }, [bookingEndTime, endTimeOptions]);
+
+  // Check availability when date/time changes
+  const checkAvailability = (date: string, time: string, endTime = bookingEndTime) => {
+    const warning = getAvailabilityConflictMessage(availability || [], date, time, getDurationHours(time, endTime));
+    setAvailabilityWarning(warning || "");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-20" role="status" aria-label={isZh ? "正在加载护理者" : "Loading caregiver"}>
+        <h1 className="sr-only">{isZh ? "护理者资料" : "Caregiver profile"}</h1>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!caregiver) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <h1 className="text-lg font-semibold text-foreground">{isZh ? "未找到该护理者" : "Caregiver not found"}</h1>
+        <Button variant="outline" onClick={() => navigate("/search")}>{isZh ? "返回搜索" : "Back to Search"}</Button>
+      </div>
+    );
+  }
+
+  const handleBooking = async () => {
+    if (!bookingDate || !bookingTime || !bookingEndTime || !selectedResource) {
+      toast({ title: isZh ? "请选择服务、日期、开始时间和结束时间" : "Please pick a service, date, start time, and end time", variant: "destructive" });
+      return;
+    }
+    const selectedDate = new Date(bookingDate + "T" + bookingTime);
+    if (selectedDate < new Date()) {
+      toast({ title: isZh ? "无法预约过去时间" : "Cannot book in the past", description: isZh ? "请选择未来的日期与时间。" : "Please select a future date and time.", variant: "destructive" });
+      return;
+    }
+    const durationHours = getDurationHours(bookingTime, bookingEndTime);
+    if (!durationHours) {
+      toast({ title: isZh ? "时间区间无效" : "Invalid time range", description: isZh ? "结束时间必须晚于开始时间。" : "End time must be after start time.", variant: "destructive" });
+      return;
+    }
+    const scheduleConflictMessage = getAvailabilityConflictMessage(availability || [], bookingDate, bookingTime, durationHours);
+    if (scheduleConflictMessage) {
+      setAvailabilityWarning(scheduleConflictMessage);
+      toast({ title: isZh ? "该时段不可预约" : "Time slot unavailable", description: scheduleConflictMessage, variant: "destructive" });
+      return;
+    }
+    const conflictMessage = await getProviderBookingConflictMessage(caregiver.id, bookingDate, bookingTime, durationHours);
+    if (conflictMessage) {
+      setAvailabilityWarning(conflictMessage);
+      toast({ title: isZh ? "该时段不可预约" : "Time slot unavailable", description: conflictMessage, variant: "destructive" });
+      return;
+    }
+    if (!isAuthenticated) {
+      toast({ title: isZh ? "请先登录后再预约" : "Please sign in to book", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
+    if (user && caregiver && String(user.id) === String(caregiver.id)) {
+      toast({
+        title: isZh ? "这是您自己的服务" : "This is your own service",
+        description: isZh
+          ? "您不能预约自己提供的服务，请使用其他账号体验预约流程。"
+          : "You can't book your own service. Use another account to try the booking flow.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // One booking request = one checkout. WooCommerce resurrects the
+      // persistent cart of an abandoned session for logged-in customers, so
+      // without this the client can silently pay for old, stale bookings.
+      try {
+        await clearCart();
+      } catch {
+        /* non-fatal: worst case the client removes stale lines by hand */
+      }
+      const recurringNote = recurringPattern !== "none" ? \`[Recurring: \${recurringPattern}] \` : "";
+      const packageNote = \`[Service: \${selectedResource.label}] \`;
+      // Just-in-time: create the WooCommerce product for this exact service and
+      // agreed price only now, at the moment of adding it to the cart.
+      const product = await createCareBookingProduct({
+        vendorUserId: caregiver.id,
+        vendorName: caregiver.full_name ?? undefined,
+        serviceLabel: selectedResource.label,
+        delivery: selectedResource.delivery,
+        rate: selectedResource.rate,
+        hours: selectedResource.unit === "hour" ? durationHours : 1,
+        unit: selectedResource.unit,
+        startDate: bookingDate,
+        startTime: bookingTime,
+        notes: recurringNote + packageNote + (bookingNotes || ""),
+      });
+      await addToCart.mutateAsync({
+        productId: product.id,
+        booking: {
+          startDate: bookingDate,
+          startTime: bookingTime,
+          durationHours,
+          serviceType: bookingTypeLabel,
+          notes: recurringNote + packageNote + (bookingNotes || "") || undefined,
+        },
+      });
+      toast({ title: isZh ? "已加入购物车" : "Added to cart", description: isZh ? \`已加入 \${caregiver.full_name} 的 \${selectedResource?.label} 预约。\` : \`\${caregiver.full_name}'s \${selectedResource?.label} booking added.\` });
+      setBookingDialogOpen(false);
+      navigate('/cart');
+    } catch (err: any) {
+      toast({ title: isZh ? "加入购物车失败" : "Failed to add to cart", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleFavorite = () => {
+    if (!isAuthenticated) { navigate("/auth"); return; }
+    toggleSaved.mutate(caregiver.id);
+  };
+
+  const durationHrs = getDurationHours(bookingTime, bookingEndTime);
+  const total = selectedResource?.unit === "visit" ? effectiveRate : effectiveRate * durationHrs;
+  const hasAvailabilityConflict = Boolean(availabilityWarning);
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-5">
+      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4" /> {isZh ? "返回" : "Back"}
+      </Button>
+
+      <div className="grid lg:grid-cols-3 lg:grid-rows-[auto_auto] items-start gap-5">
+        <div className="lg:col-span-2 space-y-5">
+          <Card className="border-transparent card-elevated">
+            <CardContent className="p-5">
+              <div className="flex flex-row items-start gap-4 sm:gap-5">
+                <img src={caregiver.avatar_url || "/placeholder.svg"} alt={caregiver.full_name || ""} className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl object-cover bg-muted shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{caregiver.full_name}</h1>
+                        {caregiver.care_provider_is_background_checked && <Shield className="h-5 w-5 text-primary shrink-0" />}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-muted-foreground">
+                        {reviewCount > 0 && (
+                          <span className="flex items-center gap-1"><Star className="h-4 w-4 text-warning fill-warning" /> {reviewAverage?.toFixed(1)} ({isZh ? \`\${reviewCount} 条评价\` : \`\${reviewCount} review\${reviewCount === 1 ? "" : "s"}\`})</span>
+                        )}
+                        {caregiver.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {caregiver.location}</span>}
+                        
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                       className="min-h-11 min-w-11 shrink-0"
+                      onClick={handleToggleFavorite}
+                      title={isZh ? "收藏" : "Save"}
+                      aria-label={isZh ? "收藏" : "Save"}
+                      aria-pressed={isFavorited}
+                    >
+                      <Heart className={\`h-5 w-5 \${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}\`} />
+                    </Button>
+
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {(caregiver.service_location_slugs || []).map((slug: string) => (
+                      <Badge key={\`loc-\${slug}\`} variant="outline" className="border-primary/40 text-primary">{deliveryModeLabel(slug, isZh)}</Badge>
+                    ))}
+                    {(caregiver.service_type_slugs || []).map((slug: string) => (
+                      <Badge key={slug} variant="secondary" className="bg-accent text-accent-foreground">{careServiceTypeLabel(slug, isZh)}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {caregiver.bio && (
+            <Card className="border-transparent card-elevated">
+              <CardHeader><CardTitle>{isZh ? "关于" : "About"}</CardTitle></CardHeader>
+              <CardContent><p className="text-muted-foreground leading-relaxed">{caregiver.bio}</p></CardContent>
+            </Card>
+          )}
+
+          {caregiver.care_provider_is_background_checked && (
+            <Card className="border-transparent card-elevated">
+              <CardHeader><CardTitle>{isZh ? "资质" : "Qualifications"}</CardTitle></CardHeader>
+              <CardContent>
+                <div className="p-3 rounded-lg bg-success/10 flex items-center gap-2 text-sm text-success">
+                  <Shield className="h-4 w-4" /> {t("caregiverProfile.bgCheckPassed")}
+                </div>
+                {caregiver.care_provider_background_check_detail && (
+                  <p className="mt-3 text-sm text-muted-foreground">{caregiver.care_provider_background_check_detail}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+
+        </div>
+
+        {/* Sidebar - Booking + Contact */}
+        <div className="space-y-4 lg:row-span-2 lg:self-start">
+          <Card className="border-transparent card-elevated sticky top-24">
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <span className="text-3xl font-bold text-foreground">{isZh ? "¥" : "$"}{bookingOptions[0]?.rate || caregiver.care_provider_starts_hourly_rate || 0}</span>
+                <span className="text-muted-foreground">{isZh ? "/小时" : "/hour"}</span>
+              </div>
+
+              {bookingOptions.length > 0 && (
+                <div className="mb-5 space-y-2">
+                  <p className="text-sm font-medium text-foreground">{isZh ? "提供的服务" : "Services offered"}</p>
+                  <div className="space-y-2">
+                    {bookingOptions.map((option) => (
+                      <div key={option.key} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-sm text-foreground">{option.label}</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            {isZh
+                              ? \`¥\${option.rate}\${option.unit === "hour" ? "/小时" : "/次"}\`
+                              : \`$\${option.rate}\${option.unit === "hour" ? "/hr" : " each"}\`}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {availabilityPreview.length > 0 && (
+                <div className="mb-5 space-y-2">
+                  <p className="text-sm font-medium text-foreground">{isZh ? "可约时间" : "Availability"}</p>
+                  <div className="space-y-1.5">
+                    {availabilityPreview.map((slot) => (
+                      <div key={slot.label} className="text-sm text-muted-foreground">{slot.label}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="coral" className="w-full mb-3" size="lg">
+                    <Calendar className="mr-2 h-4 w-4" /> {isZh ? "立即预约" : "Book Now"}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>{isZh ? \`预约 \${caregiver.full_name}\` : \`Book \${caregiver.full_name}\`}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <div>
+                      <Label>{isZh ? "服务 *" : "Service *"}</Label>
+                      {bookingOptions.length === 0 ? (
+                        <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border border-dashed">
+                          {isZh ? "该护理者还没有公开服务与价格。请发消息与他们商定价格。" : "This caregiver hasn't published services and rates yet. Send them a message to agree a price."}
+                        </div>
+                      ) : (
+                        <Select value={deliveryResourceId} onValueChange={setDeliveryResourceId}>
+                          <SelectTrigger><SelectValue placeholder={isZh ? "选择服务" : "Select a service"} /></SelectTrigger>
+                          <SelectContent>
+                            {bookingOptions.map((o) => (
+                              <SelectItem key={o.key} value={o.key}>
+                                {o.label} — {isZh
+                                  ? \`¥\${o.rate}\${o.unit === "hour" ? "/小时" : "/次"}\`
+                                  : \`$\${o.rate}\${o.unit === "hour" ? "/hr" : " each"}\`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {selectedResource && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          {isZh ? "价格：" : "Rate: "}
+                          <span className="font-semibold text-foreground">
+                            {isZh
+                              ? \`¥\${effectiveRate}\${selectedResource.unit === "hour" ? "/小时" : "/次"}\`
+                              : \`$\${effectiveRate}\${selectedResource.unit === "hour" ? "/hr" : " each"}\`}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>{isZh ? "日期 *" : "Date *"}</Label>
+                      <Input
+                        type="date"
+                        value={bookingDate}
+                        onChange={e => {
+                          setBookingDate(e.target.value);
+                          setBookingTime("");
+                          setBookingEndTime("");
+                          setAvailabilityWarning("");
+                        }}
+                        min={new Date().toISOString().split("T")[0]!}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>{isZh ? "开始 *" : "From *"}</Label>
+                        <Select
+                          value={bookingTime}
+                          onValueChange={(value) => {
+                            setBookingTime(value);
+                            setBookingEndTime("");
+                            checkAvailability(bookingDate, value, "");
+                          }}
+                          disabled={!bookingDate || startTimeOptions.length === 0}
+                        >
+                          <SelectTrigger><SelectValue placeholder={bookingDate ? (isZh ? "选择开始时间" : "Select start") : (isZh ? "请先选日期" : "Choose date first")} /></SelectTrigger>
+                          <SelectContent>
+                            {startTimeOptions.map((time) => (
+                              <SelectItem key={time} value={time}>{formatTimeLabel(time)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{isZh ? "结束 *" : "To *"}</Label>
+                        <Select
+                          value={bookingEndTime}
+                          onValueChange={(value) => {
+                            setBookingEndTime(value);
+                            checkAvailability(bookingDate, bookingTime, value);
+                          }}
+                          disabled={!bookingTime || endTimeOptions.length === 0}
+                        >
+                          <SelectTrigger><SelectValue placeholder={bookingTime ? (isZh ? "选择结束时间" : "Select end") : (isZh ? "请先选开始" : "Choose start first")} /></SelectTrigger>
+                          <SelectContent>
+                            {endTimeOptions.map((time) => (
+                              <SelectItem key={time} value={time}>{formatTimeLabel(time)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {bookingDate && startTimeOptions.length === 0 && (
+                      <div className="text-sm text-muted-foreground bg-muted/40 rounded-lg p-2.5 flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        {isZh
+                          ? "该护理者未在此日期开放时段，请选择其他日期。"
+                          : "This caregiver has no published availability on this date. Please pick another day."}
+                      </div>
+                    )}
+
+                    {availabilityWarning && (
+                      <div className="text-sm text-warning bg-warning/10 rounded-lg p-2.5 flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        {availabilityWarning}
+                      </div>
+                    )}
+                    <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <div className="text-xs text-muted-foreground">{isZh ? "时长" : "Duration"}</div>
+                      <div className="text-sm font-medium text-foreground">
+                        {durationHrs > 0 ? (isZh ? \`\${durationHrs} 小时\` : \`\${durationHrs} hour\${durationHrs > 1 ? "s" : ""}\`) : (isZh ? "请选择时间段" : "Choose a time range")}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>{isZh ? "周期" : "Recurring"}</Label>
+                      <Select value={recurringPattern} onValueChange={setRecurringPattern}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{isZh ? "单次" : "One-time"}</SelectItem>
+                          <SelectItem value="weekly">{isZh ? "每周" : "Weekly"}</SelectItem>
+                          <SelectItem value="biweekly">{isZh ? "每两周" : "Bi-weekly"}</SelectItem>
+                          <SelectItem value="monthly">{isZh ? "每月" : "Monthly"}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {recurringPattern !== "none" && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {isZh
+                            ? "周期只是给护理者的请求备注：本次只为这一次服务付款，后续每次单独预约付款。"
+                            : "Recurring is a note to the caregiver — you pay for this session only; each later session is booked and paid separately."}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>{isZh ? "备注" : "Notes"}</Label>
+                      <Textarea value={bookingNotes} onChange={e => setBookingNotes(e.target.value)} placeholder={isZh ? "任何特殊需求…" : "Any special requirements..."} />
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-sm text-muted-foreground">{isZh ? "本次预估总价" : "Estimated Total (this session)"}</span>
+                      <span className="text-xl font-bold text-foreground">{isZh ? "¥" : "$"}{total}</span>
+                    </div>
+
+                    <Button variant="coral" className="w-full" onClick={handleBooking} disabled={addToCart.isPending || hasAvailabilityConflict || !selectedResource}>
+                      {addToCart.isPending ? (isZh ? "加入中…" : "Adding...") : (isZh ? "加入购物车并结算" : "Add to Cart & Checkout")}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Button variant="outline" className="w-full mb-3" onClick={() => {
+                if (!isAuthenticated) { navigate("/auth"); return; }
+                startConversation.mutate({ otherUserId: caregiver.id }, {
+                  onSuccess: () => navigate("/inbox?tab=messages", { state: { targetUserId: caregiver.id, targetUserName: caregiver.full_name, targetUserAvatar: caregiver.avatar_url } }),
+                  onError: () => navigate("/inbox?tab=messages"),
+                });
+              }} disabled={startConversation.isPending}>
+                <MessageSquare className="mr-2 h-4 w-4" /> {startConversation.isPending ? (isZh ? "正在打开…" : "Opening...") : (isZh ? "发消息 / 议价" : "Message / Negotiate Price")}
+              </Button>
+              {caregiver.phone && (
+                <Button variant="ghost" className="w-full" asChild>
+                  <a href={\`tel:\${caregiver.phone}\`}>
+                    <Phone className="mr-2 h-4 w-4" /> {isZh ? \`致电 \${caregiver.full_name || ""}\` : \`Call \${caregiver.full_name?.split(" ")[0]! || ""}\`}
+                  </a>
+                </Button>
+              )}
+
+              {caregiver.care_provider_is_background_checked && (
+                <div className="mt-6 pt-4 border-t space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span>{isZh ? "已通过背景核查" : "Background verified"}</span>
+                  </div>
+                </div>
+              )}
+
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Reviews */}
+        <div className="lg:col-span-2 lg:col-start-1">
+            <Card className="border-transparent card-elevated">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{isZh ? "评价" : "Reviews"} ({reviews?.length || 0})</CardTitle>
+                  <Dialog open={reviewDialogOpen} onOpenChange={(open) => {
+                      if (open && !isAuthenticated) {
+                        toast({ title: isZh ? "请先登录后撰写评价" : "Please sign in to write a review", variant: "destructive" });
+                        navigate("/auth");
+                        return;
+                      }
+                      setReviewDialogOpen(open);
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader><DialogTitle>{isZh ? "评价 " : "Review "}{caregiver.full_name}</DialogTitle></DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <div>
+                            <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map(s => (
+                                 <button key={s} type="button" aria-label={isZh ? \`\${s} 星\` : \`\${s} stars\`} aria-pressed={s === reviewRating} onClick={() => setReviewRating(s)} className="min-h-11 min-w-11 flex items-center justify-center rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
+                                  <Star className={\`h-7 w-7 cursor-pointer transition-colors \${s <= reviewRating ? "text-warning fill-warning" : "text-muted-foreground/30"}\`} />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <Label>{isZh ? "评论" : "Comment"}</Label>
+                            <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
+                          </div>
+                          <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
+                            try {
+                              await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
+                              toast({ title: isZh ? "评价已提交！" : "Review submitted!", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
+                              setReviewDialogOpen(false);
+                              setReviewRating(5);
+                              setReviewComment("");
+                            } catch (err: any) {
+                              toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
+                            }
+                          }}>
+                            {createReview.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "提交评价" : "Submit Review")}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
+                  <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || (isZh ? "未填姓名" : "No name")}</span>
+                      <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
+                    </div>
+                    <div className="flex gap-0.5 mb-2">
+                      {Array.from({ length: review.rating }).map((_, j) => (
+                        <Star key={j} className="h-3 w-3 text-warning fill-warning" />
+                      ))}
+                    </div>
+                    {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
+                    {review.response_text && (
+                      <div className="mt-2 ml-4 p-2 bg-muted/50 rounded-sm text-sm text-muted-foreground">
+                        <span className="font-medium">{isZh ? "服务者回复：" : "Provider response:"}</span> {review.response_text}
+                      </div>
+                    )}
+                    <CommentsSection relationId={R.reviewComments} parentId={review.id} compact />
+                  </div>
+                )) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">{isZh ? "暂无评价" : "No reviews yet"}</p>
+                )}
+              </CardContent>
+            </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+`;export{e as default};
