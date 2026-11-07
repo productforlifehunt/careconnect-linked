@@ -14,11 +14,23 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
         priorKey: z.string().min(1).max(600).optional(),
         priorLabel: z.string().max(400).optional(),
         legacy: z
-          .object({
-            key: z.string().min(1).max(600),
-            label: z.string().max(400),
-          })
+          .union([
+            z.object({
+              key: z.string().min(1).max(600),
+              label: z.string().max(400),
+            }),
+            z
+              .array(
+                z.object({
+                  key: z.string().min(1).max(600),
+                  label: z.string().max(400),
+                }),
+              )
+              .min(1)
+              .max(8),
+          ])
           .optional(),
+        alias: z.string().max(600).optional(),
       })
       .parse(input),
   )
