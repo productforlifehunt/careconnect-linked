@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./router-compat-CRNc9rN3.js";import{t}from"./jsx-runtime-B_7alK5I.js";var n=t();function RouteHelpPage(){return(0,n.jsx)(e,{to:`/resources`,replace:!0})}export{RouteHelpPage as component};

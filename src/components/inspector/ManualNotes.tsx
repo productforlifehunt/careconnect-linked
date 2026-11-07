@@ -208,6 +208,7 @@ export function ManualNotes({
         data: {
           keys,
           priorKey,
+          priorLabel: label,
           page,
           ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
           ...(legacySourceKey

@@ -1,0 +1,1 @@
+import{t as e}from"./AICompanion-Cg97Fhsw.js";var t=e;export{t as component};

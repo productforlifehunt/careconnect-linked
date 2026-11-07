@@ -12,6 +12,7 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
         tag: z.string().max(60).optional(),
         page: z.string().max(400).optional(),
         priorKey: z.string().min(1).max(600).optional(),
+        priorLabel: z.string().max(400).optional(),
         legacy: z
           .object({
             key: z.string().min(1).max(600),
@@ -37,7 +38,8 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
       let warning: string | undefined;
       if (!notes.length && data.priorKey && data.page) {
         const previous = await readNoteForKey(data.priorKey);
-        if (previous?.scope === "element") {
+        const { matchingLegacyLabel } = await import("@/features/inspector/legacy-match");
+        if (previous?.scope === "element" && data.priorLabel && matchingLegacyLabel(previous.label, data.priorLabel)) {
           notes.push(await rebindRecoveredNote(previous, data.keys[0]!, "element", data.page, previous.label));
         }
       }

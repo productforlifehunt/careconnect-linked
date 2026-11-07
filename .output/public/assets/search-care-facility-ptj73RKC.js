@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./SearchResults-7mCKEA26.js";import{t as n}from"./SiteFeature-CBO4lZJ0.js";var r=e();function RouteSearchCareFacilityPage(){return(0,r.jsx)(n,{name:`facilities`,children:(0,r.jsx)(t,{})})}export{RouteSearchCareFacilityPage as component};
