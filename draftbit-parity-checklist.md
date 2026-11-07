@@ -19,9 +19,9 @@
 - [ ] HowItWorks：原文、共用页头、Find CTA和独立 More 入口已保存并回读；Web/iOS预览截图有正文；实际按钮点按、双语及完整布局未完成。
 
 ## 已有页面中的功能缺项
-- [ ] Meds/Checks：多时段、复发、按次记录、编辑回填、提醒、失败状态和实际读写；CCT187 a57/a58/a66/a68/a69；CCT161 a88，REL190/191/173，不使用 a90。
+- [ ] Meds/Checks：保存后刷新已配置回读；签到新增时间选择器、a57/a58一致格式及每日a66已保存回读。多时段、复发选择、按次记录、编辑时间回填、提醒、失败状态和实际读写仍未完成；CCT187 a57/a58/a66/a68/a69；CCT161 a88，REL190/191/173，不使用 a90。
 - [ ] Tasks：详情、可留空日期时间、时间回填、删除后自动刷新、真实新增/编辑/删除/状态读回。
-- [ ] Contacts/Cards/Docs/Tips/Notes/Plan：逐个核验详情、表单、验证、CRUD、确认与刷新；不可把配置回读当实际写入验证。
+- [ ] Contacts/Cards/Docs/Tips/Notes/Plan：六页保存后刷新已配置并逐页回读；联系人详情a56、地址a58、备注a60与各自空隐藏条件严格核验通过。真实表单/CRUD/确认/刷新仍未验证，运行画面Updating时新增表单未出现；不可把配置回读当实际写入验证。
 - [ ] Groups：唯一群首页加入流程；申请/邀请/接受/拒绝/退出/角色/管理/隐私/深链。
 - [ ] Groups 14 部分：Home、Calendar、Tasks、Location、Messages、Announcements、Wishes、Gallery、Cared ones、Members、Invite members、Member groups、Settings、Help。
 - [ ] Calendar：月/周、日期筛选、邀请、日程 CRUD 与复发。
