@@ -228,6 +228,7 @@ export async function readNoteForFingerprint(
   fingerprint: string,
   tag: string,
   page: string,
+  currentLabel?: string,
 ): Promise<InspectorNote | null> {
   const match = fingerprint.match(/^([^:]+):(\d+):(\d+):([0-9a-f]{64}):1$/);
   if (!match) return null;
@@ -260,7 +261,13 @@ export async function readNoteForFingerprint(
   if (new Set(matches.map((m) => m.binding.id)).size !== 1) return null;
   const found = matches[0];
   if (!found) return null;
-  return { ...mapRow(found.row), ...found.binding, key };
+  const note = { ...mapRow(found.row), ...found.binding, key };
+  if (currentLabel) {
+    const { matchingLegacyLabel } =
+      await import("@/features/inspector/legacy-match");
+    if (!matchingLegacyLabel(note.label, currentLabel)) return null;
+  }
+  return note;
 }
 
 /** Add the newly resolved stable position to a CCT note without changing its text or check state. */
@@ -270,6 +277,7 @@ export async function rebindRecoveredNote(
   scope: "element" | "page",
   page: string,
   label: string,
+  alias?: string,
 ): Promise<InspectorNote> {
   if (!note.id) throw new Error("恢复的注释缺少 CCT 编号，未修改关联。");
   const binding: NoteBinding = {
@@ -279,7 +287,7 @@ export async function rebindRecoveredNote(
     page,
     label,
     ...(note.source ? { source: note.source } : {}),
-    ...(note.alias ? { alias: note.alias } : {}),
+    ...(alias || note.alias ? { alias: alias || note.alias } : {}),
     locked: true,
   };
   await storeBinding(binding);

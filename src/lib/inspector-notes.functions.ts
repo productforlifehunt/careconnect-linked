@@ -47,42 +47,112 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
       const notes = (await Promise.all(data.keys.map(readNoteForKey))).filter(
         (n) => !!n,
       );
+      const { matchingLegacyLabel } =
+        await import("@/features/inspector/legacy-match");
       let warning: string | undefined;
+      const migrationCandidates: Array<{
+        key: string;
+        id: string;
+        title: string;
+        label: string;
+        reason: string;
+      }> = [];
+      const seenCandidates = new Set<string>();
+      const listCandidate = (
+        note: Awaited<ReturnType<typeof readNoteForKey>>,
+        key: string,
+        label: string,
+        reason: string,
+      ) => {
+        if (!note?.id) return;
+        const signature = `${note.id}|${key}`;
+        if (seenCandidates.has(signature)) return;
+        seenCandidates.add(signature);
+        migrationCandidates.push({
+          key,
+          id: note.id,
+          title: note.title || "（无标题）",
+          label,
+          reason,
+        });
+      };
+      const rebind = async (
+        note: NonNullable<Awaited<ReturnType<typeof readNoteForKey>>>,
+        label: string,
+      ) => {
+        const recovered = { ...note, key: data.keys[0]! };
+        try {
+          return await rebindRecoveredNote(
+            recovered,
+            data.keys[0]!,
+            "element",
+            data.page || "",
+            label,
+            data.alias,
+          );
+        } catch (error) {
+          warning = `已读回 CCT324 #${note.id}，但 a59 关联没有写入：${error instanceof Error ? error.message : String(error)}`;
+          return recovered;
+        }
+      };
       if (!notes.length && data.priorKey && data.page) {
         const previous = await readNoteForKey(data.priorKey);
-        const { matchingLegacyLabel } = await import("@/features/inspector/legacy-match");
-        if (previous?.scope === "element" && data.priorLabel && matchingLegacyLabel(previous.label, data.priorLabel)) {
-          notes.push(await rebindRecoveredNote(previous, data.keys[0]!, "element", data.page, previous.label));
+        if (
+          previous?.scope === "element" &&
+          data.priorLabel &&
+          matchingLegacyLabel(previous.label, data.priorLabel)
+        ) {
+          notes.push(await rebind(previous, data.priorLabel));
+        } else if (previous) {
+          listCandidate(
+            previous,
+            data.priorKey,
+            data.priorLabel || "",
+            "旧可见位置存在笔记，但标签未能核对一致",
+          );
         }
       }
       if (!notes.length && data.legacy) {
-        const { matchingLegacyLabel } =
-          await import("@/features/inspector/legacy-match");
-        const candidates = [data.legacy.key];
-        const legacyParts = data.legacy.key.split("|");
-        if (legacyParts[0] === "el" && legacyParts.length > 3)
-          candidates.push(legacyParts.slice(0, -1).join("|"));
-        let old: Awaited<ReturnType<typeof readNoteForKey>> = null;
-        for (const candidate of [...new Set(candidates)]) {
-          old = await readNoteForKey(candidate);
-          if (old) break;
-        }
-        if (old && matchingLegacyLabel(old.label, data.legacy.label)) {
-          const recovered = { ...old, key: data.keys[0]! };
-          try {
-            notes.push(
-              await rebindRecoveredNote(
-                recovered,
-                data.keys[0]!,
-                "element",
-                data.page || "",
-                data.legacy.label,
-              ),
+        const entries = Array.isArray(data.legacy) ? data.legacy : [data.legacy];
+        const candidates = [
+          ...new Map(
+            entries.flatMap((entry) => {
+              const keys = [entry.key];
+              const parts = entry.key.split("|");
+              if (parts[0] === "el" && parts.length > 3)
+                keys.push(parts.slice(0, -1).join("|"));
+              return keys.map((key) => [key, { key, label: entry.label }] as const);
+            }),
+          ).values(),
+        ];
+        const oldRows = (
+          await Promise.all(
+            candidates.map((candidate) => readNoteForKey(candidate.key)),
+          )
+        ).flatMap((note, index) =>
+          note ? [{ note, candidate: candidates[index]! }] : [],
+        );
+        const matches = oldRows.filter(({ note, candidate }) =>
+          matchingLegacyLabel(note.label, candidate.label),
+        );
+        const matchIds = new Set(matches.map(({ note }) => note.id));
+        if (matchIds.size === 1) {
+          const match = matches[0]!;
+          notes.push(await rebind(match.note, match.candidate.label));
+        } else if (matchIds.size > 1) {
+          warning = `发现多个旧元素绑定符合当前标签（${[...matchIds].map((id) => `CCT324 #${id}`).join("、")}），未自动绑定。请在“选择其他注释”中明确选择。`;
+          for (const { note, candidate } of matches)
+            listCandidate(
+              note,
+              candidate.key,
+              candidate.label,
+              "多个旧位置同时符合，未自动猜绑",
             );
-          } catch (error) {
-            notes.push(recovered);
-            warning = `已读回 CCT324 #${old.id}，但 a59 关联没有写入：${error instanceof Error ? error.message : String(error)}`;
-          }
+        } else if (oldRows.length) {
+          warning =
+            "发现旧元素绑定，但没有一个能与当前可见标签唯一核对一致，未自动绑定。";
+          for (const { note, candidate } of oldRows)
+            listCandidate(note, candidate.key, candidate.label, "旧绑定标签未核对一致");
         }
       }
       if (!notes.length && data.fingerprint && data.tag && data.page) {
@@ -91,25 +161,17 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
           data.fingerprint,
           data.tag,
           data.page,
+          Array.isArray(data.legacy)
+            ? data.legacy[0]?.label
+            : data.legacy?.label,
         );
-        if (recovered) {
-          try {
-            notes.push(
-              await rebindRecoveredNote(
-                recovered,
-                data.keys[0]!,
-                "element",
-                data.page,
-                recovered.label || "",
-              ),
-            );
-          } catch (error) {
-            notes.push(recovered);
-            warning = `已读回 CCT324 #${recovered.id}，但 a59 关联没有写入：${error instanceof Error ? error.message : String(error)}`;
-          }
-        }
+        if (recovered) notes.push(await rebind(recovered, recovered.label || ""));
       }
-      return { notes, ...(warning ? { warning } : {}) };
+      return {
+        notes,
+        ...(warning ? { warning } : {}),
+        ...(migrationCandidates.length ? { migrationCandidates } : {}),
+      };
     } catch (e) {
       return { error: e instanceof Error ? e.message : "读取失败", notes: [] };
     }
