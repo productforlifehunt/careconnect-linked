@@ -14,7 +14,8 @@ export function inspectorSourcePlugin(): Plugin {
       if (
         !file.startsWith(root) ||
         !file.endsWith(".tsx") ||
-        /\.test\.tsx$/.test(file)
+        /\.test\.tsx$/.test(file) ||
+        file.endsWith("/routes/__root.tsx")
       )
         return;
       const source = ts.createSourceFile(
