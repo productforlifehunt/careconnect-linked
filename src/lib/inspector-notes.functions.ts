@@ -4,12 +4,19 @@ import { z } from "zod";
 
 /** Researcher-only: read manual notes for an element and its page. */
 export const loadInspectorNotes = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ keys: z.array(z.string().min(1).max(600)).min(1).max(5) }).parse(input))
+  .inputValidator((input: unknown) => z.object({ keys: z.array(z.string().min(1).max(600)).min(1).max(5), fingerprint: z.string().max(600).optional(), tag: z.string().max(60).optional() }).parse(input))
   .handler(async ({ data }) => {
     const { verifyResearcher } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden", notes: [] }; }
-    const { readNoteForKey } = await import("./inspector-notes.server");
-    try { return { notes: (await Promise.all(data.keys.map(readNoteForKey))).filter(n => !!n) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
+    const { readNoteForKey, readNoteForFingerprint } = await import("./inspector-notes.server");
+    try {
+      const notes = (await Promise.all(data.keys.map(readNoteForKey))).filter(n => !!n);
+      if (!notes.length && data.fingerprint && data.tag) {
+        const recovered = await readNoteForFingerprint(data.keys[0]!, data.fingerprint, data.tag);
+        if (recovered) notes.push(recovered);
+      }
+      return { notes };
+    } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
   });
 
 /** Researcher-only: read every saved note in one call (the inspector caches them in the browser). */

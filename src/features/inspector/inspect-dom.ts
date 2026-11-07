@@ -198,7 +198,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   const sources: string[] = [];
   let firstTagged: Element | null = null;
   for (let n: Element | null = el; n && sources.length < 12; n = n.parentElement) {
-    const s = n.getAttribute("data-tsd-source");
+    const s = n.getAttribute("data-inspector-source") || n.getAttribute("data-tsd-source");
     if (s && !firstTagged) firstTagged = n;
     if (s) { const f = normalizeFile(s.split(":")[0]!) + ":" + (s.split(":")[1] || ""); if (!sources.includes(f)) sources.push(f); }
   }

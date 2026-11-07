@@ -15,7 +15,7 @@ export function inspectorSourcePlugin(): Plugin {
       const source = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
       const lines = code.split('\n');
       const name = relative(root, file).split(sep).join('/');
-      const edits: { pos: number; value: string }[] = [];
+      const edits: { pos: number; value: string; line: number; tag: string }[] = [];
       const visit = (node: ts.Node) => {
         if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
           const tag = node.tagName.getText(source);
@@ -23,14 +23,17 @@ export function inspectorSourcePlugin(): Plugin {
             const position = source.getLineAndCharacterOfPosition(node.getStart(source));
             const digest = createHash('sha256').update(lines[position.line] || '').digest('hex');
             const value = `${name}:${position.line + 1}:${position.character + 1}:${digest}`;
-            edits.push({ pos: node.tagName.end, value: ` data-inspector-source=${JSON.stringify(value)}` });
+            edits.push({ pos: node.tagName.end, value, line: position.line, tag });
           }
         }
         ts.forEachChild(node, visit);
       };
       visit(source);
       if (!edits.length) return;
-      for (const edit of edits.reverse()) code = code.slice(0, edit.pos) + edit.value + code.slice(edit.pos);
+      for (const edit of edits.reverse()) {
+        const unique = edits.filter(other => other.line === edit.line && other.tag === edit.tag).length === 1;
+        code = code.slice(0, edit.pos) + ` data-inspector-source=${JSON.stringify(`${edit.value}:${unique ? '1' : '0'}`)}` + code.slice(edit.pos);
+      }
       return { code, map: null };
     },
   };

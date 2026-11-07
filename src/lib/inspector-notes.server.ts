@@ -100,6 +100,28 @@ export async function readNoteForKey(key: string): Promise<InspectorNote | null>
   if (String(row._ID) !== binding.id) throw new Error('绑定的注释不存在。');
   return { ...mapRow(row), ...binding, key };
 }
+
+/** Recover a source-verified legacy binding only when its fingerprint identifies one note. */
+export async function readNoteForFingerprint(key: string, fingerprint: string, tag: string): Promise<InspectorNote | null> {
+  const match = fingerprint.match(/^([^:]+):(\d+):(\d+):([0-9a-f]{64}):1$/);
+  if (!match) return null;
+  const [, file, , , digest] = match;
+  const rows: CCTRow[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const filters = [{ field: 'a59', operator: 'LIKE', value: file }];
+    const result = await wp(`?_limit=100&_offset=${offset}&_orderby=_ID&_order=asc&_filters=${encodeURIComponent(JSON.stringify(filters))}`);
+    if (!Array.isArray(result)) throw new Error('旧注释读取异常。');
+    rows.push(...result as CCTRow[]);
+    if (result.length < 100) break;
+  }
+  const matches = rows.flatMap(row => positionBindings(row.a59, String(row._ID)).filter(b =>
+    b.source?.file === file && b.source.tag.toLowerCase() === tag.toLowerCase() && b.source.digest === digest
+  ).map(b => ({ row, binding: b })));
+  if (new Set(matches.map(m => m.binding.id)).size !== 1) return null;
+  const found = matches[0];
+  if (!found) return null;
+  return { ...mapRow(found.row), ...found.binding, key };
+}
 async function writeBindingsOnly(row: CCTRow, bindings: NoteBinding[]): Promise<void> {
   const a59 = updatePositionBindings(row.a59, bindings);
   await wp(`/${row._ID}`, 'POST', { a59 });
