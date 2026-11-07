@@ -23,7 +23,7 @@
 - [ ] Tasks：详情、可留空日期时间、时间回填、删除后自动刷新、真实新增/编辑/删除/状态读回。
 - [ ] Contacts/Cards/Docs/Tips/Notes/Plan：六页保存后刷新已配置并逐页回读；联系人详情a56、地址a58、备注a60与各自空隐藏条件严格核验通过。真实表单/CRUD/确认/刷新仍未验证，运行画面Updating时新增表单未出现；不可把配置回读当实际写入验证。
 - [ ] Groups：唯一群首页加入流程；申请/邀请/接受/拒绝/退出/角色/管理/隐私/深链。
-- [ ] Groups 内容：REL226→CCT202 按当前群组读取已保存回读，标题a56/正文a57已绑定，复制来的社区跳转和联系人写入已移除；两层轮询0。通用Get Row响应schema不匹配尚待处理，真实群组内容未验证。发布与关联动作均暂停，未实际写入；定时/受众过滤、提交后刷新未完成。
+- [ ] Groups 内容：REL226→CCT202 按当前群组读取已保存回读，标题a56/正文a57已绑定，复制来的社区跳转和联系人写入已移除；两层轮询0。群组专用Get Group Post已GUI测试200并接入，刷新后schema错误消失，共用Get Row未改。真实群组内容未验证。发布与关联动作均暂停，未实际写入；定时/受众过滤、提交后刷新未完成。
 - [ ] Groups 14 部分：Home、Calendar、Tasks、Location、Messages、Announcements、Wishes、Gallery、Cared ones、Members、Invite members、Member groups、Settings、Help。
 - [ ] Calendar：月/周、日期筛选、邀请、日程 CRUD 与复发。
 - [ ] Inbox：本人会话、成员解析、发消息、回复、读标记、通知与群/预约聊天；REL137/138/139。
