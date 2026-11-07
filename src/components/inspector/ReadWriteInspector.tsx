@@ -41,6 +41,8 @@ import { ManualNotes } from "./ManualNotes";
 import { elementAlias } from "@/features/inspector/route-key";
 import {
   inspectElement,
+  inspectorTarget,
+  markupAnchor,
   pageSourceFiles,
   stableElementKey,
   type ElementInfo,
@@ -535,7 +537,7 @@ export default function ReadWriteInspector() {
       if (inPanel(e.target)) return;
       e.preventDefault();
       e.stopPropagation();
-      const el = e.target as Element;
+      const el = inspectorTarget(e.target as Element);
       setSelected(el);
       setClickNo((n) => n + 1);
       setSelBox(el.getBoundingClientRect());
@@ -546,7 +548,7 @@ export default function ReadWriteInspector() {
         setHoverBox(null);
         return;
       }
-      setHoverBox((e.target as Element).getBoundingClientRect());
+      setHoverBox(inspectorTarget(e.target as Element).getBoundingClientRect());
     };
     const evs = [
       "pointerdown",
@@ -807,6 +809,12 @@ export default function ReadWriteInspector() {
   // Fixed list slots (stat cards drawn by one JSX line) get their own note; data rows of one list share theirs.
   // One identity in the editor preview and the published site: component names + markup position, never source lines.
   const elementKey = info ? stableElementKey(pathname, info.anchor) : "";
+  const priorKey = selected && info && selected.hasAttribute("data-inspector-id")
+    ? stableElementKey(pathname, markupAnchor(selected)) : undefined;
+  const uniquePriorKey = priorKey && selected &&
+    [...document.querySelectorAll(selected.tagName.toLowerCase())].filter(el =>
+      !el.closest("[data-rw-inspector]") && stableElementKey(pathname, markupAnchor(el)) === priorKey,
+    ).length === 1 ? priorKey : undefined;
   // Old line-based key, read only to carry earlier bindings over to the new identity.
   // Old line-based key only when it really names a source line; without one it is just component names + tag,
   // shared by every element of that card.
@@ -1347,6 +1355,7 @@ export default function ReadWriteInspector() {
                   <ManualNotes
                     key={elementKey}
                     noteKey={elementKey}
+                    priorKey={uniquePriorKey}
                     legacyKey={
                       info.anchor.names[0]?.startsWith("scope:")
                         ? legacyKey

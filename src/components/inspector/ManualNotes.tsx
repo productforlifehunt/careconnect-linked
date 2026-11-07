@@ -33,6 +33,7 @@ const oneCache = new Map<string, CCTNote | null>();
 
 export function ManualNotes({
   noteKey,
+  priorKey,
   legacyKey,
   legacySourceKey,
   fingerprint,
@@ -45,6 +46,7 @@ export function ManualNotes({
   evidenceReady = false,
 }: {
   noteKey: string;
+  priorKey?: string;
   legacyKey?: string | undefined;
   legacySourceKey?: string | undefined;
   alias?: string;
@@ -205,6 +207,7 @@ export function ManualNotes({
       loadOne({
         data: {
           keys,
+          priorKey,
           page,
           ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
           ...(legacySourceKey
@@ -225,7 +228,7 @@ export function ManualNotes({
     return () => {
       live = false;
     };
-  }, [noteKey, legacyKey, legacySourceKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, priorKey, legacyKey, legacySourceKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const stableAnchor = async () => {
     const match = fingerprint?.match(/^([^:]+):(\d+):\d+:([0-9a-f]{64}):1$/);
     if (!match || !tag) return {};
