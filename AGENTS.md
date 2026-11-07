@@ -6,7 +6,7 @@
 - NotchSafety uses the shared `Index` homepage with site-gated family-location content while retaining its reduced `SafetyShell` route tree, preventing landing-page drift without exposing care-marketplace features.
 - All user-visible brand identity must come from the current site and language; ChallengeD/忆畅, CareCNC/护畅, and Notch Safety/诺驰安全 must never cross-leak in pages, dialogs, metadata, AI labels, or notifications.
 - Researcher screening uses a presentation-only helper for role-specific item selection and exact original questionnaire provenance; interview role overrides mixed legacy fields, shared secondary instruments cite Sections 2.2.1/2.2.2, and unnumbered items never inherit generated question codes, preventing cross-role display without changing stored answers.
-- The app runs on TanStack Start with file routes in `src/routes/` and a react-router-style shim in `src/lib/router-compat.tsx`; site-gated sub-apps (NotchSafety, ESM survey) keep their own path lists via `src/lib/path-routes.tsx`, because one codebase serves several brands chosen at runtime.
+- The app runs on React Router 7 framework mode with flat file routes in `src/app/routes/`, discovered by `src/app/routes.ts`; `src/lib/router-compat.tsx` centralizes string-based navigation. Site-gated sub-apps keep their own path lists via `src/lib/path-routes.tsx`, because one codebase serves several brands chosen at runtime.
 - Pages that import browser-only libraries (Leaflet, FullCalendar) are loaded through `src/components/routing/BrowserOnlyPages.tsx`, because those libraries crash server rendering at import time.
 - The shared AI message renderer loads the Mermaid engine only when a diagram renders, so diagram dependency initialization cannot blank every sub-app at startup.
 - The root route mounts site/auth providers only after the browser mounts, because brand and language come from the browser tab and must not mismatch the server render.
@@ -45,10 +45,20 @@
 
 ## Lovable ↔ Draftbit sync compatibility (must keep)
 
-- Keep TanStack Start file routes in `src/routes/` with `createFileRoute`; do not add a second router or manually edit `src/routeTree.gen.ts`.
-- Keep internal navigation on TanStack Router or the shared `src/lib/router-compat.tsx` shim; use real route paths and preserve existing deep links.
+- Keep React Router 7 file routes in `src/app/routes/`, discovered by `flatRoutes()` in `src/app/routes.ts`; do not add a second router or manually edit generated route metadata.
+- Keep internal navigation on React Router or the shared `src/lib/router-compat.tsx` shim; use real route paths and preserve existing deep links.
 - Keep page UI in normal React components with inspectable DOM elements and stable `data-testid` values where tests or visual tooling depend on them.
-- Keep browser data access in feature sources/hooks and server-only credentials in `createServerFn` handlers, `src/routes/api`, or `.server` modules; never expose secrets through `VITE_*` variables.
+- Keep browser data access in feature sources/hooks and server-only credentials in React Router loaders/actions, `src/app/routes/api.*`, or `.server` modules; never expose secrets through `VITE_*` variables.
 - Keep environment variable names documented by usage, but never commit `.env` or replace generated Supabase files under `src/integrations/supabase/`.
-- Keep `vite.config.ts` compatible with the shared Lovable TanStack config: do not duplicate its plugins, hard-code sandbox hosts, or assume optional plugin hooks exist.
+- Keep `vite.config.ts` compatible with the shared Lovable React Router config: do not duplicate its plugins, hard-code sandbox hosts, or assume optional plugin hooks exist.
 - Keep changes runnable in both Lovable and Draftbit previews; prefer additive, framework-native changes and preserve SSR-safe imports for browser-only libraries.
+    
+    ## Draftbit / Lovable shared-repository compatibility
+    - Share productforlifehunt/careconnect-linked with Lovable on draftbit only; never switch branches or overwrite the other editor's saved work. Verify the latest saved revision before editing; preserve both sides' business changes when resolving conflicts. Save/Sync transfer code, not proof of compatibility.
+    - Preserve current React Router 7 framework mode, Yarn, SSR/resource routes, aliases, styling major, brand routing and authorization. Never reintroduce TanStack Start, react-router-dom or another router/shell. Keep React Router framework packages on the same exact compatible version.
+    - Preserve Draftbit visual editing, explicit element-identification attributes and source tagging. Check plugin hooks exist before invoking them outside Draftbit. Do not hand-edit platform-generated .draftbit files or require sandbox-only local files missing from the saved repository; verify clean-checkout installation.
+    - Preserve secrets, server/browser boundaries and existing WordPress service contracts and dictionary-defined CCT/relations. Compatibility work does not authorize database, schema, plugin, permission or business-rule changes.
+    - Before reporting ready, run supported project type checks and relevant tests, inspect actual changed preview flows, and verify production client/server output for dependency, routing or server changes. After Draftbit Save, inspect the saved preview and run Recommended Changes/Recheck; list every remaining warning/error. HTTP 200 or a blank screen is not success.
+    - Never claim the other editor is compatible without its real install/build/runtime evidence. Missing dist may indicate hosting-output expectations: inspect actual job logs and supported deployment adapters, never create an empty dist, fake success, remove SSR or silently migrate frameworks.
+    - Edit in one environment at a time. Pause writes during concurrent editing or repository-replacement prompts; preserve the intended latest repository version, never automatically restore old work or force-push. Report tested items, failures and unverified environments separately.
+    
