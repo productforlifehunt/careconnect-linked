@@ -15,5 +15,9 @@ export default defineConfig({
   },
   // Keep real component names in the published build: the inspector finds saved notes by them,
   // and minified names change on every publish.
-  vite: { plugins: [inspectorSourcePlugin()], build: { rolldownOptions: { output: { keepNames: true } } } },
+  vite: {
+    plugins: [inspectorSourcePlugin()],
+    server: { allowedHosts: ["672f941fa.sandbox.draftbit.dev"] },
+    build: { rolldownOptions: { output: { keepNames: true } } },
+  },
 });
