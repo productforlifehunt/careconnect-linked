@@ -10,6 +10,22 @@ export function matchingLegacyLabel(saved: string, current: string): boolean {
       /^\s*[\d.,—-]+\s*/u,
       "",
     );
+    const genericContext = new Set([
+      "card",
+      "cardcontent",
+      "div",
+      "span",
+      "button",
+      "p",
+    ]);
+    const normalizedContext = context
+      .join(" ")
+      .toLocaleLowerCase()
+      .replace(/[\d\s\p{P}\p{S}]+/gu, "");
+    // A bare number plus a generic wrapper name does not identify one element;
+    // it is exactly the kind of old binding that must stay unconfirmed.
+    if (!descriptiveValue.trim() && genericContext.has(normalizedContext))
+      return "";
     return [descriptiveValue, ...context]
       .filter(Boolean)
       .join(" ")
