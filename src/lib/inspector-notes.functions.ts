@@ -114,17 +114,25 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
       }
       if (!notes.length && data.legacy) {
         const entries = Array.isArray(data.legacy) ? data.legacy : [data.legacy];
-        const candidates = [
-          ...new Map(
-            entries.flatMap((entry) => {
-              const keys = [entry.key];
-              const parts = entry.key.split("|");
-              if (parts[0] === "el" && parts.length > 3)
-                keys.push(parts.slice(0, -1).join("|"));
-              return keys.map((key) => [key, { key, label: entry.label }] as const);
-            }),
-          ).values(),
-        ];
+        const candidateMap = new Map<
+          string,
+          { key: string; label: string; strong: boolean }
+        >();
+        for (const entry of entries) {
+          const exact = { key: entry.key, label: entry.label, strong: true };
+          candidateMap.set(entry.key, exact);
+          const parts = entry.key.split("|");
+          if (parts[0] === "el" && parts.length > 3) {
+            const fallbackKey = parts.slice(0, -1).join("|");
+            if (!candidateMap.has(fallbackKey))
+              candidateMap.set(fallbackKey, {
+                key: fallbackKey,
+                label: entry.label,
+                strong: false,
+              });
+          }
+        }
+        const candidates = [...candidateMap.values()];
         const oldRows = (
           await Promise.all(
             candidates.map((candidate) => readNoteForKey(candidate.key)),
@@ -135,13 +143,19 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
         const matches = oldRows.filter(({ note, candidate }) =>
           matchingLegacyLabel(note.label, candidate.label),
         );
-        const matchIds = new Set(matches.map(({ note }) => note.id));
+        // A full old slot (including its fixed React key) is stronger evidence
+        // than the prefix fallback used for legacy child bindings. If a strong
+        // candidate is present, never let a broad prefix create ambiguity or
+        // pull in an unrelated note from the same source line.
+        const strongMatches = matches.filter(({ candidate }) => candidate.strong);
+        const preferredMatches = strongMatches.length ? strongMatches : matches;
+        const matchIds = new Set(preferredMatches.map(({ note }) => note.id));
         if (matchIds.size === 1) {
-          const match = matches[0]!;
+          const match = preferredMatches[0]!;
           notes.push(await rebind(match.note, match.candidate.label));
         } else if (matchIds.size > 1) {
           warning = `发现多个旧元素绑定符合当前标签（${[...matchIds].map((id) => `CCT324 #${id}`).join("、")}），未自动绑定。请在“选择其他注释”中明确选择。`;
-          for (const { note, candidate } of matches)
+          for (const { note, candidate } of preferredMatches)
             listCandidate(
               note,
               candidate.key,
@@ -151,7 +165,7 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
         } else if (oldRows.length) {
           warning =
             "发现旧元素绑定，但没有一个能与当前可见标签唯一核对一致，未自动绑定。";
-          for (const { note, candidate } of oldRows)
+          for (const { note, candidate } of preferredMatches.length ? preferredMatches : oldRows)
             listCandidate(note, candidate.key, candidate.label, "旧绑定标签未核对一致");
         }
       }
