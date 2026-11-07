@@ -563,6 +563,9 @@
 - [x] 2026-11-03: 其余 19 页逐页预览实点：18 页问号→问答、机器人→普通对话均通过；Meds 页直接打开落到登录页，仍未实点
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
+- [~] 2026-11-07 10:26 continuation: Tasks GUI configured Create Row care_task→createdTask; a55 taskTitle, a56 taskDescription, a59 taskLocation, a61 taskDate FormatDate "YYYY-MM-DD", a62 taskTime FormatDate "HH:mm", a64="", a65/a66="b55", a68="b56". Creation requires caredOneId; button disabled=Negate(taskTitle). Existing REL231 uses createdTask.item_id parent and caredOneId child, conditional on returned item_id. Refetch Cared One Task Links then showForm=false. Modal moved under outer Fetch 2 (not item Fetch 3). Two Add buttons reset five inputs and open the same modal. Reload verified workflows, relation mappings, guards and formats. No actual task or relation row submitted.
+- [x] 2026-11-07 continuation: Draftbit runtime Add opens task modal; title/place filled and multiline description typed. X closes; second Add opens an empty title. Deleted Lorem ipsum description; description keyboard default and multiline=true, 2 lines. Verified with actual Draftbit runtime, not original app browser.
+- [ ] Tasks remaining: actual authenticated create→list readback, completion/undo runtime checks, edit/delete/details, accurate pending-only totals, failure handling, optional-date parity (Add currently initializes dates to Now). Preview retains Updating… and session/runtime intermittently disappears; configuration is not complete persistence verification. No creator REL exists in original create path; do not invent one. Full app items below remain unfinished.
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
