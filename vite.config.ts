@@ -22,6 +22,16 @@ const draftbitPlugin: Plugin = {
   },
 };
 
+// Lovable's editor preview waits for its dev-server coordination (HMR gate + preview
+// bridge). Load them only inside a Lovable sandbox so Draftbit and local dev are unchanged.
+const isLovableSandbox = process.env["LOVABLE_SANDBOX"] === "1";
+const lovablePreviewPlugins: Plugin[] = isLovableSandbox
+  ? [
+      (await import("@lovable.dev/vite-tanstack-config/hmr-gate")).hmrGatePlugin(),
+      (await import("@lovable.dev/vite-tanstack-config/dev-server-bridge")).devServerBridgePlugin(),
+    ]
+  : [];
+
 export default defineConfig({
   plugins: [
     reactRouter(),
@@ -29,6 +39,7 @@ export default defineConfig({
     tsconfigPaths(),
     draftbitPlugin,
     inspectorSourcePlugin(),
+    ...lovablePreviewPlugins,
   ],
   server: {
     host: true,
