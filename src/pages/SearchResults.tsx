@@ -244,7 +244,7 @@ export default function SearchResults() {
           </SheetTrigger>
           <SheetContent>
             <SheetHeader><SheetTitle>{t("search.filters")}</SheetTitle></SheetHeader>
-            <div className="mt-6"><FilterPanel /></div>
+            <div className="mt-6">{FilterPanel()}</div>
           </SheetContent>
         </Sheet>
       </div>
@@ -283,7 +283,7 @@ export default function SearchResults() {
         <aside className="hidden lg:block w-64 shrink-0">
           <div className="sticky top-24 bg-card rounded-xl border p-5">
             <h3 className="font-semibold mb-4">{t("search.filters")}</h3>
-            <FilterPanel />
+            {FilterPanel()}
           </div>
         </aside>
 
