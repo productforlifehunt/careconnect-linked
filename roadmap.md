@@ -1,3 +1,9 @@
+## Current request: Migrate inspector position bindings to existing CCT324 a59 (2026-11-07)
+- [ ] Snapshot all legacy manifest/override bindings and note metadata plus REL325; inspect existing a59 values before any API write.
+- [ ] Switch position-binding reads/writes to CCT324 a59 only, retaining exact existing keys and numeric-route matching; do not change note bodies or REL325.
+- [ ] Migrate every effective binding through API with full readback verification, preserving original Cloud files as inactive backups.
+- [ ] Run regression tests and researcher UI selection/refresh persistence checks; report exact migration counts and deployment state.
+
 ## Current request: AI dialog / Settings element recognition and Inbox note scope (2026-11-06)
 - [ ] Reproduce dialog/form element binding failures; ensure preview and published builds share stable visible-element identity.
 - [ ] Correct Inbox #10563 in-place through /afresh GUI, removing unrelated setting/schema material while retaining every inbox/push event.

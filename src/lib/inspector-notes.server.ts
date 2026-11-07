@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { bindCCTNotes, type CCTNote, type NoteBinding } from '@/features/inspector/cct-notes';
+import { findPositionBinding, positionBindings, samePosition, updatePositionBindings } from '@/features/inspector/position-bindings';
 
-/** Researcher manual notes for inspected elements/pages: one private JSON file per scope key. */
+/** Legacy Cloud archives are inactive backups; active position bindings live only in CCT324 a59. */
 const BUCKET = "inspector-notes";
 export interface InspectorNote { key: string; scope: "element" | "page"; page: string; label: string; text: string; updatedAt: string; id?: string | undefined; title?: string | undefined; locked?: boolean | undefined; verified?: boolean | undefined; source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined; alias?: string | undefined }
 
@@ -44,7 +45,7 @@ export async function readArchivedNotes(): Promise<InspectorNote[]> {
   return [...new Map([...source, ...manual].map((n) => [n.key, n])).values()].filter((n) => n.text.trim().length > 0);
 }
 
-type CCTRow = { _ID: string | number; a55: string; a56: string; a58?: string; cct_modified?: string };
+type CCTRow = { _ID: string | number; a55: string; a56: string; a58?: string; a59?: string; cct_modified?: string };
 const CCT_BASE = 'https://app.challenged-dementia.com/afresh/wp-json/jet-cct/manual_notes';
 async function wp(path = '', method = 'GET', body?: unknown): Promise<unknown> {
   const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
@@ -56,47 +57,34 @@ async function wp(path = '', method = 'GET', body?: unknown): Promise<unknown> {
 function mapRow(row: CCTRow): CCTNote {
   return { key: `cct|${row._ID}`, id: String(row._ID), title: row.a55, text: row.a56, verified: row.a58 === 'b55', updatedAt: row.cct_modified ? row.cct_modified.replace(' ', 'T') + '+08:00' : '' };
 }
-async function configuration(): Promise<NoteBinding[]> {
-  const { data, error } = await client().storage.from(BUCKET).download('notes/cct-bindings.json.gz');
-  if (error || !data) throw new Error('注释迁移尚未完成，暂不能切换。');
-  const stream = data.stream().pipeThrough(new DecompressionStream('gzip'));
-  const manifest = JSON.parse(await new Response(stream).text()) as { complete: boolean; bindings: NoteBinding[] };
-  if (!manifest.complete) throw new Error('注释迁移尚未完成，暂不能切换。');
-  return manifest.bindings;
-}
-async function override(key: string): Promise<NoteBinding | undefined> {
-  const { data, error } = await client().storage.from(BUCKET).download(`bindings/${await hash(key)}.json`);
-  if (error) {
-    if ('statusCode' in error && String(error.statusCode) === '404') return undefined;
-    throw new Error('无法读取固定选择，请重试。');
+/** Filter on the existing a59 field; never download the entire note catalogue for one element. */
+async function bindingRows(key: string): Promise<CCTRow[]> {
+  const { routePattern } = await import('@/features/inspector/route-key');
+  // Legacy record-specific keys retain their exact spelling. Query their full anchor then verify
+  // the complete key, rather than rewriting or guessing a different element's binding.
+  const pattern = routePattern(key);
+  const parts = key.split('|');
+  const needle = pattern || key.includes('/:id') ? parts.slice(2).join('|') : key;
+  const encoded = JSON.stringify(needle).slice(1, -1);
+  const rows: CCTRow[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const filters = [{ field: 'a59', operator: 'LIKE', value: encoded }];
+    const result = await wp(`?_limit=100&_offset=${offset}&_orderby=_ID&_order=asc&_filters=${encodeURIComponent(JSON.stringify(filters))}`);
+    if (!Array.isArray(result)) throw new Error('元素绑定读取异常。');
+    rows.push(...result as CCTRow[]);
+    if (result.length < 100) break;
   }
-  return data ? JSON.parse(await data.text()) as NoteBinding : undefined;
+  return rows.filter(row => positionBindings(row.a59, String(row._ID)).some(b => samePosition(b.key, key)));
 }
-/** Fast single-element lookup: one binding file, then the binding index, then one CCT324 row — never all 10k notes. */
-let indexCache: { at: number; list: NoteBinding[] } | undefined;
-async function bindingIndex(): Promise<NoteBinding[]> {
-  if (indexCache && Date.now() - indexCache.at < 60_000) return indexCache.list;
-  const storage = client().storage.from(BUCKET);
-  const files: { name: string }[] = [];
-  for (let offset = 0; ; offset += 1000) {
-    const result = await storage.list('bindings', { limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } });
-    if (result.error) throw new Error('无法读取固定选择，请重试。');
-    files.push(...result.data);
-    if (result.data.length < 1000) break;
-  }
-  const overrides = await Promise.all(files.filter(f => f.name.endsWith('.json')).map(async f => {
-    const r = await storage.download(`bindings/${f.name}`);
-    return r.data ? JSON.parse(await r.data.text()) as NoteBinding : undefined;
-  }));
-  const list = [...(await configuration()), ...overrides.filter((b): b is NoteBinding => !!b)];
-  indexCache = { at: Date.now(), list };
-  return list;
+async function storedBinding(key: string): Promise<NoteBinding | undefined> {
+  return findPositionBinding((await bindingRows(key)).flatMap(row => positionBindings(row.a59, String(row._ID))), key);
 }
 /** Picker search done by WordPress itself (name LIKE each word, or exact number): returns at most 60 names, never note bodies. */
 export async function searchNotes(q: string, status: 'all' | 'verified' | 'unverified'): Promise<{ id: string; title: string; verified: boolean }[]> {
   const words = q.trim().replace(/^#/, '').split(/\s+/).filter(Boolean).slice(0, 6);
   const filters: { field: string; operator: string; value: string }[] = [];
-  if (words.length === 1 && /^\d+$/.test(words[0]!)) filters.push({ field: '_ID', operator: '=', value: words[0]! });
+  const firstWord = words[0];
+  if (words.length === 1 && firstWord && /^\d+$/.test(firstWord)) filters.push({ field: '_ID', operator: '=', value: firstWord });
   else for (const w of words) filters.push({ field: 'a55', operator: 'LIKE', value: w });
   if (status !== 'all') filters.push({ field: 'a58', operator: '=', value: status === 'verified' ? 'b55' : 'b56' });
   const qs = `?_limit=60&_orderby=_ID&_order=desc${filters.length ? `&_filters=${encodeURIComponent(JSON.stringify(filters))}` : ''}`;
@@ -105,22 +93,32 @@ export async function searchNotes(q: string, status: 'all' | 'verified' | 'unver
   return rows.map(r => ({ id: String(r._ID), title: r.a55 || '', verified: r.a58 === 'b55' }));
 }
 export async function readNoteForKey(key: string): Promise<InspectorNote | null> {
-  const { routePattern } = await import('@/features/inspector/route-key');
-  let binding = await override(key);
-  if (!binding) {
-    const list = await bindingIndex();
-    const pattern = routePattern(key);
-    binding = [...list].reverse().find(b => b.key === key) || (pattern ? [...list].reverse().find(b => routePattern(b.key) === pattern) : undefined);
-  }
+  const binding = await storedBinding(key);
   if (!binding?.id) return null;
   const row = await wp(`/${binding.id}`) as CCTRow;
-  if (String(row._ID) !== binding.id) return null;
+  if (String(row._ID) !== binding.id) throw new Error('绑定的注释不存在。');
   return { ...mapRow(row), ...binding, key };
 }
+async function writeBindingsOnly(row: CCTRow, bindings: NoteBinding[]): Promise<void> {
+  const a59 = updatePositionBindings(row.a59, bindings);
+  await wp(`/${row._ID}`, 'POST', { a59 });
+  const saved = await wp(`/${row._ID}`) as CCTRow;
+  if (saved.a59 !== a59 || saved.a55 !== row.a55 || saved.a56 !== row.a56 || saved.a58 !== row.a58) throw new Error('元素绑定保存后核对不一致，未确认保存。');
+}
 async function storeBinding(binding: NoteBinding) {
-  indexCache = undefined;
-  const { error } = await client().storage.from(BUCKET).upload(`bindings/${await hash(binding.key)}.json`, new Blob([JSON.stringify(binding)], { type: 'application/json' }), { upsert: true, contentType: 'application/json' });
-  if (error) throw new Error('注释已写入，但固定选择未保存，请重试；不要再次新建。');
+  const rows = await bindingRows(binding.key);
+  const target = await wp(`/${binding.id}`) as CCTRow;
+  if (String(target._ID) !== binding.id) throw new Error('所选注释不存在。');
+  const retained = positionBindings(target.a59, binding.id).filter(b => !samePosition(b.key, binding.key));
+  await writeBindingsOnly(target, [...retained, binding]);
+  // Explicit user reassignment changes only this position, never other positions or REL325.
+  for (const row of rows) {
+    if (String(row._ID) === binding.id) continue;
+    const fresh = await wp(`/${row._ID}`) as CCTRow;
+    await writeBindingsOnly(fresh, positionBindings(fresh.a59, String(fresh._ID)).filter(b => !samePosition(b.key, binding.key)));
+  }
+  const saved = await storedBinding(binding.key);
+  if (saved?.id !== binding.id) throw new Error('元素绑定回读不一致。');
 }
 /**
  * Reads every CCT324 row in a few large pages fetched side by side.
@@ -167,23 +165,9 @@ async function readAllRows(): Promise<CCTRow[]> {
 }
 
 export async function readAllNotes(): Promise<InspectorNote[]> {
-  const bindings = await configuration();
   const rows = await readAllRows();
-  // Independent location files avoid lost updates between unrelated elements.
-  const storage = client().storage.from(BUCKET);
-  const files: { name: string }[] = [];
-  for (let offset = 0; ; offset += 100) {
-    const result = await storage.list('bindings', { limit: 100, offset, sortBy: { column: 'name', order: 'asc' } });
-    if (result.error) throw new Error('无法读取固定选择，请重试。');
-    files.push(...result.data);
-    if (result.data.length < 100) break;
-  }
-  const overrides = await Promise.all(files.filter(file => file.name.endsWith('.json')).map(async file => {
-    const result = await storage.download(`bindings/${file.name}`);
-    if (result.error || !result.data) throw new Error('无法读取固定选择，请重试。');
-    return JSON.parse(await result.data.text()) as NoteBinding;
-  }));
-  return bindCCTNotes(rows.map(mapRow), [...bindings, ...overrides]).map(note => ({ scope: 'element', page: '', label: note.title, ...note }));
+  const bindings = rows.flatMap(row => positionBindings(row.a59, String(row._ID)));
+  return bindCCTNotes(rows.map(mapRow), bindings).map(note => ({ scope: 'element', page: '', label: note.title, ...note }));
 }
 export async function selectNote(binding: NoteBinding): Promise<InspectorNote> {
   const row = await wp(`/${binding.id}`) as CCTRow;
@@ -192,13 +176,8 @@ export async function selectNote(binding: NoteBinding): Promise<InspectorNote> {
   return { ...mapRow(row), ...binding, locked: true };
 }
 export async function writeNote(note: Omit<InspectorNote, 'updatedAt'> & { create?: boolean | undefined }): Promise<InspectorNote> {
-  await configuration();
-  const current = await override(note.key);
+  const current = note.create ? undefined : await storedBinding(note.key);
   let id = note.create ? undefined : note.id || current?.id;
-  if (!id && !note.create) {
-    const binding = (await configuration()).find(binding => binding.key === note.key);
-    id = binding?.id;
-  }
   if (!id) {
     const result = await wp('', 'POST', { a55: note.title || note.label, a56: note.text, a58: note.verified ? 'b55' : 'b56', cct_status: 'publish' }) as number | string | { item_id?: number; _ID?: number };
     id = String(typeof result === 'number' || typeof result === 'string' ? result : result.item_id || result._ID || '');
@@ -213,9 +192,9 @@ export async function writeNote(note: Omit<InspectorNote, 'updatedAt'> & { creat
   return { ...mapRow(row), ...binding };
 }
 
-/** Fresh CCT324 note for one inspector key (override binding first, then migration binding); null when unbound. */
+/** Fresh CCT324 note for one exact position stored in a59; null when unbound. */
 export async function readCCTNoteForKey(key: string): Promise<{ id: string; title: string; text: string; verified: boolean } | null> {
-  const binding = (await override(key)) || (await configuration()).find(b => b.key === key);
+  const binding = await storedBinding(key);
   if (!binding?.id) return null;
   const row = await wp(`/${binding.id}`) as CCTRow;
   if (String(row._ID) !== binding.id) return null;
