@@ -8,8 +8,8 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { verifyResearcher } = await import("./inspector-ai.server");
     try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden", notes: [] }; }
-    const { readAllNotes } = await import("./inspector-notes.server");
-    try { return { notes: (await readAllNotes()).filter(note => data.keys.includes(note.key)) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
+    const { readNoteForKey } = await import("./inspector-notes.server");
+    try { return { notes: (await Promise.all(data.keys.map(readNoteForKey))).filter(n => !!n) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
   });
 
 /** Researcher-only: read every saved note in one call (the inspector caches them in the browser). */
@@ -20,6 +20,16 @@ export const loadAllInspectorNotes = createServerFn({ method: "POST" })
     const { readAllNotes } = await import("./inspector-notes.server");
     const { encodeNotes } = await import('@/features/inspector/notes-transport');
     try { return { compressedNotes: await encodeNotes(await readAllNotes()) }; } catch (e) { return { error: e instanceof Error ? e.message : "读取失败", notes: [] }; }
+  });
+
+/** Researcher-only: note picker search (names only, at most 60, searched on the WordPress side). */
+export const searchInspectorNotes = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ q: z.string().max(200), status: z.enum(["all", "verified", "unverified"]) }).parse(input))
+  .handler(async ({ data }) => {
+    const { verifyResearcher } = await import("./inspector-ai.server");
+    try { await verifyResearcher(getRequestHeader("X-WP-Token") || ""); } catch (e) { return { error: e instanceof Error ? e.message : "Forbidden", notes: [] }; }
+    const { searchNotes } = await import("./inspector-notes.server");
+    try { return { notes: await searchNotes(data.q, data.status) }; } catch (e) { return { error: e instanceof Error ? e.message : "搜索失败", notes: [] }; }
   });
 
 /** Researcher-only: save (overwrite) the manual note for one element or page. */

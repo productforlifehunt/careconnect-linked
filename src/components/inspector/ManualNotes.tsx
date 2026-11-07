@@ -4,15 +4,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { loadAllInspectorNotes, saveInspectorNote, selectInspectorNote } from "@/lib/inspector-notes.functions";
+import { loadInspectorNotes, saveInspectorNote, selectInspectorNote } from "@/lib/inspector-notes.functions";
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
 import { findSameElementNote } from "@/features/inspector/route-key";
-import { noteCatalogue, type CCTNote } from '@/features/inspector/cct-notes';
+import { type CCTNote } from '@/features/inspector/cct-notes';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { NoteSearchList } from './NoteSearchList';
+import { NoteSearchList, type NotePick } from './NoteSearchList';
 import { ChevronsUpDown, Plus, Lock } from 'lucide-react';
 import { RelatedNotes } from './RelatedNotes';
 import { explainReadWrite } from '@/lib/inspector-ai.functions';
@@ -20,12 +20,15 @@ import { ConflictReportView } from './ConflictReportView';
 import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { Sparkles } from 'lucide-react';
 
+/** Per-element read cache for this browser session; cleared on save/lock/retry so it never shows stale bindings. */
+const oneCache = new Map<string, CCTNote | null>();
+
 export function ManualNotes({ noteKey, scope, page, label, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; alias?: string; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
-  const load = useServerFn(loadAllInspectorNotes); const save = useServerFn(saveInspectorNote);
+  const loadOne = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
-  const [catalogue, setCatalogue] = useState<CCTNote[]>([]);
+  const [picked, setPicked] = useState<NotePick>();
   const [selected, setSelected] = useState<string>();
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState(''); const [savedTitle, setSavedTitle] = useState('');
@@ -77,17 +80,23 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       const n = findSameElementNote(map, noteKey);
       if (!live || session !== (getWPToken() || "")) return;
       setText(n?.text || ""); setSaved(n?.text || ""); onChange?.(n?.text || ""); setState({ at: n?.updatedAt });
-      setCatalogue(noteCatalogue(map)); setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
+      setSelected(n?.id); setChoice(n?.id); setTitle(n?.title || label.slice(0,240)); setSavedTitle(n?.title || label.slice(0,240));
       setVerified(!!(n as CCTNote | undefined)?.verified); setSavedVerified(!!(n as CCTNote | undefined)?.verified);
       setCreating(false);
       setStale(false);
       setLoadedFor(noteKey);
     };
-    const cached = inspectorNotesCache.peek(session);
-    if (cached) void apply(cached).catch((e) => live && setState({ error: String(e) }));
+    // Only this element's own bound note is read (one binding + one CCT324 row); the full table is never downloaded here.
+    const hit = oneCache.get(`${session}|${noteKey}`);
+    if (hit !== undefined) void apply(new Map(hit ? [[noteKey, hit]] : []) as Parameters<typeof apply>[0]);
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
-      inspectorNotesCache.load(session, () => load()).then(apply).catch((e) => live && setState({ error: String(e) }));
+      loadOne({ data: { keys: [noteKey] } }).then((r) => {
+        if ('error' in r && r.error) throw new Error(r.error);
+        const n = (r.notes as CCTNote[])[0] || null;
+        oneCache.set(`${session}|${noteKey}`, n);
+        return apply(new Map(n ? [[noteKey, n]] : []) as Parameters<typeof apply>[0]);
+      }).catch((e) => live && setState({ error: String(e) }));
     }
     return () => { live = false; };
   }, [noteKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -101,12 +110,11 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
     const r = await save({ data: { key: noteKey, scope, page, label, title, id: selected, create: creating, verified, text, ...anchor } }).catch((e) => ({ error: String(e) }) as { error: string; note?: undefined });
     if (session !== (getWPToken() || "")) return;
     if ("note" in r && r.note) {
-      inspectorNotesCache.put(session, r.note);
+      inspectorNotesCache.put(session, r.note); oneCache.delete(`${session}|${key}`);
       if (activeKey.current !== key) return;
       setSaved(r.note.text); onChange?.(r.note.text); setState({ at: r.note.updatedAt });
       setSelected(r.note.id); setChoice(r.note.id); setTitle(r.note.title || title); setSavedTitle(r.note.title || title); setVerified(!!r.note.verified); setSavedVerified(!!r.note.verified);
       setCreating(false);
-      const map = inspectorNotesCache.peek(session); if (map) setCatalogue(noteCatalogue(map));
     } else if (activeKey.current === key) setState({ error: r.error || "保存失败" });
   };
   const lockChoice = async () => {
@@ -117,7 +125,7 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       const result = await select({ data: { key, id: choice, scope, page, label, ...(await stableAnchor()) } });
       if (session !== (getWPToken() || '') || activeKey.current !== key) return;
       if (!result.note) throw new Error(result.error || '选择未保存');
-      inspectorNotesCache.put(session, result.note);
+      inspectorNotesCache.put(session, result.note); oneCache.delete(`${session}|${key}`);
       setSelected(result.note.id); setText(result.note.text); setSaved(result.note.text); setTitle(result.note.title || ''); setSavedTitle(result.note.title || ''); setVerified(!!result.note.verified); setSavedVerified(!!result.note.verified); onChange?.(result.note.text); setState({at:result.note.updatedAt});
     } catch (e) { if (activeKey.current === key) setState({error:String(e)}); }
   };
@@ -128,13 +136,13 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild><Button variant="outline" size="sm" disabled={state.loading || state.saving}><ChevronsUpDown className="mr-1 h-3 w-3" />选择其他注释</Button></PopoverTrigger>
           <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={e => e.preventDefault()}>
-            <NoteSearchList notes={catalogue} onPick={(n) => { setChoice(n.id); setOpen(false); }} />
+            <NoteSearchList onClose={() => setOpen(false)} onPick={(n) => { setChoice(n.id); setPicked(n); setOpen(false); }} />
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" disabled={!ready || !choice || choice === selected || state.saving} onClick={lockChoice}><Lock className="mr-1 h-3 w-3" />锁定选择</Button>
         <Button variant="outline" size="sm" disabled={state.loading || state.saving} onClick={() => {setCreating(true);setSelected(undefined);setChoice(undefined);setTitle(label.slice(0,240));setSavedTitle('');setVerified(false);setSavedVerified(false);setText('');setSaved('');onChange?.('');setState({});}}><Plus className="mr-1 h-3 w-3" />新建</Button>
       </div>
-      {choice && choice !== selected && <p>待锁定：{catalogue.find(n=>n.id===choice)?.title} · #{choice} · {catalogue.find(n=>n.id===choice)?.verified ? "已手动核对" : "未手动核对"}</p>}
+      {choice && choice !== selected && <p>待锁定：{picked?.id === choice ? picked.title : ""} · #{choice} · {picked?.id === choice && picked.verified ? "已手动核对" : "未手动核对"}</p>}
       <Input aria-label="注释名字" value={title} onChange={e=>setTitle(e.target.value)} maxLength={240} disabled={state.loading || state.saving} />
       <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={8} disabled={state.loading} placeholder={state.loading ? "读取中…" : "写下这里应该怎么读写、怎么判定…"} />
       <label className="flex items-center gap-2"><Switch checked={verified} onCheckedChange={setVerified} disabled={state.loading || state.saving} aria-label="已手动核对" /><span>{verified ? '已手动核对' : '未手动核对'}</span>{verified !== savedVerified && <span className="text-muted-foreground">（未保存）</span>}</label>
@@ -146,8 +154,8 @@ export function ManualNotes({ noteKey, scope, page, label, onChange, buildEviden
       <Button size="sm" variant="outline" disabled={state.loading || state.saving || ai.loading || !selected || !buildEvidence || !evidenceReady} onClick={analyzeNotes}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? 'AI 分析中…' : !evidenceReady ? '等这页数据和代码读完…' : 'AI 分析：注释、关联注释与实际读写'}</Button>
       {ai.error && <p role="alert" className="text-destructive">{ai.error}</p>}
       {ai.report && <ConflictReportView report={ai.report} />}
-      {selected && !creating ? <RelatedNotes noteId={selected} catalogue={catalogue} /> : !state.loading && <p className="rounded-md border p-2 text-muted-foreground">关联注释：这个元素还没有自己的注释。先写好并点"保存注释"（或用"选择其他注释"再"锁定选择"），下面就会出现"关联已有注释"（可搜索名字或编号）和"新建关联注释"。</p>}
-      {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => {inspectorNotesCache.reset();setRetry((n) => n + 1);}}>重新读取</Button></div>}
+      {selected && !creating ? <RelatedNotes noteId={selected} /> : !state.loading && <p className="rounded-md border p-2 text-muted-foreground">关联注释：这个元素还没有自己的注释。先写好并点"保存注释"（或用"选择其他注释"再"锁定选择"），下面就会出现"关联已有注释"（可搜索名字或编号）和"新建关联注释"。</p>}
+      {state.error && <div className="flex items-center gap-2"><p className="text-destructive">{state.error}</p><Button size="sm" variant="outline" onClick={() => {inspectorNotesCache.reset();oneCache.clear();setRetry((n) => n + 1);}}>重新读取</Button></div>}
     </div>
   );
 }

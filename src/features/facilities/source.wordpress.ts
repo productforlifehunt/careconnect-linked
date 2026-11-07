@@ -4,7 +4,8 @@ import { T } from "@/integrations/wp-schema";
 // CCT slug: care_facility | a55=name, a56=detail, a57=type, a63=location, a64=address
 export async function fetchCareFacilitiesWordPress(): Promise<any[]> {
   const F = T.careFacility.f;
-  const items = await wordpressCCTFetch(T.careFacility.slug, { params: { _limit: 100 } });
+  // WordPress returns only approved facilities itself (no unapproved rows downloaded just to be hidden).
+  const items = await wordpressCCTFetch(T.careFacility.slug, { params: { _limit: 100, _filters: JSON.stringify([{ field: F.FACILITY_IS_APPROVED, operator: "=", value: T.careFacility.opt.FACILITY_IS_APPROVED.YES }]) } });
   if (!Array.isArray(items)) throw new Error("Care facilities returned an invalid response");
   return items
     .filter((f: any) => String(f[F.FACILITY_IS_APPROVED]) === T.careFacility.opt.FACILITY_IS_APPROVED.YES)

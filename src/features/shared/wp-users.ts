@@ -1,3 +1,4 @@
+import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
@@ -130,24 +131,23 @@ export async function fetchWPUser(id: number | string): Promise<WPUserRecord> {
 
 
 /**
- * Whole-table read of a CCT, cached for the screen.
- *
- * Reading N rows by id costs N round-trips; the browser only runs 6 at a time,
- * so a marketplace page with 20 people used to queue 20+ serialized requests.
- * One list read answers for everybody on the screen.
+ * Rows of a CCT by ID, gathered for one tick and read with one JetEngine IN filter.
+ * A screen with N people costs one small request for exactly their rows — never the whole table.
  */
-async function fetchCCTRowIndex(cctSlug: string): Promise<Map<string, any> | null> {
-  return dedupeRead(`cct-index:${cctSlug}`, async () => {
-    try {
-      const rows = await wordpressCCTFetch<any[]>(cctSlug, { params: { _limit: 500 } });
-      if (!Array.isArray(rows)) return null;
-      const index = new Map<string, any>();
-      for (const row of rows) index.set(String(row?.id ?? row?._ID ?? ""), row);
-      return index;
-    } catch {
-      return null;
-    }
-  });
+const pendingRows = new Map<string, { ids: Set<string>; wait: Promise<Map<string, any>> }>();
+function fetchCCTRowsBatched(cctSlug: string, id: string): Promise<any | null> {
+  let batch = pendingRows.get(cctSlug);
+  if (!batch) {
+    const ids = new Set<string>();
+    const wait = new Promise<Map<string, any>>((resolve, reject) => setTimeout(() => {
+      pendingRows.delete(cctSlug);
+      readLinkedCCTRows(cctSlug, [...ids]).then((rows) => resolve(new Map(rows.map((r: any) => [String(r?.id ?? r?._ID), r])))).catch(reject);
+    }, 0));
+    batch = { ids, wait };
+    pendingRows.set(cctSlug, batch);
+  }
+  batch.ids.add(id);
+  return batch.wait.then((m) => m.get(id) ?? null);
 }
 
 /**
@@ -170,10 +170,7 @@ async function fetchOneToOneChild(relationId: number, userId: number, cctSlug: s
     childId = rels[0]?.child_object_id ?? null;
   }
   if (!childId) return null;
-  const index = await fetchCCTRowIndex(cctSlug);
-  const hit = index?.get(String(childId));
-  if (hit) return hit;
-  return dedupeRead(`cct-row:${cctSlug}:${childId}`, () => wordpressCCTFetch<any>(cctSlug, { id: childId as any }));
+  return fetchCCTRowsBatched(cctSlug, String(childId));
 }
 
 /**
@@ -197,14 +194,7 @@ async function fetchAppProfileChild(userId: number): Promise<any | null> {
   }
   if (childIds.length === 0) return null;
 
-  const index = await fetchCCTRowIndex(slug);
-  const rows = await Promise.all(
-    childIds.map(async (id) => {
-      const hit = index?.get(id);
-      if (hit) return hit;
-      return dedupeRead(`cct-row:${slug}:${id}`, () => wordpressCCTFetch<any>(slug, { id: id as any })).catch(() => null);
-    }),
-  );
+  const rows = await Promise.all(childIds.map((id) => fetchCCTRowsBatched(slug, id).catch(() => null)));
   const present = rows.filter(Boolean) as any[];
   const mine = present.find((r) => String(r?.[APP_PROFILE_F.APP] ?? "").toLowerCase() === app);
   // Rows written before a01 existed have no app stamp; they still belong to the
