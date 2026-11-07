@@ -7,9 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
-import { LANGUAGES as SETTING_LANGUAGES, runSettingSkill } from "@/lib/ai-dynamic-knowledge";
-
-const LANGUAGES = SETTING_LANGUAGES;
+import { LANGUAGES } from "@/config/languages";
 
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
@@ -18,7 +16,11 @@ export function LanguageSwitcher() {
 
   const selectLanguage = (code: string) => {
     // One write path: the "set-language" skill in ai-dynamic-knowledge.ts.
-    void runSettingSkill("set-language", code);
+    void import("@/lib/ai-dynamic-knowledge")
+      .then(({ runSettingSkill }) => runSettingSkill("set-language", code))
+      .catch(() => {
+        // The language still changes locally if account sync is unavailable.
+      });
     i18n.changeLanguage(code);
   };
 

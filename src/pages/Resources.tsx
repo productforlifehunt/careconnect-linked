@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +14,7 @@ import {
   PlayCircle,
   HelpCircle,
   Lightbulb,
+  Loader2,
   XCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,9 +26,11 @@ import {
   ISUPPORT_MODULES,
   getModule,
   getNextLesson,
+  loadLessonContent,
   TOTAL_LESSONS,
   type ISupportModule,
   type ISupportLesson,
+  type ISupportLessonSummary,
   type ISupportQuiz,
 } from "@/data/isupport-modules";
 import { LESSON_CONTENT_IDS } from "@/data/lesson-content-ids";
@@ -59,21 +62,50 @@ export default function Resources() {
   const isZh = i18n.language?.startsWith("zh");
   const [activeModuleKey, setActiveModuleKey] = useState<string | null>(null);
   const [activeLessonKey, setActiveLessonKey] = useState<string | null>(null);
+  const [activeLesson, setActiveLesson] = useState<ISupportLesson | null>(null);
+  const [lessonLoading, setLessonLoading] = useState(false);
+  const [lessonLoadFailed, setLessonLoadFailed] = useState(false);
   const [search, setSearch] = useState("");
   const [progress, setProgress] = useState<Set<string>>(() => loadProgress());
+  const lessonLoadRequest = useRef(0);
 
   const activeModule = activeModuleKey ? getModule(activeModuleKey) : null;
-  const activeLesson = useMemo(() => {
-    if (!activeModule || !activeLessonKey) return null;
-    return activeModule.lessons.find((l) => l.key === activeLessonKey) || null;
-  }, [activeModule, activeLessonKey]);
+
+  const openLesson = async (moduleKey: string, lessonKey: string) => {
+    const requestId = ++lessonLoadRequest.current;
+    setActiveModuleKey(moduleKey);
+    setActiveLessonKey(lessonKey);
+    setActiveLesson(null);
+    setLessonLoadFailed(false);
+    setLessonLoading(true);
+    try {
+      const lesson = await loadLessonContent(moduleKey, lessonKey);
+      if (requestId !== lessonLoadRequest.current) return;
+      if (!lesson) {
+        setLessonLoadFailed(true);
+        return;
+      }
+      setActiveLesson(lesson);
+    } catch {
+      if (requestId === lessonLoadRequest.current) setLessonLoadFailed(true);
+    } finally {
+      if (requestId === lessonLoadRequest.current) setLessonLoading(false);
+    }
+  };
+
+  const closeLesson = () => {
+    lessonLoadRequest.current += 1;
+    setActiveLessonKey(null);
+    setActiveLesson(null);
+    setLessonLoading(false);
+    setLessonLoadFailed(false);
+  };
 
   // search across all lessons (must run before any early return)
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const q = search.toLowerCase();
-    const results: Array<{ module: ISupportModule; lesson: ISupportLesson }> =
-      [];
+    const results: Array<{ module: ISupportModule; lesson: ISupportLessonSummary }> = [];
     ISUPPORT_MODULES.forEach((m) => {
       m.lessons.forEach((l) => {
         const hay = (
@@ -104,8 +136,41 @@ export default function Resources() {
         isZh={isZh}
         isComplete={progress.has(activeLesson.key)}
         onToggleComplete={() => toggleComplete(activeLesson.key)}
-        onBack={() => setActiveLessonKey(null)}
+        onBack={closeLesson}
       />
+    );
+  }
+
+  if (activeModule && activeLessonKey && lessonLoading) {
+    return (
+      <div
+        className="min-h-[50vh] flex flex-col items-center justify-center gap-3 text-muted-foreground"
+        role="status"
+      >
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p>{isZh ? "正在加载课程内容…" : "Loading lesson…"}</p>
+        <Button variant="outline" onClick={closeLesson}>
+          {isZh ? "返回课程" : "Back to lessons"}
+        </Button>
+      </div>
+    );
+  }
+
+  if (activeModule && activeLessonKey && lessonLoadFailed) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-sm text-muted-foreground" role="alert">
+          {isZh ? "课程暂时无法加载，请重试。" : "This lesson could not load. Please try again."}
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={closeLesson}>
+            {isZh ? "返回课程" : "Back to lessons"}
+          </Button>
+          <Button onClick={() => void openLesson(activeModule.key, activeLessonKey)}>
+            {isZh ? "重试" : "Try again"}
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -116,8 +181,11 @@ export default function Resources() {
         module={activeModule}
         isZh={isZh}
         progress={progress}
-        onBack={() => setActiveModuleKey(null)}
-        onSelectLesson={(key) => setActiveLessonKey(key)}
+        onBack={() => {
+          closeLesson();
+          setActiveModuleKey(null);
+        }}
+        onSelectLesson={(key) => void openLesson(activeModule.key, key)}
       />
     );
   }
@@ -184,8 +252,7 @@ export default function Resources() {
                 <button
                   key={`${module.key}-${lesson.key}`}
                   onClick={() => {
-                    setActiveModuleKey(module.key);
-                    setActiveLessonKey(lesson.key);
+                    void openLesson(module.key, lesson.key);
                     setSearch("");
                   }}
                   className="w-full text-left p-4 rounded-lg border bg-card hover:border-primary/40 transition-colors flex items-center gap-3"
@@ -214,8 +281,7 @@ export default function Resources() {
           {nextUp && (
             <button
               onClick={() => {
-                setActiveModuleKey(nextUp.module.key);
-                setActiveLessonKey(nextUp.lesson.key);
+                void openLesson(nextUp.module.key, nextUp.lesson.key);
               }}
               className="w-full text-left mb-6 group"
             >
@@ -267,7 +333,10 @@ export default function Resources() {
               return (
                 <button
                   key={m.key}
-                  onClick={() => setActiveModuleKey(m.key)}
+                  onClick={() => {
+                    closeLesson();
+                    setActiveModuleKey(m.key);
+                  }}
                   className="text-left group"
                 >
                   <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-primary/30">

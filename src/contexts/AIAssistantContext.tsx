@@ -1,9 +1,25 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AICompanionChatDialog } from "@/components/ai/AICompanionChatDialog";
-import { resolveWriteSkill, type WriteSkillName, type WriteTarget } from "@/lib/ai-dynamic-knowledge";
+import type { WriteSkillName, WriteTarget } from "@/lib/ai-dynamic-knowledge";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
+import { lazyRetry } from "@/lib/lazy-retry";
+
+const AICompanionChatDialog = lazyRetry(
+  () =>
+    import("@/components/ai/AICompanionChatDialog").then((module) => ({
+      default: module.AICompanionChatDialog,
+    })),
+  "AICompanionChatDialog",
+);
 
 export type AssistantResult = { status?: string | undefined; summary?: string | undefined };
 /**
@@ -63,9 +79,11 @@ const AIAssistantContext = (ctxStore.__aiAssistantContext ??= createContext<AIAs
 
 export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [assistantActivated, setAssistantActivated] = useState(false);
   const [request, setRequest] = useState<AssistantRequest>({});
   const openAssistant = useCallback((next: AssistantRequest = {}) => {
     setRequest({ ...next, id: next.id || `general-${Date.now()}` });
+    setAssistantActivated(true);
     setOpen(true);
   }, []);
   const closeAssistant = useCallback(() => setOpen(false), []);
@@ -74,23 +92,34 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
 
   const openWriteAssistant = useCallback(
     ({ skill, target, id, contextScope, onWritten }: WriteRequest) => {
-      const isChinese = (i18n.language || "").startsWith("zh");
-      const spec = resolveWriteSkill(skill, target, { isChinese });
-      openAssistant({
-        id: id || `${skill}-${target.recordId || target.caredOneId || "new"}`,
-        title: spec.title,
-        contextPrompt: spec.contextPrompt,
-        contextScope: contextScope || (target.caredOneId ? { caredOneId: target.caredOneId } : undefined),
-        starterPrompt: spec.starterPrompt,
-        starterFallback: spec.starterFallback,
-        completionStatuses: spec.statuses,
-        onComplete: async (result) => {
-          await spec.write(result);
-          spec.invalidateKeys.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
-          toast({ title: spec.toastFor(result.status) });
-          onWritten?.(result);
-        },
-      });
+      void import("@/lib/ai-dynamic-knowledge")
+        .then(({ resolveWriteSkill }) => {
+          const isChinese = (i18n.language || "").startsWith("zh");
+          const spec = resolveWriteSkill(skill, target, { isChinese });
+          openAssistant({
+            id: id || `${skill}-${target.recordId || target.caredOneId || "new"}`,
+            title: spec.title,
+            contextPrompt: spec.contextPrompt,
+            contextScope: contextScope || (target.caredOneId ? { caredOneId: target.caredOneId } : undefined),
+            starterPrompt: spec.starterPrompt,
+            starterFallback: spec.starterFallback,
+            completionStatuses: spec.statuses,
+            onComplete: async (result) => {
+              await spec.write(result);
+              spec.invalidateKeys.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
+              toast({ title: spec.toastFor(result.status) });
+              onWritten?.(result);
+            },
+          });
+        })
+        .catch(() => {
+          toast({
+            title: (i18n.language || "").startsWith("zh")
+              ? "助手暂时无法打开，请重试。"
+              : "Could not open the assistant. Please try again.",
+            variant: "destructive",
+          });
+        });
     },
     [openAssistant, qc, toast]
   );
@@ -103,7 +132,15 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   return (
     <AIAssistantContext.Provider value={value}>
       {children}
-      <AICompanionChatDialog open={open} onOpenChange={setOpen} request={request} />
+      {assistantActivated && (
+        <Suspense fallback={null}>
+          <AICompanionChatDialog
+            open={open}
+            onOpenChange={setOpen}
+            request={request}
+          />
+        </Suspense>
+      )}
     </AIAssistantContext.Provider>
   );
 }

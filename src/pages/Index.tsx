@@ -8,7 +8,7 @@ import {
   Search, MapPin, Star, Shield, Clock, Heart,
   Users, ArrowRight, CheckCircle, Loader2
 } from "lucide-react";
-import { useProviders } from "@/hooks/use-care-data";
+import { useProviders } from "@/features/providers/use-providers";
 import { useSite } from "@/contexts/SiteContext";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-image.jpg";
@@ -30,7 +30,10 @@ const Index = () => {
 
   // Release builds hide the paid caregiver marketplace entirely.
   const paidCare = site.features.paidCaregivers;
-  const { data: topProviders, isLoading } = useProviders({ sortBy: "rating" });
+  const { data: topProviders, isLoading } = useProviders(
+    { sortBy: "rating" },
+    { enabled: paidCare },
+  );
   const featuredProviders = (topProviders || []).slice(0, 3);
 
   const handleSearch = () => {
@@ -61,6 +64,8 @@ const Index = () => {
             alt={isSafety ? (isChinese ? "家人一起查看位置地图" : "A family viewing their location map together") : (isChinese ? "用心的护理" : "Compassionate caregiving")}
             width={1536}
             height={864}
+            fetchPriority="high"
+            decoding="async"
             className="w-full h-full object-cover"
           />
           <div

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
+import { Suspense, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,24 +8,39 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import {
   useBookings, useCareTasks, useUserCaredOnes, usePosts, useCareGroups, useInboxCounts,
-} from "@/hooks/use-care-data";
+} from "@/features/dashboard/use-dashboard-data";
 
 import {
   CalendarDays, Users, MapPin, ArrowRight, CheckCircle, AlertCircle, MessageSquare,
   ShoppingBag, Heart, BookOpen, Wand2, Briefcase, Bell, Calendar as CalIcon,
+  Settings2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PatientSummaryCard } from "@/components/challenged/PatientSummaryCard";
-import { DailyTimeline } from "@/components/challenged/DailyTimeline";
 import {
-  DashboardWidgetConfig, getWidgetPrefs, setWidgetPrefs,
-  getWidgetOrder, setWidgetOrder, resolveOrder,
-} from "@/components/dashboard/DashboardWidgetConfig";
+  getWidgetPrefs, setWidgetPrefs, getWidgetOrder, setWidgetOrder, resolveOrder,
+} from "@/components/dashboard/dashboard-widget-preferences";
 import { getAvailableWidgets, getDefaultVisibility } from "@/components/dashboard/widgets";
-import { AISmartBriefing } from "@/components/dashboard/AISmartBriefing";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { pendingCareTasks, pendingCareTaskTarget } from "@/features/care-tasks/pending";
+import { lazyRetry } from "@/lib/lazy-retry";
+
+const DashboardWidgetConfig = lazyRetry(
+  () => import("@/components/dashboard/DashboardWidgetConfig").then((module) => ({ default: module.DashboardWidgetConfig })),
+  "DashboardWidgetConfig",
+);
+const AISmartBriefing = lazyRetry(
+  () => import("@/components/dashboard/AISmartBriefing").then((module) => ({ default: module.AISmartBriefing })),
+  "AISmartBriefing",
+);
+const PatientSummaryCard = lazyRetry(
+  () => import("@/components/challenged/PatientSummaryCard").then((module) => ({ default: module.PatientSummaryCard })),
+  "PatientSummaryCard",
+);
+const DailyTimeline = lazyRetry(
+  () => import("@/components/challenged/DailyTimeline").then((module) => ({ default: module.DailyTimeline })),
+  "DailyTimeline",
+);
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -63,6 +78,7 @@ export default function Dashboard() {
   const [order, setOrder] = useState<string[]>(() =>
     resolveOrder(availableWidgets, getWidgetOrder())
   );
+  const [showWidgetConfig, setShowWidgetConfig] = useState(false);
 
   // Keep order in sync when available widgets change (role/site switch)
   useEffect(() => {
@@ -135,20 +151,26 @@ export default function Dashboard() {
   );
 
   const blocks: Record<string, ReactNode> = {
-    "ai-briefing": <AISmartBriefing />,
+    "ai-briefing": (
+      <Suspense fallback={slotSkeleton(isChinese ? "今日智能简报" : "Today's Smart Briefing", "h-32")}>
+        <AISmartBriefing />
+      </Suspense>
+    ),
     "patient-summaries": caredOnes && caredOnes.length > 0 ? (
       <section>
         <h2 className="text-sm font-semibold text-foreground mb-2">
           {t("nav.myLovedOnes") || site.navLabels.caredOnes}
         </h2>
         {caredOnes.length === 1 ? (
-          <PatientSummaryCard
-            caredOneId={caredOnes[0].user_id}
-            name={caredOnes[0].cared_one?.full_name || ""}
-            avatarUrl={caredOnes[0].cared_one?.avatar_url}
-            relationship={caredOnes[0].relationship}
-            onClick={() => navigate(`/cared-ones/${String(caredOnes[0].user_id).replace(/^wp-/, "")}`)}
-          />
+          <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>
+            <PatientSummaryCard
+              caredOneId={caredOnes[0].user_id}
+              name={caredOnes[0].cared_one?.full_name || ""}
+              avatarUrl={caredOnes[0].cared_one?.avatar_url}
+              relationship={caredOnes[0].relationship}
+              onClick={() => navigate(`/cared-ones/${String(caredOnes[0].user_id).replace(/^wp-/, "")}`)}
+            />
+          </Suspense>
         ) : (
           <Tabs defaultValue={caredOnes[0].user_id}>
             <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1 rounded-xl">
@@ -168,13 +190,15 @@ export default function Dashboard() {
             </TabsList>
             {caredOnes.map((co: any) => (
               <TabsContent key={co.user_id} value={co.user_id} className="mt-3 focus-visible:outline-hidden">
-                <PatientSummaryCard
-                  caredOneId={co.user_id}
-                  name={co.cared_one?.full_name || ""}
-                  avatarUrl={co.cared_one?.avatar_url}
-                  relationship={co.relationship}
-                  onClick={() => navigate(`/cared-ones/${String(co.user_id).replace(/^wp-/, "")}`)}
-                />
+                <Suspense fallback={<Skeleton className="h-40 w-full rounded-xl" />}>
+                  <PatientSummaryCard
+                    caredOneId={co.user_id}
+                    name={co.cared_one?.full_name || ""}
+                    avatarUrl={co.cared_one?.avatar_url}
+                    relationship={co.relationship}
+                    onClick={() => navigate(`/cared-ones/${String(co.user_id).replace(/^wp-/, "")}`)}
+                  />
+                </Suspense>
               </TabsContent>
             ))}
           </Tabs>
@@ -312,18 +336,22 @@ export default function Dashboard() {
             </TabsList>
             {caredOnes!.map((co: any) => (
               <TabsContent key={co.user_id} value={co.user_id} className="focus-visible:outline-hidden">
-                <DailyTimeline
-                  caredOneId={co.user_id}
-                  caredOneName={co.cared_one?.full_name || ""}
-                />
+                <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>
+                  <DailyTimeline
+                    caredOneId={co.user_id}
+                    caredOneName={co.cared_one?.full_name || ""}
+                  />
+                </Suspense>
               </TabsContent>
             ))}
           </Tabs>
         ) : (
-          <DailyTimeline
-            caredOneId={firstCaredOne.user_id}
-            caredOneName={firstCaredOne.cared_one?.full_name || ""}
-          />
+          <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>
+            <DailyTimeline
+              caredOneId={firstCaredOne.user_id}
+              caredOneName={firstCaredOne.cared_one?.full_name || ""}
+            />
+          </Suspense>
         )}
       </section>
     ) : caredOnesLoading ? slotSkeleton(t("dashboard.timeline", { defaultValue: "Today's Events" }), "h-32") : null,
@@ -358,6 +386,22 @@ export default function Dashboard() {
 
   };
 
+  const customizeButton = (
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-2"
+      aria-label={isChinese ? "自定义面板" : "Customize dashboard"}
+      disabled={showWidgetConfig}
+      onClick={() => setShowWidgetConfig(true)}
+    >
+      <Settings2 className="h-4 w-4" />
+      <span className="hidden sm:inline">
+        {isChinese ? "自定义" : "Customize"}
+      </span>
+    </Button>
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-5 space-y-5">
       <div className="flex items-start justify-between gap-3">
@@ -369,13 +413,20 @@ export default function Dashboard() {
             {t(`site.${site.id}.dashboardSubtitle`, { defaultValue: site.tagline })}
           </p>
         </div>
-        <DashboardWidgetConfig
-          widgets={availableWidgets}
-          visibility={visibility}
-          order={order}
-          onChange={handleToggle}
-          onReorder={handleReorder}
-        />
+        {showWidgetConfig ? (
+          <Suspense fallback={customizeButton}>
+            <DashboardWidgetConfig
+              widgets={availableWidgets}
+              visibility={visibility}
+              order={order}
+              onChange={handleToggle}
+              onReorder={handleReorder}
+              initialOpen
+            />
+          </Suspense>
+        ) : (
+          customizeButton
+        )}
       </div>
 
       {order.map((id) => {

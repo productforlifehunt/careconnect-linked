@@ -4,7 +4,7 @@ import { readInspectionSource } from './inspector-source.server';
 describe('deployment-compatible actual route source', () => {
   it('reads the real medicine frontend and its read/write helpers without DOM source markers', async () => {
     const result = await readInspectionSource({ page: '/cared-ones/46/medicine' });
-    expect(result.roots).toEqual(['routes/cared-ones/$personId/$card.tsx']);
+    expect(result.roots).toEqual(["app/routes/cared-ones.$personId.$card.tsx"]);
     expect(result.files.some(source => source.file === 'pages/CaredOnes.tsx')).toBe(true);
     expect(result.files.some(source => source.file === 'features/schedules/calendar-schedule.ts')).toBe(true);
     const code = result.files.map(source => source.text).join('\n');
@@ -21,7 +21,7 @@ describe('deployment-compatible actual route source', () => {
 
   it('resolves main care routes when the selected site is carried in the query string', async () => {
     const result = await readInspectionSource({ page: '/search-local-caregiver?__site=challenged' });
-    expect(result.roots).toEqual(['routes/search-local-caregiver.tsx']);
+    expect(result.roots).toEqual(["app/routes/search-local-caregiver.tsx"]);
     expect(result.files.some(source => source.file === 'pages/SearchResults.tsx')).toBe(true);
     expect(result.omissions).not.toContain('没有实际源代码，三方核对未执行。');
   }, 30_000);

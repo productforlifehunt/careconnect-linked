@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-react";
-import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/hooks/use-care-data";
+import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/features/dashboard/use-dashboard-data";
 import { useMemo } from "react";
 import { findDoseLog } from "@/features/medicine/dose-slot";
 import { useTranslation } from "react-i18next";

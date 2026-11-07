@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Settings2, GripVertical } from "lucide-react";
+import type { WidgetDef } from "./dashboard-widget-preferences";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -14,43 +15,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-export interface WidgetDef {
-  id: string;
-  label: string;
-  roles: ("caregiver" | "provider" | "caredOne" | "all")[];
-  challengedOnly?: boolean | undefined;
-  defaultOnly?: boolean | undefined;
-}
-
-const VIS_KEY = "dashboard-widget-prefs";
-const ORDER_KEY = "dashboard-widget-order";
-
-export function getWidgetPrefs(): Record<string, boolean> {
-  try { return JSON.parse(localStorage.getItem(VIS_KEY) || "{}"); } catch { return {}; }
-}
-export function setWidgetPrefs(prefs: Record<string, boolean>) {
-  try { localStorage.setItem(VIS_KEY, JSON.stringify(prefs)); } catch {}
-}
-
-export function getWidgetOrder(): string[] {
-  try { return JSON.parse(localStorage.getItem(ORDER_KEY) || "[]"); } catch { return []; }
-}
-export function setWidgetOrder(order: string[]) {
-  try { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); } catch {}
-}
-
-/** Merge saved order with available widgets (saved first, then any new widgets appended) */
-export function resolveOrder(available: WidgetDef[], saved: string[]): string[] {
-  const ids = available.map((w) => w.id);
-  const filtered = saved.filter((id) => ids.includes(id));
-  const missing = ids.filter((id) => !filtered.includes(id));
-  return [...filtered, ...missing];
-}
-
-export function isWidgetVisible(id: string, defaults: Record<string, boolean>): boolean {
-  const prefs = getWidgetPrefs();
-  return prefs[id] ?? defaults[id] ?? true;
-}
+export type { WidgetDef } from "./dashboard-widget-preferences";
 
 const ZH_WIDGET_LABELS: Record<string, string> = {
   "patient-summaries": "被护理者概览",
@@ -112,10 +77,18 @@ interface Props {
   order: string[];
   onChange: (id: string, visible: boolean) => void;
   onReorder: (order: string[]) => void;
+  initialOpen?: boolean;
 }
 
-export function DashboardWidgetConfig({ widgets, visibility, order, onChange, onReorder }: Props) {
-  const [open, setOpen] = useState(false);
+export function DashboardWidgetConfig({
+  widgets,
+  visibility,
+  order,
+  onChange,
+  onReorder,
+  initialOpen = false,
+}: Props) {
+  const [open, setOpen] = useState(initialOpen);
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
   const sensors = useSensors(

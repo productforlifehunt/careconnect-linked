@@ -32,6 +32,11 @@
  */
 
 import { retrieveStaticKnowledge, type KnowledgeTopic } from "@/lib/ai-static-knowledge";
+import { DEFAULT_DISPLAY_SETTINGS, applyDisplaySettings } from "@/features/settings/display-preferences";
+import { LANGUAGES } from "@/config/languages";
+
+export { applyDisplaySettings } from "@/features/settings/display-preferences";
+export { LANGUAGES } from "@/config/languages";
 type Lang = { isChinese: boolean };
 
 const Z = (isChinese: boolean, zh: string, en: string) => (isChinese ? zh : en);
@@ -643,7 +648,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   // registered a token, so the switch can never promise alerts that
   // physically cannot arrive.
   notifications: { push: false, email: true, sms: false, muted_types: [] },
-  display: { theme: "system", text_size: "default", reduce_motion: false, help_bubble: true },
+  display: { ...DEFAULT_DISPLAY_SETTINGS },
   permissions_asked: {},
 };
 
@@ -681,15 +686,6 @@ async function saveAppSettings(patch: Partial<AppSettings>, _scope: AppScope = c
   return next;
 }
 
-/** Puts the display half of the settings on screen at once. */
-export function applyDisplaySettings(display: AppSettings["display"]) {
-  const root = document.documentElement;
-  root.classList.remove("text-size-large", "text-size-xlarge");
-  if (display.text_size === "large") root.classList.add("text-size-large");
-  if (display.text_size === "xlarge") root.classList.add("text-size-xlarge");
-  root.classList.toggle("reduce-motion", !!display.reduce_motion);
-}
-
 /* ── skill shape ──────────────────────────────────────────────────────────── */
 
 export type SettingGroupId =
@@ -725,17 +721,6 @@ export interface SettingSkill<V = any> {
   /** Plain note on how the sub-apps differ, kept next to the write itself. */
   perApp?: Partial<Record<AppScope, string>> | undefined;
 }
-
-/* ── languages (header menu and settings tab share this one list) ─────────── */
-
-export const LANGUAGES = [
-  { code: "en", flag: "🇺🇸" }, { code: "zh-CN", flag: "🇨🇳" }, { code: "zh-TW", flag: "🇹🇼" },
-  { code: "ja", flag: "🇯🇵" }, { code: "ko", flag: "🇰🇷" }, { code: "es", flag: "🇪🇸" },
-  { code: "fr", flag: "🇫🇷" }, { code: "de", flag: "🇩🇪" }, { code: "pt", flag: "🇧🇷" },
-  { code: "hi", flag: "🇮🇳" }, { code: "ar", flag: "🇸🇦" }, { code: "vi", flag: "🇻🇳" },
-  { code: "th", flag: "🇹🇭" }, { code: "id", flag: "🇮🇩" }, { code: "tl", flag: "🇵🇭" },
-  { code: "ru", flag: "🇷🇺" }, { code: "it", flag: "🇮🇹" },
-] as const;
 
 /* ── the registry ─────────────────────────────────────────────────────────── */
 

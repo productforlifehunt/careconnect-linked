@@ -14,11 +14,10 @@ Continue developing this project in the [Lovable editor](https://lovable.dev/pro
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+The app uses Yarn 4.18.1, React Router 7 framework mode, and Vite 8. Install dependencies with Yarn before starting the development server.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+yarn install
+yarn dev
+yarn build
 ```

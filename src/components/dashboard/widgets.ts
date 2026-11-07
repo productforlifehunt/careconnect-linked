@@ -1,4 +1,4 @@
-import type { WidgetDef } from "./DashboardWidgetConfig";
+import type { WidgetDef } from "./dashboard-widget-preferences";
 
 /**
  * Master widget registry.

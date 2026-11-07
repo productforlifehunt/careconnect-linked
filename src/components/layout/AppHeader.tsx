@@ -95,18 +95,22 @@ export function AppHeader() {
           ))}
           <div className="pt-4 mt-4 border-t space-y-2">
             <Button
+              asChild
               variant="outline"
               className="w-full"
-              onClick={() => { setMobileOpen(false); navigate("/auth"); }}
             >
-              {t("common.signIn")}
+              <Link to="/auth" onClick={() => setMobileOpen(false)}>
+                {t("common.signIn")}
+              </Link>
             </Button>
             <Button
+              asChild
               variant="coral"
               className="w-full"
-              onClick={() => { setMobileOpen(false); navigate("/auth?mode=signup"); }}
             >
-              {t("common.getStarted")}
+              <Link to="/auth?mode=signup" onClick={() => setMobileOpen(false)}>
+                {t("common.getStarted")}
+              </Link>
             </Button>
           </div>
         </nav>
@@ -167,9 +171,11 @@ export function AppHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-card border shadow-lg z-[60]">
                 {overflowNav.map(item => (
-                  <DropdownMenuItem key={item.url} onClick={() => navigate(item.url)}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    <span className="truncate">{item.title}</span>
+                  <DropdownMenuItem key={item.url} asChild>
+                    <Link to={item.url}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span className="truncate">{item.title}</span>
+                    </Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -188,14 +194,16 @@ export function AppHeader() {
           <div className="flex items-center gap-1">
 
             <Button
+              asChild
               variant="ghost"
               size="icon"
               className="relative min-h-11 min-w-11 shrink-0"
-              onClick={() => navigate("/inbox")}
               title={isChinese ? "收件箱" : "Inbox"}
               aria-label={isChinese ? "收件箱" : "Inbox"}
             >
-              <Bell className="h-5 w-5" />
+              <Link to="/inbox">
+                <Bell className="h-5 w-5" />
+              </Link>
             </Button>
 
             <DropdownMenu>
@@ -218,44 +226,64 @@ export function AppHeader() {
                   <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
 
-                <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> {dashboardLabel}
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> {dashboardLabel}
+                  </Link>
                 </DropdownMenuItem>
                 {paidCare && (
-                  <DropdownMenuItem onClick={() => navigate("/bookings")}>
-                    <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
+                  <DropdownMenuItem asChild>
+                    <Link to="/bookings">
+                      <CalendarDays className="mr-2 h-4 w-4" /> {t("nav.myBookings")}
+                    </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => navigate("/care-circle")}>
-                  <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")}
+                <DropdownMenuItem asChild>
+                  <Link to="/care-circle">
+                    <Users className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.united") : t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups")}
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/find")}>
-                  <MapPin className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.find") : t("nav.gpsTracking")}
+                <DropdownMenuItem asChild>
+                  <Link to="/find">
+                    <MapPin className="mr-2 h-4 w-4" /> {isChallenged ? t("nav.find") : t("nav.gpsTracking")}
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/inbox?tab=messages")}>
-                  <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
+                <DropdownMenuItem asChild>
+                  <Link to="/inbox?tab=messages">
+                    <MessageSquare className="mr-2 h-4 w-4" /> {t("nav.messages")}
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {paidCare && (
-                  <DropdownMenuItem onClick={() => navigate("/favorite-caregiver")}>
-                    <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
+                  <DropdownMenuItem asChild>
+                    <Link to="/favorite-caregiver">
+                      <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
+                    </Link>
                   </DropdownMenuItem>
                 )}
                 {site.features.facilities && (
-                  <DropdownMenuItem onClick={() => navigate("/facilities/new")}>
-                    <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
+                  <DropdownMenuItem asChild>
+                    <Link to="/facilities/new">
+                      <Building2 className="mr-2 h-4 w-4" /> {isChinese ? "提交养老院" : "Submit Facility"}
+                    </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
-                  <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">
+                    <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
+                  </Link>
                 </DropdownMenuItem>
                 {paidCare && (
-                  <DropdownMenuItem onClick={() => navigate("/caregiver-setting?tab=profile")}>
-                    <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
+                  <DropdownMenuItem asChild>
+                    <Link to="/caregiver-setting?tab=profile">
+                      <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
+                    </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => navigate("/how-it-works")}>
-                  <HelpCircle className="mr-2 h-4 w-4" /> {isChinese ? "帮助" : "Help"}
+                <DropdownMenuItem asChild>
+                  <Link to="/how-it-works">
+                    <HelpCircle className="mr-2 h-4 w-4" /> {isChinese ? "帮助" : "Help"}
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
@@ -266,11 +294,11 @@ export function AppHeader() {
           </div>
         ) : (
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" onClick={() => navigate("/auth")} className="hidden h-10 px-3 sm:inline-flex">
-              {t("common.signIn")}
+            <Button asChild variant="ghost" className="hidden h-10 px-3 sm:inline-flex">
+              <Link to="/auth">{t("common.signIn")}</Link>
             </Button>
-            <Button variant="coral" className="hidden h-10 shrink-0 px-4 shadow-xs sm:inline-flex sm:px-5" onClick={() => navigate("/auth?mode=signup")}>
-              {t("common.getStarted")}
+            <Button asChild variant="coral" className="hidden h-10 shrink-0 px-4 shadow-xs sm:inline-flex sm:px-5">
+              <Link to="/auth?mode=signup">{t("common.getStarted")}</Link>
             </Button>
           </div>
         )}

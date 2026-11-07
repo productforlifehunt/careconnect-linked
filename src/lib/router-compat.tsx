@@ -37,14 +37,30 @@ export function useSearchParams() {
 }
 
 type CompatLinkProps = Omit<LinkProps, "to"> & { to: string };
-export const Link = forwardRef<HTMLAnchorElement, CompatLinkProps>(function Link(props, ref) {
-  return <RouterLink ref={ref} {...props} />;
-});
+export const Link = forwardRef<HTMLAnchorElement, CompatLinkProps>(
+  function Link(props, ref) {
+    return (
+      <RouterLink
+        ref={ref}
+        {...props}
+        prefetch={props.prefetch ?? "intent"}
+      />
+    );
+  },
+);
 
 type CompatNavLinkProps = Omit<NavLinkProps, "to"> & { to: string };
-export const NavLink = forwardRef<HTMLAnchorElement, CompatNavLinkProps>(function NavLink(props, ref) {
-  return <RouterNavLink ref={ref} {...props} />;
-});
+export const NavLink = forwardRef<HTMLAnchorElement, CompatNavLinkProps>(
+  function NavLink(props, ref) {
+    return (
+      <RouterNavLink
+        ref={ref}
+        {...props}
+        prefetch={props.prefetch ?? "intent"}
+      />
+    );
+  },
+);
 
 export function Navigate(props: ComponentProps<typeof RouterNavigate>) {
   return <RouterNavigate {...props} />;

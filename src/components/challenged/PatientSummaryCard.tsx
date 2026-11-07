@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pill, ClipboardCheck, MapPin, CheckCircle, AlertTriangle, Clock } from "lucide-react";
-import { useCheckins, useTodayCheckinLogs, useMedicines, useCaredOneLocation, useCareTasks } from "@/hooks/use-care-data";
+import { useCheckins, useTodayCheckinLogs, useMedicines, useCaredOneLocation, useCareTasks } from "@/features/dashboard/use-dashboard-data";
 import { useTranslation } from "react-i18next";
 import { pendingCareTasks } from "@/features/care-tasks/pending";
 

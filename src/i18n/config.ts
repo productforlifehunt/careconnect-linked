@@ -1,48 +1,69 @@
-import i18n from "i18next";
+import i18n, { type BackendModule, type ResourceKey } from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-import en from "./locales/en";
-import zhCN from "./locales/zh-CN";
-import zhTW from "./locales/zh-TW";
-import ja from "./locales/ja";
-import ko from "./locales/ko";
-import es from "./locales/es";
-import fr from "./locales/fr";
-import de from "./locales/de";
-import pt from "./locales/pt";
-import hi from "./locales/hi";
-import ar from "./locales/ar";
-import vi from "./locales/vi";
-import th from "./locales/th";
-import id from "./locales/id";
-import tl from "./locales/tl";
-import ru from "./locales/ru";
-import it from "./locales/it";
+type LocaleResources = Record<string, unknown>;
+
+const loadEnglish = async (): Promise<LocaleResources> =>
+  (await import("./locales/en")).default;
+
+const localeLoaders: Record<string, () => Promise<LocaleResources>> = {
+  en: loadEnglish,
+  "zh-CN": async () => (await import("./locales/zh-CN")).default,
+  "zh-TW": async () => (await import("./locales/zh-TW")).default,
+  ja: async () => (await import("./locales/ja")).default,
+  ko: async () => (await import("./locales/ko")).default,
+  es: async () => (await import("./locales/es")).default,
+  fr: async () => (await import("./locales/fr")).default,
+  de: async () => (await import("./locales/de")).default,
+  pt: async () => (await import("./locales/pt")).default,
+  hi: async () => (await import("./locales/hi")).default,
+  ar: async () => (await import("./locales/ar")).default,
+  vi: async () => (await import("./locales/vi")).default,
+  th: async () => (await import("./locales/th")).default,
+  id: async () => (await import("./locales/id")).default,
+  tl: async () => (await import("./locales/tl")).default,
+  ru: async () => (await import("./locales/ru")).default,
+  it: async () => (await import("./locales/it")).default,
+};
+
+const localeBackend: BackendModule = {
+  type: "backend",
+  init() {},
+  read(language, namespace, callback) {
+    if (namespace !== "translation") {
+      callback(null, false);
+      return;
+    }
+
+    const normalized = language.replace(/_/g, "-").toLowerCase();
+    const exact = Object.keys(localeLoaders).find(
+      (locale) => locale.toLowerCase() === normalized,
+    );
+    const base = normalized.split("-")[0] ?? "en";
+    const chineseLocale = /(?:tw|hk|hant)/.test(normalized) ? "zh-TW" : "zh-CN";
+    const preferred =
+      exact ?? (normalized.startsWith("zh") ? chineseLocale : base);
+    const loadLocale = localeLoaders[preferred] ?? loadEnglish;
+
+    void loadLocale()
+      .then((resources) => callback(null, resources as ResourceKey))
+      .catch((error: unknown) => {
+        callback(
+          error instanceof Error
+            ? error
+            : new Error("Could not load translations"),
+          false,
+        );
+      });
+  },
+};
 
 i18n
+  .use(localeBackend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: {
-      en: { translation: en },
-      "zh-CN": { translation: zhCN },
-      "zh-TW": { translation: zhTW },
-      ja: { translation: ja },
-      ko: { translation: ko },
-      es: { translation: es },
-      fr: { translation: fr },
-      de: { translation: de },
-      pt: { translation: pt },
-      hi: { translation: hi },
-      ar: { translation: ar },
-      vi: { translation: vi },
-      th: { translation: th },
-      id: { translation: id },
-      tl: { translation: tl },
-      ru: { translation: ru },
-      it: { translation: it },
-    },
     fallbackLng: "en",
     interpolation: {
       escapeValue: false,

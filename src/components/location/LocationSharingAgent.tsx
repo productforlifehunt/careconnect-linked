@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { getCurrentPosition } from "@/lib/geolocation";
-import { useSite } from '@/contexts/SiteContext';
+import { useSite } from "@/contexts/SiteContext";
 
 const SHARE_EVERY_MS = 3 * 60 * 1000;
 const POLL_EVERY_MS = 30 * 1000;
@@ -17,7 +17,9 @@ const POLL_EVERY_MS = 30 * 1000;
 export function LocationSharingAgent() {
   const { isAuthenticated } = useAuth();
   const site = useSite();
-  const careSite = !['researcher', 'esm_survey', 'consent', 'sick'].includes(site.id);
+  const careSite = !["researcher", "esm_survey", "consent", "sick"].includes(
+    site.id,
+  );
   const qc = useQueryClient();
   const lastShare = useRef(0);
   const busy = useRef(false);
@@ -27,30 +29,49 @@ export function LocationSharingAgent() {
     let stopped = false;
 
     const tick = async () => {
-      if (stopped || busy.current || document.visibilityState !== "visible") return;
+      if (stopped || busy.current || document.visibilityState !== "visible")
+        return;
       const me = getStoredWPUser()?.user_id;
       if (!me) return;
       busy.current = true;
       try {
-        const [{ fetchLocationSharingFlags }, ext, { runNotificationSkill }] = await Promise.all([
-          import("@/features/location/sharing-flags"),
-          import("@/features/location/source.wordpress-extended"),
-          import("@/lib/ai-dynamic-knowledge"),
-        ]);
+        const { fetchLocationSharingFlags } =
+          await import("@/features/location/sharing-flags");
         const flags = await fetchLocationSharingFlags(me);
 
         if (flags.emergencyAllowed) {
-          const unread = await runNotificationSkill("list-notifications", { unreadOnly: true }).catch(() => []);
-          const emergencies = (Array.isArray(unread) ? unread : []).filter(
-            (n: any) => typeof n.action_url === "string" && n.action_url.includes("emergency=1") && n.action_url.includes("request_from="),
+          const { runNotificationSkill } =
+            await import("@/lib/ai-dynamic-knowledge");
+          const unread = await runNotificationSkill("list-notifications", {
+            unreadOnly: true,
+          }).catch(() => []);
+          const emergencies = unread.filter(
+            (n) =>
+              typeof n.action_url === "string" &&
+              n.action_url.includes("emergency=1") &&
+              n.action_url.includes("request_from="),
           );
           if (emergencies.length) {
+            const locationSource =
+              import("@/features/location/source.wordpress-extended");
             const pos = await getCurrentPosition({ timeout: 15000 });
             if (pos) {
+              const ext = await locationSource;
               for (const n of emergencies) {
-                const requester = new URL(String(n.action_url), window.location.origin).searchParams.get("request_from");
-                if (requester) await ext.answerEmergencyRequestWordPress({ requesterId: requester, position: pos }).catch(() => {});
-                await runNotificationSkill("mark-notification-read", { id: n.id }).catch(() => {});
+                const requester = new URL(
+                  String(n.action_url),
+                  window.location.origin,
+                ).searchParams.get("request_from");
+                if (requester)
+                  await ext
+                    .answerEmergencyRequestWordPress({
+                      requesterId: requester,
+                      position: pos,
+                    })
+                    .catch(() => {});
+                await runNotificationSkill("mark-notification-read", {
+                  id: n.id,
+                }).catch(() => {});
               }
               lastShare.current = Date.now();
               qc.invalidateQueries({ queryKey: ["caredOneLocation"] });
@@ -59,8 +80,11 @@ export function LocationSharingAgent() {
         }
 
         if (flags.shareOn && Date.now() - lastShare.current >= SHARE_EVERY_MS) {
+          const locationSource =
+            import("@/features/location/source.wordpress-extended");
           const pos = await getCurrentPosition({ timeout: 15000 });
           if (pos) {
+            const ext = await locationSource;
             await ext.writeCaredOneSnapshot(pos, false);
             lastShare.current = Date.now();
             qc.invalidateQueries({ queryKey: ["caredOneLocation"] });
@@ -75,7 +99,10 @@ export function LocationSharingAgent() {
 
     tick();
     const id = window.setInterval(tick, POLL_EVERY_MS);
-    return () => { stopped = true; window.clearInterval(id); };
+    return () => {
+      stopped = true;
+      window.clearInterval(id);
+    };
   }, [isAuthenticated, careSite, qc]);
 
   return null;

@@ -1,19 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
 import { readLastGood, withLastGood } from "@/lib/last-good";
-import { inboxCounts } from "@/features/inbox/counts";
-import { currentAppId } from "@/features/shared/app-profile";
 
 // ─── Feature source modules (backend-specific) ─────────────
-import { fetchProviderDirectoryWordPress, filterProviders, fetchProvidersWordPress, fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
-import { fetchBookingsWordPress, fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
-import { fetchCareGroupsWordPress, fetchCareGroupMembersWordPress, createCareGroupWordPress } from "@/features/care-groups/source.wordpress";
-import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
+import { fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
+import { fetchProviderBookingsWordPress, createBookingWordPress, updateBookingStatusWordPress } from "@/features/bookings/source.wordpress";
+import { fetchCareGroupMembersWordPress, createCareGroupWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchMyProfileWordPress, updateProfileWordPress } from "@/features/profile/source.wordpress";
-import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 import { notifySubgroupApproved } from "@/features/notifications/notify-events";
 import { fetchCareFacilitiesWordPress, fetchCareFacilityByIdWordPress } from "@/features/facilities/source.wordpress";
 import { toCodeList } from "@/lib/facility-options";
+export { useProviders } from "@/features/providers/use-providers";
 
 import {
   createCareFacilityWordPress, updateCareFacilityWordPress,
@@ -39,11 +36,11 @@ import {
   searchProfilesWordPress, addCaredOneToGroupWordPress, leaveGroupWordPress,
   fetchGroupInvitesWordPress, createGroupInviteWordPress, updateGroupInviteWordPress, deleteGroupInviteWordPress,
 } from "@/features/care-groups/source.wordpress-extended";
-import { setPostVisibility, setTaskVisibility, filterVisiblePosts, filterVisibleTasks } from "@/features/care-groups/visibility";
+import { setPostVisibility, setTaskVisibility, filterVisiblePosts } from "@/features/care-groups/visibility";
 import {
   fetchSafeZonesWordPress, createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
   fetchSafeZoneAlertsWordPress, acknowledgeAlertWordPress, acknowledgeAllAlertsWordPress,
-  fetchCaredOneLocationWordPress, fetchCaredOneLocationHistoryWordPress,
+  fetchCaredOneLocationHistoryWordPress,
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
   fetchLocationRequestsWordPress, sendLocationRequestWordPress, cancelLocationRequestWordPress,
   respondToLocationRequestWordPress, enableEmergencyLocationPermissionWordPress,
@@ -55,7 +52,7 @@ import {
   shareTaskWordPress, unshareTaskWordPress,
 } from "@/features/care-tasks/tasks-needing-help";
 import {
-  fetchPostsWordPress, fetchPostByIdWordPress, createPostWordPress, updatePostWordPress, deletePostWordPress,
+  fetchPostByIdWordPress, createPostWordPress, updatePostWordPress, deletePostWordPress,
 } from "@/features/posts/source.wordpress";
 import {
   fetchCommunityPostsWordPress, fetchCommunityPostByIdWordPress,
@@ -64,13 +61,13 @@ import {
   fetchCommentRepliesWordPress, createCommentReplyWordPress,
   updateCommentCCTWordPress, deleteCommentCCTWordPress,
 } from "@/features/community-posts/source.wordpress";
-import { fetchCareTasksWordPress, createCareTaskWordPress, updateCareTaskWordPress, deleteCareTaskWordPress, updateAssigneeStatusWordPress, linkTaskToCalendarEventWordPress } from "@/features/care-tasks/source.wordpress";
+import { createCareTaskWordPress, updateCareTaskWordPress, deleteCareTaskWordPress, updateAssigneeStatusWordPress, linkTaskToCalendarEventWordPress } from "@/features/care-tasks/source.wordpress";
 import { createCalendarEventForUserWordPress } from "@/features/calendar/source.wordpress";
 import { fetchCategoriesWordPress } from "@/features/categories/source.wordpress";
 import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
 import { fetchEntityReviewsWordPress, createReviewWordPress } from "@/features/reviews/source.wordpress";
 import { setMyGroupDisplayNameWordPress } from "@/features/care-groups/source.wordpress";
-import { fetchConversationsWordPress, fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress, getOrCreateGroupConversationWordPress } from "@/features/conversations/source.wordpress";
+import { fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress, getOrCreateGroupConversationWordPress } from "@/features/conversations/source.wordpress";
 import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
 import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
 import { fetchVoteSummaries, fetchVoteSummary, toggleVote } from "@/features/votes/source.wordpress";
@@ -79,9 +76,9 @@ import { fetchLocationSharesWordPress } from "@/features/location/source.wordpre
 
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
-  fetchCheckinsWordPress, createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, fetchTodayCheckinLogsWordPress, logCheckinWordPress,
-  fetchMedicinesWordPress, createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
-  fetchMedicineLogsWordPress, fetchTodayMedicineLogsWordPress, fetchAllMedicineLogsWordPress, logMedicineWordPress,
+  createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, logCheckinWordPress,
+  createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
+  fetchMedicineLogsWordPress, fetchAllMedicineLogsWordPress, logMedicineWordPress,
   fetchCareTipsWordPress, createCareTipWordPress, updateCareTipWordPress, deleteCareTipWordPress,
   fetchCarePlansWordPress, createCarePlanWordPress, updateCarePlanWordPress, deleteCarePlanWordPress,
   fetchCareNotesWordPress, createCareNoteWordPress, updateCareNoteWordPress, deleteCareNoteWordPress,
@@ -103,6 +100,22 @@ import type {
   Post, Comment, CareFacility, FacilityMember, FacilityMemberWithProfile, LocationRecord,
   FacilityOwnershipClaim, FacilityOwnershipDispute,
 } from "@/types/care-connector";
+
+export {
+  useBookings,
+  useCareGroups,
+  useCareTasks,
+  useCheckins,
+  useCaredOneLocation,
+  useConversations,
+  useInboxCounts,
+  useMedicines,
+  useNotifications,
+  usePosts,
+  useTodayCheckinLogs,
+  useTodayMedicineLogs,
+  useUserCaredOnes,
+} from "@/features/dashboard/use-dashboard-data";
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -134,27 +147,6 @@ function dedupeFacilities(list: CareFacility[]) {
   const map = new Map<string, CareFacility>();
   list.forEach((item) => map.set(item.id, item));
   return Array.from(map.values());
-}
-
-export function useProviders(filters?: {
-  query?: string | undefined;
-  specialties?: string[] | undefined;
-  minRate?: number | undefined;
-  maxRate?: number | undefined;
-  verifiedOnly?: boolean | undefined;
-  minRating?: number | undefined;
-  sortBy?: string | undefined;
-  location?: string | undefined;
-  serviceLocations?: string[] | undefined;
-  serviceTypeSlugs?: string[] | undefined;
-}) {
-  return useQuery({
-    // One directory read shared by every keystroke/filter; typing only re-filters it.
-    queryKey: ["providers"],
-    queryFn: fetchProviderDirectoryWordPress,
-    staleTime: 60_000,
-    select: (list) => filterProviders(list, filters),
-  });
 }
 
 export function useProvider(id: string | undefined) {
@@ -332,16 +324,6 @@ export function useCreateReview() {
 }
 
 // ─── Bookings ───────────────────────────────────────────────
-export function useBookings() {
-  return useQuery({
-    queryKey: ["bookings"],
-    queryFn: withLastGood("bookings", fetchBookingsWordPress),
-    // Show the last known list instantly, refresh it in the background.
-    initialData: () => readLastGood<any[]>("bookings"),
-    initialDataUpdatedAt: 0,
-  });
-}
-
 // Bookings where current user is the provider (incoming requests)
 export function useProviderBookings() {
   return useQuery({
@@ -361,18 +343,7 @@ export function useCreateBooking() {
   });
 }
 
-// ─── Messages ───────────────────────────────────────────────@@
-export function useConversations() {
-  const me = getStoredWPUser();
-  const myId = me ? `wp-${me.user_id}` : "";
-  return useQuery({
-    queryKey: ["conversations", myId],
-    queryFn: () => fetchConversationsWordPress(myId),
-    enabled: !!myId,
-    refetchInterval: 30000,
-  });
-}
-
+// ─── Messages ───────────────────────────────────────────────
 /**
  * react-query keeps `isLoading` true for *disabled* queries (status stays
  * "pending" while fetchStatus is "idle"), which makes skeletons hang forever
@@ -463,13 +434,6 @@ export function useStartConversation() {
 }
 
 // ─── Care Groups ────────────────────────────────────────────
-export function useCareGroups() {
-  return useQuery({
-    queryKey: ["careGroups"],
-    queryFn: () => fetchCareGroupsWordPress(),
-  });
-}
-
 export function useCareGroupMembers(groupId: string | null) {
   return withIdleAwareLoading(useQuery({
     queryKey: ["careGroupMembers", groupId],
@@ -539,16 +503,6 @@ export function useCareGroupGallery(groupId: string | null) {
 }
 
 // ─── Care Tasks ─────────────────────────────────────────────
-export function useCareTasks(groupId?: string | null | undefined) {
-  return useQuery({
-    queryKey: ["careTasks", groupId],
-    queryFn: async () => {
-      const tasks = await fetchCareTasksWordPress(groupId);
-      return await filterVisibleTasks(tasks);
-    },
-  });
-}
-
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
@@ -610,30 +564,10 @@ export function useUpdateTaskStatus() {
 }
 
 // ─── Notifications ──────────────────────────────────────────
-export function useNotifications() {
-  const me = getStoredWPUser();
-  return useQuery({
-    queryKey: ["notifications", me?.user_id, currentAppId()],
-    queryFn: () => runNotificationSkill("list-notifications"),
-    enabled: hasWPSession(),
-    refetchInterval: 30000,
-  });
-}
-
-export function useInboxCounts() {
-  const notifications = useNotifications();
-  const conversations = useConversations();
-  return {
-    ...inboxCounts(notifications.data || [], conversations.data || []),
-    isLoading: notifications.isLoading || conversations.isLoading,
-    error: notifications.error || conversations.error,
-  };
-}
-
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => runNotificationSkill("mark-notification-read", { id }),
+    mutationFn: async (id: string) => (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("mark-notification-read", { id }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 }
@@ -641,7 +575,7 @@ export function useMarkNotificationRead() {
 export function useMarkAllNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => runNotificationSkill("mark-all-notifications-read"),
+    mutationFn: async () => (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("mark-all-notifications-read"),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 }
@@ -1088,13 +1022,6 @@ export function useUpdateSubgroupMemberRole() {
 }
 
 // ─── Shared Posts (SupaPress community usage) ──────────────
-export function usePosts(postType: string, area?: string | undefined, childPostType?: string | null | undefined) {
-  return useQuery({
-    queryKey: ["posts", postType, area, childPostType],
-    queryFn: () => fetchPostsWordPress(postType, area, childPostType),
-  });
-}
-
 export function usePost(id: string | null, postType?: string | undefined) {
   return useQuery({
     queryKey: ["post", id, postType],
@@ -1147,13 +1074,6 @@ export function useServiceCategories() {
 }
 
 // ─── Cared Ones (user_cared_one junction) ───────────────────
-export function useUserCaredOnes() {
-  return useQuery({
-    queryKey: ["userCaredOnes"],
-    queryFn: () => fetchUserCaredOnesWordPress(),
-  });
-}
-
 // ─── Group Cared Ones (members with is_cared_one = true) ────
 export function useGroupCaredOnes(groupId: string | null) {
   return useQuery({
@@ -1164,27 +1084,10 @@ export function useGroupCaredOnes(groupId: string | null) {
 }
 
 // ─── Check-Ins (schedule) ────────────────────────────────────
-export function useCheckins(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["checkins", caredOneId],
-    queryFn: () => fetchCheckinsWordPress(caredOneId!),
-    enabled: !!caredOneId,
-  });
-}
-
 export function useCheckinLogs(caredOneId: string | null) {
   return useQuery({
     queryKey: ["checkinLogs", caredOneId],
     queryFn: () => fetchCheckinLogsWordPress(caredOneId!),
-    enabled: !!caredOneId,
-  });
-}
-
-export function useTodayCheckinLogs(caredOneId: string | null) {
-  const today = new Date().toISOString().split('T')[0];
-  return useQuery({
-    queryKey: ["todayCheckinLogs", caredOneId, today],
-    queryFn: () => fetchTodayCheckinLogsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1236,14 +1139,6 @@ export function useDeleteCheckin() {
   });
 }
 
-export function useMedicines(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["medicines", caredOneId],
-    queryFn: () => fetchMedicinesWordPress(caredOneId!),
-    enabled: !!caredOneId,
-  });
-}
-
 export function useCreateMedicine() {
   const qc = useQueryClient();
   return useMutation({
@@ -1272,15 +1167,6 @@ export function useAllMedicineLogs(caredOneId: string | null) {
   return useQuery({
     queryKey: ["allMedicineLogs", caredOneId],
     queryFn: () => fetchAllMedicineLogsWordPress(caredOneId!),
-    enabled: !!caredOneId,
-  });
-}
-
-export function useTodayMedicineLogs(caredOneId: string | null) {
-  const today = new Date().toISOString().split('T')[0];
-  return useQuery({
-    queryKey: ["todayMedicineLogs", caredOneId, today],
-    queryFn: () => fetchTodayMedicineLogsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -1704,16 +1590,6 @@ export function useUnshareTask() {
 }
 
 // ─── Location: cared-one location, history, settings, sharing ─
-export function useCaredOneLocation(caredOneId: string | null) {
-  return useQuery({
-    queryKey: ["caredOneLocation", caredOneId],
-    queryFn: () => fetchCaredOneLocationWordPress(caredOneId!),
-    enabled: !!caredOneId,
-    // A requested location arrives whenever the cared one answers — keep looking.
-    refetchInterval: 30_000,
-  });
-}
-
 export function useCaredOneLocationHistory(caredOneId: string | null) {
   return useQuery({
     queryKey: ["caredOneLocationHistory", caredOneId],

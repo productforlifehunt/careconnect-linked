@@ -13,6 +13,9 @@ import {
 import { ThemeProvider } from "next-themes";
 
 import appCss from "@/styles.css?url";
+import heroImage from "@/assets/hero-image.jpg";
+import heroImageCn from "@/assets/hero-image-cn.jpg";
+import heroImageCarecnc from "@/assets/hero-image-carecnc.jpg";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -48,6 +51,21 @@ const FAVICON_BOOTSTRAP = `(function () {
     try { lang = localStorage.getItem("i18nextLng") || ""; } catch (e) {}
     if (!lang) lang = navigator.language || "en";
     var zh = lang.toLowerCase().indexOf("zh") === 0;
+    if (location.pathname === "/" && slug.indexOf("researcher") !== 0 && slug.indexOf("esm_survey") !== 0 && slug.indexOf("consent") !== 0 && slug.indexOf("sick") !== 0) {
+      var hero = slug.indexOf("notchsafety") === 0
+        ? (zh ? ${JSON.stringify(heroImageCarecnc)} : ${JSON.stringify(heroImage)})
+        : slug.indexOf("carecnc") === 0 && zh
+          ? ${JSON.stringify(heroImageCarecnc)}
+          : zh
+            ? ${JSON.stringify(heroImageCn)}
+            : ${JSON.stringify(heroImage)};
+      var imagePreload = document.createElement("link");
+      imagePreload.rel = "preload";
+      imagePreload.as = "image";
+      imagePreload.href = hero;
+      imagePreload.setAttribute("fetchpriority", "high");
+      document.head.appendChild(imagePreload);
+    }
     var href;
     if (slug.indexOf("researcher") === 0 || slug.indexOf("esm_survey") === 0 || slug.indexOf("consent") === 0 || slug.indexOf("sick") === 0) href = "/favicon-research.svg";
     else if (slug.indexOf("notchsafety") === 0) href = "/favicon-notchsafety.png";
@@ -84,9 +102,6 @@ export function meta() {
 export function links() {
   return [
     { rel: "stylesheet", href: appCss },
-    { rel: "preconnect", href: "https://fonts.googleapis.com" },
-    { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-    { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Color+Emoji&display=swap" },
   ];
 }
 
@@ -146,19 +161,21 @@ export default function Root() {
             <TooltipProvider>
               <Toaster />
               {mounted ? (
-                <AuthProvider>
-                  <SiteProvider>
-                    <Sonner />
-                    <LocationSharingAgent />
-                    <InspectorGate />
-                    <AIAssistantProvider>
-                      <Suspense fallback={<BootScreen />}>
+                <Suspense fallback={<BootScreen />}>
+                  <AuthProvider>
+                    <SiteProvider>
+                      <Sonner />
+                      <LocationSharingAgent />
+                      <InspectorGate />
+                      <AIAssistantProvider>
                         <SiteRouter />
-                      </Suspense>
-                    </AIAssistantProvider>
-                  </SiteProvider>
-                </AuthProvider>
-              ) : <BootScreen />}
+                      </AIAssistantProvider>
+                    </SiteProvider>
+                  </AuthProvider>
+                </Suspense>
+              ) : (
+                <BootScreen />
+              )}
             </TooltipProvider>
           </QueryClientProvider>
         </ThemeProvider>

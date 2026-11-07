@@ -11,7 +11,6 @@ import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-c
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
-import { runNotificationSkill } from "@/lib/ai-dynamic-knowledge";
 import { fetchCurrentLocation, fetchLocationHistory, writeLocationAndCheckZones, writeLocationSnapshot } from "@/features/location/source.wordpress";
 import { fetchLocationSharingFlags, setLocationSharingFlags } from "@/features/location/sharing-flags";
 import {
@@ -23,7 +22,6 @@ import {
   isSafeZone,
   zoneNameFor,
 } from "@/features/location/zone-types";
-
 
 // NOTE: There is no `safe_zone_alerts` or `location_requests` CCT in the live
 // WordPress backend. Alerts are delivered exclusively via the `notification`
@@ -349,7 +347,7 @@ export async function deleteSafeZoneWordPress(id: string): Promise<void> {
 // filters it down to location events instead of showing an empty list.
 
 export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise<any[]> {
-  const all = await runNotificationSkill("list-notifications");
+  const all = await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("list-notifications");
   return all
       .filter((n: any) => n.type === "location")
       .map((n: any) => ({
@@ -363,11 +361,11 @@ export async function fetchSafeZoneAlertsWordPress(_caredOneId: string): Promise
 
 export async function acknowledgeAlertWordPress(alertId: string): Promise<void> {
   // Alerts are notification rows — acknowledging one marks it read.
-  await runNotificationSkill("mark-notification-read", { id: alertId });
+  await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("mark-notification-read", { id: alertId });
 }
 
 export async function acknowledgeAllAlertsWordPress(_caredOneId: string): Promise<void> {
-  await runNotificationSkill("mark-all-notifications-read");
+  await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("mark-all-notifications-read");
 }
 
 
@@ -438,7 +436,7 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
                                                     `Entered zone: ${zone.zone_type_label}`;
 
       {
-        await runNotificationSkill("send-notification", {
+        await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("send-notification", {
           userIds: [userId],
           includeSelf: true,
           type: "safe_zone_breach",
@@ -453,13 +451,17 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
         await Promise.all(
           receivers
             .filter((rid) => normalizeWpUserId(rid) !== normalizeWpUserId(userId))
-            .map((rid) => runNotificationSkill("send-notification", {
-              userIds: [rid],
-              type: "safe_zone_breach",
-              title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
-              message: msg,
-              actionUrl: `/find?zone=${zone.id}`,
-            })),
+            .map((rid) =>
+              import("@/lib/ai-dynamic-knowledge").then(({ runNotificationSkill }) =>
+                runNotificationSkill("send-notification", {
+                  userIds: [rid],
+                  type: "safe_zone_breach",
+                  title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
+                  message: msg,
+                  actionUrl: `/find?zone=${zone.id}`,
+                }),
+              ),
+            ),
         );
       }
     }
@@ -533,7 +535,7 @@ export async function sendLocationRequestWordPress(input: { caredOneId: string; 
   }
   // Name comes ONLY from CCT 151; no WordPress account name fallback.
   const askerName = (await fetchMyAppUserName().catch(() => "")) || (cn ? "你的护理者" : "Your caregiver");
-  const sent = await runNotificationSkill("send-notification", {
+  const sent = await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("send-notification", {
     userIds: [caredOneUserId],
     type: input.isEmergency ? "emergency_location_request" : "location_request",
     title: input.isEmergency ? (cn ? "🚨 紧急位置请求" : "🚨 Emergency location request") : (cn ? "📍 位置请求" : "📍 Location request"),
@@ -559,7 +561,7 @@ async function notifyRequester(requesterId: number, accept: boolean, emergency =
   const me = getStoredWPUser();
   const cn = zh();
   const name = (await fetchMyAppUserName().catch(() => "")) || (cn ? "被护理者" : "Your cared one");
-  await runNotificationSkill("send-notification", {
+  await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("send-notification", {
     userIds: [requesterId],
     type: "location",
     title: accept ? (cn ? "📍 已收到位置" : "📍 Location received") : (cn ? "位置请求被拒绝" : "Location request declined"),
@@ -639,7 +641,7 @@ export async function enableEmergencyLocationPermissionWordPress(caredOneId: str
 async function notifyEmergencyEnabled(target: number): Promise<void> {
   const cn = zh();
   const askerName = (await fetchMyAppUserName().catch(() => "")) || (cn ? "你的护理者" : "Your caregiver");
-  await runNotificationSkill("send-notification", {
+  await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("send-notification", {
     userIds: [target],
     type: "location",
     title: cn ? "已开启紧急定位许可" : "Emergency location permission is on",

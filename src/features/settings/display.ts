@@ -5,24 +5,27 @@
  */
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  fetchAppSettings,
   applyDisplaySettings,
-  DEFAULT_APP_SETTINGS,
-} from "@/lib/ai-dynamic-knowledge";
+  DEFAULT_DISPLAY_SETTINGS,
+} from "@/features/settings/display-preferences";
 
 export { applyDisplaySettings };
 
 /** Mount once, high in the tree. */
 export function useApplyDisplaySettings() {
+  const { isAuthenticated } = useAuth();
   const { data } = useQuery({
     queryKey: ["appSettings"],
-    queryFn: () => fetchAppSettings(),
+    queryFn: async () => (await import("@/lib/ai-dynamic-knowledge")).fetchAppSettings(),
+    enabled: isAuthenticated,
     staleTime: 60_000,
   });
-  const display = (data ?? DEFAULT_APP_SETTINGS).display;
+  const textSize = data?.display.text_size ?? DEFAULT_DISPLAY_SETTINGS.text_size;
+  const reduceMotion = data?.display.reduce_motion ?? DEFAULT_DISPLAY_SETTINGS.reduce_motion;
 
   useEffect(() => {
-    applyDisplaySettings(display);
-  }, [display.text_size, display.reduce_motion]);
+    applyDisplaySettings({ text_size: textSize, reduce_motion: reduceMotion });
+  }, [textSize, reduceMotion]);
 }

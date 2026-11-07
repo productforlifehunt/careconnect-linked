@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { fetchAppSettings, runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -70,7 +69,9 @@ function loadPrefs(): Prefs {
   }
 }
 function savePrefs(p: Prefs) {
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch {}
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch {
+    // Storage is optional; keep the preference for this session.
+  }
 }
 
 export function MobileBottomBar() {
@@ -89,7 +90,7 @@ export function MobileBottomBar() {
   const { toast } = useToast();
   const { data: appSettings } = useQuery({
     queryKey: ["appSettings"],
-    queryFn: () => fetchAppSettings(),
+    queryFn: async () => (await import("@/lib/ai-dynamic-knowledge")).fetchAppSettings(),
     enabled: isAuthenticated,
   });
   const showHelpBubble = appSettings?.display.help_bubble !== false;
@@ -112,6 +113,7 @@ export function MobileBottomBar() {
 
   const hideHelpBubble = async () => {
     try {
+      const { runSettingSkill } = await import("@/lib/ai-dynamic-knowledge");
       const next = await runSettingSkill("set-help-bubble", false, { settings: appSettings });
       qc.setQueryData(["appSettings"], next);
       toast({
