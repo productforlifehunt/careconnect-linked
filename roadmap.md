@@ -563,6 +563,9 @@
 - [x] 2026-11-03: 其余 19 页逐页预览实点：18 页问号→问答、机器人→普通对话均通过；Meds 页直接打开落到登录页，仍未实点
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
+- [~] 2026-11-07 continuation: Tasks edit button added through GUI; seven persisted actions refill taskTitle=a55, taskDescription=a56, taskLocation=a59, taskDate=a61, taskTime=a62, editId=_ID, showForm=true. Separate Save changes button calls Update Row care_task/editId with five fields, FormatDate YYYY-MM-DD/HH:mm, condition editId, refetch Cared One Task Links, showForm=false. Reload verified workflows and formats. Add button visible when editId falsy; update visible when truthy; both Add entrances reset editId. No actual update submitted; date picker hydration and optional empty-date handling remain unverified.
+- [~] 2026-11-07 continuation: Tasks delete button targets DEL_SLUG=care_task and DEL_ID=current _ID; reused existing DeleteConfirm Block (now used on nine screens). Read-only inspection verified Block modal visible=DEL_ID and Delete Row uses DEL_SLUG/DEL_ID then clears DEL_ID. No real deletion submitted. Task list refresh after confirmed deletion remains unfinished; redundant showDelete screen action remains harmless but unnecessary.
+- [ ] Tasks end-to-end verification remains blocked by intermittent Draftbit Web Preview Updating/frame disappearance. This turn only editor reload verification passed; creation/update/delete persistence, status runtime, pending-only totals, optional-date parity and failure feedback not completed. Original app was not browser-scanned; original notes/REL325 untouched. Full-app items below remain open.
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
