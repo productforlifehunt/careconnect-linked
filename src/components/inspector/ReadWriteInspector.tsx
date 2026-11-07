@@ -959,20 +959,18 @@ export default function ReadWriteInspector() {
           unrelatedSameText: strayMatches.map(
             (m) => m.target.label + " #" + m.row,
           ),
-          pageValueMatches: (info?.matches || [])
-            .slice(0, 12)
-            .map((m) => ({
-              related: realMatches.includes(m),
-              sameCard: !!m.sameCard,
-              target: m.target.label,
-              row: m.row,
-              field: m.field,
-              fieldName: m.fieldName,
-              value: m.value,
-              chain: traceRow(m.row, m.request, pageRequests, path).map(
-                (x) => x.text,
-              ),
-            })),
+          pageValueMatches: (info?.matches || []).slice(0, 12).map((m) => ({
+            related: realMatches.includes(m),
+            sameCard: !!m.sameCard,
+            target: m.target.label,
+            row: m.row,
+            field: m.field,
+            fieldName: m.fieldName,
+            value: m.value,
+            chain: traceRow(m.row, m.request, pageRequests, path).map(
+              (x) => x.text,
+            ),
+          })),
           fieldMatches: realMatches.map((m) => ({
             chain: traceRow(m.row, m.request, pageRequests, path).map(
               (x) => x.text,
@@ -1023,14 +1021,12 @@ export default function ReadWriteInspector() {
               : JSON.stringify(r.rows).slice(0, 800),
           callers: r.callers,
         })),
-        codeRefs: elementRefs
-          .slice(0, 80)
-          .map((r) => ({
-            kind: r.kind,
-            label: r.label,
-            file: `${r.file}:${r.line}`,
-            snippet: r.snippet,
-          })),
+        codeRefs: elementRefs.slice(0, 80).map((r) => ({
+          kind: r.kind,
+          label: r.label,
+          file: `${r.file}:${r.line}`,
+          snippet: r.snippet,
+        })),
       }),
     [
       path,
@@ -1099,14 +1095,12 @@ export default function ReadWriteInspector() {
           fields: returnedFields(r),
           callers: r.callers,
         })),
-        codeRefs: pageRefs
-          .slice(0, 150)
-          .map((r) => ({
-            kind: r.kind,
-            label: r.label,
-            file: `${r.file}:${r.line}`,
-            snippet: r.snippet,
-          })),
+        codeRefs: pageRefs.slice(0, 150).map((r) => ({
+          kind: r.kind,
+          label: r.label,
+          file: `${r.file}:${r.line}`,
+          snippet: r.snippet,
+        })),
       }),
     [path, pageFiles, pageRequests, pageRefs, notes],
   );

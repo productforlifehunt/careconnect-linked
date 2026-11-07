@@ -446,9 +446,7 @@ export async function writeNote(
 }
 
 /** Fresh CCT324 note for one exact position stored in a59; null when unbound. */
-export async function readCCTNoteForKey(
-  key: string,
-): Promise<{
+export async function readCCTNoteForKey(key: string): Promise<{
   id: string;
   title: string;
   text: string;
