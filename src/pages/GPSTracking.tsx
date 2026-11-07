@@ -374,6 +374,7 @@ export default function GPSTracking() {
       const marker = L.marker([person.coordinates.lat, person.coordinates.lng], { icon })
         .addTo(map)
         .bindPopup(`<b>${person.name}</b><br/>${Z("最近上线", "Last seen")}: ${person.lastUpdated}<br/>${person.lastLocation}`);
+      marker.getElement()?.setAttribute("data-inspector-id", `gps-tracking/person-marker/${person.userId}`);
       marker.on("click", () => setSelectedPerson(person));
       markersRef.current.push(marker);
 
