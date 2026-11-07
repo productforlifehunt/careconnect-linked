@@ -3,7 +3,10 @@ import { useEffect } from "react";
 
 function DraftbitSyncTestPage() {
   useEffect(() => {
-    document.title = "Care Connect — Draftbit Sync Test";
+    const titleTimer = window.setTimeout(() => {
+      document.title = "Care Connect — Draftbit Sync Test";
+    }, 0);
+    return () => window.clearTimeout(titleTimer);
   }, []);
 
   return (
