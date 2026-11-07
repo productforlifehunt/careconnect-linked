@@ -22,15 +22,21 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { useApplyDisplaySettings } from "@/features/settings/display";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { LocationSharingAgent } from "@/components/location/LocationSharingAgent";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary as AppErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/NotFound";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
-import { InspectorGate } from "@/components/inspector/InspectorGate";
 import { lazyRetry } from "@/lib/lazy-retry";
 
+const LocationSharingAgent = lazyRetry(
+  () => import("@/components/location/LocationSharingAgent").then((module) => ({ default: module.LocationSharingAgent })),
+  "LocationSharingAgent",
+);
+const InspectorGate = lazyRetry(
+  () => import("@/components/inspector/InspectorGate").then((module) => ({ default: module.InspectorGate })),
+  "InspectorGate",
+);
 const SafetyApp = lazyRetry(() => import("@/pages/safety/SafetyApp"), "SafetyApp");
 const EsmApp = lazyRetry(() => import("@/pages/esm/EsmApp"), "EsmApp");
 const ResearcherApp = lazyRetry(() => import("@/pages/researcher/ResearcherApp"), "ResearcherApp");
@@ -112,7 +118,19 @@ function useMounted() {
 }
 
 function BootScreen() {
-  return <div className="min-h-dvh bg-background" aria-busy="true" />;
+  return (
+    <div className="min-h-dvh bg-background" aria-busy="true" role="status" aria-label="Loading application">
+      <div className="mx-auto w-full max-w-6xl animate-pulse px-4 py-6" aria-hidden="true">
+        <div className="h-12 rounded-xl bg-muted" />
+        <div className="mt-8 min-h-[52vh] rounded-2xl bg-muted/70" />
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="h-28 rounded-xl bg-muted/70" />
+          <div className="h-28 rounded-xl bg-muted/70" />
+          <div className="h-28 rounded-xl bg-muted/70" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SiteRouter() {
@@ -165,8 +183,12 @@ export default function Root() {
                   <AuthProvider>
                     <SiteProvider>
                       <Sonner />
-                      <LocationSharingAgent />
-                      <InspectorGate />
+                      <Suspense fallback={null}>
+                        <LocationSharingAgent />
+                      </Suspense>
+                      <Suspense fallback={null}>
+                        <InspectorGate />
+                      </Suspense>
                       <AIAssistantProvider>
                         <SiteRouter />
                       </AIAssistantProvider>
