@@ -30,11 +30,17 @@ import { reportLovableError } from "@/lib/lovable-error-reporting";
 import { lazyRetry } from "@/lib/lazy-retry";
 
 const LocationSharingAgent = lazyRetry(
-  () => import("@/components/location/LocationSharingAgent").then((module) => ({ default: module.LocationSharingAgent })),
+  () =>
+    import("@/components/location/LocationSharingAgent").then((module) => ({
+      default: module.LocationSharingAgent,
+    })),
   "LocationSharingAgent",
 );
 const InspectorGate = lazyRetry(
-  () => import("@/components/inspector/InspectorGate").then((module) => ({ default: module.InspectorGate })),
+  () =>
+    import("@/components/inspector/InspectorGate").then((module) => ({
+      default: module.InspectorGate,
+    })),
   "InspectorGate",
 );
 const SafetyApp = lazyRetry(() => import("@/pages/safety/SafetyApp"), "SafetyApp");
@@ -119,8 +125,16 @@ function useMounted() {
 
 function BootScreen() {
   return (
-    <div className="min-h-dvh bg-background" aria-busy="true" role="status" aria-label="Loading application">
-      <div className="mx-auto w-full max-w-6xl animate-pulse px-4 py-6" aria-hidden="true">
+    <div
+      className="min-h-dvh bg-background"
+      aria-busy="true"
+      role="status"
+      aria-label="Loading application"
+    >
+      <div
+        className="mx-auto w-full max-w-6xl animate-pulse px-4 py-6"
+        aria-hidden="true"
+      >
         <div className="h-12 rounded-xl bg-muted" />
         <div className="mt-8 min-h-[52vh] rounded-2xl bg-muted/70" />
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
