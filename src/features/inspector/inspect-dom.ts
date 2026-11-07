@@ -101,11 +101,12 @@ function useSiteOf(node: Element, own: string): string | undefined {
  * from more than one place, so single-use components keep their existing notes.
  */
 export function sharedCallSite(owner: Element | null): string | undefined {
-  const raw = owner?.getAttribute("data-tsd-source"); if (!owner || !raw) return undefined;
+  const attr = owner?.hasAttribute("data-inspector-source") ? "data-inspector-source" : "data-tsd-source";
+  const raw = owner?.getAttribute(attr); if (!owner || !raw) return undefined;
   const own = fileOf(raw);
   const mine = useSiteOf(owner, own); if (!mine) return undefined;
   const sites = new Set<string>();
-  document.querySelectorAll(`[data-tsd-source="${CSS.escape(raw)}"]`).forEach((n) => { if (!n.closest("[data-rw-inspector]")) sites.add(useSiteOf(n, own) || ""); });
+  document.querySelectorAll(`[${attr}="${CSS.escape(raw)}"]`).forEach((n) => { if (!n.closest("[data-rw-inspector]")) sites.add(useSiteOf(n, own) || ""); });
   return sites.size > 1 ? mine : undefined;
 }
 

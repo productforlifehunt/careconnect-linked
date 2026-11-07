@@ -30,8 +30,13 @@ export function inspectorSourcePlugin(): Plugin {
       };
       visit(source);
       if (!edits.length) return;
+      const counts = new Map<string, number>();
+      for (const edit of edits) {
+        const key = `${edit.line}:${edit.tag}`;
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
       for (const edit of edits.reverse()) {
-        const unique = edits.filter(other => other.line === edit.line && other.tag === edit.tag).length === 1;
+        const unique = counts.get(`${edit.line}:${edit.tag}`) === 1;
         code = code.slice(0, edit.pos) + ` data-inspector-source=${JSON.stringify(`${edit.value}:${unique ? '1' : '0'}`)}` + code.slice(edit.pos);
       }
       return { code, map: null };
