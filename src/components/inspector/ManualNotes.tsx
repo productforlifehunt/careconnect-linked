@@ -180,8 +180,27 @@ export function ManualNotes({
     setSavedTitle("");
     setVerified(false);
     setSavedVerified(false);
+    setState({ loading: true });
+    const uniqueLegacyKeys = [
+      ...(legacyKeys || []),
+      legacyKey,
+      legacySourceKey,
+    ].filter((key): key is string => !!key && key !== noteKey);
+    const legacy = [
+      ...new Set(uniqueLegacyKeys),
+    ].map((key) => ({ key, label }));
     const apply = async (
       map: Awaited<ReturnType<typeof inspectorNotesCache.load>>,
+      migration?: {
+        warning?: string;
+        migrationCandidates?: Array<{
+          key: string;
+          id: string;
+          title: string;
+          label: string;
+          reason: string;
+        }>;
+      },
     ) => {
       if (!live || session !== (getWPToken() || "")) return;
       // Only the visible-element identity (page + component names + markup position), identical in preview
@@ -191,7 +210,13 @@ export function ManualNotes({
       setText(n?.text || "");
       setSaved(n?.text || "");
       onChange?.(n?.text || "");
-      setState({ at: n?.updatedAt });
+      setState({
+        at: n?.updatedAt,
+        ...(migration?.warning ? { warning: migration.warning } : {}),
+        ...(migration?.migrationCandidates?.length
+          ? { migrationCandidates: migration.migrationCandidates }
+          : {}),
+      });
       setSelected(n?.id);
       setChoice(n?.id);
       setTitle(n?.title || label.slice(0, 240));
@@ -210,7 +235,6 @@ export function ManualNotes({
         new Map(hit ? [[noteKey, hit]] : []) as Parameters<typeof apply>[0],
       );
     else {
-      setState({ loading: true });
       setText("");
       setSaved("");
       onChange?.("");
@@ -222,9 +246,8 @@ export function ManualNotes({
           priorLabel: label,
           page,
           ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
-          ...(legacySourceKey
-            ? { legacy: { key: legacySourceKey, label } }
-            : {}),
+          ...(legacy.length ? { legacy } : {}),
+          ...(alias ? { alias } : {}),
         },
       })
         .then((r) => {
@@ -233,6 +256,11 @@ export function ManualNotes({
           if (n) oneCache.set(`${session}|${noteKey}`, n);
           return apply(
             new Map(n ? [[noteKey, n]] : []) as Parameters<typeof apply>[0],
+            {
+              warning: "warning" in r ? r.warning : undefined,
+              migrationCandidates:
+                "migrationCandidates" in r ? r.migrationCandidates : undefined,
+            },
           );
         })
         .catch((e) => live && setState({ error: String(e) }));
@@ -240,7 +268,7 @@ export function ManualNotes({
     return () => {
       live = false;
     };
-  }, [noteKey, priorKey, legacyKey, legacySourceKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [noteKey, priorKey, legacyKey, legacySourceKey, legacyKeys, alias, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
   const stableAnchor = async () => {
     const match = fingerprint?.match(/^([^:]+):(\d+):\d+:([0-9a-f]{64}):1$/);
     if (!match || !tag) return {};
@@ -266,6 +294,7 @@ export function ManualNotes({
         create: creating,
         verified,
         text,
+        ...(alias ? { alias } : {}),
         ...anchor,
       },
     }).catch(
@@ -302,6 +331,7 @@ export function ManualNotes({
           scope,
           page,
           label,
+          ...(alias ? { alias } : {}),
           ...(await stableAnchor()),
         },
       });
@@ -331,6 +361,20 @@ export function ManualNotes({
             ? `当前注释：${savedTitle} · CCT324 #${selected}`
             : "当前没有已保存的注释"}
       </p>
+      {state.warning && (
+        <div className="space-y-1 rounded-md border border-amber-500/50 bg-amber-50 p-2 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100">
+          <p role="status">{state.warning}</p>
+          {state.migrationCandidates?.length ? (
+            <ul className="list-disc space-y-0.5 pl-4">
+              {state.migrationCandidates.map((candidate) => (
+                <li key={`${candidate.id}|${candidate.key}`}>
+                  CCT324 #{candidate.id} · {candidate.title}：{candidate.reason}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>

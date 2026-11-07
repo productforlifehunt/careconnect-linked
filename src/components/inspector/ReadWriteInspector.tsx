@@ -828,6 +828,15 @@ export default function ReadWriteInspector() {
     : info?.sources[0]
       ? `el|${pathname}|${info.sources[0] || info.components.join("<")}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}${info.itemSlot ? `|${info.itemSlot}` : ""}`
       : "";
+  const legacySourceKey =
+    info &&
+    !info.anchor.names[0]?.startsWith("scope:") &&
+    info.sources[0]
+      ? `el|${pathname}|${info.sources[0]}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}`
+      : "";
+  const legacyKeys = [legacyKey, legacySourceKey].filter(
+    (key): key is string => !!key && key !== elementKey,
+  );
   const elementAliasKey = info
     ? elementAlias(pathname, info.components, info.tag, info.itemSlot)
     : "";
@@ -1356,17 +1365,9 @@ export default function ReadWriteInspector() {
                     key={elementKey}
                     noteKey={elementKey}
                     priorKey={uniquePriorKey}
-                    legacyKey={
-                      info.anchor.names[0]?.startsWith("scope:")
-                        ? legacyKey
-                        : undefined
-                    }
-                    legacySourceKey={
-                      info.anchor.names[0]?.startsWith("scope:") ||
-                      !info.sources[0]
-                        ? undefined
-                        : `el|${pathname}|${info.sources[0]}|${info.tag}${info.callSite ? `@${info.callSite}` : ""}`
-                    }
+                    legacyKey={legacyKey || undefined}
+                    legacySourceKey={legacySourceKey || undefined}
+                    legacyKeys={legacyKeys}
                     fingerprint={fingerprint}
                     alias={elementAliasKey}
                     scope="element"
