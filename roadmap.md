@@ -2,7 +2,8 @@
 - [x] Snapshotted legacy manifest (6,519 bindings), overrides (148 files), effective bindings (6,663), all 10,480 notes and all 35 REL325 links; preserved pre-existing a59 metadata.
 - [x] Active position reads/writes use only CCT324 a59 inspectorBindings; exact keys and existing numeric-route behavior retained. No automatic source-key remapping or REL325 writes.
 - [x] Migrated 6,663/6,663 effective bindings on 6,640 existing records through API. Fresh full 10,480-row readback found zero binding/body/title/app/check-state mismatches; REL325 all 35 links exactly unchanged. Plugin normalized 5,304 empty field representations (null to empty string); modified timestamps update normally. Original Cloud files remain inactive backups.
-- [x] Researcher settings page #6145 and visible personal form #10567 read through the UI and survive full reload with zero page errors; screenshots inspected. Exhaustive binding data verification is not an every-page visual matching audit. Not published; production remains on its prior code until explicitly published.
+- [x] Researcher settings page #6145 and visible personal form #10567 read through the UI and survive full reload with zero page errors; screenshots inspected. Exhaustive binding data verification is not an every-page visual matching audit.
+- [x] Published 2026-11-07; live careconnect-linked.lovable.app verified with researcher account: /settings whole-page mode reads related note #10564 via REL325 from CCT324 a59, and the same binding survives a full page reload with zero page errors. Only the settings page was visually re-verified on production; other pages' bindings are data-verified (6,663/6,663 readback) but not individually clicked on the live site.
 
 ## Current request: AI dialog / Settings element recognition and Inbox note scope (2026-11-06)
 - [ ] Reproduce dialog/form element binding failures; ensure preview and published builds share stable visible-element identity.
