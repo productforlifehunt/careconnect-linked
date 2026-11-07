@@ -103,7 +103,7 @@ async function writeBindingsOnly(row: CCTRow, bindings: NoteBinding[]): Promise<
   const a59 = updatePositionBindings(row.a59, bindings);
   await wp(`/${row._ID}`, 'POST', { a59 });
   const saved = await wp(`/${row._ID}`) as CCTRow;
-  if (saved.a59 !== a59 || saved.a55 !== row.a55 || saved.a56 !== row.a56 || saved.a58 !== row.a58) throw new Error('元素绑定保存后核对不一致，未确认保存。');
+  if (saved.a59 !== a59 || saved.a55 !== row.a55 || saved.a56 !== row.a56 || (saved.a58 || '') !== (row.a58 || '')) throw new Error('元素绑定保存后核对不一致，未确认保存。');
 }
 async function storeBinding(binding: NoteBinding) {
   const rows = await bindingRows(binding.key);
