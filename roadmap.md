@@ -616,3 +616,12 @@
 - [x] 2026-11-03 群组页底部加 Fetch 4（Get Group，groupId=SEL_GROUP）+ 文字 gCode："Join code: {{a58}}  Group page: careconnect-linked.lovable.app/care-circle/{{_ID}}"（未测；加入码只显示不进链接）
 - [x] 2026-11-03 加入码改为只给群主/管理员看（对照原版 GroupSettingsTab 仅 isAdmin 可见）：Fetch 5(Get Group) 移入成员列表，显示条件=本人(child_object_id==USER_ID)；gCode 条件 a56 Includes b56（群主），gCode 2 条件 JsonStringify(a56)==JsonStringify(["b57"])（纯管理员，避免群主+管理员重复显示）。未测。
 - [ ] AI分析：已测首页/被护理者/群组/收件箱/通知/社区约33个值；剩：群组日历/相册/子群组/邀请、被护理者紧急联系人、个人资料、亲友声音空状态；群任务额外个人任务查询是否多余待核实
+
+## Build compatibility only — 2026-11-07
+- [x] Compare live GitHub draftbit head with local HEAD: both a5efbae2fc8eb77ce76c30b66deb35e197bf94b2 at inspection; no branch switching or business edits.
+- [x] Read full available build log: browser build succeeded, deploy dist-check failed; dynamic/static import message is a chunking warning, not the dist failure.
+- [x] Restore framework-native production orchestration using react-router build; retain SSR, routes, Yarn, authorization and Draftbit guards.
+- [~] Latest automatic check at 13:41:28Z reports build OK without detailed type/build output. No client/server artifacts remain in this sandbox, so full production-package and SSR deployment verification is still blocked by missing job evidence and undocumented host adapter contract. Do not treat directory renaming as a remedy.
+- [x] Repeat identical home/auth/search preview check: home content, login form and search controls render; no pageerror. First pass showed missing optimized-dependency chunks; repeat recovered without business-code changes. Search data completion and sign-in were not tested.
+- [x] Routing and inspector identity tests: 2 files, 5/5 tests passed.
+- [ ] Real Draftbit runtime/install/Recheck and production SSR hosting remain unverified; no surviving Draftbit browser session in this sandbox. Do not claim dual-editor compatibility.
