@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { resolveSourceNote, sourceDigest, isGeneratedNote } from "./source-notes";
+import { matchingLegacyLabel } from "./legacy-match";
 
 it("resolves a listing wrapper independently of page path and stored display text", async () => {
   const code = "<Card>{post.title}</Card>";
@@ -32,4 +33,10 @@ it('selects exactly one persisted note when same-line source candidates exist', 
   const a = {key:'source|a',id:'11',text:'第一条',updatedAt:'today',source};
   const b = {key:'source|b',id:'12',text:'第二条',updatedAt:'today',source};
   expect(await resolveSourceNote(new Map([[a.key,a],[b.key,b]]),'page.tsx:1','span',async()=>code)).toEqual(a);
+});
+
+it("matches old labels when only a rendered numeric value changed", () => {
+  expect(matchingLegacyLabel("<p> 0 · Dashboard", "<p> 1 · Dashboard")).toBe(true);
+  expect(matchingLegacyLabel("<button> 0 Pending Tasks · Dashboard", "<button> 1 Pending Tasks · Dashboard")).toBe(true);
+  expect(matchingLegacyLabel("<p> 0 · Dashboard", "<p> 1 · Other Page")).toBe(false);
 });
