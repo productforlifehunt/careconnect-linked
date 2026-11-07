@@ -64,6 +64,9 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    // Synchronous init: the default schedules a timer on import, which
+    // Cloudflare Workers rejects during server bundle startup.
+    initAsync: false,
     fallbackLng: "en",
     interpolation: {
       escapeValue: false,
