@@ -1,0 +1,4 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/inbox-B4TW6FCJ.js
+var inbox_default = "import { createFileRoute } from \"@tanstack/react-router\";\nimport Inbox from \"@/pages/Inbox\";\nimport { RequireAuth } from \"@/components/auth/RequireAuth\";\n\nfunction RouteInboxPage() {\n  return <RequireAuth><Inbox /></RequireAuth>;\n}\n\nexport const Route = createFileRoute(\"/inbox\")({\n  head: () => ({ meta: [\n    { title: \"Inbox · Family Care\" },\n    { name: \"description\", content: \"Your care messages, notifications and unread items.\" },\n    { property: \"og:title\", content: \"Inbox · Family Care\" },\n    { property: \"og:description\", content: \"Your care messages, notifications and unread items.\" },\n    { property: \"og:type\", content: \"website\" },\n    { name: \"twitter:card\", content: \"summary\" },\n  ] }),\n  component: RouteInboxPage,\n});\n";
+//#endregion
+export { inbox_default as default };

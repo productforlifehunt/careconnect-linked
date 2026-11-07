@@ -33,8 +33,15 @@ export function inspectorSourcePlugin(): Plugin {
       const visit = (node: ts.Node) => {
         if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
           const tag = node.tagName.getText(source);
+          const formTag = /^(input|textarea|select|button|form|a|option)$/i.test(tag);
+          const dynamicAttribute = node.attributes.properties.some((p) =>
+            ts.isJsxAttribute(p) && p.initializer && ts.isJsxExpression(p.initializer),
+          );
+          const dynamicChild = ts.isJsxOpeningElement(node) && ts.isJsxElement(node.parent) &&
+            node.parent.children.some((c) => ts.isJsxExpression(c) && !!c.expression);
           if (
             /^[A-Za-z][\w-]*$/.test(tag) &&
+            (formTag || dynamicAttribute || dynamicChild) &&
             !node.attributes.properties.some(
               (p) =>
                 ts.isJsxAttribute(p) &&

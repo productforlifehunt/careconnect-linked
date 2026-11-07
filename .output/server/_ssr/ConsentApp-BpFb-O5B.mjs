@@ -1,0 +1,374 @@
+import { s as __toESM } from "../_runtime.mjs";
+import { i as require_react } from "../_libs/dnd-kit__accessibility+react.mjs";
+import { B as require_jsx_runtime } from "../_libs/@radix-ui/react-alert-dialog+[...].mjs";
+import { t as Button } from "./button-DgaEzEqC.mjs";
+import { n as CardContent, t as Card } from "./card-DGU2jav_.mjs";
+import { En as CircleCheck, nn as FileText } from "../_libs/lucide-react.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/ConsentApp-BpFb-O5B.js
+var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_jsx_runtime = require_jsx_runtime();
+/**
+* Informed-consent micro site (`/?__site=consent`).
+*
+* One static bilingual page for study participants: it states the interview
+* study per standard consent convention and collects a single confirmation
+* tap. It deliberately shows no care-app brand or navigation, keeps the
+* ethics approval fields unnumbered (the approval letter's number and date
+* fields are blank — never invent values), and persists nothing to any
+* backend; the confirmation is a local, per-browser marker only.
+*/
+var STORAGE_KEY = "consent-confirmed:hznu-caregiver-study";
+function localDate() {
+	const d = /* @__PURE__ */ new Date();
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function Section({ title, children }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+		"data-inspector-id": "pages/consent/ConsentApp/Section/section/0",
+		"data-inspector-source": "pages/consent/ConsentApp.tsx:25:5:2b2d3a0fe188754ce17d7e87dde63a9fb9f2c8f11d40ebc09de2057211e9d317:1",
+		className: "space-y-1",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+			"data-inspector-id": "pages/consent/ConsentApp/Section/h3/aaf232064610/0",
+			"data-inspector-source": "pages/consent/ConsentApp.tsx:26:7:378e69582d73d04b28b14df8344915e58277b9158b081bfc10c736292d5c3cdc:1",
+			className: "text-base font-semibold text-foreground",
+			children: title
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			"data-inspector-id": "pages/consent/ConsentApp/Section/div/10910087de24/0",
+			"data-inspector-source": "pages/consent/ConsentApp.tsx:27:7:271ddbdf5d64ffb7675375c1f19df757b3ef509021c1c8dd6daab56bb4219421:1",
+			className: "text-sm leading-relaxed text-muted-foreground space-y-1",
+			children
+		})]
+	});
+}
+function ConsentApp() {
+	const [confirmed, setConfirmed] = (0, import_react.useState)(() => {
+		try {
+			return typeof window !== "undefined" && window.localStorage.getItem(STORAGE_KEY) === "1";
+		} catch {
+			return false;
+		}
+	});
+	const [confirmedAt, setConfirmedAt] = (0, import_react.useState)(null);
+	const confirm = () => {
+		const today = localDate();
+		setConfirmed(true);
+		setConfirmedAt(today);
+		try {
+			window.localStorage.setItem(STORAGE_KEY, "1");
+		} catch {}
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/0",
+		"data-inspector-source": "pages/consent/ConsentApp.tsx:47:5:1f3f5a39f19e1b2bccd04cea6e88041e30b82ef38b8b7a368169c1144ca8b2fd:1",
+		className: "min-h-dvh bg-background",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", {
+			"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/main/0",
+			"data-inspector-source": "pages/consent/ConsentApp.tsx:48:7:9f1b93ae0ec635bca32c83bc5f96773b2dabb46427d2144233887bfd10f86c1d:1",
+			className: "mx-auto max-w-2xl px-4 py-10 sm:py-14",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+					"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/header/0",
+					"data-inspector-source": "pages/consent/ConsentApp.tsx:49:9:aa77e2cb6c3566c72b10765fa8832a02abfaab4c0df95a92a8116632e2fa5b68:1",
+					className: "text-center space-y-2 mb-8",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/1",
+							"data-inspector-source": "pages/consent/ConsentApp.tsx:50:11:dae6564b0f2040f807455768681cef0d81910e657d01de031e56fdef1b50a8db:1",
+							className: "flex justify-center",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/span/0",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:51:13:283c65f911c42598cf258135f69e758f9a4c696386297dc7906c3744963c2590:1",
+								className: "inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FileText, {
+									"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/FileText/0",
+									"data-inspector-source": "pages/consent/ConsentApp.tsx:52:15:98af59887bf5430c29949f48b83cb915b6c8397587fc343f7d463422132be66d:1",
+									className: "h-5 w-5",
+									"aria-hidden": "true"
+								})
+							})
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+							"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/h1/0",
+							"data-inspector-source": "pages/consent/ConsentApp.tsx:55:11:d7687f52b9e5dc505e38ff2bc43e21468ad4afb856f9d1b535a2115e8565e879:1",
+							className: "text-2xl font-bold tracking-tight text-foreground",
+							children: "Informed Consent · 知情同意书"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/0",
+							"data-inspector-source": "pages/consent/ConsentApp.tsx:56:11:b139adbc8a0250633a9cff3737cffcc019d49ec169ff3d4855c5617614d3e17a:1",
+							className: "text-sm text-muted-foreground",
+							children: "School of Nursing, Hangzhou Normal University · 杭州师范大学护理学院"
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
+					"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Card/0",
+					"data-inspector-source": "pages/consent/ConsentApp.tsx:61:9:c72e198e702edeab3b1edd43e511c682a6935a40335055f129c1a5107fef894e:1",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(CardContent, {
+						"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/CardContent/0",
+						"data-inspector-source": "pages/consent/ConsentApp.tsx:62:11:411ab94931fa952faced1d541d2d89b062294039789796539025010dcb853e85:1",
+						className: "pt-6 space-y-6",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/2",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:63:13:a7542a46e13311b9d63af472c24ea3594062567b1983a94bda0c507d0aa739fe:1",
+								className: "rounded-lg bg-muted/60 p-4 space-y-1",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/1",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:64:15:be77aaa46c3de7e17c5bf42f31e763c8cbe9f30c13e773212df46e7eea0aa263:1",
+										className: "text-sm font-semibold text-foreground",
+										children: "Study: A Study of Home-Based Care and Caregiver Needs for People with Alzheimer's Disease"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/2",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:67:15:be77aaa46c3de7e17c5bf42f31e763c8cbe9f30c13e773212df46e7eea0aa263:1",
+										className: "text-sm font-semibold text-foreground",
+										children: "项目名称：《阿尔茨海默症患者居家照顾现状与照顾者需求研究》"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/3",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:70:15:330a532565ca707d7287923fe79c41c9fea5e36376ae8c6995c1c871a5a49a79:1",
+										className: "text-xs text-muted-foreground",
+										children: "Investigators: Jiang Guowei (doctoral candidate, principal investigator); Prof. Cao Shihua (co-supervising professor) · 项目负责人：江国维（博士生）；曹世华（合作博士生导师）"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/4",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:74:15:330a532565ca707d7287923fe79c41c9fea5e36376ae8c6995c1c871a5a49a79:1",
+										className: "text-xs text-muted-foreground",
+										children: "This study protocol and its informed consent form have been reviewed and approved by the Ethics Committee of the School of Nursing, Hangzhou Normal University. 本研究方案与知情同意书已经杭州师范大学护理学院伦理委员会审查通过。"
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/3",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:82:13:fc217957b0936f971793d9339d74ac109a1acc1aa32b8677ef382a31b9e9270e:1",
+								className: "space-y-4",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/h2/0",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:83:15:ccbd0fa2e311928d131e5ba613ddcd9e6b993ee790275828e2bee39798dcfe63:1",
+										className: "text-lg font-semibold text-foreground",
+										children: "English"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/0",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:84:15:9bdfc5b6b169214d5c48f30ed2cf5f152724cabaccca565f547ac9df6f24420c:1",
+										title: "1. Purpose of the study",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/5",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:85:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "You are invited to take part in a research study about home-based care for people with Alzheimer's disease and the needs of their family caregivers. The study aims to understand caregiving situations, common caregiving difficulties, how caregivers obtain knowledge and support, and how they cooperate with other caregivers, so that better caregiving support tools and services can be developed."
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/1",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:93:15:425d5d7a12908492d3c53011d989f27bc53454162e2dccf083d530db3ebc9480:1",
+										title: "2. What participation involves",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/6",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:94:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "You may be asked to complete questionnaires, record your caregiving experiences over one week using a study platform, where you may write text or record voice or video, and take part in interviews. Taking part in each part of the study is your own choice."
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/2",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:101:15:df24216279488fe36f32629a55c055886461ef2d882aef82f2b45cd33aeaa9d3:1",
+										title: "3. Voluntary participation",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/7",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:102:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "Participation is entirely voluntary. You may decline to answer any question or withdraw from the study at any time, without any penalty and without affecting any care or service you receive."
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/3",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:108:15:215d3f786bf317f548a58c18cff40ff943f105fd087bb7d70f2951da4e0f2145:1",
+										title: "4. Risks and discomforts",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/8",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:109:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "The study is expected to involve minimal risk. Some questions may touch on stressful caregiving experiences; you may skip any of them."
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/4",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:114:15:5d83121660c13da838cfe0adcf319404001ba97018db2133bfc94f3167c6c0a5:1",
+										title: "5. Privacy and confidentiality",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/9",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:115:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "Your information will be stored securely, used only for this research, and handled in a way that protects your identity. Audio or video recordings are made only with your permission and are used only for research analysis. Results will be reported in written form, including anonymized quotations from interviews, and will not include any information that could identify you personally. Audio and video recordings will not be presented or played in any publication or public presentation of this study."
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/5",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:124:15:2905c8060b1c67147d0b88e8f0fac3bd235d4281b39c21ab3493c9ba3fd68f7b:1",
+										title: "6. Contact",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/10",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:125:17:caa708d68f31997a3ff661d941efb9c0b2737f311f9f3046ea4f0082f76cb6e2:1",
+											children: "If you have any questions about the study or your rights as a participant, please contact the research team."
+										})
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/4",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:129:13:88e7272ef947d40b85bf6b8fdc9f72600adf0648b0ddc3c1c0628f77ae046c43:1",
+								className: "border-t border-border",
+								"aria-hidden": "true"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/5",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:132:13:fc217957b0936f971793d9339d74ac109a1acc1aa32b8677ef382a31b9e9270e:1",
+								className: "space-y-4",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/h2/1",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:133:15:b3881a2fabe0453e9e514d11a03f8ccd26ca00438438400cbe22d61b4f632da7:1",
+										className: "text-lg font-semibold text-foreground",
+										children: "中文"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/6",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:134:15:87c17dea79b279aa1042db107114ec71cd2a56e58d917774d180a7aa674569a0:1",
+										title: "一、研究目的",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/11",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:135:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "邀请您参加一项关于失智症患者居家照护及其家庭护理者需求的研究。研究希望了解护理者的照护情况、常见照护困难、照护知识与支持的获取方式，以及与其他护理者的合作情况，以便为开发更好的照护支持工具和服务提供依据。"
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/7",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:139:15:8ff49357e9eb2a33ed20ce864e2e6d4cacce0f13c0a383980271e08561d184bd:1",
+										title: "二、参加内容",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/12",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:140:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "参加本研究可能需要您填写问卷，在一周内通过研究平台记录照护经历（可文字记录，也可语音或视频记录），并参加访谈。是否参加每一部分，均由您自行决定。"
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/8",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:144:15:21fe6e7f9d6143aec9e82a5db62c2e7fab60a60ffb0aa735f7bca85e4e17e353:1",
+										title: "三、自愿参加",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/13",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:145:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "参加本研究完全自愿。您可以拒绝回答任何问题，也可以随时退出研究，这不会给您带来任何不利影响，也不会影响您获得的任何护理或服务。"
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/9",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:149:15:e018a6c3e08e045d5f4c63065ac0a7842d53e26724138cc63187aab093f62459:1",
+										title: "四、风险与不适",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/14",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:150:17:644fbea5b22aeeff30b3c53b259ac841b81dbd728702b2f61adf724bed7afbd6:1",
+											children: "本研究预期风险很小。部分问题可能涉及照护中压力较大的经历，您可以随时跳过。"
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/10",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:152:15:043704f7218e2dbeb35ee13c578ed86b93300362e15a6667c062ad6aaeefcec4:1",
+										title: "五、隐私与保密",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/15",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:153:17:c6a6e498a244a7e483d471c20e997bc72456b2c4e3b5e3ddc778a5a1edf2efb3:1",
+											children: "您的信息将被安全保存，仅用于本研究，并以保护您身份的方式处理。录音或录像仅在您允许的情况下进行，且仅用于研究分析。研究结果仅以文字形式呈现（包括引用访谈中的匿名原话），不会包含任何能够识别您个人身份的信息。录音与录像文件均不会在研究发表或公开演示中呈现。"
+										})
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Section, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Section/11",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:157:15:25e8fb72fad3c3cca41f8e3b10674fbfebe50f2c29fc20834bb1c8582886869f:1",
+										title: "六、联系方式",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/16",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:158:17:cc4f3b8b9b31be49f6dd275ea675f1317904b2150c2f50e7122bdc73bf139314:1",
+											children: "如您对本研究或作为参加者的权利有任何疑问，请与研究团队联系。"
+										})
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/6",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:162:13:88e7272ef947d40b85bf6b8fdc9f72600adf0648b0ddc3c1c0628f77ae046c43:1",
+								className: "border-t border-border",
+								"aria-hidden": "true"
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/8fb61540cb32/0",
+								"data-inspector-source": "pages/consent/ConsentApp.tsx:164:13:ffa5068b2e51f2ff323fc8c1cc14dada55436c2f5011e3d8d64bbf57cc336bbf:1",
+								className: "space-y-3",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/17",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:165:15:b4efe0453db899f1e6fe561a63f528050b4d1541bcf5f1ceb2b27ecd2119e01a:1",
+										className: "text-sm leading-relaxed text-foreground",
+										children: "I have read and understood the information above, my questions have been answered, and I voluntarily agree to take part in this study."
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/18",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:169:15:b4efe0453db899f1e6fe561a63f528050b4d1541bcf5f1ceb2b27ecd2119e01a:1",
+										className: "text-sm leading-relaxed text-foreground",
+										children: "我已阅读并理解以上内容，我的疑问已得到解答，我自愿同意参加本研究。"
+									}),
+									confirmed ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/7",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:173:17:c2ebbc26171926feeb4a5c6831613d2c22454e1b2fc268dc5931b7b9b84ebd0e:1",
+										className: "flex items-start gap-3 rounded-lg border border-border bg-muted/60 p-4",
+										role: "status",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/CheckCircle2/0",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:174:19:9ad6af32e47e33cf626eed91577a3c857eac2db58281d6972f247a8a17a9cefa:1",
+											className: "mt-0.5 h-5 w-5 shrink-0 text-primary",
+											"aria-hidden": "true"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/div/8",
+											"data-inspector-source": "pages/consent/ConsentApp.tsx:175:19:26ed612c8ac5c3af6fbacbf352ed1674fdaef0bea45588b4c11cce6bd2d03ac5:1",
+											className: "text-sm",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+												"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/19",
+												"data-inspector-source": "pages/consent/ConsentApp.tsx:176:21:e5c968a0b85e1a4f1600517824c89f755b799c8cdcba7333768a4de1daa2bd7a:1",
+												className: "font-semibold text-foreground",
+												children: "Consent confirmed · 已确认知情同意"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+												"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/4bd43194302a/0",
+												"data-inspector-source": "pages/consent/ConsentApp.tsx:177:21:51c0f092e7c089af42019991739f7fa035345d18e177586028620e424b2135ee:1",
+												className: "text-muted-foreground",
+												children: [
+													"Date: ",
+													confirmedAt ?? "—",
+													" · 日期：",
+													confirmedAt ?? "—",
+													"（本机记录）"
+												]
+											})]
+										})]
+									}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+										"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/Button/3f267c2ab422/0",
+										"data-inspector-source": "pages/consent/ConsentApp.tsx:183:17:2704da883920a659068ebf2d7c80c43707e6d670bb120e845c831b3f372c9f8e:1",
+										size: "lg",
+										className: "w-full",
+										onClick: confirm,
+										children: "确认同意 · I agree"
+									})
+								]
+							})
+						]
+					})
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					"data-inspector-id": "pages/consent/ConsentApp/ConsentApp/p/20",
+					"data-inspector-source": "pages/consent/ConsentApp.tsx:191:9:c41fb7eec3bc4a9316679825d9678a1538b6d1eb7322545f5de13ce0caf552c5:1",
+					className: "mt-6 text-center text-xs text-muted-foreground",
+					children: "Informed consent · 知情同意书 — School of Nursing, Hangzhou Normal University"
+				})
+			]
+		})
+	});
+}
+//#endregion
+export { ConsentApp as default };

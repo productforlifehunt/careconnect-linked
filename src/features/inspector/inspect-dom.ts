@@ -66,7 +66,7 @@ export function stableAnchor(el: Element): { names: string[]; path: string } {
 }
 
 export function inspectorTarget(el: Element): Element {
-  return el.closest('button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="switch"], [role="combobox"], [contenteditable="true"]') || el;
+  return el.closest('[data-inspector-id], button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="switch"], [role="combobox"], [contenteditable="true"]') || el;
 }
 
 /** Previous identity retained for uniquely confirmed old bindings. */
