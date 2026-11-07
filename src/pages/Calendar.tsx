@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
@@ -45,6 +45,7 @@ export default function CalendarPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const calendarRootRef = useRef<HTMLDivElement>(null);
 
   const { data: allEvents = [], isLoading } = useQuery({
     queryKey: ["calendar-events"],
@@ -111,6 +112,46 @@ export default function CalendarPage() {
       next.has(t) ? next.delete(t) : next.add(t);
       return next;
     });
+  };
+
+  const markCalendarToolbar = () => {
+    const root = calendarRootRef.current;
+    if (!root) return;
+    const toolbarSlots = [
+      [".fc-prev-button", "previous"],
+      [".fc-next-button", "next"],
+      [".fc-today-button", "today"],
+      [".fc-dayGridMonth-button", "month-view"],
+      [".fc-timeGridWeek-button", "week-view"],
+      [".fc-listWeek-button", "list-view"],
+    ] as const;
+    for (const [selector, slot] of toolbarSlots) {
+      root.querySelector(selector)?.setAttribute(
+        "data-inspector-id",
+        `components/pages/Calendar/toolbar/${slot}`,
+      );
+    }
+  };
+
+  const markCalendarDay = (arg: { el: HTMLElement }) => {
+    const date = arg.el.getAttribute("data-date");
+    const dayLink = arg.el.querySelector(".fc-daygrid-day-number");
+    if (date && dayLink) {
+      dayLink.setAttribute(
+        "data-inspector-id",
+        `components/pages/Calendar/day/${date}`,
+      );
+    }
+    markCalendarToolbar();
+  };
+
+  const markCalendarWeekday = (arg: { el: HTMLElement; date: Date }) => {
+    const dayLink = arg.el.querySelector(".fc-col-header-cell-cushion");
+    dayLink?.setAttribute(
+      "data-inspector-id",
+      `components/pages/Calendar/weekday/${arg.date.getDay()}`,
+    );
+    markCalendarToolbar();
   };
 
   return (
@@ -188,6 +229,7 @@ export default function CalendarPage() {
         [&_.fc-list-day-cushion]:!bg-muted/60
         [&_.fc-list-event:hover_td]:!bg-accent/40
         [&_.fc-event]:!rounded-md [&_.fc-event]:!border-0 [&_.fc-event]:!px-1.5 [&_.fc-event]:!text-[10px] [&_.fc-event]:!font-medium">
+        <div ref={calendarRootRef} data-inspector-scope="calendar">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, rrulePlugin]}
           initialView="dayGridMonth"
@@ -210,12 +252,15 @@ export default function CalendarPage() {
           nowIndicator
           dayMaxEvents={2}
           fixedWeekCount={false}
+          dayCellDidMount={markCalendarDay}
+          dayHeaderDidMount={markCalendarWeekday}
           dateClick={openCreate}
           eventClick={(info) => {
             setSelectedEvent(info.event.extendedProps as CalendarEvent);
           }}
 
         />
+        </div>
       </Card>
 
         {/* Event detail dialog */}
