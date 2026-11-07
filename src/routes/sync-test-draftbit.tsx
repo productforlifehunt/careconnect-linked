@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 function DraftbitSyncTestPage() {
+  useEffect(() => {
+    document.title = "Care Connect — Draftbit Sync Test";
+  }, []);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 data-testid="careconnect-draftbit-sync-ok" className="text-4xl font-bold">
