@@ -23,7 +23,7 @@ type Msg = { role: "user" | "assistant"; content: string };
  * tapping one answers instantly with no AI call and no cost. The AI is only
  * used for anything the user types that is not covered below.
  */
-type GuideEntry = { q: { zh: string; en: string }; a: { zh: string; en: string } };
+type GuideEntry = { q: { zh: string; en: string }; a: { zh: string; en: string }; inspectorId?: string };
 
 const GUIDE_SHARED: GuideEntry[] = [
   {
@@ -167,7 +167,16 @@ function guideEntries(family: string | undefined): GuideEntry[] {
     | "challenged"
     | "carecnc"
     | "notchsafety";
-  return [...GUIDE_BY_FAMILY[key], ...GUIDE_SHARED];
+  return [
+    ...GUIDE_BY_FAMILY[key].map((entry, index) => ({
+      ...entry,
+      inspectorId: `components/ai/AICompanionChat/guide-${key}-${index}`,
+    })),
+    ...GUIDE_SHARED.map((entry, index) => ({
+      ...entry,
+      inspectorId: `components/ai/AICompanionChat/guide-shared-${index}`,
+    })),
+  ];
 }
 
 /** Reply mode: text only / read aloud / live back-and-forth talk. Remembered. */
@@ -594,7 +603,8 @@ export function AICompanionChat({
           <div className="mt-3 space-y-2">
             {visibleGuide.map((entry) => (
               <button
-                key={entry.q.en}
+                key={entry.inspectorId}
+                data-inspector-id={entry.inspectorId}
                 type="button"
                 onClick={() => answerFromGuide(entry)}
                 className="w-full rounded-xl bg-background px-3 py-2.5 text-left text-sm text-foreground shadow-xs transition-colors hover:bg-accent"
@@ -684,6 +694,7 @@ export function AICompanionChat({
             return (
               <button
                 key={opt.id}
+                data-inspector-id={`components/ai/AICompanionChat/reply-mode-${opt.id}`}
                 type="button"
                 aria-pressed={on}
                 onClick={() => changeMode(opt.id)}
