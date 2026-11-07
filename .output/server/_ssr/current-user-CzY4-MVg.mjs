@@ -1,4 +1,0 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/current-user-CzY4-MVg.js
-var current_user_default = "/**\n * Shared helper to read the current WP user id from localStorage.\n * The stored user object uses `user_id` (not `id`) — see services/wp-auth.ts.\n */\nimport { getStoredWPUser } from \"@/services/wp-auth\";\n\nexport function getCurrentUserId(): string | null {\n  const u = getStoredWPUser();\n  if (!u) return null;\n  const raw = (u as any).user_id ?? (u as any).id;\n  return raw ? String(raw) : null;\n}\n\nexport function getCurrentUserIdNumber(): number | null {\n  const id = getCurrentUserId();\n  if (!id) return null;\n  const n = Number(String(id).replace(/^wp-/, \"\"));\n  return Number.isFinite(n) && n > 0 ? n : null;\n}\n";
-//#endregion
-export { current_user_default as default };

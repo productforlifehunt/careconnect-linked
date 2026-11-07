@@ -1,0 +1,1 @@
+import{t as e}from"./ChallengedArticleDetail-CVSNuy-q.js";var t=e;export{t as component};

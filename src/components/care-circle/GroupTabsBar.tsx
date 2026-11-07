@@ -79,7 +79,7 @@ export function GroupTabsBar({ tabs, activeTab, onSelect, allLabel, isCN }: Grou
     <div className="sticky top-0 z-20 -mx-4 mb-2 border-b border-border bg-background/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex items-center gap-2">
         <div ref={scrollerRef} className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <TabsList className="inline-flex h-auto w-max gap-1 bg-transparent p-0">
+          <TabsList className="inline-flex h-auto w-max !justify-start md:!justify-start gap-1 bg-transparent p-0">
             {orderedTabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}

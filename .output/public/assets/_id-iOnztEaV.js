@@ -1,1 +1,0 @@
-import{t as e}from"./ChallengedArticleDetail-Be60CkTh.js";var t=e;export{t as component};

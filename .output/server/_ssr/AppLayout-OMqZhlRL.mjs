@@ -1,4 +1,0 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/AppLayout-OMqZhlRL.js
-var AppLayout_default = "import { AppHeader } from \"./AppHeader\";\nimport { MobileBottomBar } from \"./MobileBottomBar\";\nimport { PageBackButton } from \"./PageBackButton\";\n\ninterface AppLayoutProps {\n  children: React.ReactNode;\n}\n\nexport function AppLayout({ children }: AppLayoutProps) {\n  return (\n    <div className=\"min-h-dvh flex flex-col w-full overflow-x-hidden\">\n        <AppHeader />\n        {/* The page scrolls with the window, so the header stays pinned at the top. */}\n        <main className=\"flex-1 overflow-x-hidden pb-16\">\n          <div className=\"mx-auto w-full max-w-6xl px-4 pt-2\">\n            <PageBackButton />\n          </div>\n          {children}\n        </main>\n        <MobileBottomBar />\n    </div>\n  );\n}\n";
-//#endregion
-export { AppLayout_default as default };
