@@ -152,7 +152,7 @@ function mapRow(row: CCTRow): CCTNote {
   };
 }
 /** Filter on the existing a59 field; never download the entire note catalogue for one element. */
-async function bindingRows(key: string): Promise<CCTRow[]> {
+async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
   const { routePattern } = await import("@/features/inspector/route-key");
   // Legacy record-specific keys retain their exact spelling. Query their full anchor then verify
   // the complete key, rather than rewriting or guessing a different element's binding.
@@ -166,6 +166,9 @@ async function bindingRows(key: string): Promise<CCTRow[]> {
     const filters = [{ field: "a59", operator: "LIKE", value: encoded }];
     const result = await wp(
       `?_limit=100&_offset=${offset}&_orderby=_ID&_order=asc&_filters=${encodeURIComponent(JSON.stringify(filters))}`,
+      "GET",
+      undefined,
+      token,
     );
     if (!Array.isArray(result)) throw new Error("元素绑定读取异常。");
     rows.push(...(result as CCTRow[]));
@@ -177,9 +180,9 @@ async function bindingRows(key: string): Promise<CCTRow[]> {
     ),
   );
 }
-async function storedBinding(key: string): Promise<NoteBinding | undefined> {
+async function storedBinding(key: string, token?: string): Promise<NoteBinding | undefined> {
   return findPositionBinding(
-    (await bindingRows(key)).flatMap((row) =>
+    (await bindingRows(key, token)).flatMap((row) =>
       positionBindings(row.a59, String(row._ID)),
     ),
     key,
@@ -189,6 +192,7 @@ async function storedBinding(key: string): Promise<NoteBinding | undefined> {
 export async function searchNotes(
   q: string,
   status: "all" | "verified" | "unverified",
+  token?: string,
 ): Promise<{ id: string; title: string; verified: boolean }[]> {
   const words = q
     .trim()
@@ -210,7 +214,7 @@ export async function searchNotes(
       value: status === "verified" ? "b55" : "b56",
     });
   const qs = `?_limit=60&_orderby=_ID&_order=desc${filters.length ? `&_filters=${encodeURIComponent(JSON.stringify(filters))}` : ""}`;
-  const rows = (await wp(qs)) as CCTRow[];
+  const rows = (await wp(qs, "GET", undefined, token)) as CCTRow[];
   if (!Array.isArray(rows)) return [];
   return rows.map((r) => ({
     id: String(r._ID),
@@ -220,10 +224,11 @@ export async function searchNotes(
 }
 export async function readNoteForKey(
   key: string,
+  token?: string,
 ): Promise<InspectorNote | null> {
-  const binding = await storedBinding(key);
+  const binding = await storedBinding(key, token);
   if (!binding?.id) return null;
-  const row = (await wp(`/${binding.id}`)) as CCTRow;
+  const row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== binding.id) throw new Error("绑定的注释不存在。");
   return { ...mapRow(row), ...binding, key };
 }
@@ -235,6 +240,7 @@ export async function readNoteForFingerprint(
   tag: string,
   page: string,
   currentLabel?: string,
+  token?: string,
 ): Promise<InspectorNote | null> {
   const match = fingerprint.match(/^([^:]+):(\d+):(\d+):([0-9a-f]{64}):1$/);
   if (!match) return null;
@@ -244,6 +250,9 @@ export async function readNoteForFingerprint(
     const filters = [{ field: "a59", operator: "LIKE", value: file }];
     const result = await wp(
       `?_limit=100&_offset=${offset}&_orderby=_ID&_order=asc&_filters=${encodeURIComponent(JSON.stringify(filters))}`,
+      "GET",
+      undefined,
+      token,
     );
     if (!Array.isArray(result)) throw new Error("旧注释读取异常。");
     rows.push(...(result as CCTRow[]));
@@ -284,6 +293,7 @@ export async function rebindRecoveredNote(
   page: string,
   label: string,
   alias?: string,
+  token?: string,
 ): Promise<InspectorNote> {
   if (!note.id) throw new Error("恢复的注释缺少 CCT 编号，未修改关联。");
   const binding: NoteBinding = {
@@ -296,16 +306,17 @@ export async function rebindRecoveredNote(
     ...(alias || note.alias ? { alias: alias || note.alias } : {}),
     locked: true,
   };
-  await storeBinding(binding);
+  await storeBinding(binding, token);
   return { ...note, ...binding };
 }
 async function writeBindingsOnly(
   row: CCTRow,
   bindings: NoteBinding[],
+  token?: string,
 ): Promise<void> {
   const a59 = updatePositionBindings(row.a59, bindings);
-  await wp(`/${row._ID}`, "POST", { a59 });
-  const saved = (await wp(`/${row._ID}`)) as CCTRow;
+  await wp(`/${row._ID}`, "POST", { a59 }, token);
+  const saved = (await wp(`/${row._ID}`, "GET", undefined, token)) as CCTRow;
   if (
     saved.a59 !== a59 ||
     saved.a55 !== row.a55 ||
@@ -314,26 +325,27 @@ async function writeBindingsOnly(
   )
     throw new Error("元素绑定保存后核对不一致，未确认保存。");
 }
-async function storeBinding(binding: NoteBinding) {
-  const rows = await bindingRows(binding.key);
-  const target = (await wp(`/${binding.id}`)) as CCTRow;
+async function storeBinding(binding: NoteBinding, token?: string) {
+  const rows = await bindingRows(binding.key, token);
+  const target = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   if (String(target._ID) !== binding.id) throw new Error("所选注释不存在。");
   const retained = positionBindings(target.a59, binding.id).filter(
     (b) => !samePosition(b.key, binding.key),
   );
-  await writeBindingsOnly(target, [...retained, binding]);
+  await writeBindingsOnly(target, [...retained, binding], token);
   // Explicit user reassignment changes only this position, never other positions or REL325.
   for (const row of rows) {
     if (String(row._ID) === binding.id) continue;
-    const fresh = (await wp(`/${row._ID}`)) as CCTRow;
+    const fresh = (await wp(`/${row._ID}`, "GET", undefined, token)) as CCTRow;
     await writeBindingsOnly(
       fresh,
       positionBindings(fresh.a59, String(fresh._ID)).filter(
         (b) => !samePosition(b.key, binding.key),
       ),
+      token,
     );
   }
-  const saved = await storedBinding(binding.key);
+  const saved = await storedBinding(binding.key, token);
   if (saved?.id !== binding.id) throw new Error("元素绑定回读不一致。");
 }
 /**
@@ -345,12 +357,14 @@ const PAGE = 1000;
 const PARALLEL = 3;
 async function readPage(
   offset: number,
+  token?: string,
 ): Promise<{ rows: CCTRow[]; total: number | null }> {
   const user = process.env["WP_ADMIN_USER"];
   const password = process.env["WP_ADMIN_APP_PASSWORD"];
   const headers: Record<string, string> = {};
   if (user && password)
     headers["Authorization"] = `Basic ${btoa(`${user}:${password}`)}`;
+  else if (token) headers["Authorization"] = `Bearer ${token}`;
   const response = await fetch(
     `${CCT_BASE}?_limit=${PAGE}&_offset=${offset}&_orderby=_ID&_order=asc`,
     { headers },
@@ -365,8 +379,8 @@ async function readPage(
     total: Number.isFinite(header) && header > 0 ? header : null,
   };
 }
-async function readAllRows(): Promise<CCTRow[]> {
-  const first = await readPage(0);
+async function readAllRows(token?: string): Promise<CCTRow[]> {
+  const first = await readPage(0, token);
   if (first.rows.length < PAGE) return first.rows;
   const rows: CCTRow[] = [...first.rows];
   if (first.total) {
@@ -374,19 +388,19 @@ async function readAllRows(): Promise<CCTRow[]> {
     for (let o = PAGE; o < first.total; o += PAGE) offsets.push(o);
     for (let i = 0; i < offsets.length; i += PARALLEL) {
       const pages = await Promise.all(
-        offsets.slice(i, i + PARALLEL).map(readPage),
+        offsets.slice(i, i + PARALLEL).map((offset) => readPage(offset, token)),
       );
       for (const p of pages) rows.push(...p.rows);
     }
     // Rows added while reading land past the counted total; pick them up so nothing is missed.
     for (let o = Math.ceil(first.total / PAGE) * PAGE; ; o += PAGE) {
-      const tail = await readPage(o);
+      const tail = await readPage(o, token);
       rows.push(...tail.rows);
       if (tail.rows.length < PAGE) break;
     }
   } else {
     for (let o = PAGE; ; o += PAGE) {
-      const page = await readPage(o);
+      const page = await readPage(o, token);
       rows.push(...page.rows);
       if (page.rows.length < PAGE) break;
     }
@@ -394,8 +408,8 @@ async function readAllRows(): Promise<CCTRow[]> {
   return [...new Map(rows.map((r) => [String(r._ID), r])).values()];
 }
 
-export async function readAllNotes(): Promise<InspectorNote[]> {
-  const rows = await readAllRows();
+export async function readAllNotes(token?: string): Promise<InspectorNote[]> {
+  const rows = await readAllRows(token);
   const bindings = rows.flatMap((row) =>
     positionBindings(row.a59, String(row._ID)),
   );
@@ -406,16 +420,17 @@ export async function readAllNotes(): Promise<InspectorNote[]> {
     ...note,
   }));
 }
-export async function selectNote(binding: NoteBinding): Promise<InspectorNote> {
-  const row = (await wp(`/${binding.id}`)) as CCTRow;
+export async function selectNote(binding: NoteBinding, token?: string): Promise<InspectorNote> {
+  const row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== binding.id) throw new Error("所选注释不存在。");
-  await storeBinding({ ...binding, locked: true });
+  await storeBinding({ ...binding, locked: true }, token);
   return { ...mapRow(row), ...binding, locked: true };
 }
 export async function writeNote(
   note: Omit<InspectorNote, "updatedAt"> & { create?: boolean | undefined },
+  token?: string,
 ): Promise<InspectorNote> {
-  const current = note.create ? undefined : await storedBinding(note.key);
+  const current = note.create ? undefined : await storedBinding(note.key, token);
   let id = note.create ? undefined : note.id || current?.id;
   if (!id) {
     const result = (await wp("", "POST", {
@@ -423,7 +438,7 @@ export async function writeNote(
       a56: note.text,
       a58: note.verified ? "b55" : "b56",
       cct_status: "publish",
-    })) as number | string | { item_id?: number; _ID?: number };
+    }, token)) as number | string | { item_id?: number; _ID?: number };
     id = String(
       typeof result === "number" || typeof result === "string"
         ? result
@@ -436,9 +451,9 @@ export async function writeNote(
       a55: note.title || note.label,
       a56: note.text,
       a58: note.verified ? "b55" : "b56",
-    });
+    }, token);
   }
-  const row = (await wp(`/${id}`)) as CCTRow;
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (
     row.a56 !== note.text ||
     row.a55 !== (note.title || note.label) ||
@@ -455,20 +470,20 @@ export async function writeNote(
     ...(note.alias ? { alias: note.alias } : {}),
     locked: true,
   };
-  await storeBinding(binding);
+  await storeBinding(binding, token);
   return { ...mapRow(row), ...binding };
 }
 
 /** Fresh CCT324 note for one exact position stored in a59; null when unbound. */
-export async function readCCTNoteForKey(key: string): Promise<{
+export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   id: string;
   title: string;
   text: string;
   verified: boolean;
 } | null> {
-  const binding = await storedBinding(key);
+  const binding = await storedBinding(key, token);
   if (!binding?.id) return null;
-  const row = (await wp(`/${binding.id}`)) as CCTRow;
+  const row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== binding.id) return null;
   return {
     id: binding.id,

@@ -2,6 +2,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchCareGroupsWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { R, T, WP } from "@/integrations/wp-schema";
 
 
@@ -165,10 +166,30 @@ export async function fetchCareTasksWordPress(groupId?: string | null | undefine
         ...links.flatMap((rows, index) => (Array.isArray(rows) ? rows : []).map((r) => String(index < groups.length ? r.child_object_id || "" : r.parent_object_id || ""))),
       ].filter(Boolean);
     }
-    const ownById = new Map(ownRows.map((t) => [String(t._ID || t.id), t]));
-    const taskList = (await Promise.all([...new Set(taskIds)].map((id) =>
-      ownById.get(id) || wordpressCCTFetch<any>(CCT_SLUG, { id }),
-    ))).filter(Boolean);
+    const uniqueTaskIds = [
+      ...new Set(
+        taskIds
+          .map((id) => normalizeWpObjectId(id))
+          .filter((id) => Number.isFinite(id) && id > 0)
+          .map(String),
+      ),
+    ];
+    const ownById = new Map(
+      ownRows.flatMap((task) => {
+        const id = normalizeWpObjectId(task._ID || task.id);
+        return id > 0 ? [[String(id), task] as const] : [];
+      }),
+    );
+    const linkedRows = await readLinkedCCTRows(
+      CCT_SLUG,
+      uniqueTaskIds.filter((id) => !ownById.has(id)),
+    );
+    const linkedById = new Map(
+      linkedRows.map((task) => [String(task.id ?? task._ID), task]),
+    );
+    const taskList = uniqueTaskIds
+      .map((id) => ownById.get(id) || linkedById.get(id))
+      .filter(Boolean);
 
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const base = mapTask(t, groupId);

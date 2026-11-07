@@ -13,8 +13,8 @@ it('verifies researcher then saves only the exact existing record and preserves 
   mocks.read.mockResolvedValueOnce(current).mockResolvedValueOnce({...current,title:data.title,text:data.text});
   const result = await invoke();
   expect(mocks.verify).toHaveBeenCalledWith('test-session');
-  expect(mocks.update).toHaveBeenCalledExactlyOnceWith('6855','修改标题','修改后的完整正文',true);
-  expect(mocks.read.mock.calls).toEqual([['6855'],['6855']]);
+  expect(mocks.update).toHaveBeenCalledExactlyOnceWith('6855','修改标题','修改后的完整正文',true,'test-session');
+  expect(mocks.read.mock.calls).toEqual([['6855','test-session'],['6855','test-session']]);
   expect(result.note?.text).toBe('修改后的完整正文');
 });
 it('never writes after auth denial', async () => {

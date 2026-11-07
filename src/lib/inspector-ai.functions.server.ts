@@ -11,8 +11,9 @@ export const analyzeSiteNoteInput = z.object({ page: z.string().max(500), noteId
 export async function explainReadWrite(rawData: unknown, request: Request) {
   const data = explainReadWriteInput.parse(rawData);
 
+    const token = request.headers.get("X-WP-Token") || "";
     const { verifyResearcher, explainInspection } = await import("./inspector-ai.server");
-    try { await verifyResearcher(request.headers.get("X-WP-Token") || ""); }
+    try { await verifyResearcher(token); }
     catch (error) { return { error: error instanceof Error ? error.message : "Forbidden", status: 403 }; }
     // Always compare against the current CCT324 manual notes and their REL325 related notes, read fresh on the server.
     let notes: string;
@@ -22,8 +23,8 @@ export async function explainReadWrite(rawData: unknown, request: Request) {
     try {
       const { readCCTNoteForKey, readRelatedNotes, readNoteById } = await import("./inspector-notes.server");
       const all = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
-        const note = data.noteId ? await readNoteById(data.noteId) : await readCCTNoteForKey(key);
-        return { key: data.noteId && data.scope === 'page' ? 'page|current-selection' : key, note, related: note ? await readRelatedNotes(note.id) : [] };
+        const note = data.noteId ? await readNoteById(data.noteId, token) : await readCCTNoteForKey(key, token);
+        return { key: data.noteId && data.scope === 'page' ? 'page|current-selection' : key, note, related: note ? await readRelatedNotes(note.id, token) : [] };
       }));
       // Element identity + its old line-based key describe one element: keep one entry (the bound one).
       const elements = all.filter((f) => !f.key.startsWith('page|'));
@@ -60,15 +61,16 @@ export async function checkNoteConflicts(rawData: unknown, request: Request) {
   const validate = ((input: unknown) => z.object({ id: z.string().regex(/^\d+$/) }).parse(input));
   const data = validate(rawData);
 
+    const token = request.headers.get("X-WP-Token") || "";
     const { verifyResearcher, compareNotes } = await import("./inspector-ai.server");
-    try { await verifyResearcher(request.headers.get("X-WP-Token") || ""); }
+    try { await verifyResearcher(token); }
     catch (error) { return { error: error instanceof Error ? error.message : "Forbidden", status: 403 }; }
     let payload: string;
     const { attachCorrectionNotes, noteRole } = await import('@/features/inspector/corrections');
     let originals: import('@/features/inspector/conflict-report').ReportNote[] = [];
     try {
       const { readNoteById, readRelatedNotes } = await import("./inspector-notes.server");
-      const [note, related] = await Promise.all([readNoteById(data.id), readRelatedNotes(data.id)]);
+      const [note, related] = await Promise.all([readNoteById(data.id, token), readRelatedNotes(data.id, token)]);
       originals = [{ ...note, current: true, role: noteRole(note.title, 'element_note') }, ...related.map(r => ({ ...r, role: noteRole(r.title, 'related_note') }))];
       payload = JSON.stringify({ note: { cct: `CCT324 #${data.id}`, role: originals[0]?.role, a55: note.title, a56: note.text }, related: related.map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })) });
     } catch (error) { return { error: `注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
@@ -80,8 +82,9 @@ export async function checkNoteConflicts(rawData: unknown, request: Request) {
 export async function analyzeSiteNote(rawData: unknown, request: Request) {
   const data = analyzeSiteNoteInput.parse(rawData);
 
+    const token = request.headers.get("X-WP-Token") || "";
     const { verifyResearcher, explainInspection } = await import('./inspector-ai.server');
-    try { await verifyResearcher(request.headers.get("X-WP-Token") || ""); }
+    try { await verifyResearcher(token); }
     catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden', status: 403 }; }
     try {
       const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
@@ -89,7 +92,7 @@ export async function analyzeSiteNote(rawData: unknown, request: Request) {
       const { attachCorrectionNotes, noteRole } = await import('@/features/inspector/corrections');
       const collected: import('@/features/inspector/conflict-report').ReportNote[] = [];
       for (const id of rootIds) {
-        const [note, related] = await Promise.all([readNoteById(id), readRelatedNotes(id)]);
+        const [note, related] = await Promise.all([readNoteById(id, token), readRelatedNotes(id, token)]);
         collected.push({ ...note, current: true, role: noteRole(note.title, data.pageNoteIds?.includes(id) ? 'page_note' : 'element_note') }, ...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
       }
       const notes = attachCorrectionNotes({ summary: '正在准备', comparedNoteIds: [], comparedPairs: [], comparedCodeNoteIds: [], codeCompared: false, findings: [] }, collected).notes || [];
@@ -119,14 +122,15 @@ export async function chatAboutCorrection(rawData: unknown, request: Request) {
   }).parse(input));
   const data = validate(rawData);
 
+    const token = request.headers.get("X-WP-Token") || "";
     const { verifyResearcher, chatCorrection } = await import('./inspector-ai.server');
-    try { await verifyResearcher(request.headers.get("X-WP-Token") || ""); }
+    try { await verifyResearcher(token); }
     catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden' }; }
     try {
       const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
-      const current = data.noteId ? await readNoteById(data.noteId) : null;
-      const related = data.noteId ? await readRelatedNotes(data.noteId) : [];
-      const basis = await Promise.all(data.basisNoteIds.filter(id => !related.some(r => r.id === id)).map(id => readNoteById(id).catch(() => null)));
+      const current = data.noteId ? await readNoteById(data.noteId, token) : null;
+      const related = data.noteId ? await readRelatedNotes(data.noteId, token) : [];
+      const basis = await Promise.all(data.basisNoteIds.filter(id => !related.some(r => r.id === id)).map(id => readNoteById(id, token).catch(() => null)));
       const baseline = [...related, ...basis.filter((n): n is NonNullable<typeof n> => !!n)];
       const { readInspectionSource } = await import('./inspector-source.server');
       const { formatSourceEvidence } = await import('@/features/inspector/source-evidence');

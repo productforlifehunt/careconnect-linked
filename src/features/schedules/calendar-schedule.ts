@@ -10,6 +10,7 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
 import { dedupeRead } from "@/features/shared/rel-batch";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { FREQUENCY_CODES, type FrequencyCode, normalizeSlots, frequencyForSlots, buildRRule } from "./recurrence";
 
 export const CAL = T.calendarEvent;
@@ -115,9 +116,18 @@ export async function fetchEventsOfType(userId: string | number, eventType: stri
     .map((r: any) => String(r?.child_object_id ?? "").replace(/^wp-/, ""))
     .filter(Boolean);
   if (!ids.length) return [];
-  const rows = await Promise.all(ids.map((id) =>
-    dedupeRead(`cct:${CAL.slug}:${id}`, () => wordpressCCTFetch<any>(CAL.slug, { id }))));
-  return rows.filter((r: any) => r && typeof r === "object" && String(r[FC.CUSTOM_EVENT_TYPE]) === eventType);
+  const rows = await readLinkedCCTRows(CAL.slug, ids);
+  const rowsById = new Map(
+    rows.map((row) => [String(row?.id ?? row?._ID), row]),
+  );
+  return ids
+    .map((id) => rowsById.get(id))
+    .filter(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        String(row[FC.CUSTOM_EVENT_TYPE]) === eventType,
+    );
 }
 
 export async function createEvent(body: Record<string, any>, ownerId: string | number): Promise<number> {
