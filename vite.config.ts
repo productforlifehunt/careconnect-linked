@@ -17,7 +17,8 @@ export default defineConfig({
   // and minified names change on every publish.
   vite: {
     plugins: [inspectorSourcePlugin()],
-    server: { allowedHosts: ["672f941fa.sandbox.draftbit.dev"] },
+    // Allow any dev host (Draftbit sandbox, Lovable preview); no host-specific values.
+    server: { allowedHosts: true },
     build: { rolldownOptions: { output: { keepNames: true } } },
   },
 });
