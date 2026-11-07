@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
@@ -154,6 +154,16 @@ export default function CalendarPage() {
     markCalendarToolbar();
   };
 
+  useEffect(() => {
+    const root = calendarRootRef.current;
+    if (!root) return;
+    const mark = () => markCalendarToolbar();
+    mark();
+    const observer = new MutationObserver(mark);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-5 sm:py-8 space-y-5 max-w-5xl">
       <header className="space-y-2">
@@ -254,6 +264,12 @@ export default function CalendarPage() {
           fixedWeekCount={false}
           dayCellDidMount={markCalendarDay}
           dayHeaderDidMount={markCalendarWeekday}
+          eventDidMount={(arg) => {
+            arg.el.setAttribute(
+              "data-inspector-id",
+              `components/pages/Calendar/event/${arg.event.id}`,
+            );
+          }}
           dateClick={openCreate}
           eventClick={(info) => {
             setSelectedEvent(info.event.extendedProps as CalendarEvent);
