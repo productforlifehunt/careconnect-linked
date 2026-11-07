@@ -21,6 +21,7 @@ export interface ElementInfo {
   itemSlot?: string | undefined; // React key of that list item when it names a fixed item ("Pending Tasks"), not a data row id
   callSite?: string | undefined;  // where the shared component was used, only when the same JSX line is used from several places on this page
   anchor: { names: string[]; path: string }; // build-independent identity: same in editor preview and published site
+  sourceFingerprint?: string | undefined; // exact rendered host, generated at build time
 }
 
 function componentName(f: any): string {
@@ -88,7 +89,7 @@ function fileOf(src: string): string { return normalizeFile(src.split(":")[0]!);
 /** First ancestor source in a different file than `own`: the place that used this component. */
 function useSiteOf(node: Element, own: string): string | undefined {
   for (let n: Element | null = node.parentElement; n; n = n.parentElement) {
-    const s = n.getAttribute("data-tsd-source");
+    const s = n.getAttribute("data-inspector-source") || n.getAttribute("data-tsd-source");
     if (s && fileOf(s) !== own && !fileOf(s).startsWith("components/ui/")) return fileOf(s) + ":" + (s.split(":")[1] || "");
   }
   return undefined;
@@ -278,7 +279,7 @@ export function inspectElement(el: Element, requests: RecordedRequest[]): Elemen
   const files = sources.map((x) => x.split(":")[0]!.split("/").pop()!.replace(/\.tsx?$/, ""));
   const writer = components.find((c) => files.includes(c)) || owner || "?";
   for (const h of pending) if (handlers.length < 4 && !handlers.some((x) => x.code === h.code)) handlers.push({ ...h, owner: writer });
-  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex, itemSlot, callSite: sharedCallSite(firstTagged), anchor: stableAnchor(el) };
+  return { tag: el.tagName.toLowerCase(), text, sources, components: components.slice(0, 12), handlers, link, props: dataProps, matches: rank(matchValues(text, requests), around, text.toLowerCase()), card: cardText, itemIndex, itemSlot, callSite: sharedCallSite(firstTagged), anchor: stableAnchor(el), sourceFingerprint: el.getAttribute("data-inspector-source") || undefined };
 }
 
 function rank(matches: FieldMatch[], around: string, own: string): FieldMatch[] {

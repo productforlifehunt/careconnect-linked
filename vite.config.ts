@@ -5,6 +5,7 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { inspectorSourcePlugin } from "./scripts/inspector-source-plugin";
 
 export default defineConfig({
   tanstackStart: {
@@ -14,5 +15,5 @@ export default defineConfig({
   },
   // Keep real component names in the published build: the inspector finds saved notes by them,
   // and minified names change on every publish.
-  vite: { build: { rolldownOptions: { output: { keepNames: true } } } },
+  vite: { plugins: [inspectorSourcePlugin()], build: { rolldownOptions: { output: { keepNames: true } } } },
 });
