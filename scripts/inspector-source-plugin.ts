@@ -64,7 +64,10 @@ export function inspectorSourcePlugin(): Plugin {
               ts.forEachChild(part, collect);
             };
             for (const attr of node.attributes.properties) {
-              if (ts.isJsxAttribute(attr) && /^(name|value|checked|on[A-Z].*)$/.test(attr.name.getText(source)) && attr.initializer && ts.isJsxExpression(attr.initializer)) collect(attr.initializer);
+              if (ts.isJsxAttribute(attr) && /^(name|value|checked|on[A-Z].*)$/.test(attr.name.getText(source)) && attr.initializer) {
+                if (ts.isJsxExpression(attr.initializer) && attr.initializer.expression) collect(attr.initializer);
+                else identifiers.push(attr.getText(source));
+              }
             }
             if (ts.isJsxOpeningElement(node) && ts.isJsxElement(node.parent)) {
               for (const child of node.parent.children) if (ts.isJsxExpression(child)) collect(child);
@@ -78,7 +81,7 @@ export function inspectorSourcePlugin(): Plugin {
               value,
               line: position.line,
               tag,
-              identity: `${slot}/${ordinal}`,
+              identity: `${slot}${semantic ? "" : `/${ordinal}`}`,
             });
           }
         }
