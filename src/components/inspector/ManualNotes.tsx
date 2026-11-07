@@ -93,7 +93,7 @@ export function ManualNotes({ noteKey, legacyKey, legacySourceKey, fingerprint, 
     else {
       setState({ loading: true }); setText(""); setSaved(""); onChange?.("");
       const keys = [noteKey, ...(legacyKey && legacyKey !== noteKey ? [legacyKey] : [])];
-      loadOne({ data: { keys, ...(fingerprint && tag ? { fingerprint, tag } : {}), ...(legacySourceKey && fingerprint ? { legacy: { key: legacySourceKey, label } } : {}) } }).then((r) => {
+      loadOne({ data: { keys, ...(fingerprint && tag ? { fingerprint, tag, page } : {}), ...(legacySourceKey && fingerprint ? { legacy: { key: legacySourceKey, label } } : {}) } }).then((r) => {
         if ('error' in r && r.error) throw new Error(r.error);
         const n = (r.notes as CCTNote[])[0] || null;
         if (n) oneCache.set(`${session}|${noteKey}`, n);
@@ -102,7 +102,12 @@ export function ManualNotes({ noteKey, legacyKey, legacySourceKey, fingerprint, 
     }
     return () => { live = false; };
   }, [noteKey, legacyKey, legacySourceKey, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
-  const stableAnchor = async (): Promise<Record<string, never>> => ({});
+  const stableAnchor = async () => {
+    const match = fingerprint?.match(/^([^:]+):(\d+):\d+:([0-9a-f]{64}):1$/);
+    if (!match || !tag) return {};
+    const line = Number(match[2]);
+    return { source: { file: match[1]!, line, endLine: line, tag, digest: match[3]! } };
+  };
   const doSave = async () => {
     if (stale || !ready) return;
     const session = getWPToken() || "";

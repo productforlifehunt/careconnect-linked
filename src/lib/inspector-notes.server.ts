@@ -102,7 +102,7 @@ export async function readNoteForKey(key: string): Promise<InspectorNote | null>
 }
 
 /** Recover a source-verified legacy binding only when its fingerprint identifies one note. */
-export async function readNoteForFingerprint(key: string, fingerprint: string, tag: string): Promise<InspectorNote | null> {
+export async function readNoteForFingerprint(key: string, fingerprint: string, tag: string, page: string): Promise<InspectorNote | null> {
   const match = fingerprint.match(/^([^:]+):(\d+):(\d+):([0-9a-f]{64}):1$/);
   if (!match) return null;
   const [, file, , , digest] = match;
@@ -114,7 +114,9 @@ export async function readNoteForFingerprint(key: string, fingerprint: string, t
     rows.push(...result as CCTRow[]);
     if (result.length < 100) break;
   }
+  const { samePosition: samePage } = await import('@/features/inspector/position-bindings');
   const matches = rows.flatMap(row => positionBindings(row.a59, String(row._ID)).filter(b =>
+    (!b.page || samePage(`el|${b.page}|x`, `el|${page}|x`) || (key.startsWith('el|*|') && b.key.startsWith('el|*|'))) &&
     b.source?.file === file && b.source?.tag.toLowerCase() === tag.toLowerCase() && b.source?.digest === digest
   ).map(b => ({ row, binding: b })));
   if (new Set(matches.map(m => m.binding.id)).size !== 1) return null;

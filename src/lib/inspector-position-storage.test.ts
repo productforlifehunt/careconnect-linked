@@ -47,9 +47,9 @@ it('recovers one source-verified note with public CCT reads, but refuses ambiguo
     return Response.json(rows);
   }));
   const fp = `pages/Test.tsx:5:2:${digest}:1`;
-  expect(await readNoteForFingerprint('el|/test|one', fp, 'p')).toMatchObject({ id: '11', key: 'el|/test|one', text: '原文' });
-  expect(await readNoteForFingerprint('el|/test|one', fp, 'span')).toBeNull();
-  expect(await readNoteForFingerprint('el|/test|one', fp.replace(/:1$/, ':0'), 'p')).toBeNull();
+  expect(await readNoteForFingerprint('el|/test|one', fp, 'p', '/test')).toMatchObject({ id: '11', key: 'el|/test|one', text: '原文' });
+  expect(await readNoteForFingerprint('el|/test|one', fp, 'span', '/test')).toBeNull();
+  expect(await readNoteForFingerprint('el|/test|one', fp.replace(/:1$/, ':0'), 'p', '/test')).toBeNull();
   rows = [row('11'), row('12')];
-  expect(await readNoteForFingerprint('el|/test|one', fp, 'p')).toBeNull();
+  expect(await readNoteForFingerprint('el|/test|one', fp, 'p', '/test')).toBeNull();
 });
