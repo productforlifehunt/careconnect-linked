@@ -33,10 +33,11 @@ export function inspectorSourcePlugin(): Plugin {
       const visit = (node: ts.Node) => {
         if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
           const tag = node.tagName.getText(source);
+          const componentName = tag.split(".").at(-1) || tag;
           const formTag = /^(input|textarea|select|button|form|a|option)$/i.test(tag);
           const interactiveComponent =
-            /(?:button|link|trigger|item|tab|switch|checkbox|radio|slider|input|textarea|select|option|previous|prev|next)$/i.test(
-              tag,
+            /(?:button|link|trigger|item|tab|switch|checkbox|radio|slider|input|textarea|select|option|previous|prev|next|close|cancel|dismiss)$/i.test(
+              componentName,
             );
           const dynamicAttribute = node.attributes.properties.some((p) =>
             ts.isJsxAttribute(p) && p.initializer && ts.isJsxExpression(p.initializer),
@@ -44,7 +45,7 @@ export function inspectorSourcePlugin(): Plugin {
           const dynamicChild = ts.isJsxOpeningElement(node) && ts.isJsxElement(node.parent) &&
             node.parent.children.some((c) => ts.isJsxExpression(c) && !!c.expression);
           if (
-            /^[A-Za-z][\w-]*$/.test(tag) &&
+            /^[A-Za-z][\w-]*(?:\.[A-Za-z][\w-]*)*$/.test(tag) &&
             (formTag || interactiveComponent || dynamicAttribute || dynamicChild) &&
             !node.attributes.properties.some(
               (p) =>

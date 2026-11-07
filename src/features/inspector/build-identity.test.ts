@@ -45,3 +45,21 @@ it('tags static interactive components such as tabs even when their labels are l
   expect(ids(after)).toEqual(ids(before));
   expect(before).toContain('data-inspector-source=');
 });
+
+it('tags namespaced dialog close and cancel controls with label-stable identities', () => {
+  const plugin = inspectorSourcePlugin();
+  const transform = plugin.transform as (code: string, id: string) => { code: string };
+  const file = `${process.cwd()}/src/pages/IdentityFixture.tsx`;
+  const before = transform(
+    'function Fixture(){return <><DialogPrimitive.Close aria-label="Close" /><AlertDialogPrimitive.Cancel>Cancel</AlertDialogPrimitive.Cancel></>}',
+    file,
+  ).code;
+  const after = transform(
+    'function Fixture(){return <><DialogPrimitive.Close aria-label="Dismiss" /><AlertDialogPrimitive.Cancel>Abbrechen</AlertDialogPrimitive.Cancel></>}',
+    file,
+  ).code;
+  const ids = (code: string) => [...code.matchAll(/data-inspector-id="([^"]+)"/g)].map((m) => m[1]);
+  expect(ids(before)).toEqual(ids(after));
+  expect(ids(before)).toContain('pages/IdentityFixture/Fixture/DialogPrimitive.Close/0');
+  expect(ids(before)).toContain('pages/IdentityFixture/Fixture/AlertDialogPrimitive.Cancel/0');
+});
