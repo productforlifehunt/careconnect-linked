@@ -201,13 +201,11 @@ export function ManualNotes({
       setText("");
       setSaved("");
       onChange?.("");
-      const keys = [
-        noteKey,
-        ...(legacyKey && legacyKey !== noteKey ? [legacyKey] : []),
-      ];
+      const keys = [noteKey];
       loadOne({
         data: {
           keys,
+          page,
           ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
           ...(legacySourceKey
             ? { legacy: { key: legacySourceKey, label } }
