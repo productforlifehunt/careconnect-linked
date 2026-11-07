@@ -19,6 +19,13 @@ describe('deployment-compatible actual route source', () => {
     expect(result.files.find(source => source.file === 'components/cared-ones/TipsCard.tsx')?.text).toContain('useCareTips');
   }, 30_000);
 
+  it('resolves main care routes when the selected site is carried in the query string', async () => {
+    const result = await readInspectionSource({ page: '/search-local-caregiver?__site=challenged' });
+    expect(result.roots).toEqual(['routes/search-local-caregiver.tsx']);
+    expect(result.files.some(source => source.file === 'pages/SearchResults.tsx')).toBe(true);
+    expect(result.omissions).not.toContain('没有实际源代码，三方核对未执行。');
+  }, 30_000);
+
   it('fails closed for an unknown page rather than treating notes alone as actual code', async () => {
     const result = await readInspectionSource({ page: '/not-a-real-inspector-page' });
     expect(result.files).toHaveLength(0);

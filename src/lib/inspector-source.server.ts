@@ -16,7 +16,9 @@ export async function readInspectionSource(selection: SourceSelection) {
       if (appSite === site) roots.push(file.replace('/src/', ''));
     }
   }
-  if (!roots.length && !site) {
+  // The main care site is selected by a URL flag but is not a standalone *App.tsx*.
+  // Fall back to its real file route when no standalone site root matched.
+  if (!roots.length) {
     const matches = await Promise.all(Object.entries(ROUTES).map(async ([file]) => {
       // The same source reader is used in dev and the deployment; dev reads fresh files.
       const relative = file.replace('/src/', '');
