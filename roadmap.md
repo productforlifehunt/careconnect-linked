@@ -621,6 +621,7 @@
 - [x] Compare live GitHub draftbit head with local HEAD: both a5efbae2fc8eb77ce76c30b66deb35e197bf94b2 at inspection; no branch switching or business edits.
 - [x] Read full available build log: browser build succeeded, deploy dist-check failed; dynamic/static import message is a chunking warning, not the dist failure.
 - [x] Restore framework-native production orchestration using react-router build; retain SSR, routes, Yarn, authorization and Draftbit guards.
-- [ ] Verify automatic production build/typecheck and real client/server artifacts; deployment contract for React Router SSR remains undocumented by available platform guides.
-- [ ] Verify home/auth/search preview after diagnosing stale optimize-dependency files; first pass home visible, auth error, search blank.
-- [ ] Run relevant routing/inspector tests and inspect real Draftbit runtime before claiming dual-editor compatibility.
+- [~] Latest automatic check at 13:41:28Z reports build OK without detailed type/build output. No client/server artifacts remain in this sandbox, so full production-package and SSR deployment verification is still blocked by missing job evidence and undocumented host adapter contract. Do not treat directory renaming as a remedy.
+- [x] Repeat identical home/auth/search preview check: home content, login form and search controls render; no pageerror. First pass showed missing optimized-dependency chunks; repeat recovered without business-code changes. Search data completion and sign-in were not tested.
+- [x] Routing and inspector identity tests: 2 files, 5/5 tests passed.
+- [ ] Real Draftbit runtime/install/Recheck and production SSR hosting remain unverified; no surviving Draftbit browser session in this sandbox. Do not claim dual-editor compatibility.
