@@ -1,1 +1,0 @@
-import{t as e}from"./JoinGroup-Dwkf6PfX.js";var t=e;export{t as component};

@@ -1,24 +1,44 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - TanStack devtools (dev-only, first), tanstackStart, viteReact, tailwindcss, tsConfigPaths,
-//     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
-//     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { reactRouter } from "@react-router/dev/vite";
+import tailwindcss from "@tailwindcss/vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { defineConfig, type Plugin } from "vite";
+import { vitePlugin as injectJsxSourcePlugin } from "./.draftbit/draftbit-integration.mjs";
 import { inspectorSourcePlugin } from "./scripts/inspector-source-plugin";
 
+const draftbitSource = injectJsxSourcePlugin();
+
+// Forward only hooks that the installed Draftbit plugin actually supplies.
+const draftbitPlugin: Plugin = {
+  name: draftbitSource?.name || "draftbit-inject-jsx-source",
+  ...(draftbitSource?.enforce ? { enforce: draftbitSource.enforce } : {}),
+  ...(draftbitSource?.apply ? { apply: draftbitSource.apply } : {}),
+  load(...args) {
+    const hook = draftbitSource?.load;
+    return typeof hook === "function" ? hook.apply(this, args as never) : null;
+  },
+  transform(...args) {
+    const hook = draftbitSource?.transform;
+    return typeof hook === "function" ? hook.apply(this, args as never) : null;
+  },
+};
+
 export default defineConfig({
-  tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+  plugins: [
+    reactRouter(),
+    tailwindcss(),
+    tsconfigPaths(),
+    draftbitPlugin,
+    inspectorSourcePlugin(),
+  ],
+  server: {
+    host: true,
+    port: Number(process.env["WORKING_METRO_PORT"] || 36356),
+    strictPort: true,
+    allowedHosts: true,
   },
-  // Keep real component names in the published build: the inspector finds saved notes by them,
-  // and minified names change on every publish.
-  vite: {
-    plugins: [inspectorSourcePlugin()],
-    // Allow any dev host (Draftbit sandbox, Lovable preview); no host-specific values.
-    server: { allowedHosts: true },
-    build: { rolldownOptions: { output: { keepNames: true } } },
+  optimizeDeps: {
+    include: ["@draftbit/iframe-element-picker", "@draftbit/babel-plugin-inject-jsx-source"],
   },
+  ssr: { noExternal: ["rrule"] },
+  build: { rolldownOptions: { output: { keepNames: true } } },
 });

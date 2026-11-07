@@ -107,18 +107,6 @@ export class InspectorWriteBlocked extends Error {
  * are recorded too by observing window.fetch. Recording only: they are never
  * held back here, so sign-in refresh and checkout behave normally.
  */
-/** Best-effort plain view of a server-function payload (seroval: t1 string, t0 number, t9 array, t10 object). */
-function fromSeroval(node: unknown): unknown {
-  if (!node || typeof node !== "object") return node;
-  const n = node as { t?: number; s?: unknown; a?: unknown[]; p?: { k?: string[]; v?: unknown[] }; i?: number };
-  if ("t" in n && typeof n.t === "number" && !("p" in n) && !("a" in n) && "s" in n) return n.t === 0 ? Number(n.s) : n.s;
-  if (n.t === 2) return n.s === 2 ? true : n.s === 3 ? false : null;
-  if (Array.isArray(n.a)) return n.a.map(fromSeroval);
-  if (n.p && Array.isArray(n.p.k)) return Object.fromEntries(n.p.k.map((k, i) => [k, fromSeroval(n.p!.v?.[i])]));
-  if ("t" in n && typeof (n as { t: unknown }).t === "object") return fromSeroval((n as { t: unknown }).t);
-  return node;
-}
-
 function installFetchObserver() {
   if (typeof window === "undefined") return;
   const w = window as unknown as { __rwFetchObserved?: boolean; fetch: typeof fetch };
@@ -149,25 +137,24 @@ function installFetchObserver() {
         entry = recordRequest(/^(list|get|fetch|read|search)/.test(action) ? "GET" : "POST", `wc/server-op/${action}`, rest, undefined);
         if (entry) { entry.blocked = false; entry.via = fn[1]; }
       }
-      // App server functions (/_serverFn/<base64 {file, export}>): recorded under their export and action.
-      const sf = url.match(/\/_serverFn\/([A-Za-z0-9_=-]+)/);
-      if (sf && !entry && isResearcherAccount() && !/inspector-ai/.test(url)) {
-        let name = "serverFn"; let serverFile = "";
-        try { const id = JSON.parse(atob(sf[1]!.replace(/-/g, "+").replace(/_/g, "/"))) as { export?: string; file?: string }; name = String(id.export || name).replace(/_createServerFn_handler$/, ""); serverFile = String(id.file || "").replace(/^\/?src\//, "").replace(/\?.*$/, ""); if (/inspector-ai/.test(id.file || "")) name = ""; } catch { /* opaque id */ }
-        if (name) {
-          let data: unknown;
-          try { data = typeof init?.body === "string" ? fromSeroval(JSON.parse(init.body)) : undefined; } catch { data = undefined; }
-          const payload = (data && typeof data === "object" && "data" in (data as object) ? (data as { data: unknown }).data : data) as Record<string, unknown> | undefined;
-          const action = payload && typeof payload === "object" && typeof payload["action"] === "string" ? String(payload["action"]) : "";
-          entry = recordRequest(!action || /^(list|get|fetch|read|load|search|original)/.test(action) ? "GET" : "POST", `server-fn/${name}${action ? `/${action}` : ""}`, payload && typeof payload === "object" ? Object.fromEntries(Object.entries(payload).filter(([, v]) => typeof v !== "string" || v.length < 200)) : undefined, undefined);
-          if (entry) { entry.blocked = false; entry.via = "server-fn"; if (!entry.callers.length && serverFile) entry.callers = [serverFile]; }
-        }
+      // React Router resource actions replace Start server functions; keep the
+      // inspector trace grouped by exported action while omitting long payloads.
+      const resourceAction = url.match(/\/api\/server-actions(?:\?|$)/);
+      if (resourceAction && !entry && isResearcherAccount() && typeof init?.body === "string") {
+        let body: Record<string, unknown> = {};
+        try { body = JSON.parse(init.body) as Record<string, unknown>; } catch { body = {}; }
+        const name = typeof body["name"] === "string" ? body["name"] : "unknown";
+        const payload = body["data"] && typeof body["data"] === "object" ? body["data"] as Record<string, unknown> : undefined;
+        const action = payload && typeof payload["action"] === "string" ? String(payload["action"]) : "";
+        const safePayload = payload ? Object.fromEntries(Object.entries(payload).filter(([, value]) => typeof value !== "string" || value.length < 200)) : undefined;
+        entry = recordRequest(!action || /^(list|get|fetch|read|load|search|original)/.test(action) ? "GET" : "POST", `server-action/${name}${action ? `/${action}` : ""}`, safePayload, undefined);
+        if (entry) { entry.blocked = false; entry.via = "server-action"; }
       }
     } catch { entry = null; }
     const res = await original(input as RequestInfo, init);
     if (entry?.via) {
       const e = entry; e.status = res.status;
-      res.clone().json().then((raw) => { let j = e.via === "server-fn" ? fromSeroval(raw) : raw; if (e.via === "server-fn" && j && typeof j === "object" && "result" in (j as object)) j = (j as { result: unknown }).result; if (e.via === "server-fn" && j && typeof j === "object" && !Array.isArray(j)) { const arrays = Object.values(j as object).filter(Array.isArray); if (arrays.length === 1) j = arrays[0]; } e.rows = trim((j && typeof j === "object" && "data" in (j as object) && e.via !== "server-fn") ? (j as { data: unknown }).data : j); emit(); }).catch(() => emit());
+      res.clone().json().then((result) => { const data = e.via !== "server-action" && result && typeof result === "object" && "data" in result ? (result as { data: unknown }).data : result; e.rows = trim(data); emit(); }).catch(() => emit());
     } else if (entry) attachResponse(entry, res);
     return res;
   }) as typeof fetch;

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MessageResponse } from "@/components/ai-elements/message";
@@ -10,7 +9,7 @@ export function InterviewOverview({ path }: { path: string }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const generate = useServerFn(getInterviewOverview);
+  const generate = getInterviewOverview;
   const load = async () => {
     if (loading || text) return;
     setLoading(true); setError("");

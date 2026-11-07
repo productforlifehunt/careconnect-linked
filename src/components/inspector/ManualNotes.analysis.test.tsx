@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/re
 import { afterEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ analyze: vi.fn(), save: vi.fn() }));
-vi.mock('@tanstack/react-start', () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock('@/lib/inspector-ai.functions', () => ({ explainReadWrite: mocks.analyze }));
 vi.mock('@/lib/inspector-notes.functions', () => ({ loadAllInspectorNotes: vi.fn(), loadInspectorNotes: () => Promise.resolve({ notes: [{ key:'page|/care-circle', id:'1', title:'群组逻辑', text:'已保存的说明', locked:true, verified:true, updatedAt:'2026-11-06' }] }), saveInspectorNote: mocks.save, selectInspectorNote: vi.fn() }));
 vi.mock('@/services/wp-auth', () => ({ getWPToken: () => 'test-session' }));

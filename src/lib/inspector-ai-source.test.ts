@@ -1,12 +1,11 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ verify: vi.fn(), explain: vi.fn(), source: vi.fn(), note: vi.fn(), related: vi.fn() }));
-vi.mock('@tanstack/react-start', () => ({ createServerFn: () => ({ inputValidator: () => ({ handler: (fn: unknown) => fn }) }) }));
-vi.mock('@tanstack/react-start/server', () => ({ getRequestHeader: () => 'test-session' }));
 vi.mock('./inspector-ai.server', () => ({ verifyResearcher: mocks.verify, explainInspection: mocks.explain }));
 vi.mock('./inspector-source.server', () => ({ readInspectionSource: mocks.source }));
 vi.mock('./inspector-notes.server', () => ({ readCCTNoteForKey: mocks.note, readNoteById: mocks.note, readRelatedNotes: mocks.related }));
-import { explainReadWrite } from './inspector-ai.functions';
-const invoke = () => (explainReadWrite as unknown as (args: { data: { context: string; noteKeys: string[] } }) => Promise<{ error?: string }>)({ data: { context: JSON.stringify({ page: '/cared-ones/46/medicine', files: [], codeRefs: [] }), noteKeys: ['page|/cared-ones/46/medicine'] } });
+import { explainReadWrite } from './inspector-ai.functions.server';
+const request = new Request('http://localhost/api/server-actions', { headers: { 'X-WP-Token': 'test-session' } });
+const invoke = () => explainReadWrite({ context: JSON.stringify({ page: '/cared-ones/46/medicine', files: [], codeRefs: [] }), noteKeys: ['page|/cared-ones/46/medicine'] }, request) as Promise<{ error?: string }>;
 afterEach(() => vi.resetAllMocks());
 it('supplies server-read actual code plus functional and manual notes even when the browser has no source tags', async () => {
   mocks.note.mockResolvedValue({ id: '6126', title: '用药整页', text: 'manual note', verified: true });

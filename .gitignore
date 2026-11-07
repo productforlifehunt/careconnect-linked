@@ -23,3 +23,25 @@ dist-ssr
 *.sln
 *.sw?
 .lovable-tmp/
+.yarn/install-state.gz
+build
+.react-router/
+
+# TanStack Start / Nitro generated output
+.tanstack/
+.output/
+coverage/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# TanStack Start / Nitro generated output
+.output/
+.tanstack/
+.nitro/
+coverage/
+nohup.out

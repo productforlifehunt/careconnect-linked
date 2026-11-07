@@ -7,7 +7,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   X,
@@ -341,7 +340,7 @@ function AiExplain({
   ready?: boolean;
   noteKeys?: string[];
 }) {
-  const explain = useServerFn(explainReadWrite);
+  const explain = explainReadWrite;
   const [state, setState] = useState<{
     loading?: boolean;
     report?: ConflictReport;

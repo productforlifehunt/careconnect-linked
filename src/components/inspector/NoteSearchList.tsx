@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { searchInspectorNotes } from "@/lib/inspector-notes.functions";
@@ -12,7 +11,7 @@ export type NoteSearch = (q: string, status: "all" | "verified" | "unverified") 
  * so nothing ever downloads the whole note table just to type into this box.
  */
 export function NoteSearchList({ onPick, exclude, search, onClose }: { onPick: (n: NotePick) => void; exclude?: Set<string>; search?: NoteSearch; onClose?: () => void }) {
-  const remote = useServerFn(searchInspectorNotes);
+  const remote = searchInspectorNotes;
   const run: NoteSearch = search ?? (async (q, status) => { const r = await remote({ data: { q, status } }); if ("error" in r && r.error) throw new Error(r.error); return r.notes; });
   const [text, setText] = useState("");
   const [status, setStatus] = useState<"all" | "verified" | "unverified">("all");

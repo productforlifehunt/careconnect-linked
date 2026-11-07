@@ -1,8 +1,19 @@
 import { analyse, readSource, resolveImport } from './live-index';
 import { siteInventory, splitSiteEvidence, type SiteBinding, type SitePage } from './site-analysis';
 
-const ROUTES = import.meta.glob(['/src/routes/**/*.tsx', '!/src/routes/__root.tsx', '!/src/routes/api/**'], { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
+const ROUTES = import.meta.glob(['/src/app/routes/**/*.tsx', '!/src/app/routes/api.*'], { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
 const APPS = import.meta.glob('/src/pages/*/*App.tsx', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
+
+function pathFromRouteFile(file: string): string {
+  const name = file.replace(/^.*\/routes\//, '').replace(/\.(?:tsx|ts)$/, '');
+  if (name === 'index') return '/';
+  if (name === '$') return '/*';
+  const segments = name.split('.').filter(segment => segment && segment !== '_index').map(segment => {
+    const clean = segment.replace(/_$/, '');
+    return clean === '$' ? '*' : clean.startsWith('$') ? `:${clean.slice(1)}` : clean;
+  });
+  return `/${segments.join('/')}`;
+}
 
 export async function discoverSitePages(bindings: SiteBinding[]): Promise<SitePage[]> {
   const routes: { path: string; files: string[] }[] = [];
@@ -10,8 +21,8 @@ export async function discoverSitePages(bindings: SiteBinding[]): Promise<SitePa
   for (let index = 0; index < routeEntries.length; index += 6) {
     await Promise.all(routeEntries.slice(index, index + 6).map(async ([file, load]) => {
     const text = await load();
-    const path = text.match(/createFileRoute\(["']([^"']+)["']\)/)?.[1];
-    if (path && path !== '/$') routes.push({ path: path.replace(/_\//g, '/').replace(/\/$/, '') || '/', files: [file.replace('/src/', '')] });
+    const path = pathFromRouteFile(file);
+    if (path !== '/*') routes.push({ path, files: [file.replace('/src/', '')] });
     }));
   }
   for (const [file, load] of Object.entries(APPS)) {

@@ -132,7 +132,7 @@ export default function CalendarPage() {
       );
     }
     root.querySelectorAll<HTMLElement>(".fc-list-day[data-date]").forEach((day) => {
-      const date = day.dataset.date;
+      const date = day.dataset["date"];
       if (!date) return;
       day.querySelectorAll<HTMLElement>(".fc-list-day-text, .fc-list-day-side-text").forEach((link) => {
         link.setAttribute("data-inspector-id", `components/pages/Calendar/day/${date}`);

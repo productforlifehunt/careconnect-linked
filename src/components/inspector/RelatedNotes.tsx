@@ -1,6 +1,5 @@
 /** REL325 related manual notes for the current CCT324 note: collapsed list, link/unlink/create, and an AI conflict check. */
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, ChevronRight, Link2, Plus, Sparkles, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +16,9 @@ type Related = { id: string; title: string; text: string; side: "parent" | "chil
 type Edit = { title: string; text: string; verified: boolean };
 
 export function RelatedNotes({ noteId }: { noteId: string }) {
-  const list = useServerFn(listRelatedNotes); const link = useServerFn(linkRelatedNote);
-  const unlink = useServerFn(unlinkRelatedNote); const update = useServerFn(updateRelatedNote);
-  const [edits, setEdits] = useState<Record<string, Edit>>({}); const compare = useServerFn(explainReadWrite);
+  const list = listRelatedNotes; const link = linkRelatedNote;
+  const unlink = unlinkRelatedNote; const update = updateRelatedNote;
+  const [edits, setEdits] = useState<Record<string, Edit>>({}); const compare = explainReadWrite;
   const [notes, setNotes] = useState<Related[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [state, setState] = useState<{ loading?: boolean; busy?: boolean; error?: string | undefined }>({ loading: true });

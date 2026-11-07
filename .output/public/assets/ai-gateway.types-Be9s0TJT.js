@@ -1,1 +1,0 @@
-var e=`import type {} from './generated/ai-gateway/models';`;export{e as default};

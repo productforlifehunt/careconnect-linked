@@ -1,8 +1,18 @@
 import { readSource } from '@/features/inspector/live-index';
 import { gatherSourceEvidence, matchesSourceRoute, type SourceSelection } from '@/features/inspector/source-evidence';
 
-const ROUTES = import.meta.glob(['/src/routes/**/*.tsx', '!/src/routes/api/**', '!/src/routes/__root.tsx'], { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
+const ROUTES = import.meta.glob(['/src/app/routes/**/*.tsx', '!/src/app/routes/api.*'], { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
 const APPS = import.meta.glob('/src/pages/*/*App.tsx', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>;
+
+function pathFromRouteFile(file: string): string {
+  const name = file.replace(/^.*\/routes\//, '').replace(/\.(?:tsx|ts)$/, '');
+  if (name === 'index') return '/';
+  if (name === '$') return '/*';
+  return `/${name.split('.').filter(segment => segment && segment !== '_index').map(segment => {
+    const clean = segment.replace(/_$/, '');
+    return clean === '$' ? '*' : clean.startsWith('$') ? `:${clean.slice(1)}` : clean;
+  }).join('/')}`;
+}
 
 /** Authenticated callers resolve the deployment's own source, never trust a client code summary. */
 export async function readInspectionSource(selection: SourceSelection) {
@@ -23,7 +33,7 @@ export async function readInspectionSource(selection: SourceSelection) {
       // The same source reader is used in dev and the deployment; dev reads fresh files.
       const relative = file.replace('/src/', '');
       const text = await readSource(relative);
-      const pattern = text?.match(/createFileRoute\(["']([^"']+)["']\)/)?.[1];
+      const pattern = pathFromRouteFile(file);
       return pattern && matchesSourceRoute(pattern, selection.page) ? { file: relative, pattern } : null;
     }));
     const found = matches.filter((match): match is { file: string; pattern: string } => match !== null);

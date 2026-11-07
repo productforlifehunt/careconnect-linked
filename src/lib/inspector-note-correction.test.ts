@@ -1,14 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ verify:vi.fn(), read:vi.fn(), update:vi.fn() }));
-vi.mock('@tanstack/react-start', () => ({ createServerFn:() => ({ handler:(fn:unknown) => fn, inputValidator:() => ({ handler:(fn:unknown) => fn }) }) }));
-vi.mock('@tanstack/react-start/server', () => ({ getRequestHeader:() => 'test-session' }));
 vi.mock('./inspector-ai.server', () => ({ verifyResearcher:mocks.verify }));
 vi.mock('./inspector-notes.server', () => ({ readNoteById:mocks.read,updatePlainNote:mocks.update }));
-import { submitNoteCorrection } from './inspector-notes.functions';
+import { submitNoteCorrection } from './inspector-notes.functions.server';
 const current = {id:'6855',title:'功能逻辑',text:'原正文',verified:true};
 const data = {id:'6855',title:'修改标题',text:'修改后的完整正文',expected:{title:current.title,text:current.text,verified:true},confirmVerified:true};
 // The mock builder exposes the handler for testing its actual authentication and write boundary.
-async function invoke(input = data) { return (submitNoteCorrection as unknown as (args:{data:typeof data}) => Promise<{error?:string;note?:typeof current}>)({data:input}); }
+const request = new Request('http://localhost/api/server-actions', { headers: { 'X-WP-Token': 'test-session' } });
+async function invoke(input = data) { return submitNoteCorrection(input, request) as Promise<{error?:string;note?:typeof current}>; }
 afterEach(() => vi.resetAllMocks());
 it('verifies researcher then saves only the exact existing record and preserves its manual-check flag', async () => {
   mocks.read.mockResolvedValueOnce(current).mockResolvedValueOnce({...current,title:data.title,text:data.text});

@@ -1,166 +1,53 @@
-/**
- * Router-compat shim — bridges @/lib/router-compat v6 call sites to
- * @tanstack/react-router without hand-rewriting every component.
- * This is the same load-bearing pattern used in Klar's dev-copy migration.
- */
+/** Small React Router adapter for the app's existing string based navigation calls. */
 import {
-  useNavigate as tsNavigate,
-  useLocation as tsLocation,
-  useParams as tsParams,
-  useSearch as tsSearch,
-  useRouter,
-  Link as TSLink,
-  Outlet as TSOutlet,
-} from "@tanstack/react-router";
-import { useMemo, useCallback, useEffect, useRef, forwardRef, type ComponentProps, type ReactNode } from "react";
+  Link as RouterLink,
+  Navigate as RouterNavigate,
+  NavLink as RouterNavLink,
+  Outlet,
+  useLocation as useRouterLocation,
+  useNavigate as useRouterNavigate,
+  useParams as useRouterParams,
+  useSearchParams as useRouterSearchParams,
+  type LinkProps,
+  type NavLinkProps,
+} from "react-router";
+import { forwardRef, type ComponentProps } from "react";
 
-// ---------- shared URL parsing ----------
-
-function parseTo(to: string): { pathname: string; search?: Record<string, string>; hash?: string | undefined } {
-  const [beforeHash = "", hashStr] = (to ?? "").split("#");
-  const [pathname, searchStr] = beforeHash.split("?");
-  return {
-    // react-router keeps the current path for search-only ("?a=1") and
-    // hash-only ("#section") targets; TanStack's "." means current route.
-    pathname: pathname || ".",
-    ...(searchStr ? { search: Object.fromEntries(new URLSearchParams(searchStr)) } : {}),
-    ...(hashStr ? { hash: hashStr } : {}),
-  };
-}
-
-// ---------- useNavigate ----------
-
-type NavigateOptions = { replace?: boolean | undefined; state?: unknown | undefined };
-
+type NavigateOptions = { replace?: boolean; state?: unknown };
 type NavigateFn = {
-  (to: string | number, options?: NavigateOptions | undefined): void;
+  (to: string | number, options?: NavigateOptions): void;
   (delta: number): void;
 };
 
 export function useNavigate(): NavigateFn {
-  const tsNav = tsNavigate();
-  const router = useRouter();
-  return useCallback((to: string | number, options?: NavigateOptions | undefined) => {
-    if (typeof to === "number") {
-      router.history.go(to);
-      return;
-    }
-    const { pathname, search, hash } = parseTo(to);
-    tsNav({
-      to: pathname,
-      search: search as never,
-      ...(hash !== undefined ? { hash } : {}),
-      state: options?.state as never,
-      ...(options?.replace !== undefined ? { replace: options.replace } : {}),
-    });
-  }, [tsNav, router]) as NavigateFn;
+  return useRouterNavigate() as NavigateFn;
 }
-
-// ---------- useLocation ----------
 
 export function useLocation() {
-  const loc = tsLocation();
-  return useMemo(
-    () => ({
-      pathname: loc.pathname,
-      search: loc.searchStr ? `?${loc.searchStr}` : "",
-      hash: loc.hash ?? "",
-      state: (loc.state ?? null) as unknown,
-      key: loc.pathname + (loc.searchStr ?? ""),
-    }),
-    [loc.pathname, loc.searchStr, loc.hash, loc.state],
-  );
+  const location = useRouterLocation();
+  return { ...location, search: location.search };
 }
-
-// ---------- useParams ----------
 
 export function useParams<T extends Record<string, string | undefined> = Record<string, string | undefined>>(): T {
-  return tsParams({ strict: false } as never) as T;
+  return useRouterParams() as T;
 }
 
-
-// ---------- useSearchParams (@/lib/router-compat compat) ----------
-
-export function useSearchParams(): [URLSearchParams, (init: URLSearchParams | Record<string, string> | ((prev: URLSearchParams) => URLSearchParams), opts?: { replace?: boolean | undefined }) => void] {
-  const loc = tsLocation();
-  const nav = tsNavigate();
-  const router = useRouter();
-  const params = useMemo(() => new URLSearchParams(loc.searchStr ?? ""), [loc.searchStr]);
-  const setParams = useCallback(
-    (
-      init: URLSearchParams | Record<string, string> | ((prev: URLSearchParams) => URLSearchParams),
-      opts?: { replace?: boolean | undefined } | undefined,
-    ) => {
-      // Functional updaters read the router's live location, not the render
-      // snapshot — react-router passes call-time params, and chained updates
-      // within one tick must see each other's writes.
-      const live = router.state.location;
-      const current = new URLSearchParams(live.searchStr ?? "");
-      const next =
-        typeof init === "function"
-          ? init(current)
-          : init instanceof URLSearchParams
-            ? init
-            : new URLSearchParams(init);
-      const searchObj: Record<string, string> = {};
-      next.forEach((v, k) => { searchObj[k] = v; });
-      nav({ to: live.pathname, search: searchObj as never, ...(opts?.replace !== undefined ? { replace: opts.replace } : {}) });
-    },
-    [nav, router],
-  );
-  return [params, setParams];
+export function useSearchParams() {
+  return useRouterSearchParams();
 }
 
-// ---------- Link ----------
-
-type LinkProps = Omit<ComponentProps<typeof TSLink>, "to"> & {
-  to: string;
-  replace?: boolean | undefined;
-  state?: unknown | undefined;
-  children?: ReactNode | undefined;
-};
-
-export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
-  { to, replace, state, children, ...rest },
-  ref,
-) {
-  const { pathname, search, hash } = parseTo(to);
-  return (
-    <TSLink
-      ref={ref as never}
-      to={pathname as never}
-      search={search as never}
-      state={state as never}
-      {...(hash !== undefined ? { hash } : {})}
-      {...(replace !== undefined ? { replace } : {})}
-      {...((rest ?? {}) as Record<string, unknown>)}
-    >
-      {children}
-    </TSLink>
-  );
+type CompatLinkProps = Omit<LinkProps, "to"> & { to: string };
+export const Link = forwardRef<HTMLAnchorElement, CompatLinkProps>(function Link(props, ref) {
+  return <RouterLink ref={ref} {...props} />;
 });
 
+type CompatNavLinkProps = Omit<NavLinkProps, "to"> & { to: string };
+export const NavLink = forwardRef<HTMLAnchorElement, CompatNavLinkProps>(function NavLink(props, ref) {
+  return <RouterNavLink ref={ref} {...props} />;
+});
 
-// ---------- Navigate ----------
-
-export function Navigate({ to, replace, state }: { to: string; replace?: boolean | undefined; state?: unknown | undefined }) {
-  // Like react-router's <Navigate>: navigate once per target, not on every
-  // render (TanStack's <Navigate> re-fires whenever its props object changes,
-  // which loops when callers pass a fresh `state` object each render).
-  const navigate = useNavigate();
-  const lastTarget = useRef<string | null>(null);
-  useEffect(() => {
-    if (lastTarget.current === to) return;
-    lastTarget.current = to;
-    navigate(to, { ...(replace !== undefined ? { replace } : {}), ...(state !== undefined ? { state } : {}) });
-  }, [to, replace, state, navigate]);
-  return null;
+export function Navigate(props: ComponentProps<typeof RouterNavigate>) {
+  return <RouterNavigate {...props} />;
 }
 
-// ---------- Outlet ----------
-
-export const Outlet = TSOutlet;
-
-// ---------- NavLink (minimal) ----------
-
-export const NavLink = Link;
+export { Outlet };

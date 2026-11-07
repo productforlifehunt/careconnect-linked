@@ -1,6 +1,5 @@
 /** Researcher manual notes for the selected element or the whole page, saved privately so they survive refresh/close. */
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,10 +78,10 @@ export function ManualNotes({
   buildEvidence?: () => string;
   evidenceReady?: boolean;
 }) {
-  const loadOne = useServerFn(loadInspectorNotes);
-  const save = useServerFn(saveInspectorNote);
-  const select = useServerFn(selectInspectorNote);
-  const analyze = useServerFn(explainReadWrite);
+  const loadOne = loadInspectorNotes;
+  const save = saveInspectorNote;
+  const select = selectInspectorNote;
+  const analyze = explainReadWrite;
   const [ai, setAi] = useState<{
     loading?: boolean;
     report?: ConflictReport;

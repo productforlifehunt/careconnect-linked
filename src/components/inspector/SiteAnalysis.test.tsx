@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ load:vi.fn(), analyze:vi.fn(), discover:vi.fn(), evidence:vi.fn() }));
-vi.mock('@tanstack/react-start', () => ({ useServerFn: (fn:unknown) => fn }));
 vi.mock('@/lib/inspector-notes.functions', () => ({ loadAllInspectorNotes:mocks.load }));
 vi.mock('@/lib/inspector-ai.functions', () => ({ analyzeSiteNote:mocks.analyze }));
 vi.mock('@/features/inspector/site-evidence', () => ({ discoverSitePages:mocks.discover,buildSiteEvidence:mocks.evidence }));

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +11,7 @@ import type { Correction, ReportNote } from '@/features/inspector/conflict-repor
 const labels = { page_note: '整页笔记', element_note: '元素笔记', functional_note: '当前功能逻辑笔记', code: '页面逻辑代码' };
 type Msg = { role: 'user' | 'assistant'; content: string; title?: string; text?: string };
 export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion: Correction; original?: ReportNote | undefined; onSaved?: (note: ReportNote) => void }) {
-  const submit = useServerFn(submitNoteCorrection);
+  const submit = submitNoteCorrection;
   const [title, setTitle] = useState(suggestion.title);
   const [text, setText] = useState(suggestion.text);
   const [confirm, setConfirm] = useState(false);
@@ -20,7 +19,7 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
   const code = suggestion.target === 'code';
-  const chat = useServerFn(chatAboutCorrection);
+  const chat = chatAboutCorrection;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [ask, setAsk] = useState('');
   const [thinking, setThinking] = useState(false);

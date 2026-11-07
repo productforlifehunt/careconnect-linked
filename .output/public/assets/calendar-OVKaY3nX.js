@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{t as e}from"./jsx-runtime-B_7alK5I.js";import{t}from"./RequireAuth-DdZ28E2C.js";import{t as n}from"./BrowserOnlyPages-f7qnoq9u.js";var r=e();function RouteCalendarPage(){return(0,r.jsx)(t,{children:(0,r.jsx)(n,{})})}export{RouteCalendarPage as component};

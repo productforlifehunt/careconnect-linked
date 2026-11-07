@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
 import { Download, Globe, Square, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { loadAllInspectorNotes } from '@/lib/inspector-notes.functions';
@@ -12,7 +11,7 @@ import { readSource } from '@/features/inspector/live-index';
 
 interface Work { page: string; noteId?: string; pageNoteIds?: string[]; evidence: string; chunk: number; chunks: number; omissions: string[] }
 export function SiteAnalysis() {
-  const load = useServerFn(loadAllInspectorNotes); const analyze = useServerFn(analyzeSiteNote);
+  const load = loadAllInspectorNotes; const analyze = analyzeSiteNote;
   const [pages, setPages] = useState<SitePage[]>([]); const [results, setResults] = useState<SiteResult[]>([]);
   const [phase, setPhase] = useState(''); const [running, setRunning] = useState(false); const [error, setError] = useState('');
   const [expected, setExpected] = useState(0); const stop = useRef(false); const work = useRef<Work[]>([]); const cursor = useRef(0);

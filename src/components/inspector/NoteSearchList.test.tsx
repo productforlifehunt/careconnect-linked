@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, act, cleanup, waitFor } from "@testing-library/react";
-vi.mock("@tanstack/react-start", () => ({ useServerFn: () => vi.fn() }));
 vi.mock("@/lib/inspector-notes.functions", () => ({ searchInspectorNotes: vi.fn() }));
 import { NoteSearchList } from "./NoteSearchList";
 

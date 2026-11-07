@@ -1,11 +1,11 @@
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 /** Shared at the start of page content; direct-entry pages return to the site's home. */
 export function PageBackButton() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { i18n } = useTranslation();
   const label = i18n.language?.startsWith("zh") ? "返回" : "Back";
   return (
@@ -18,10 +18,10 @@ export function PageBackButton() {
       title={label}
       data-page-back
       onClick={() => {
-        if (router.history.canGoBack()) {
-          router.history.back();
+        if (window.history.length > 1) {
+          navigate(-1);
         } else {
-          void router.navigate({ to: "/" });
+          void navigate("/");
         }
       }}
     >

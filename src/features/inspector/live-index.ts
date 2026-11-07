@@ -3,7 +3,7 @@
  * current source files (no stored index, no cache), so the "what this code
  * reads/writes" view always matches the code as it is right now.
  */
-const LOADERS = import.meta.glob(["/src/**/*.{ts,tsx}", "/supabase/functions/_shared/ai-prompts.ts", "!/src/routeTree.gen.ts", "!/src/integrations/wp-schema.ts", "!/src/features/inspector/**", "!/src/integrations/supabase/**", "!/src/**/*.test.{ts,tsx}"], { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
+const LOADERS = import.meta.glob(["/src/**/*.{ts,tsx}", "/supabase/functions/_shared/ai-prompts.ts", "!/src/routeTree.gen.ts", "!/src/integrations/wp-schema.ts", "!/src/features/inspector/**", "!/src/integrations/supabase/**", "!/src/app/routes/api.*", "!/src/**/*.server.{ts,tsx}", "!/src/**/*.test.{ts,tsx}"], { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
 const FILES = new Set(Object.keys(LOADERS).map((k) => k.replace(/^\/src\//, "").replace(/^\//, "")));
 
 export type LiveRef = [kind: string, key: string, method: string, line: number];

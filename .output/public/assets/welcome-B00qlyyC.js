@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./router-compat-DXJm_933.js";import{t}from"./jsx-runtime-B_7alK5I.js";var n=t();function RouteWelcomePage(){return(0,n.jsx)(e,{to:`/auth?mode=signup`,replace:!0})}export{RouteWelcomePage as component};

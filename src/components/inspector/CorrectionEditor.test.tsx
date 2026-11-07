@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ submit: vi.fn(), put:vi.fn(), chat: vi.fn() }));
-vi.mock('@tanstack/react-start', () => ({ useServerFn:(fn:unknown) => fn }));
 vi.mock('@/lib/inspector-notes.functions', () => ({ submitNoteCorrection:mocks.submit }));
 vi.mock('@/lib/inspector-ai.functions', () => ({ chatAboutCorrection:mocks.chat }));
 vi.mock('@/features/inspector/notes-cache', () => ({ inspectorNotesCache:{put:mocks.put} }));

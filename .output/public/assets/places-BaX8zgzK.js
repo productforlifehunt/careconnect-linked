@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./router-compat-DXJm_933.js";import{t}from"./jsx-runtime-B_7alK5I.js";var n=t();function RoutePlacesPage(){return(0,n.jsx)(e,{to:`/find`,replace:!0})}export{RoutePlacesPage as component};
