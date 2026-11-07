@@ -563,6 +563,8 @@
 - [x] 2026-11-03: 其余 19 页逐页预览实点：18 页问号→问答、机器人→普通对话均通过；Meds 页直接打开落到登录页，仍未实点
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
+- [~] 2026-11-07 continuation: Original app was not browsed. Draftbit Tasks now has pModal layout copied through GUI; all three copied contact write actions deleted. Five task inputs reload-verified: taskTitle, taskDescription (editable true), taskLocation, taskTime Date, taskDate Date; pDate uses date mode, pTime time mode, submit moved after both. Create Row configuration maps care_task a55/a56/a59/a61/a62/a65/a66, date/time FormatDate YYYY-MM-DD/HH:mm. NOT complete: REL231 parent/new result and current person mapping, creator relation, success/refresh/error handling, open/reset, edit/delete. Submit is explicitly disabled=true, reload-verified, to prevent orphan/wrong writes. No real data, notes or REL rows changed.
+- [ ] Group reconstruction: source-only inventory identified 14 sections including location, invitations, member groups, settings and help; not yet replicated. Other full-app tasks below remain open. Runtime persistence is unverified; no overall percentage is established.
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
