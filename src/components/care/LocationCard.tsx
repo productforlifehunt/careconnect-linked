@@ -333,8 +333,10 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           html: `<div style="width:22px;height:22px;border-radius:50%;background:#10B981;border:3px solid white;box-shadow:0 0 0 3px rgba(16,185,129,.3);animation:locPulse 2s infinite"></div>`,
           iconSize: [22, 22], iconAnchor: [11, 11],
         });
-        mapLayersRef.current.push(Lx.marker([lat, lng], { icon }).addTo(map)
-          .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`));
+        const personMarker = Lx.marker([lat, lng], { icon }).addTo(map)
+          .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`);
+        personMarker.getElement()?.setAttribute("data-inspector-id", "location-map/person-marker");
+        mapLayersRef.current.push(personMarker);
       }
     }
 
@@ -350,11 +352,13 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           ? chaikinPerVertex(pts, zone.corner_radius) : pts;
         const poly = Lx.polygon(smoothed, { color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: isDanger ? "6,4" : undefined })
           .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type, zone.zone_name)}</b>${zone.description ? `<br>${zone.description}` : ""}`);
+        poly.getElement()?.setAttribute("data-inspector-id", `location-map/zone-area/${zone.id}`);
         mapLayersRef.current.push(poly);
         pts.forEach((pt: [number, number]) => bounds.push(pt));
       } else {
         const c = Lx.circle([zLat, zLng], { radius: zone.radius_meters || 200, color, fillColor: color, fillOpacity: 0.15, weight: 2, dashArray: isDanger ? "6,4" : undefined })
           .addTo(map).bindPopup(`<b>${zoneLabel(zone.zone_type, zone.zone_name)}</b><br>${zone.radius_meters || 200}m`);
+        c.getElement()?.setAttribute("data-inspector-id", `location-map/zone-area/${zone.id}`);
         mapLayersRef.current.push(c);
         bounds.push([zLat, zLng]);
       }
@@ -366,7 +370,9 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           : `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg></div>`,
         iconSize: [28, 28], iconAnchor: [14, 14],
       });
-      mapLayersRef.current.push(Lx.marker([zLat, zLng], { icon: zIcon }).addTo(map));
+      const zoneMarker = Lx.marker([zLat, zLng], { icon: zIcon }).addTo(map);
+      zoneMarker.getElement()?.setAttribute("data-inspector-id", `location-map/zone-marker/${zone.id}`);
+      mapLayersRef.current.push(zoneMarker);
     });
 
     if (bounds.length > 0) {
@@ -375,6 +381,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
       map.setView([viewerPos.lat, viewerPos.lng], 15);
       const me = Lx.circleMarker([viewerPos.lat, viewerPos.lng], { radius: 8, color: "#fff", weight: 3, fillColor: "#3B82F6", fillOpacity: 1 }).addTo(map)
         .bindTooltip(isZh ? "你的位置" : "You are here");
+      me.getElement()?.setAttribute("data-inspector-id", "location-map/viewer-marker");
       mapLayersRef.current.push(me);
     } else {
       map.setView([37.0902, -95.7129], 4);
