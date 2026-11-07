@@ -1,0 +1,1 @@
+import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./router-compat-D4c50cQu.js";import{t}from"./jsx-runtime-B_7alK5I.js";var n=t();function RouteLearnPage(){return(0,n.jsx)(e,{to:`/resources`,replace:!0})}export{RouteLearnPage as component};

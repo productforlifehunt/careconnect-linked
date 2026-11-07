@@ -1,0 +1,1 @@
+import{t as e}from"./Index-CKK192u-.js";var t=e;export{t as component};
