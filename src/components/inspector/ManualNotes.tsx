@@ -36,6 +36,8 @@ export function ManualNotes({
   priorKey,
   legacyKey,
   legacySourceKey,
+  legacyKeys,
+  alias,
   fingerprint,
   scope,
   page,
@@ -49,6 +51,7 @@ export function ManualNotes({
   priorKey?: string;
   legacyKey?: string | undefined;
   legacySourceKey?: string | undefined;
+  legacyKeys?: string[];
   alias?: string;
   fingerprint?: string | undefined;
   scope: "element" | "page";
@@ -82,6 +85,14 @@ export function ManualNotes({
     loading?: boolean;
     saving?: boolean;
     error?: string | undefined;
+    warning?: string | undefined;
+    migrationCandidates?: Array<{
+      key: string;
+      id: string;
+      title: string;
+      label: string;
+      reason: string;
+    }>;
     at?: string | undefined;
   }>({ loading: true });
   const [retry, setRetry] = useState(0);
