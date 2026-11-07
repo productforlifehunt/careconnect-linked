@@ -563,6 +563,8 @@
 - [x] 2026-11-03: 其余 19 页逐页预览实点：18 页问号→问答、机器人→普通对话均通过；Meds 页直接打开落到登录页，仍未实点
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
+- [~] 2026-11-07 09:47 continuation: Tasks native tMarkDone and tMarkPending Pressables wrap existing status icons. Each has Update Row PUT with current Get Task ._ID, slug care_task, and valid ._ID condition. Done sets a66=b56 and a64=Now→FormatDateISO; undo sets a66=b55 and a64="". Both then Refetch Data→Get Task. Full editor reload verified both workflows, 5 target/status/time/condition bindings each, and all 14 unrelated fields remain unbound. No real task or relation was changed. Completion notifications, detail-dialog placement, add/edit/delete, pending-only totals and runtime persistence remain unfinished.
+- [ ] 2026-11-07 continuation: Draftbit runtime still shows Updating… on Tasks after 20 seconds; real completion→undo→readback unverified. Replica is not complete; native configuration verification is not end-to-end verification. Original app, notes and RELs untouched.
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
