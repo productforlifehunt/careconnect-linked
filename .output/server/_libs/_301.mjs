@@ -1,2 +1,2 @@
-import { it as catppuccin_macchiato_default } from "./shikijs__themes.mjs";
-export { catppuccin_macchiato_default as default };
+import { at as catppuccin_latte_default } from "./shikijs__themes.mjs";
+export { catppuccin_latte_default as default };

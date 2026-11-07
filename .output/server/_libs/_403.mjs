@@ -1,2 +1,2 @@
-import { t as _mod } from "./shiki.mjs";
-export { _mod as default };
+import { c as katex } from "./katex.mjs";
+export { katex as default };

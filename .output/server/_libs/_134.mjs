@@ -1,2 +1,2 @@
-import { Qn as yaml_default } from "./shikijs__langs.mjs";
-export { yaml_default as default };
+import { $n as lua_default } from "./shikijs__langs.mjs";
+export { lua_default as default };

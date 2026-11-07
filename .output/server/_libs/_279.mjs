@@ -1,2 +1,2 @@
-import { h as vhdl_default } from "./shikijs__langs.mjs";
-export { vhdl_default as default };
+import { g as verilog_default } from "./shikijs__langs.mjs";
+export { verilog_default as default };

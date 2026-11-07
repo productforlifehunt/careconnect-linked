@@ -1,2 +1,2 @@
-import { t as zig_default } from "./shikijs__langs.mjs";
-export { zig_default as default };
+import { n as zenscript_default } from "./shikijs__langs.mjs";
+export { zenscript_default as default };

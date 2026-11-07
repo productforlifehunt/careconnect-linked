@@ -1,2 +1,2 @@
-import { Cn as hcl_default } from "./shikijs__langs.mjs";
-export { hcl_default as default };
+import { wn as haxe_default } from "./shikijs__langs.mjs";
+export { haxe_default as default };

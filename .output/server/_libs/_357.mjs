@@ -1,2 +1,2 @@
-import { n as vitesse_dark_default } from "./shikijs__themes.mjs";
-export { vitesse_dark_default as default };
+import { r as vitesse_black_default } from "./shikijs__themes.mjs";
+export { vitesse_black_default as default };

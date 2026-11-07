@@ -1,2 +1,2 @@
-import { ar as elixir_default } from "./shikijs__langs.mjs";
-export { elixir_default as default };
+import { or as edge_default } from "./shikijs__langs.mjs";
+export { edge_default as default };

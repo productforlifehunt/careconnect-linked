@@ -1,2 +1,2 @@
-import { Ot as objective_c_default } from "./shikijs__langs.mjs";
-export { objective_c_default as default };
+import { kt as nushell_default } from "./shikijs__langs.mjs";
+export { nushell_default as default };

@@ -1,2 +1,2 @@
-import { H as soy_default } from "./shikijs__langs.mjs";
-export { soy_default as default };
+import { U as solidity_default } from "./shikijs__langs.mjs";
+export { solidity_default as default };

@@ -1,2 +1,2 @@
-import { cn as jssm_default } from "./shikijs__langs.mjs";
-export { jssm_default as default };
+import { ln as jsonnet_default } from "./shikijs__langs.mjs";
+export { jsonnet_default as default };

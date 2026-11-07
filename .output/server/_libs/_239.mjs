@@ -1,2 +1,2 @@
-import { tt as riscv_default } from "./shikijs__langs.mjs";
-export { riscv_default as default };
+import { nt as rel_default } from "./shikijs__langs.mjs";
+export { rel_default as default };

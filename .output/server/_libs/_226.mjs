@@ -1,2 +1,2 @@
-import { mt as prolog_default } from "./shikijs__langs.mjs";
-export { prolog_default as default };
+import { ht as prisma_default } from "./shikijs__langs.mjs";
+export { prisma_default as default };

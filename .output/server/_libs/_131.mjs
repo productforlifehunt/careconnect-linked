@@ -1,2 +1,2 @@
-import { tr as jsx_default } from "./shikijs__langs.mjs";
-export { jsx_default as default };
+import { nr as haml_default } from "./shikijs__langs.mjs";
+export { haml_default as default };

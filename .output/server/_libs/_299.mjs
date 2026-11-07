@@ -1,2 +1,2 @@
-import { ot as catppuccin_frappe_default } from "./shikijs__themes.mjs";
-export { catppuccin_frappe_default as default };
+import { st as ayu_mirage_default } from "./shikijs__themes.mjs";
+export { ayu_mirage_default as default };

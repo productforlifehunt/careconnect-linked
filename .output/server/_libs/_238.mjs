@@ -1,2 +1,2 @@
-import { nt as rel_default } from "./shikijs__langs.mjs";
-export { rel_default as default };
+import { rt as reg_default } from "./shikijs__langs.mjs";
+export { reg_default as default };

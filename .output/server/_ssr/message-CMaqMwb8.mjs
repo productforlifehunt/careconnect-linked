@@ -36,7 +36,7 @@ var streamdownPlugins = {
 					config = nextConfig;
 				},
 				async render(id, source) {
-					const { createMermaidPlugin } = await import("../_libs/_359.mjs");
+					const { createMermaidPlugin } = await import("../_libs/_360.mjs");
 					return createMermaidPlugin().getMermaid(config).render(id, source);
 				}
 			};

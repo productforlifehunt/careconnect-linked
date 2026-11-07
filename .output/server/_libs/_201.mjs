@@ -1,2 +1,2 @@
-import { zt as mipsasm_default } from "./shikijs__langs.mjs";
-export { mipsasm_default as default };
+import { Bt as mermaid_default } from "./shikijs__langs.mjs";
+export { mermaid_default as default };

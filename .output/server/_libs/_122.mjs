@@ -1,2 +1,2 @@
-import { ur as diff_default } from "./shikijs__langs.mjs";
-export { diff_default as default };
+import { dr as desktop_default } from "./shikijs__langs.mjs";
+export { desktop_default as default };

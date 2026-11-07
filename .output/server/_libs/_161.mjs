@@ -1,2 +1,2 @@
-import { Tn as haskell_default } from "./shikijs__langs.mjs";
-export { haskell_default as default };
+import { En as handlebars_default } from "./shikijs__langs.mjs";
+export { handlebars_default as default };

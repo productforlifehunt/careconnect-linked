@@ -1,2 +1,2 @@
-import { On as groovy_default } from "./shikijs__langs.mjs";
-export { groovy_default as default };
+import { kn as go_default } from "./shikijs__langs.mjs";
+export { go_default as default };

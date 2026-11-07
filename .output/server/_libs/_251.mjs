@@ -1,2 +1,2 @@
-import { U as solidity_default } from "./shikijs__langs.mjs";
-export { solidity_default as default };
+import { W as smalltalk_default } from "./shikijs__langs.mjs";
+export { smalltalk_default as default };

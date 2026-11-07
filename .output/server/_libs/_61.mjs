@@ -1,2 +1,2 @@
-import { _i as ada_default } from "./shikijs__langs.mjs";
-export { ada_default as default };
+import { vi as actionscript_3_default } from "./shikijs__langs.mjs";
+export { actionscript_3_default as default };

@@ -1,2 +1,2 @@
-import { Q as everforest_light_default } from "./shikijs__themes.mjs";
-export { everforest_light_default as default };
+import { $ as everforest_dark_default } from "./shikijs__themes.mjs";
+export { everforest_dark_default as default };

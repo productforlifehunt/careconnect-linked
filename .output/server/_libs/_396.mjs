@@ -1,2 +1,2 @@
-import { o as render } from "./mermaid+uuid.mjs";
-export { render };
+import { s as diagram } from "./mermaid+uuid.mjs";
+export { diagram };

@@ -1,2 +1,2 @@
-import { Xt as liquid_default } from "./shikijs__langs.mjs";
-export { liquid_default as default };
+import { Zt as less_default } from "./shikijs__langs.mjs";
+export { less_default as default };

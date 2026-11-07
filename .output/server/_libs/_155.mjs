@@ -1,2 +1,2 @@
-import { jn as gn_default } from "./shikijs__langs.mjs";
-export { gn_default as default };
+import { Mn as glimmer_ts_default } from "./shikijs__langs.mjs";
+export { glimmer_ts_default as default };

@@ -1,2 +1,2 @@
-import { di as angular_ts_default } from "./shikijs__langs.mjs";
-export { angular_ts_default as default };
+import { fi as scss_default } from "./shikijs__langs.mjs";
+export { scss_default as default };

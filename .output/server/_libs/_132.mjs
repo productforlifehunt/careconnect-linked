@@ -1,2 +1,2 @@
-import { er as graphql_default } from "./shikijs__langs.mjs";
-export { graphql_default as default };
+import { tr as jsx_default } from "./shikijs__langs.mjs";
+export { jsx_default as default };

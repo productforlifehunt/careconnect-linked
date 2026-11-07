@@ -1,2 +1,2 @@
-import { D as templ_default } from "./shikijs__langs.mjs";
-export { templ_default as default };
+import { O as tcl_default } from "./shikijs__langs.mjs";
+export { tcl_default as default };

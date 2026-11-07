@@ -1,2 +1,2 @@
-import { s as solarized_light_default } from "./shikijs__themes.mjs";
-export { solarized_light_default as default };
+import { c as solarized_dark_default } from "./shikijs__themes.mjs";
+export { solarized_dark_default as default };

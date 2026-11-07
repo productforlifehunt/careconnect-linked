@@ -1,2 +1,2 @@
-import { z as gruvbox_light_soft_default } from "./shikijs__themes.mjs";
-export { gruvbox_light_soft_default as default };
+import { B as gruvbox_light_medium_default } from "./shikijs__themes.mjs";
+export { gruvbox_light_medium_default as default };

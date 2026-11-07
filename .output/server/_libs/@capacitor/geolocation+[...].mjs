@@ -35,7 +35,7 @@ function f(t = !1) {
 }
 //#endregion
 //#region node_modules/@capacitor/geolocation/dist/esm/index.js
-var Geolocation$1 = registerPlugin("Geolocation", { web: () => import("../_42.mjs").then((m) => new m.GeolocationWeb()) });
+var Geolocation$1 = registerPlugin("Geolocation", { web: () => import("../_43.mjs").then((m) => new m.GeolocationWeb()) });
 f();
 //#endregion
 //#region node_modules/@capacitor/geolocation/dist/esm/web.js

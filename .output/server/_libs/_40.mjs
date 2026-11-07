@@ -1,2 +1,2 @@
-import { t as AppWeb } from "./@capacitor/app+[...].mjs";
-export { AppWeb };
+import { n as App } from "./@capacitor/app+[...].mjs";
+export { App };

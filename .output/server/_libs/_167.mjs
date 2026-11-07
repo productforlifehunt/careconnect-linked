@@ -1,2 +1,2 @@
-import { yn as hurl_default } from "./shikijs__langs.mjs";
-export { hurl_default as default };
+import { bn as http_default } from "./shikijs__langs.mjs";
+export { http_default as default };

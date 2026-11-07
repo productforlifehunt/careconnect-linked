@@ -1,2 +1,2 @@
-import { t as PushNotifications } from "./capacitor__push-notifications.mjs";
-export { PushNotifications };
+import { t as GeolocationWeb } from "./@capacitor/geolocation+[...].mjs";
+export { GeolocationWeb };

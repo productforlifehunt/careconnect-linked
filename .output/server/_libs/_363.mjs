@@ -1,2 +1,2 @@
-import { K as diagram } from "./mermaid+uuid.mjs";
+import { q as diagram } from "./mermaid+uuid.mjs";
 export { diagram };

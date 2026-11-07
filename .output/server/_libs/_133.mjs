@@ -1,2 +1,2 @@
-import { $n as lua_default } from "./shikijs__langs.mjs";
-export { lua_default as default };
+import { er as graphql_default } from "./shikijs__langs.mjs";
+export { graphql_default as default };

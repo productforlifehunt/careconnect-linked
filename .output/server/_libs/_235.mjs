@@ -1,2 +1,2 @@
-import { at as raku_default } from "./shikijs__langs.mjs";
-export { raku_default as default };
+import { ot as racket_default } from "./shikijs__langs.mjs";
+export { racket_default as default };

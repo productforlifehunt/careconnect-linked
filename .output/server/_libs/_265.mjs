@@ -1,2 +1,2 @@
-import { k as tasl_default } from "./shikijs__langs.mjs";
-export { tasl_default as default };
+import { A as talonscript_default } from "./shikijs__langs.mjs";
+export { talonscript_default as default };

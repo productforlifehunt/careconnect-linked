@@ -1,2 +1,2 @@
-import { a as tokyo_night_default } from "./shikijs__themes.mjs";
-export { tokyo_night_default as default };
+import { o as synthwave_84_default } from "./shikijs__themes.mjs";
+export { synthwave_84_default as default };

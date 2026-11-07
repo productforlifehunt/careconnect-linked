@@ -9044,7 +9044,7 @@ var renderKatexUnsanitized = /* @__PURE__ */ __name(async (text, config2) => {
 	if (!hasKatex(text)) return text;
 	if (!(isMathMLSupported() || config2.legacyMathML || config2.forceLegacyMathML)) return text.replace(katexRegex, "MathML is unsupported in this environment.");
 	{
-		const { default: katex } = await import("../_402.mjs");
+		const { default: katex } = await import("../_403.mjs");
 		const outputMode = config2.forceLegacyMathML || !isMathMLSupported() && config2.legacyMathML ? "htmlAndMathml" : "mathml";
 		return text.split(lineBreakRegex).map((line) => hasKatex(line) ? `<div style="display: flex; align-items: center; justify-content: center; white-space: nowrap;">${line}</div>` : `<div>${line}</div>`).join("").replace(katexRegex, (_, c) => katex.renderToString(c, {
 			throwOnError: true,
@@ -28634,7 +28634,7 @@ async function createGraphWithElements(element, data4Layout) {
 		if (!data4Layout.edges.some((existingEdge) => existingEdge.id === edge.id)) data4Layout.edges.push(edge);
 	}
 	if (globalThis.mermaidCaptureSizes) {
-		const { captureNodeSizes } = await import("../_393.mjs");
+		const { captureNodeSizes } = await import("../_394.mjs");
 		captureNodeSizes(element, data4Layout);
 	}
 	return {
@@ -31663,15 +31663,15 @@ var registerLayoutLoaders = /* @__PURE__ */ __name((loaders) => {
 	registerLayoutLoaders([
 		{
 			name: "dagre",
-			loader: /* @__PURE__ */ __name(async () => await import("../_370.mjs"), "loader")
+			loader: /* @__PURE__ */ __name(async () => await import("../_371.mjs"), "loader")
 		},
 		{
 			name: "swimlane",
-			loader: /* @__PURE__ */ __name(async () => await import("../_396.mjs"), "loader")
+			loader: /* @__PURE__ */ __name(async () => await import("../_397.mjs"), "loader")
 		},
 		...[{
 			name: "cose-bilkent",
-			loader: /* @__PURE__ */ __name(async () => await import("../_368.mjs"), "loader")
+			loader: /* @__PURE__ */ __name(async () => await import("../_369.mjs"), "loader")
 		}]
 	]);
 }, "registerDefaultLayoutLoaders"))();
@@ -32191,7 +32191,7 @@ var c4Detector_default = {
 		return /^\s*C4Context|C4Container|C4Component|C4Dynamic|C4Deployment/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_365.mjs");
+		const { diagram: diagram2 } = await import("../_366.mjs");
 		return {
 			id,
 			diagram: diagram2
@@ -32206,7 +32206,7 @@ var flowDetector_default = {
 		return /^\s*graph/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_378.mjs");
+		const { diagram: diagram2 } = await import("../_379.mjs");
 		return {
 			id: id2,
 			diagram: diagram2
@@ -32223,7 +32223,7 @@ var flowDetector_v2_default = {
 		return /^\s*flowchart/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_378.mjs");
+		const { diagram: diagram2 } = await import("../_379.mjs");
 		return {
 			id: id3,
 			diagram: diagram2
@@ -32237,7 +32237,7 @@ var detector_default = {
 		return /^\s*swimlane-beta\b/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_397.mjs");
+		const { diagram: diagram2 } = await import("../_398.mjs");
 		return {
 			id: id4,
 			diagram: diagram2
@@ -32251,7 +32251,7 @@ var erDetector_default = {
 		return /^\s*erDiagram/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_377.mjs");
+		const { diagram: diagram2 } = await import("../_378.mjs");
 		return {
 			id: id5,
 			diagram: diagram2
@@ -32265,7 +32265,7 @@ var gitGraphDetector_default = {
 		return /^\s*gitGraph/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_380.mjs");
+		const { diagram: diagram2 } = await import("../_381.mjs");
 		return {
 			id: id6,
 			diagram: diagram2
@@ -32279,7 +32279,7 @@ var ganttDetector_default = {
 		return /^\s*gantt/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_379.mjs");
+		const { diagram: diagram2 } = await import("../_380.mjs");
 		return {
 			id: id7,
 			diagram: diagram2
@@ -32293,7 +32293,7 @@ var info = {
 		return /^\s*info/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_381.mjs");
+		const { diagram: diagram2 } = await import("../_382.mjs");
 		return {
 			id: id8,
 			diagram: diagram2
@@ -32307,7 +32307,7 @@ var pie = {
 		return /^\s*pie/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_387.mjs");
+		const { diagram: diagram2 } = await import("../_388.mjs");
 		return {
 			id: id9,
 			diagram: diagram2
@@ -32321,7 +32321,7 @@ var quadrantDetector_default = {
 		return /^\s*quadrantChart/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_388.mjs");
+		const { diagram: diagram2 } = await import("../_389.mjs");
 		return {
 			id: id10,
 			diagram: diagram2
@@ -32335,7 +32335,7 @@ var xychartDetector_default = {
 		return /^\s*xychart(-beta)?/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_401.mjs");
+		const { diagram: diagram2 } = await import("../_402.mjs");
 		return {
 			id: id11,
 			diagram: diagram2
@@ -32349,7 +32349,7 @@ var requirementDetector_default = {
 		return /^\s*requirement(Diagram)?/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_390.mjs");
+		const { diagram: diagram2 } = await import("../_391.mjs");
 		return {
 			id: id12,
 			diagram: diagram2
@@ -32363,7 +32363,7 @@ var sequenceDetector_default = {
 		return /^\s*sequenceDiagram/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_392.mjs");
+		const { diagram: diagram2 } = await import("../_393.mjs");
 		return {
 			id: id13,
 			diagram: diagram2
@@ -32378,7 +32378,7 @@ var classDetector_default = {
 		return /^\s*classDiagram/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_366.mjs");
+		const { diagram: diagram2 } = await import("../_367.mjs");
 		return {
 			id: id14,
 			diagram: diagram2
@@ -32393,7 +32393,7 @@ var classDetector_V2_default = {
 		return /^\s*classDiagram-v2/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_367.mjs");
+		const { diagram: diagram2 } = await import("../_368.mjs");
 		return {
 			id: id15,
 			diagram: diagram2
@@ -32408,7 +32408,7 @@ var stateDetector_default = {
 		return /^\s*stateDiagram/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_394.mjs");
+		const { diagram: diagram2 } = await import("../_395.mjs");
 		return {
 			id: id16,
 			diagram: diagram2
@@ -32424,7 +32424,7 @@ var stateDetector_V2_default = {
 		return false;
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_395.mjs");
+		const { diagram: diagram2 } = await import("../_396.mjs");
 		return {
 			id: id17,
 			diagram: diagram2
@@ -32438,7 +32438,7 @@ var journeyDetector_default = {
 		return /^\s*journey/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_383.mjs");
+		const { diagram: diagram2 } = await import("../_384.mjs");
 		return {
 			id: id18,
 			diagram: diagram2
@@ -32477,7 +32477,7 @@ var detector_default2 = {
 		return false;
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_378.mjs");
+		const { diagram: diagram2 } = await import("../_379.mjs");
 		return {
 			id: id19,
 			diagram: diagram2
@@ -32491,7 +32491,7 @@ var detector_default3 = {
 		return /^\s*timeline/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_398.mjs");
+		const { diagram: diagram2 } = await import("../_399.mjs");
 		return {
 			id: id20,
 			diagram: diagram2
@@ -32505,7 +32505,7 @@ var detector_default4 = {
 		return /^\s*mindmap/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_385.mjs");
+		const { diagram: diagram2 } = await import("../_386.mjs");
 		return {
 			id: id21,
 			diagram: diagram2
@@ -32519,7 +32519,7 @@ var detector_default5 = {
 		return /^\s*kanban/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_384.mjs");
+		const { diagram: diagram2 } = await import("../_385.mjs");
 		return {
 			id: id22,
 			diagram: diagram2
@@ -32533,7 +32533,7 @@ var sankeyDetector_default = {
 		return /^\s*sankey(-beta)?/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_391.mjs");
+		const { diagram: diagram2 } = await import("../_392.mjs");
 		return {
 			id: id23,
 			diagram: diagram2
@@ -32547,7 +32547,7 @@ var packet = {
 		return /^\s*packet(-beta)?/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_375.mjs");
+		const { diagram: diagram2 } = await import("../_376.mjs");
 		return {
 			id: id24,
 			diagram: diagram2
@@ -32561,7 +32561,7 @@ var radar = {
 		return /^\s*radar-beta/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_372.mjs");
+		const { diagram: diagram2 } = await import("../_373.mjs");
 		return {
 			id: id25,
 			diagram: diagram2
@@ -32575,7 +32575,7 @@ var blockDetector_default = {
 		return /^\s*block(-beta)?/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_364.mjs");
+		const { diagram: diagram2 } = await import("../_365.mjs");
 		return {
 			id: id26,
 			diagram: diagram2
@@ -32589,7 +32589,7 @@ var detector_default6 = {
 		return /^\s*treeView-beta/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_371.mjs");
+		const { diagram: diagram2 } = await import("../_372.mjs");
 		return {
 			id: id27,
 			diagram: diagram2
@@ -32603,7 +32603,7 @@ var architectureDetector_default = {
 		return /^\s*architecture/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_363.mjs");
+		const { diagram: diagram2 } = await import("../_364.mjs");
 		return {
 			id: id28,
 			diagram: diagram2
@@ -32617,7 +32617,7 @@ var detector_default7 = {
 		return /^\s*eventmodeling/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_373.mjs");
+		const { diagram: diagram2 } = await import("../_374.mjs");
 		return {
 			id: id29,
 			diagram: diagram2
@@ -32631,7 +32631,7 @@ var ishikawa = {
 		return /^\s*ishikawa(-beta)?\b/i.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_382.mjs");
+		const { diagram: diagram2 } = await import("../_383.mjs");
 		return {
 			id: id30,
 			diagram: diagram2
@@ -32645,7 +32645,7 @@ var vennDetector_default = {
 		return /^\s*venn-beta/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_399.mjs");
+		const { diagram: diagram2 } = await import("../_400.mjs");
 		return {
 			id: id31,
 			diagram: diagram2
@@ -32659,7 +32659,7 @@ var treemap = {
 		return /^\s*treemap/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_374.mjs");
+		const { diagram: diagram2 } = await import("../_375.mjs");
 		return {
 			id: id32,
 			diagram: diagram2
@@ -32673,7 +32673,7 @@ var wardleyDetector_default = {
 		return /^\s*wardley-beta/i.test(text);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_400.mjs");
+		const { diagram: diagram2 } = await import("../_401.mjs");
 		return {
 			id: id33,
 			diagram: diagram2
@@ -32687,7 +32687,7 @@ var cynefin = {
 		return /^\s*cynefin-beta(?:[\s:]|$)/.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_369.mjs");
+		const { diagram: diagram2 } = await import("../_370.mjs");
 		return {
 			id: id34,
 			diagram: diagram2
@@ -32701,7 +32701,7 @@ var railroad = {
 		return /^\s*railroad-beta/i.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_389.mjs");
+		const { diagram: diagram2 } = await import("../_390.mjs");
 		return {
 			id: id35,
 			diagram: diagram2
@@ -32715,7 +32715,7 @@ var railroadEbnf = {
 		return /^\s*railroad-ebnf-beta/i.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_376.mjs");
+		const { diagram: diagram2 } = await import("../_377.mjs");
 		return {
 			id: id36,
 			diagram: diagram2
@@ -32729,7 +32729,7 @@ var railroadAbnf = {
 		return /^\s*railroad-abnf-beta/i.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_362.mjs");
+		const { diagram: diagram2 } = await import("../_363.mjs");
 		return {
 			id: id37,
 			diagram: diagram2
@@ -32743,7 +32743,7 @@ var railroadPeg = {
 		return /^\s*railroad-peg-beta/i.test(txt);
 	}, "detector"),
 	loader: /* @__PURE__ */ __name(async () => {
-		const { diagram: diagram2 } = await import("../_386.mjs");
+		const { diagram: diagram2 } = await import("../_387.mjs");
 		return {
 			id: id38,
 			diagram: diagram2

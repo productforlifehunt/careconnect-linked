@@ -1,2 +1,2 @@
-import { K as shaderlab_default } from "./shikijs__langs.mjs";
-export { shaderlab_default as default };
+import { q as scheme_default } from "./shikijs__langs.mjs";
+export { scheme_default as default };

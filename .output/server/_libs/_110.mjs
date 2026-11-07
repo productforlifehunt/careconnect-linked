@@ -1,2 +1,2 @@
-import { Sr as glsl_default } from "./shikijs__langs.mjs";
-export { glsl_default as default };
+import { Cr as regexp_default } from "./shikijs__langs.mjs";
+export { regexp_default as default };

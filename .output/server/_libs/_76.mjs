@@ -1,2 +1,2 @@
-import { ni as asciidoc_default } from "./shikijs__langs.mjs";
-export { asciidoc_default as default };
+import { ri as ara_default } from "./shikijs__langs.mjs";
+export { ara_default as default };

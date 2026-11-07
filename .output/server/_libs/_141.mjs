@@ -1,2 +1,2 @@
-import { Gn as fluent_default } from "./shikijs__langs.mjs";
-export { fluent_default as default };
+import { Kn as fish_default } from "./shikijs__langs.mjs";
+export { fish_default as default };

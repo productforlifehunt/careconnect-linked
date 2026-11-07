@@ -1,2 +1,2 @@
-import { q as scheme_default } from "./shikijs__langs.mjs";
-export { scheme_default as default };
+import { J as scala_default } from "./shikijs__langs.mjs";
+export { scala_default as default };

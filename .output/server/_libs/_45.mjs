@@ -1,2 +1,2 @@
-import { A as createCynefinServices } from "./mermaid-js__parser.mjs";
-export { createCynefinServices };
+import { M as createArchitectureServices } from "./mermaid-js__parser.mjs";
+export { createArchitectureServices };

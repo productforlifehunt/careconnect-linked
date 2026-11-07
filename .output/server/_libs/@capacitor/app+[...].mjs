@@ -518,7 +518,7 @@ var SystemBarsPluginWeb = class extends WebPlugin {
 registerPlugin("SystemBars", { web: () => new SystemBarsPluginWeb() });
 //#endregion
 //#region node_modules/@capacitor/app/dist/esm/index.js
-var App = registerPlugin("App", { web: () => import("../_40.mjs").then((m) => new m.AppWeb()) });
+var App = registerPlugin("App", { web: () => import("../_41.mjs").then((m) => new m.AppWeb()) });
 //#endregion
 //#region node_modules/@capacitor/app/dist/esm/web.js
 var AppWeb = class extends WebPlugin {

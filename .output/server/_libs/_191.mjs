@@ -1,2 +1,2 @@
-import { Yt as llvm_default } from "./shikijs__langs.mjs";
-export { llvm_default as default };
+import { Xt as liquid_default } from "./shikijs__langs.mjs";
+export { liquid_default as default };

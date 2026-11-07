@@ -1,2 +1,2 @@
-import { ai as apl_default } from "./shikijs__langs.mjs";
-export { apl_default as default };
+import { oi as json_default } from "./shikijs__langs.mjs";
+export { json_default as default };

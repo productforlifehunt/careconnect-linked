@@ -1,2 +1,2 @@
-import { et as ron_default } from "./shikijs__langs.mjs";
-export { ron_default as default };
+import { tt as riscv_default } from "./shikijs__langs.mjs";
+export { riscv_default as default };

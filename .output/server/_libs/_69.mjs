@@ -1,2 +1,2 @@
-import { li as apex_default } from "./shikijs__langs.mjs";
-export { apex_default as default };
+import { ui as apache_default } from "./shikijs__langs.mjs";
+export { apache_default as default };

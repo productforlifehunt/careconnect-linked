@@ -1,2 +1,2 @@
-import { oi as json_default } from "./shikijs__langs.mjs";
-export { json_default as default };
+import { si as xml_default } from "./shikijs__langs.mjs";
+export { xml_default as default };

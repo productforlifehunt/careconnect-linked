@@ -1,2 +1,2 @@
-import { S as night_owl_light_default } from "./shikijs__themes.mjs";
-export { night_owl_light_default as default };
+import { C as monokai_default } from "./shikijs__themes.mjs";
+export { monokai_default as default };

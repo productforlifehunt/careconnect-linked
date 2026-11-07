@@ -1,2 +1,2 @@
-import { wt as openscad_default } from "./shikijs__langs.mjs";
-export { openscad_default as default };
+import { Tt as odin_default } from "./shikijs__langs.mjs";
+export { odin_default as default };

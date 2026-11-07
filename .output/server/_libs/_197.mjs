@@ -1,2 +1,2 @@
-import { Ut as matlab_default } from "./shikijs__langs.mjs";
-export { matlab_default as default };
+import { Wt as marko_default } from "./shikijs__langs.mjs";
+export { marko_default as default };

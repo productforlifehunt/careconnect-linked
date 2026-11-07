@@ -1,2 +1,2 @@
-import { Z as github_dark_default_default } from "./shikijs__themes.mjs";
-export { github_dark_default_default as default };
+import { Q as everforest_light_default } from "./shikijs__themes.mjs";
+export { everforest_light_default as default };

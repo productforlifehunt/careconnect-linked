@@ -1,2 +1,2 @@
-import { Zt as less_default } from "./shikijs__langs.mjs";
-export { less_default as default };
+import { Qt as lean_default } from "./shikijs__langs.mjs";
+export { lean_default as default };

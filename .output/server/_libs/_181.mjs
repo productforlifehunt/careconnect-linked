@@ -1,2 +1,2 @@
-import { an as perl_default } from "./shikijs__langs.mjs";
-export { perl_default as default };
+import { on as julia_default } from "./shikijs__langs.mjs";
+export { julia_default as default };

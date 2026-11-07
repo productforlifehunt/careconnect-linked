@@ -1,2 +1,2 @@
-import { Ln as gherkin_default } from "./shikijs__langs.mjs";
-export { gherkin_default as default };
+import { Rn as genie_default } from "./shikijs__langs.mjs";
+export { genie_default as default };

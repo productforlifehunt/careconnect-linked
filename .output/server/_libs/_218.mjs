@@ -1,2 +1,2 @@
-import { St as php_default } from "./shikijs__langs.mjs";
-export { php_default as default };
+import { Ct as pascal_default } from "./shikijs__langs.mjs";
+export { pascal_default as default };

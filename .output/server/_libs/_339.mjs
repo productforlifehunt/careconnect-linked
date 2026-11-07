@@ -1,2 +1,2 @@
-import { b as nord_default } from "./shikijs__themes.mjs";
-export { nord_default as default };
+import { x as night_owl_default } from "./shikijs__themes.mjs";
+export { night_owl_default as default };

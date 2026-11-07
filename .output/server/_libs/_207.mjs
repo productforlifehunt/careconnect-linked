@@ -1,2 +1,2 @@
-import { Nt as nextflow_default } from "./shikijs__langs.mjs";
-export { nextflow_default as default };
+import { Pt as nextflow_groovy_default } from "./shikijs__langs.mjs";
+export { nextflow_groovy_default as default };

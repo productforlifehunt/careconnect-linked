@@ -1,2 +1,2 @@
-import { wn as haxe_default } from "./shikijs__langs.mjs";
-export { haxe_default as default };
+import { Tn as haskell_default } from "./shikijs__langs.mjs";
+export { haskell_default as default };

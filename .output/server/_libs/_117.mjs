@@ -1,2 +1,2 @@
-import { hr as cypher_default } from "./shikijs__langs.mjs";
-export { cypher_default as default };
+import { gr as cue_default } from "./shikijs__langs.mjs";
+export { cue_default as default };

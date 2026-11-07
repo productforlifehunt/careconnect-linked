@@ -1,2 +1,2 @@
-import { nt as dark_plus_default } from "./shikijs__themes.mjs";
-export { dark_plus_default as default };
+import { rt as catppuccin_mocha_default } from "./shikijs__themes.mjs";
+export { catppuccin_mocha_default as default };

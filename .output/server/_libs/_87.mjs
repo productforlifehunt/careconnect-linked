@@ -1,2 +1,2 @@
-import { Gr as bibtex_default } from "./shikijs__langs.mjs";
-export { bibtex_default as default };
+import { Kr as berry_default } from "./shikijs__langs.mjs";
+export { berry_default as default };

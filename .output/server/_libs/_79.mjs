@@ -1,2 +1,2 @@
-import { $r as postcss_default } from "./shikijs__langs.mjs";
-export { postcss_default as default };
+import { ei as typescript_default } from "./shikijs__langs.mjs";
+export { typescript_default as default };

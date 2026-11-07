@@ -1,2 +1,2 @@
-import { pt as proto_default } from "./shikijs__langs.mjs";
-export { proto_default as default };
+import { mt as prolog_default } from "./shikijs__langs.mjs";
+export { prolog_default as default };

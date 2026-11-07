@@ -1,2 +1,2 @@
-import { dt as puppet_default } from "./shikijs__langs.mjs";
-export { puppet_default as default };
+import { ft as pug_default } from "./shikijs__langs.mjs";
+export { pug_default as default };

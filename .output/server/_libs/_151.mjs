@@ -1,2 +1,2 @@
-import { Fn as git_rebase_default } from "./shikijs__langs.mjs";
-export { git_rebase_default as default };
+import { In as git_commit_default } from "./shikijs__langs.mjs";
+export { git_commit_default as default };

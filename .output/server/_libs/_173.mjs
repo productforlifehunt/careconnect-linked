@@ -1,2 +1,2 @@
-import { pn as jison_default } from "./shikijs__langs.mjs";
-export { jison_default as default };
+import { mn as jinja_default } from "./shikijs__langs.mjs";
+export { jinja_default as default };

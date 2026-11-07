@@ -1,2 +1,2 @@
-import { $ as everforest_dark_default } from "./shikijs__themes.mjs";
-export { everforest_dark_default as default };
+import { et as dracula_default } from "./shikijs__themes.mjs";
+export { dracula_default as default };

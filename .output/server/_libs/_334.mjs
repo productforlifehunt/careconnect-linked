@@ -1,2 +1,2 @@
-import { T as min_dark_default } from "./shikijs__themes.mjs";
-export { min_dark_default as default };
+import { E as material_theme_default } from "./shikijs__themes.mjs";
+export { material_theme_default as default };

@@ -1,2 +1,2 @@
-import { Rt as mojo_default } from "./shikijs__langs.mjs";
-export { mojo_default as default };
+import { zt as mipsasm_default } from "./shikijs__langs.mjs";
+export { mipsasm_default as default };

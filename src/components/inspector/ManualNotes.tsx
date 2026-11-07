@@ -209,7 +209,7 @@ export function ManualNotes({
         data: {
           keys,
           ...(fingerprint && tag ? { fingerprint, tag, page } : {}),
-          ...(legacySourceKey && fingerprint
+          ...(legacySourceKey
             ? { legacy: { key: legacySourceKey, label } }
             : {}),
         },

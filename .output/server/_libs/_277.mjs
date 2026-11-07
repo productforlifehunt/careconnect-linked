@@ -1,2 +1,2 @@
-import { _ as vb_default } from "./shikijs__langs.mjs";
-export { vb_default as default };
+import { v as vala_default } from "./shikijs__langs.mjs";
+export { vala_default as default };

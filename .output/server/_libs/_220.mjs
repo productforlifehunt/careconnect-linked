@@ -1,2 +1,2 @@
-import { bt as plsql_default } from "./shikijs__langs.mjs";
-export { plsql_default as default };
+import { xt as pkl_default } from "./shikijs__langs.mjs";
+export { pkl_default as default };

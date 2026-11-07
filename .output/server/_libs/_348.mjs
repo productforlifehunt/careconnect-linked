@@ -1,2 +1,2 @@
-import { d as slack_dark_default } from "./shikijs__themes.mjs";
-export { slack_dark_default as default };
+import { f as rose_pine_default } from "./shikijs__themes.mjs";
+export { rose_pine_default as default };

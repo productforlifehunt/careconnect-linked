@@ -1,2 +1,2 @@
-import { dr as desktop_default } from "./shikijs__langs.mjs";
-export { desktop_default as default };
+import { fr as dax_default } from "./shikijs__langs.mjs";
+export { dax_default as default };

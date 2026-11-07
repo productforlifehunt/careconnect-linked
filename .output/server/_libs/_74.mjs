@@ -1,2 +1,2 @@
-import { ii as applescript_default } from "./shikijs__langs.mjs";
-export { applescript_default as default };
+import { ai as apl_default } from "./shikijs__langs.mjs";
+export { apl_default as default };

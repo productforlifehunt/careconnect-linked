@@ -1,2 +1,2 @@
-import { mn as jinja_default } from "./shikijs__langs.mjs";
-export { jinja_default as default };
+import { hn as ini_default } from "./shikijs__langs.mjs";
+export { ini_default as default };

@@ -1,2 +1,2 @@
-import { It as move_default } from "./shikijs__langs.mjs";
-export { move_default as default };
+import { Lt as moonbit_default } from "./shikijs__langs.mjs";
+export { moonbit_default as default };

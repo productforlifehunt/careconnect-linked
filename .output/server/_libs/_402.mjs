@@ -1,2 +1,2 @@
-import { c as katex } from "./katex.mjs";
-export { katex as default };
+import { t as diagram } from "./mermaid+uuid.mjs";
+export { diagram };

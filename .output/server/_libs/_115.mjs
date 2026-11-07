@@ -1,2 +1,2 @@
-import { _r as csv_default } from "./shikijs__langs.mjs";
-export { csv_default as default };
+import { vr as csharp_default } from "./shikijs__langs.mjs";
+export { csharp_default as default };

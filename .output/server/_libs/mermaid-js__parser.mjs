@@ -28073,63 +28073,63 @@ __name(createWardleyServices, "createWardleyServices");
 var parsers = {};
 var initializers = {
 	info: /* @__PURE__ */ __name(async () => {
-		const { createInfoServices: createInfoServices2 } = await import("./_48.mjs");
+		const { createInfoServices: createInfoServices2 } = await import("./_49.mjs");
 		parsers.info = createInfoServices2().Info.parser.LangiumParser;
 	}, "info"),
 	packet: /* @__PURE__ */ __name(async () => {
-		const { createPacketServices: createPacketServices2 } = await import("./_49.mjs");
+		const { createPacketServices: createPacketServices2 } = await import("./_50.mjs");
 		parsers.packet = createPacketServices2().Packet.parser.LangiumParser;
 	}, "packet"),
 	pie: /* @__PURE__ */ __name(async () => {
-		const { createPieServices: createPieServices2 } = await import("./_50.mjs");
+		const { createPieServices: createPieServices2 } = await import("./_51.mjs");
 		parsers.pie = createPieServices2().Pie.parser.LangiumParser;
 	}, "pie"),
 	treeView: /* @__PURE__ */ __name(async () => {
-		const { createTreeViewServices: createTreeViewServices2 } = await import("./_56.mjs");
+		const { createTreeViewServices: createTreeViewServices2 } = await import("./_57.mjs");
 		parsers.treeView = createTreeViewServices2().TreeView.parser.LangiumParser;
 	}, "treeView"),
 	architecture: /* @__PURE__ */ __name(async () => {
-		const { createArchitectureServices: createArchitectureServices2 } = await import("./_44.mjs");
+		const { createArchitectureServices: createArchitectureServices2 } = await import("./_45.mjs");
 		parsers.architecture = createArchitectureServices2().Architecture.parser.LangiumParser;
 	}, "architecture"),
 	gitGraph: /* @__PURE__ */ __name(async () => {
-		const { createGitGraphServices: createGitGraphServices2 } = await import("./_47.mjs");
+		const { createGitGraphServices: createGitGraphServices2 } = await import("./_48.mjs");
 		parsers.gitGraph = createGitGraphServices2().GitGraph.parser.LangiumParser;
 	}, "gitGraph"),
 	eventmodeling: /* @__PURE__ */ __name(async () => {
-		const { createEventModelingServices: createEventModelingServices2 } = await import("./_46.mjs");
+		const { createEventModelingServices: createEventModelingServices2 } = await import("./_47.mjs");
 		parsers.eventmodeling = createEventModelingServices2().EventModel.parser.LangiumParser;
 	}, "eventmodeling"),
 	radar: /* @__PURE__ */ __name(async () => {
-		const { createRadarServices: createRadarServices2 } = await import("./_51.mjs");
+		const { createRadarServices: createRadarServices2 } = await import("./_52.mjs");
 		parsers.radar = createRadarServices2().Radar.parser.LangiumParser;
 	}, "radar"),
 	railroad: /* @__PURE__ */ __name(async () => {
-		const { createRailroadServices: createRailroadServices2 } = await import("./_52.mjs");
+		const { createRailroadServices: createRailroadServices2 } = await import("./_53.mjs");
 		parsers.railroad = createRailroadServices2().Railroad.parser.LangiumParser;
 	}, "railroad"),
 	railroadEbnf: /* @__PURE__ */ __name(async () => {
-		const { createRailroadEbnfServices: createRailroadEbnfServices2 } = await import("./_54.mjs");
+		const { createRailroadEbnfServices: createRailroadEbnfServices2 } = await import("./_55.mjs");
 		parsers.railroadEbnf = createRailroadEbnfServices2().RailroadEbnf.parser.LangiumParser;
 	}, "railroadEbnf"),
 	railroadAbnf: /* @__PURE__ */ __name(async () => {
-		const { createRailroadAbnfServices: createRailroadAbnfServices2 } = await import("./_53.mjs");
+		const { createRailroadAbnfServices: createRailroadAbnfServices2 } = await import("./_54.mjs");
 		parsers.railroadAbnf = createRailroadAbnfServices2().RailroadAbnf.parser.LangiumParser;
 	}, "railroadAbnf"),
 	railroadPeg: /* @__PURE__ */ __name(async () => {
-		const { createRailroadPegServices: createRailroadPegServices2 } = await import("./_55.mjs");
+		const { createRailroadPegServices: createRailroadPegServices2 } = await import("./_56.mjs");
 		parsers.railroadPeg = createRailroadPegServices2().RailroadPeg.parser.LangiumParser;
 	}, "railroadPeg"),
 	treemap: /* @__PURE__ */ __name(async () => {
-		const { createTreemapServices: createTreemapServices2 } = await import("./_57.mjs");
+		const { createTreemapServices: createTreemapServices2 } = await import("./_58.mjs");
 		parsers.treemap = createTreemapServices2().Treemap.parser.LangiumParser;
 	}, "treemap"),
 	wardley: /* @__PURE__ */ __name(async () => {
-		const { createWardleyServices: createWardleyServices2 } = await import("./_58.mjs");
+		const { createWardleyServices: createWardleyServices2 } = await import("./_59.mjs");
 		parsers.wardley = createWardleyServices2().Wardley.parser.LangiumParser;
 	}, "wardley"),
 	cynefin: /* @__PURE__ */ __name(async () => {
-		const { createCynefinServices: createCynefinServices2 } = await import("./_45.mjs");
+		const { createCynefinServices: createCynefinServices2 } = await import("./_46.mjs");
 		parsers.cynefin = createCynefinServices2().Cynefin.parser.LangiumParser;
 	}, "cynefin")
 };

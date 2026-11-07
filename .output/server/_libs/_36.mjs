@@ -1,2 +1,2 @@
-import { t as formatSourceEvidence } from "../_ssr/source-evidence-CocJZGyq.mjs";
-export { formatSourceEvidence };
+import { r as samePosition } from "../_ssr/position-bindings-DbhXelFw.mjs";
+export { samePosition };

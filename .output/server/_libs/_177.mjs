@@ -1,2 +1,2 @@
-import { ln as jsonnet_default } from "./shikijs__langs.mjs";
-export { jsonnet_default as default };
+import { un as jsonl_default } from "./shikijs__langs.mjs";
+export { jsonl_default as default };

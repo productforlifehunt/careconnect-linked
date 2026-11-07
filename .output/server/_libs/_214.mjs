@@ -1,2 +1,2 @@
-import { Et as ocaml_default } from "./shikijs__langs.mjs";
-export { ocaml_default as default };
+import { Dt as objective_cpp_default } from "./shikijs__langs.mjs";
+export { objective_cpp_default as default };

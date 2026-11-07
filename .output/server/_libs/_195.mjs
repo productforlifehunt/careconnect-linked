@@ -1,2 +1,2 @@
-import { Gt as make_default } from "./shikijs__langs.mjs";
-export { make_default as default };
+import { Kt as luau_default } from "./shikijs__langs.mjs";
+export { luau_default as default };

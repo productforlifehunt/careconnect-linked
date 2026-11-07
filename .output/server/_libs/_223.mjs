@@ -1,2 +1,2 @@
-import { _t as powerquery_default } from "./shikijs__langs.mjs";
-export { powerquery_default as default };
+import { vt as polar_default } from "./shikijs__langs.mjs";
+export { polar_default as default };

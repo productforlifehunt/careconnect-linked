@@ -1,2 +1,2 @@
-import { Nn as glimmer_js_default } from "./shikijs__langs.mjs";
-export { glimmer_js_default as default };
+import { Pn as gleam_default } from "./shikijs__langs.mjs";
+export { gleam_default as default };

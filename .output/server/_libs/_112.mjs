@@ -1,2 +1,2 @@
-import { br as shellscript_default } from "./shikijs__langs.mjs";
-export { shellscript_default as default };
+import { xr as cpp_default } from "./shikijs__langs.mjs";
+export { cpp_default as default };

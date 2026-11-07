@@ -1,2 +1,2 @@
-import { vt as polar_default } from "./shikijs__langs.mjs";
-export { polar_default as default };
+import { yt as po_default } from "./shikijs__langs.mjs";
+export { po_default as default };

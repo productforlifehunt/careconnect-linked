@@ -1,2 +1,2 @@
-import { l as snazzy_light_default } from "./shikijs__themes.mjs";
-export { snazzy_light_default as default };
+import { u as slack_ochin_default } from "./shikijs__themes.mjs";
+export { slack_ochin_default as default };

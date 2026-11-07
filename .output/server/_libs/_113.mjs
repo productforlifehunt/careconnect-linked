@@ -1,2 +1,2 @@
-import { yr as crystal_default } from "./shikijs__langs.mjs";
-export { crystal_default as default };
+import { br as shellscript_default } from "./shikijs__langs.mjs";
+export { shellscript_default as default };

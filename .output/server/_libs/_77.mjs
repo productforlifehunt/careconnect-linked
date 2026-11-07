@@ -1,2 +1,2 @@
-import { ti as asm_default } from "./shikijs__langs.mjs";
-export { asm_default as default };
+import { ni as asciidoc_default } from "./shikijs__langs.mjs";
+export { asciidoc_default as default };

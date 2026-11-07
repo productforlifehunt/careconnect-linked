@@ -1,2 +1,2 @@
-import { gn as imba_default } from "./shikijs__langs.mjs";
-export { imba_default as default };
+import { _n as hy_default } from "./shikijs__langs.mjs";
+export { hy_default as default };

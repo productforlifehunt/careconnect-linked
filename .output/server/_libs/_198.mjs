@@ -1,2 +1,2 @@
-import { Ht as mdc_default } from "./shikijs__langs.mjs";
-export { mdc_default as default };
+import { Ut as matlab_default } from "./shikijs__langs.mjs";
+export { matlab_default as default };

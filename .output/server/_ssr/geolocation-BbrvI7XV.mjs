@@ -10,7 +10,7 @@ var geolocation_exports = /* @__PURE__ */ __exportAll({ getCurrentPosition: () =
 async function getCurrentPosition(options) {
 	const timeout = options?.timeout ?? 1e4;
 	if (Capacitor.isNativePlatform()) try {
-		const { Geolocation } = await import("../_libs/_41.mjs");
+		const { Geolocation } = await import("../_libs/_42.mjs");
 		if ((await Geolocation.checkPermissions()).location === "denied") {
 			if ((await Geolocation.requestPermissions()).location === "denied") return null;
 		}

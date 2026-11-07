@@ -1,2 +1,2 @@
-import { vr as csharp_default } from "./shikijs__langs.mjs";
-export { csharp_default as default };
+import { yr as crystal_default } from "./shikijs__langs.mjs";
+export { crystal_default as default };

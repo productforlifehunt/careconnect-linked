@@ -1,2 +1,2 @@
-import { zr as sdbl_default } from "./shikijs__langs.mjs";
-export { sdbl_default as default };
+import { Br as blade_default } from "./shikijs__langs.mjs";
+export { blade_default as default };

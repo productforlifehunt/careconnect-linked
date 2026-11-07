@@ -1,2 +1,2 @@
-import { ht as prisma_default } from "./shikijs__langs.mjs";
-export { prisma_default as default };
+import { gt as powershell_default } from "./shikijs__langs.mjs";
+export { powershell_default as default };

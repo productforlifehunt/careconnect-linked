@@ -1,2 +1,2 @@
-import { Mr as clarity_default } from "./shikijs__langs.mjs";
-export { clarity_default as default };
+import { Nr as cairo_default } from "./shikijs__langs.mjs";
+export { cairo_default as default };

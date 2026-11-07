@@ -1,2 +1,2 @@
-import { ot as racket_default } from "./shikijs__langs.mjs";
-export { racket_default as default };
+import { st as qss_default } from "./shikijs__langs.mjs";
+export { qss_default as default };

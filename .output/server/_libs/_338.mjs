@@ -1,2 +1,2 @@
-import { x as night_owl_default } from "./shikijs__themes.mjs";
-export { night_owl_default as default };
+import { S as night_owl_light_default } from "./shikijs__themes.mjs";
+export { night_owl_light_default as default };

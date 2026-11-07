@@ -1,2 +1,2 @@
-import { j as light_plus_default } from "./shikijs__themes.mjs";
-export { light_plus_default as default };
+import { M as laserwave_default } from "./shikijs__themes.mjs";
+export { laserwave_default as default };

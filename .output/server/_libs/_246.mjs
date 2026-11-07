@@ -1,2 +1,2 @@
-import { J as scala_default } from "./shikijs__langs.mjs";
-export { scala_default as default };
+import { Y as sass_default } from "./shikijs__langs.mjs";
+export { sass_default as default };

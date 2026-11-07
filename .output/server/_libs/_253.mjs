@@ -1,2 +1,2 @@
-import { V as turtle_default } from "./shikijs__langs.mjs";
-export { turtle_default as default };
+import { H as soy_default } from "./shikijs__langs.mjs";
+export { soy_default as default };

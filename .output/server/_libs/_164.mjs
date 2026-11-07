@@ -1,2 +1,2 @@
-import { Sn as hjson_default } from "./shikijs__langs.mjs";
-export { hjson_default as default };
+import { Cn as hcl_default } from "./shikijs__langs.mjs";
+export { hcl_default as default };

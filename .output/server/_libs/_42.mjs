@@ -1,2 +1,2 @@
-import { t as GeolocationWeb } from "./@capacitor/geolocation+[...].mjs";
-export { GeolocationWeb };
+import { n as Geolocation } from "./@capacitor/geolocation+[...].mjs";
+export { Geolocation };

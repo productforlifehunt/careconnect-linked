@@ -1,2 +1,2 @@
-import { N as swift_default } from "./shikijs__langs.mjs";
-export { swift_default as default };
+import { P as svelte_default } from "./shikijs__langs.mjs";
+export { svelte_default as default };

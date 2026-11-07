@@ -1,2 +1,2 @@
-import { Y as sass_default } from "./shikijs__langs.mjs";
-export { sass_default as default };
+import { X as sas_default } from "./shikijs__langs.mjs";
+export { sas_default as default };

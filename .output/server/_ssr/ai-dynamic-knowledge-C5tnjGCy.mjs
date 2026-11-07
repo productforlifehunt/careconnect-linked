@@ -670,7 +670,7 @@ var isNative = () => Capacitor.isNativePlatform();
 var platform = () => Capacitor.getPlatform();
 async function checkPushPermission() {
 	if (isNative()) try {
-		const { PushNotifications } = await import("../_libs/_43.mjs");
+		const { PushNotifications } = await import("../_libs/_44.mjs");
 		const r = await PushNotifications.checkPermissions();
 		return r.receive === "granted" ? "granted" : r.receive === "denied" ? "denied" : "prompt";
 	} catch {
@@ -686,7 +686,7 @@ async function checkPushPermission() {
 */
 async function requestPushPermission(onToken) {
 	if (isNative()) try {
-		const { PushNotifications } = await import("../_libs/_43.mjs");
+		const { PushNotifications } = await import("../_libs/_44.mjs");
 		const req = await PushNotifications.requestPermissions();
 		if (req.receive !== "granted") return req.receive === "denied" ? "denied" : "prompt";
 		if (onToken) {
@@ -708,7 +708,7 @@ async function requestPushPermission(onToken) {
 }
 async function checkLocationPermission() {
 	if (isNative()) try {
-		const { Geolocation } = await import("../_libs/_41.mjs");
+		const { Geolocation } = await import("../_libs/_42.mjs");
 		const r = await Geolocation.checkPermissions();
 		const v = r.location ?? r.coarseLocation;
 		return v === "granted" ? "granted" : v === "denied" ? "denied" : "prompt";
@@ -726,7 +726,7 @@ async function checkLocationPermission() {
 }
 async function requestLocationPermission() {
 	if (isNative()) try {
-		const { Geolocation } = await import("../_libs/_41.mjs");
+		const { Geolocation } = await import("../_libs/_42.mjs");
 		const r = await Geolocation.requestPermissions();
 		return r.location === "granted" ? "granted" : r.location === "denied" ? "denied" : "prompt";
 	} catch {
@@ -780,7 +780,7 @@ async function openAppSettings() {
 		return true;
 	} catch {
 		try {
-			const { App } = await import("../_libs/_39.mjs");
+			const { App } = await import("../_libs/_40.mjs");
 			await App.openUrl?.({ url: "app-settings:" });
 			return true;
 		} catch {

@@ -1,2 +1,2 @@
-import { Br as blade_default } from "./shikijs__langs.mjs";
-export { blade_default as default };
+import { Vr as sql_default } from "./shikijs__langs.mjs";
+export { sql_default as default };

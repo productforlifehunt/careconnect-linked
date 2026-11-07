@@ -1,2 +1,2 @@
-import { O as tcl_default } from "./shikijs__langs.mjs";
-export { tcl_default as default };
+import { k as tasl_default } from "./shikijs__langs.mjs";
+export { tasl_default as default };

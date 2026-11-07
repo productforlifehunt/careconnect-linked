@@ -1,2 +1,2 @@
-import { dn as jsonc_default } from "./shikijs__langs.mjs";
-export { jsonc_default as default };
+import { fn as json5_default } from "./shikijs__langs.mjs";
+export { json5_default as default };

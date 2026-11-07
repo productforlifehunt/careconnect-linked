@@ -1,2 +1,2 @@
-import { Vt as mdx_default } from "./shikijs__langs.mjs";
-export { mdx_default as default };
+import { Ht as mdc_default } from "./shikijs__langs.mjs";
+export { mdc_default as default };

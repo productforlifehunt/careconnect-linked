@@ -1,2 +1,2 @@
-import { x as typespec_default } from "./shikijs__langs.mjs";
-export { typespec_default as default };
+import { S as twig_default } from "./shikijs__langs.mjs";
+export { twig_default as default };

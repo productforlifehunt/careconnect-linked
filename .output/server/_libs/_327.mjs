@@ -1,2 +1,2 @@
-import { M as laserwave_default } from "./shikijs__themes.mjs";
-export { laserwave_default as default };
+import { N as kanagawa_wave_default } from "./shikijs__themes.mjs";
+export { kanagawa_wave_default as default };

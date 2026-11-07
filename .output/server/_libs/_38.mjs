@@ -1,2 +1,3 @@
-import { n as server_default, t as renderErrorPage } from "../_ssr/ssr.mjs";
-export { server_default as default, renderErrorPage as t };
+import { i as require_token_util } from "./@ai-sdk/gateway+[...].mjs";
+export default require_token_util();
+export {};

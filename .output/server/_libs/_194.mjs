@@ -1,2 +1,2 @@
-import { Kt as luau_default } from "./shikijs__langs.mjs";
-export { luau_default as default };
+import { qt as logo_default } from "./shikijs__langs.mjs";
+export { logo_default as default };

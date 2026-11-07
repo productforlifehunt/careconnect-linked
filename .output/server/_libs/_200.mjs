@@ -1,2 +1,2 @@
-import { Bt as mermaid_default } from "./shikijs__langs.mjs";
-export { mermaid_default as default };
+import { Vt as mdx_default } from "./shikijs__langs.mjs";
+export { mdx_default as default };

@@ -1,2 +1,2 @@
-import { Rn as genie_default } from "./shikijs__langs.mjs";
-export { genie_default as default };
+import { zn as gdresource_default } from "./shikijs__langs.mjs";
+export { gdresource_default as default };

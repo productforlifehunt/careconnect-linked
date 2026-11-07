@@ -1,2 +1,2 @@
-import { sn as r_default } from "./shikijs__langs.mjs";
-export { r_default as default };
+import { cn as jssm_default } from "./shikijs__langs.mjs";
+export { jssm_default as default };

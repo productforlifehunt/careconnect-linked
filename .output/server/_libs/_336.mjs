@@ -1,2 +1,2 @@
-import { C as monokai_default } from "./shikijs__themes.mjs";
-export { monokai_default as default };
+import { w as min_light_default } from "./shikijs__themes.mjs";
+export { min_light_default as default };

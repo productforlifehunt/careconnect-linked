@@ -33,7 +33,7 @@ export const loadInspectorNotes = createServerFn({ method: "POST" })
       const notes = (await Promise.all(data.keys.map(readNoteForKey))).filter(
         (n) => !!n,
       );
-      if (!notes.length && data.legacy && data.fingerprint) {
+      if (!notes.length && data.legacy) {
         const { matchingLegacyLabel } =
           await import("@/features/inspector/legacy-match");
         const old = await readNoteForKey(data.legacy.key);

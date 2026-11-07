@@ -1,2 +1,2 @@
-import { F as surrealql_default } from "./shikijs__langs.mjs";
-export { surrealql_default as default };
+import { I as stylus_default } from "./shikijs__langs.mjs";
+export { stylus_default as default };

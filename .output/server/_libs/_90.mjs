@@ -1,2 +1,2 @@
-import { Hr as html_derivative_default } from "./shikijs__langs.mjs";
-export { html_derivative_default as default };
+import { Ur as bird2_default } from "./shikijs__langs.mjs";
+export { bird2_default as default };

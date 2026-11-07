@@ -1,2 +1,2 @@
-import { lr as docker_default } from "./shikijs__langs.mjs";
-export { docker_default as default };
+import { ur as diff_default } from "./shikijs__langs.mjs";
+export { diff_default as default };

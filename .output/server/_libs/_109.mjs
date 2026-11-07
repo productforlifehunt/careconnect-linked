@@ -1,2 +1,2 @@
-import { Cr as regexp_default } from "./shikijs__langs.mjs";
-export { regexp_default as default };
+import { wr as coq_default } from "./shikijs__langs.mjs";
+export { coq_default as default };

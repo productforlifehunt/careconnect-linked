@@ -1,2 +1,2 @@
-import { pi as angular_html_default } from "./shikijs__langs.mjs";
-export { angular_html_default as default };
+import { mi as html_default } from "./shikijs__langs.mjs";
+export { html_default as default };

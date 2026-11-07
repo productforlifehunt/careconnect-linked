@@ -1,2 +1,2 @@
-import { gt as powershell_default } from "./shikijs__langs.mjs";
-export { powershell_default as default };
+import { _t as powerquery_default } from "./shikijs__langs.mjs";
+export { powerquery_default as default };

@@ -1,2 +1,2 @@
-import { P as svelte_default } from "./shikijs__langs.mjs";
-export { svelte_default as default };
+import { F as surrealql_default } from "./shikijs__langs.mjs";
+export { surrealql_default as default };

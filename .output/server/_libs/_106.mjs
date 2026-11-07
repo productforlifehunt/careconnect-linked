@@ -1,2 +1,2 @@
-import { Er as coffee_default } from "./shikijs__langs.mjs";
-export { coffee_default as default };
+import { Dr as codeql_default } from "./shikijs__langs.mjs";
+export { codeql_default as default };

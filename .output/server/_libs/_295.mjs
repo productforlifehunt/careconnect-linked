@@ -1,2 +1,2 @@
-import { ut as aurora_x_default } from "./shikijs__themes.mjs";
-export { aurora_x_default as default };
+import { dt as andromeeda_default } from "./shikijs__themes.mjs";
+export { andromeeda_default as default };

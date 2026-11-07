@@ -1,2 +1,2 @@
-import { L as stata_default } from "./shikijs__langs.mjs";
-export { stata_default as default };
+import { R as ssh_config_default } from "./shikijs__langs.mjs";
+export { ssh_config_default as default };

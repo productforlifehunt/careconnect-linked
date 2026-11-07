@@ -1,2 +1,2 @@
-import { c as diagram } from "./mermaid+uuid.mjs";
-export { diagram };
+import { l as captureNodeSizes } from "./mermaid+uuid.mjs";
+export { captureNodeSizes };

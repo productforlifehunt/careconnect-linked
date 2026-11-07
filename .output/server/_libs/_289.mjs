@@ -1,2 +1,2 @@
-import { a as wit_default } from "./shikijs__langs.mjs";
-export { wit_default as default };
+import { o as wikitext_default } from "./shikijs__langs.mjs";
+export { wikitext_default as default };

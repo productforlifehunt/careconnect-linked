@@ -1,2 +1,2 @@
-import { t as T } from "./streamdown+[...].mjs";
-export { T as HighlightedCodeBlockBody };
+import { t as _mod } from "./shiki.mjs";
+export { _mod as default };

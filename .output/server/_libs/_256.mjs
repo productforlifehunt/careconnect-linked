@@ -1,2 +1,2 @@
-import { R as ssh_config_default } from "./shikijs__langs.mjs";
-export { ssh_config_default as default };
+import { z as splunk_default } from "./shikijs__langs.mjs";
+export { splunk_default as default };

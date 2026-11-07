@@ -1,2 +1,2 @@
-import { in as just_default } from "./shikijs__langs.mjs";
-export { just_default as default };
+import { an as perl_default } from "./shikijs__langs.mjs";
+export { perl_default as default };
