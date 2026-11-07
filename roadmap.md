@@ -564,6 +564,8 @@
 
 ## Draftbit 全量复刻（用户 2026-11-03 指令："全部做"）
 - [ ] 2026-11-07 续做：只按现有代码参考，Draftbit Classic GUI 补齐全部显示/功能；不浏览原 App，不修改笔记或关联。保存的私有会话恢复成功，编辑器确认 CareConnect Backup 有 24 页；全量完成尚未核验。
+- [x] 2026-11-07 GUI：Voices 外层错误 Cared Ones 标题改 Family Voices，删除复制残留副标题，空状态改 No voices yet；标题及副标题删除刷新后可见核验。没有修改 WordPress 数据/笔记/REL。
+- [~] 2026-11-07 GUI：新增 CareConnect Family Voices 原生 REST 服务，开发/正式地址均为现有正式站，Authorization 绑定 AUTH_TOKEN；刷新确认保存。List Family Voices POST /api/public/family-voices（action=list,caredOneId）已保存，Skip Test 所示 200 {} 不是实测。Fetch 不提供 POST body 参数，试接返回 Invalid request，已撤回并确认原 REL323+caredOneId 读取参数保留。需原生 API Request→Screen Variable→List 接入，尚未完成；录音/复刻/原音的外部 HTTP 接口现未具备，不能冒充完成。
 - [ ] 圆按钮重测（每次整页重载）：已通过 Voices/Calendar/Post/Community/Resources；其余进行中
 - [ ] 主线：用药/签到按次打卡、群组 /care-circle 加入流程、双语
 - [ ] 缺失约 40 页：电商(Woo/Dokan)、找护理者细分/机构、定位地图与区域、五个内容专区与文章、消息/通知/资料/引导/帮助/重置密码/分享
