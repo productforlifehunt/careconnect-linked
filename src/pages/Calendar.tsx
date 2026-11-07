@@ -266,6 +266,7 @@ export default function CalendarPage() {
           noEventsText={isZh ? "本周没有日程" : "No events this week"}
           events={fcEvents}
           height="auto"
+          datesSet={() => requestAnimationFrame(markCalendarToolbar)}
           nowIndicator
           dayMaxEvents={2}
           fixedWeekCount={false}
@@ -275,6 +276,7 @@ export default function CalendarPage() {
             const identity = `components/pages/Calendar/event/${arg.event.id}`;
             arg.el.setAttribute("data-inspector-id", identity);
             arg.el.querySelector("a")?.setAttribute("data-inspector-id", identity);
+            markCalendarToolbar();
           }}
           dateClick={openCreate}
           eventClick={(info) => {
