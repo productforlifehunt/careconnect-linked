@@ -22,6 +22,18 @@ describe('published visible slot identity', () => {
     expect(inspectorTarget(host.querySelector('span')!)).toBe(host.querySelector('button'));
     expect(inspectorTarget(host.querySelector('svg')!)).toBe(host.querySelector('button'));
   });
+  it('keeps fixed numeric filter choices distinct when labels and selection state change', () => {
+    const host = document.createElement('div');
+    host.innerHTML = '<button data-inspector-id="pages/SearchResults/FilterPanel/rating-0">Any</button><button data-inspector-id="pages/SearchResults/FilterPanel/rating-4">4+</button><button data-inspector-id="pages/SearchResults/FilterPanel/rating-4.5">4.5+</button><button data-inspector-id="pages/SearchResults/FilterPanel/rating-4.8">4.8+</button>';
+    const buttons = [...host.querySelectorAll('button')];
+    const keys = buttons.map((button) => stableElementKey('/search', stableAnchor(button)));
+    expect(new Set(keys).size).toBe(4);
+    buttons.forEach((button, index) => {
+      button.textContent = `translated ${index}`;
+      button.className = index === 2 ? 'selected bg-blue-500' : 'bg-gray-100';
+    });
+    expect(buttons.map((button) => stableElementKey('/search', stableAnchor(button)))).toEqual(keys);
+  });
   it('keeps portal AI controls independent of the underlying page', () => {
     const host = document.createElement('div');
     host.innerHTML = '<div data-inspector-scope="ai-chat-dialog"><textarea data-inspector-id="AI/message/textarea/0"></textarea></div>';
