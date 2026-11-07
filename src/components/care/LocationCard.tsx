@@ -412,9 +412,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
         const zoomIn = mapRef.current.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-in");
         const zoomOut = mapRef.current.querySelector<HTMLAnchorElement>(".leaflet-control-zoom-out");
         zoomIn?.setAttribute("data-inspector-id", "location-map/zoom-in");
-        zoomIn?.setAttribute("aria-label", isZh ? "放大地图" : "Zoom in map");
         zoomOut?.setAttribute("data-inspector-id", "location-map/zoom-out");
-        zoomOut?.setAttribute("aria-label", isZh ? "缩小地图" : "Zoom out map");
         Lx.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
         leafletMapRef.current = map;
         mapReadyRef.current = true;
