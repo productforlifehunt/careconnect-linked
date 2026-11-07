@@ -23,7 +23,7 @@ import { Sparkles } from 'lucide-react';
 /** Per-element read cache for this browser session; cleared on save/lock/retry so it never shows stale bindings. */
 const oneCache = new Map<string, CCTNote | null>();
 
-export function ManualNotes({ noteKey, legacyKey, legacySourceKey, fingerprint, scope, page, label, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string; legacySourceKey?: string; alias?: string; fingerprint?: string | undefined; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
+export function ManualNotes({ noteKey, legacyKey, legacySourceKey, fingerprint, scope, page, label, tag, onChange, buildEvidence, evidenceReady = false }: { noteKey: string; legacyKey?: string | undefined; legacySourceKey?: string | undefined; alias?: string; fingerprint?: string | undefined; scope: "element" | "page"; page: string; label: string; source?: string | undefined; tag?: string | undefined; onChange?: (text: string) => void; buildEvidence?: () => string; evidenceReady?: boolean }) {
   const loadOne = useServerFn(loadInspectorNotes); const save = useServerFn(saveInspectorNote);
   const select = useServerFn(selectInspectorNote);
   const analyze = useServerFn(explainReadWrite);
@@ -96,7 +96,7 @@ export function ManualNotes({ noteKey, legacyKey, legacySourceKey, fingerprint, 
       loadOne({ data: { keys, ...(fingerprint && tag ? { fingerprint, tag } : {}), ...(legacySourceKey && fingerprint ? { legacy: { key: legacySourceKey, label } } : {}) } }).then((r) => {
         if ('error' in r && r.error) throw new Error(r.error);
         const n = (r.notes as CCTNote[])[0] || null;
-        oneCache.set(`${session}|${noteKey}`, n);
+        if (n) oneCache.set(`${session}|${noteKey}`, n);
         return apply(new Map(n ? [[noteKey, n]] : []) as Parameters<typeof apply>[0]);
       }).catch((e) => live && setState({ error: String(e) }));
     }

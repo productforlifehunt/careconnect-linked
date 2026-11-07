@@ -50,7 +50,7 @@ const CCT_BASE = 'https://app.challenged-dementia.com/afresh/wp-json/jet-cct/man
 async function wp(path = '', method = 'GET', body?: unknown): Promise<unknown> {
   const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (user && password) headers.Authorization = `Basic ${btoa(`${user}:${password}`)}`;
+  if (user && password) headers['Authorization'] = `Basic ${btoa(`${user}:${password}`)}`;
   const response = await fetch(CCT_BASE + path, { method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   if (!response.ok) throw new Error(`注释读取或保存失败（${response.status}），请重试。`);
   return response.json();
@@ -115,7 +115,7 @@ export async function readNoteForFingerprint(key: string, fingerprint: string, t
     if (result.length < 100) break;
   }
   const matches = rows.flatMap(row => positionBindings(row.a59, String(row._ID)).filter(b =>
-    b.source?.file === file && b.source.tag.toLowerCase() === tag.toLowerCase() && b.source.digest === digest
+    b.source?.file === file && b.source?.tag.toLowerCase() === tag.toLowerCase() && b.source?.digest === digest
   ).map(b => ({ row, binding: b })));
   if (new Set(matches.map(m => m.binding.id)).size !== 1) return null;
   const found = matches[0];
@@ -153,7 +153,7 @@ const PARALLEL = 3;
 async function readPage(offset: number): Promise<{ rows: CCTRow[]; total: number | null }> {
   const user = process.env['WP_ADMIN_USER']; const password = process.env['WP_ADMIN_APP_PASSWORD'];
   const headers: Record<string, string> = {};
-  if (user && password) headers.Authorization = `Basic ${btoa(`${user}:${password}`)}`;
+  if (user && password) headers['Authorization'] = `Basic ${btoa(`${user}:${password}`)}`;
   const response = await fetch(`${CCT_BASE}?_limit=${PAGE}&_offset=${offset}&_orderby=_ID&_order=asc`, { headers });
   if (!response.ok) throw new Error(`注释读取或保存失败（${response.status}），请重试。`);
   const result = await response.json();
