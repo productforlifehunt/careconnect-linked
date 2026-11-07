@@ -51,7 +51,19 @@ export function inspectorSourcePlugin(): Plugin {
             let owner: ts.Node | undefined = node.parent;
             while (owner && !ts.isFunctionDeclaration(owner) && !ts.isVariableDeclaration(owner)) owner = owner.parent;
             const ownerName = owner && "name" in owner && owner.name ? (owner.name as ts.Node).getText(source) : "module";
-            const slot = `${name.replace(/\.tsx$/, "")}/${ownerName}/${tag}`;
+            const identifiers: string[] = [];
+            const collect = (part: ts.Node) => {
+              if (ts.isIdentifier(part)) identifiers.push(part.text);
+              ts.forEachChild(part, collect);
+            };
+            for (const attr of node.attributes.properties) {
+              if (ts.isJsxAttribute(attr) && /^(name|value|checked|on[A-Z].*)$/.test(attr.name.getText(source)) && attr.initializer && ts.isJsxExpression(attr.initializer)) collect(attr.initializer);
+            }
+            if (ts.isJsxOpeningElement(node) && ts.isJsxElement(node.parent)) {
+              for (const child of node.parent.children) if (ts.isJsxExpression(child)) collect(child);
+            }
+            const semantic = identifiers.length ? `/${createHash("sha256").update(identifiers.join(".")).digest("hex").slice(0, 12)}` : "";
+            const slot = `${name.replace(/\.tsx$/, "")}/${ownerName}/${tag}${semantic}`;
             const ordinal = slots.get(slot) || 0;
             slots.set(slot, ordinal + 1);
             edits.push({

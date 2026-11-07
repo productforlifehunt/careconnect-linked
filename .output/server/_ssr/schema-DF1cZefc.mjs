@@ -1,4 +1,0 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/schema-DF1cZefc.js
-var schema_default = "/** Verified in the /afresh JetEngine GUI on 2026-10-30. Never regenerate this mapping. */\nexport const FAMILY_VOICE_CCT = { id: 322, slug: \"cared_one_relatives_voice\", fields: {\n  label: \"a55\", audioPath: \"a56\", voiceId: \"a57\", model: \"a58\", state: \"a59\", error: \"a60\", mime: \"a61\",\n} } as const;\nexport const FAMILY_VOICE_RELATION = 323;\nexport const FAMILY_VOICE_STATE = { pending: \"b55\", ready: \"b56\", failed: \"b57\" } as const;\nexport type SavedFamilyVoice = { id: string; voiceId: string; model: string; label: string; caredOneId: string; caredOneName: string; createdAt: string; audioSaved: boolean; state: string; error: string };";
-//#endregion
-export { schema_default as default };

@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./chunk-Y2CYZVJY-CUaGfQly.js";var ImperativeState=class{constructor(e){this.init=e,this.records=this.init()}static{e(this,`ImperativeState`)}reset(){this.records=this.init()}};export{ImperativeState as t};

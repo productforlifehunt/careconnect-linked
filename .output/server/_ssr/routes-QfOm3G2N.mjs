@@ -1,4 +1,0 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-QfOm3G2N.js
-var routes_default = "import { createFileRoute } from \"@tanstack/react-router\";\nimport Index from \"@/pages/Index\";\n\nexport const Route = createFileRoute(\"/\")({\n  head: () => ({ meta: [\n    { title: \"ChallengeD · Family Care & Safety\" },\n    { name: \"description\", content: \"Family care knowledge, shared care coordination, and location safety.\" },\n    { property: \"og:title\", content: \"ChallengeD · Family Care & Safety\" },\n    { property: \"og:description\", content: \"Family care knowledge, shared care coordination, and location safety.\" },\n    { property: \"og:type\", content: \"website\" },\n    { name: \"twitter:card\", content: \"summary_large_image\" },\n  ] }),\n  component: Index,\n});\n";
-//#endregion
-export { routes_default as default };

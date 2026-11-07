@@ -1,4 +1,0 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_token-CN46iLYc.js
-var $token_default = "import { createFileRoute } from \"@tanstack/react-router\";\nimport SharedInformationCard from \"@/pages/SharedInformationCard\";\n\nexport const Route = createFileRoute(\"/share/card/$token\")({\n  head: () => ({ meta: [\n    { title: \"Care information card / 护理信息卡\" },\n    { name: \"description\", content: \"View a care information card according to its current visibility. 按当前可见范围查看护理信息卡。\" },\n    { property: \"og:title\", content: \"Care information card / 护理信息卡\" },\n    { property: \"og:description\", content: \"A shared care information card. Access is determined by the card's current visibility. 护理信息卡按当前可见范围开放。\" },\n    { property: \"og:type\", content: \"website\" },\n    { name: \"twitter:card\", content: \"summary\" },\n  ] }),\n  component: SharedInformationCard,\n});\n";
-//#endregion
-export { $token_default as default };

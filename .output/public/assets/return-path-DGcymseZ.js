@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";function safeNextPath(e){let t=String(e??``).trim();return!t.startsWith(`/`)||t.startsWith(`//`)||t.startsWith(`/\\`)||t.startsWith(`/auth`)||t.startsWith(`/onboarding`)?null:t}function withNext(e,t){let n=safeNextPath(t);return n?`${e}?next=${encodeURIComponent(n)}`:e}export{withNext as n,safeNextPath as t};

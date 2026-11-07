@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";import{n as e}from"./chunk-Y2CYZVJY-CUaGfQly.js";import{t}from"./d3-selection-D2h7Y91O.js";import{x as n}from"./chunk-DU6HZSFF-BDIn85ah.js";var r=e(e=>{let{securityLevel:r}=n(),i=t(`body`);return r===`sandbox`&&(i=t((t(`#i${e}`).node()?.contentDocument??document).body)),i.select(`#${e}`)},`selectSvgElement`);export{r as t};

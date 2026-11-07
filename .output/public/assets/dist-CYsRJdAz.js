@@ -1,1 +1,0 @@
-import"./rolldown-runtime-Eu0AZhn2.js";var e=Object.defineProperty,__name=(t,n)=>e(t,`name`,{value:n,configurable:!0});function clamp(e,[t,n]){return Math.min(n,Math.max(t,e))}__name(clamp,`clamp`);export{clamp as t};
