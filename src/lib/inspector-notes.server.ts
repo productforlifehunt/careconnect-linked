@@ -15,7 +15,7 @@ import { WP } from "@/integrations/wp-schema";
 const BUCKET = "inspector-notes";
 export interface InspectorNote {
   key: string;
-  scope: "element" | "page";
+  scope: "element" | "page" | "site";
   page: string;
   label: string;
   text: string;
@@ -198,7 +198,7 @@ async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
       undefined,
       token,
     );
-    if (!Array.isArray(result)) throw new Error("元素绑定读取异常。");
+    if (!Array.isArray(result)) throw new Error("位置绑定读取异常。");
     rows.push(...(result as CCTRow[]));
     if (result.length < 100) break;
   }
@@ -267,7 +267,7 @@ export async function reorderPositionNotes(
     const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
     if (String(row._ID) !== id || row[NOTE_FIELDS["笔记类型"]] !== noteType ||
       !positionBindings(row.a59, id).some((binding) => samePosition(binding.key, key)))
-      throw new Error(`笔记 #${id} 已不属于当前分类或页面，请重新读取。`);
+        throw new Error(`笔记 #${id} 已不属于当前分类或位置，请重新读取。`);
     const tabOrder = String(index + 1);
     if (row[NOTE_FIELDS["笔记标签顺序"]] !== tabOrder) {
       await wp(`/${id}`, "POST", { [NOTE_FIELDS["笔记标签顺序"]]: tabOrder }, token);
@@ -380,7 +380,7 @@ export async function readNoteForFingerprint(
 export async function rebindRecoveredNote(
   note: InspectorNote,
   key: string,
-  scope: "element" | "page",
+  scope: "element" | "page" | "site",
   page: string,
   label: string,
   alias?: string,
@@ -414,7 +414,7 @@ async function writeBindingsOnly(
     saved.a56 !== row.a56 ||
     (saved.a58 || "") !== (row.a58 || "")
   )
-    throw new Error("元素绑定保存后核对不一致，未确认保存。");
+    throw new Error("位置绑定保存后核对不一致，未确认保存。");
 }
 async function storeBinding(binding: NoteBinding, token?: string) {
   const target = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
@@ -610,7 +610,7 @@ export async function updateBoundNote(
 ): Promise<CCTNote> {
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== id || !positionBindings(row.a59, id).some((binding) => samePosition(binding.key, key)))
-    throw new Error("此笔记未关联到当前元素或页面。");
+    throw new Error("此笔记未关联到当前元素、页面或全站。");
   await updatePlainNote(id, note, token);
   const fresh = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   const binding = positionBindings(fresh.a59, id).find((entry) => samePosition(entry.key, key));
@@ -618,7 +618,7 @@ export async function updateBoundNote(
   return { ...mapRow(fresh), ...binding };
 }
 
-/** Fresh CCT324 note for one exact position stored in a59; null when unbound. */
+/** Fresh CCT324 note for one exact position, including a site scope, stored in a59; null when unbound. */
 export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   id: string;
   title: string;

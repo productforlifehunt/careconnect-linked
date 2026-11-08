@@ -16,11 +16,6 @@ import {
   type WPUser,
   type WPAuthResult,
 } from "@/services/wp-auth";
-import {
-  fetchMyAppUserName,
-  saveMyAppUserName,
-} from "@/features/profile/app-user-name";
-import { APP_PROFILE_F, ensureAppProfile } from "@/features/shared/app-profile";
 import { useQueryClient } from "@tanstack/react-query";
 
 export type AuthSource = "wordpress" | null;
@@ -167,7 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const storedWP = initialAuth.wpUser;
     if (storedWP) {
       // Hydrate the display name from CCT 151 (this app's own column).
-      fetchMyAppUserName()
+      import("@/features/shared/app-profile")
+        .then(({ fetchMyAppUserName }) => fetchMyAppUserName())
         .then((appName) => {
           if (!cancelled) setUser(wpUserToProfile(storedWP, appName));
         })
@@ -200,18 +196,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAuthSource("wordpress");
     setIsLoading(false);
 
-    void ensureAppProfile()
-      .then((profile) => {
-        if (!profile || getWPToken() !== token) return;
-        const storedName = profile.row?.[APP_PROFILE_F.NAME];
-        const appName = typeof storedName === "string" ? storedName.trim() : "";
-        setUser(wpUserToProfile(wpUser, appName));
+    void import("@/features/shared/app-profile")
+      .then(async ({ APP_PROFILE_F, ensureAppProfile, fetchMyAppUserName }) => {
+        try {
+          const profile = await ensureAppProfile();
+          if (!profile || getWPToken() !== token) return;
+          const storedName = profile.row?.[APP_PROFILE_F.NAME];
+          const appName =
+            typeof storedName === "string" ? storedName.trim() : "";
+          setUser(wpUserToProfile(wpUser, appName));
+        } catch {
+          if (getWPToken() !== token) return;
+          const appName = await fetchMyAppUserName().catch(() => "");
+          if (getWPToken() === token) setUser(wpUserToProfile(wpUser, appName));
+        }
       })
-      .catch(async () => {
-        if (getWPToken() !== token) return;
-        const appName = await fetchMyAppUserName().catch(() => "");
-        if (getWPToken() === token) setUser(wpUserToProfile(wpUser, appName));
-      });
+      .catch(() => undefined);
   }, []);
 
   const login = useCallback(
@@ -246,7 +246,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signup = useCallback(
     async (name: string, email: string, password: string, _role: string) => {
-      const result: WPAuthResult = await wpAuthRegister(email, password, name);
+      const [result, appProfile] = await Promise.all([
+        wpAuthRegister(email, password, name),
+        import("@/features/shared/app-profile"),
+      ]);
       clearAccountReads();
       const wpUser: WPUser = {
         user_id: result.user_id,
@@ -255,8 +258,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user_display_name: result.user_display_name,
       };
       // The name the user typed at signup belongs to this app's own row (a55).
-      await ensureAppProfile().catch(() => null);
-      await saveMyAppUserName(name);
+      await appProfile.ensureAppProfile().catch(() => null);
+      await appProfile.saveMyAppUserName(name);
       setUser(wpUserToProfile(wpUser, name));
       setAuthSource("wordpress");
       setIsLoading(false);

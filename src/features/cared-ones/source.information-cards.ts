@@ -1,4 +1,5 @@
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 
@@ -184,10 +185,13 @@ export async function fetchInformationCardsWordPress(caredOneId: string): Promis
   if (!id) return [];
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_INFO_CARD}/children/${id}`);
   if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_INFO_CARD} returned an invalid response`);
-  const rows = await Promise.all(rels.map(async (rel: any) => {
+  const cardIds = rels.map((rel: any) => String(rel?.child_object_id ?? "")).filter(Boolean);
+  const linkedRows = await readLinkedCCTRows(CCT_SLUG, cardIds);
+  const rowsById = new Map(linkedRows.map((row) => [String(row.id ?? row._ID), row]));
+  const rows = await Promise.all(cardIds.map(async (cardId) => {
     try {
-      const raw = await wordpressCCTFetch<any>(CCT_SLUG, { id: rel.child_object_id });
-      return raw && typeof raw === "object" ? await applyExpiry(decodeCard(raw)) : null;
+      const raw = rowsById.get(cardId);
+      return raw ? await applyExpiry(decodeCard(raw)) : null;
     } catch {
       // One stale relation must not hide every valid care info sheet.
       return null;
@@ -234,13 +238,13 @@ async function viewerIsCaregiverOf(viewerId: number, caredOneId: number): Promis
 }
 
 async function viewerSharesGroupWith(viewerId: number, caredOneId: number): Promise<boolean> {
-  const groups = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${viewerId}`);
-  if (!Array.isArray(groups)) return false;
-  for (const g of groups) {
-    const members = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${Number(g.parent_object_id)}`);
-    if (Array.isArray(members) && members.some((m: any) => Number(m.child_object_id) === caredOneId)) return true;
-  }
-  return false;
+  const [viewerGroups, caredOneGroups] = await Promise.all([
+    wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${viewerId}`),
+    wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${caredOneId}`),
+  ]);
+  if (!Array.isArray(viewerGroups) || !Array.isArray(caredOneGroups)) return false;
+  const viewerGroupIds = new Set(viewerGroups.map((row: any) => Number(row.parent_object_id)));
+  return caredOneGroups.some((row: any) => viewerGroupIds.has(Number(row.parent_object_id)));
 }
 
 /** Fixed card-ID link. Always check the card's current visibility. */
@@ -345,20 +349,29 @@ export async function setInformationCardContactsWordPress(cardId: string, contac
   const desiredSet = new Set(contactIds.map((c) => String(normalizeWpId(c))));
 
   const toAdd = [...desiredSet].filter((c) => !currentSet.has(c));
-  for (const childId of toAdd) {
-    await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, {
-      method: "POST",
-      body: {
-        parent_id: parentId,
-        child_id: Number(childId),
-        context: "child",
-        store_items_type: "update",
-      },
-    });
-  }
-
   const toRemove = [...currentSet].filter((c) => !desiredSet.has(c));
-  for (const childId of toRemove) {
-    await wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, { method: "POST", body: { parent_id: parentId, child_id: Number(childId), context: "child", store_items_type: "disconnect" } });
-  }
+  await Promise.all([
+    ...toAdd.map((childId) =>
+      wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, {
+        method: "POST",
+        body: {
+          parent_id: parentId,
+          child_id: Number(childId),
+          context: "child",
+          store_items_type: "update",
+        },
+      }),
+    ),
+    ...toRemove.map((childId) =>
+      wordpressFetch(`jet-rel/${REL_INFO_CARD_EMERGENCY}`, {
+        method: "POST",
+        body: {
+          parent_id: parentId,
+          child_id: Number(childId),
+          context: "child",
+          store_items_type: "disconnect",
+        },
+      }),
+    ),
+  ]);
 }

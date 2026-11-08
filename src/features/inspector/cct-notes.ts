@@ -4,7 +4,7 @@ import type { SourceAnnotation } from './source-notes';
 export interface NoteBinding {
   key: string;
   id: string;
-  scope: 'element' | 'page';
+  scope: 'element' | 'page' | 'site';
   page: string;
   label: string;
   locked?: boolean | undefined;

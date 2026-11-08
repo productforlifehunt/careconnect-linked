@@ -1,4 +1,3 @@
-import { detectSite } from "@/contexts/SiteContext";
 /**
  * ONE row per user per sub-app on JetEngine CCT 151 `users_extended_prof`.
  *
@@ -28,26 +27,18 @@ import { detectSite } from "@/contexts/SiteContext";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 import { T, R } from "@/integrations/wp-schema";
-import { currentAppScope, type AppScope } from "@/features/shared/app-scope";
 import { linkOwnRow } from "@/features/shared/own-profile-row";
 import { dedupeRead } from './rel-batch';
 import { readLinkedCCTRows } from './cct-rows';
+import { currentAppId, type AppId } from "./app-id";
+import { APP_PROFILE_F } from "./app-profile-fields";
+
+export { currentAppId } from "./app-id";
+export type { AppId } from "./app-id";
+export { APP_PROFILE_F } from "./app-profile-fields";
 
 const SLUG = T.userProfile.slug;
 const REL = R.userProfileRel;
-
-export const APP_PROFILE_F = {
-  APP: "a01",
-  NAME: "a55",
-  COMMUNITY_NAME: "a56",
-  TIMEZONE: "a57",
-  LANGUAGE: "a58",
-  CURRENCY: "a59",
-  ONBOARDING: "a70",
-  SETTINGS_JSON: "a87",
-  AI_CREDITS: "a91",
-  HELP_HIDDEN: "a92",
-} as const;
 
 const ONBOARDING_DONE_CACHE_PREFIX = "app-onboarding-done-v1";
 
@@ -85,9 +76,6 @@ function storeOnboardingDone(app: AppId, userId: number, done: boolean): void {
 export const YES = "b55";
 export const NO = "b56";
 
-/** Standard lowercase app id stored in a01. */
-export type AppId = "challenged" | "carecnc" | "notchsafety" | "afresh" | "adry" | "ablocked" | "benotch";
-
 /** Apps that charge for AI, and therefore get the 10-credit welcome grant. */
 const PAID_APPS: AppId[] = ["challenged", "carecnc", "notchsafety"];
 
@@ -110,27 +98,6 @@ const LEGACY_SETTINGS: Partial<Record<AppId, string>> = {
   ablocked: "a89",
   benotch: "a90",
 };
-
-/**
- * The running app's own id. NotchSafety shares the ChallengeD care data model
- * (currentAppScope() folds it into "challenged"), but it is its own product and
- * therefore keeps its own settings row.
- */
-export function currentAppId(): AppId {
-  if (typeof window !== "undefined") {
-    try {
-      const p = new URLSearchParams(window.location.search).get("__site");
-      if (p === "notchsafety" || p === "safety") return "notchsafety";
-      if (/(^|\.)notchsafety\.com$/.test(window.location.hostname)) return "notchsafety";
-      // Links inside Notch Safety drop ?__site; the tab still remembers it.
-      if (detectSite() === "notchsafety") return "notchsafety";
-    } catch {
-      /* ignore */
-    }
-  }
-  const scope: AppScope = currentAppScope();
-  return scope as AppId;
-}
 
 async function childRowIds(userId: number): Promise<string[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL}/children/${userId}`);

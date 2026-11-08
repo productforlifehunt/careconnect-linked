@@ -11,6 +11,7 @@
  */
 
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
@@ -103,6 +104,16 @@ function mapSnapshot(raw: any): LocationSnapshot {
   };
 }
 
+async function readSnapshots(ids: number[]): Promise<any[]> {
+  if (ids.length === 0) return [];
+  const rows = await readLinkedCCTRows(CCT_SLUG, ids.map(String));
+  const rowsById = new Map(rows.map((row) => [String(row.id ?? row._ID), row]));
+  return ids.flatMap((id) => {
+    const row = rowsById.get(String(id));
+    return row ? [row] : [];
+  });
+}
+
 
 // ─── WRITE: Append a new location snapshot ───────────────────
 
@@ -185,7 +196,7 @@ export async function fetchCurrentLocation(userId: string | number): Promise<Loc
     if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_CURRENT_LOCATION} returned an invalid response`);
     const ids = rels.map((r) => Number(r.child_object_id)).filter(Boolean);
     if (!ids.length) return null;
-    const items = await Promise.all(ids.map((id) => wordpressCCTFetch<any>(CCT_SLUG, { id })));
+    const items = await readSnapshots(ids);
     const mapped = items.map(mapSnapshot).sort((a, b) => new Date(b.captured_at || 0).getTime() - new Date(a.captured_at || 0).getTime());
     return mapped[0] || null;
 }
@@ -201,7 +212,7 @@ export async function fetchLocationHistory(
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CURRENT_LOCATION}/children/${wpUserId}`);
     if (!Array.isArray(rels)) throw new Error(`Relation ${REL_USER_CURRENT_LOCATION} returned an invalid response`);
     const ids = rels.map((r) => Number(r.child_object_id)).filter(Boolean);
-    const items = await Promise.all(ids.map((id) => wordpressCCTFetch<any>(CCT_SLUG, { id })));
+    const items = await readSnapshots(ids);
     return items
       .map(mapSnapshot)
       .filter(s => s.latitude != null && s.longitude != null)

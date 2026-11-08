@@ -10,7 +10,7 @@ import { ConflictReportView } from './ConflictReportView';
 import { readSource } from '@/features/inspector/live-index';
 
 interface Work { page: string; noteId?: string; pageNoteIds?: string[]; evidence: string; chunk: number; chunks: number; omissions: string[] }
-export function SiteAnalysis() {
+export function SiteAnalysis({ siteId = 'challenged', siteName = 'ChallengeD' }: { siteId?: string; siteName?: string }) {
   const load = loadAllInspectorNotes; const analyze = analyzeSiteNote;
   const [pages, setPages] = useState<SitePage[]>([]); const [results, setResults] = useState<SiteResult[]>([]);
   const [phase, setPhase] = useState(''); const [running, setRunning] = useState(false); const [error, setError] = useState('');
@@ -22,7 +22,7 @@ export function SiteAnalysis() {
       const task = work.current[cursor.current]; if (!task) break;
       setPhase(`${task.page} · ${task.noteId ? `注释 #${task.noteId}` : '没有绑定注释'} · 代码 ${task.chunk}/${task.chunks}`);
       if (!task.noteId) {
-        setResults(previous => [...previous, { page: task.page, chunk: 1, chunks: 1, report: { summary: '此页面没有绑定的整页或元素注释，不能比对。', comparedNoteIds: [], comparedCodeNoteIds: [], comparedPairs: [], codeCompared: false, findings: [{ kind: 'missing_evidence', title: '缺少页面注释', noteIds: [], evidence: task.page, verdict: '未完成核查', fix: '为页面及可见动态读写元素绑定注释后重新分析。' }] } }]);
+        setResults(previous => [...previous, { page: task.page, chunk: 1, chunks: 1, report: { summary: '此页面没有绑定的全站、整页或元素注释，不能比对。', comparedNoteIds: [], comparedCodeNoteIds: [], comparedPairs: [], codeCompared: false, findings: [{ kind: 'missing_evidence', title: '缺少页面注释', noteIds: [], evidence: task.page, verdict: '未完成核查', fix: '为全站、页面或可见动态读写元素绑定注释后重新分析。' }] } }]);
         continue;
       }
       let result: { report?: SiteResult['report']; error?: string };
@@ -40,7 +40,7 @@ export function SiteAnalysis() {
         const response = await load({ data: undefined });
         if (response.error) throw new Error(response.error);
         const bindings = response.compressedNotes ? await decodeNotes(response.compressedNotes) : response.notes || [];
-        const inventory = await discoverSitePages(bindings); setPages(inventory);
+        const inventory = await discoverSitePages(bindings, siteId); setPages(inventory);
         const sourceReads = new Map<string, Promise<string | null>>();
         const readForRun = (file: string) => {
           const existing = sourceReads.get(file); if (existing) return existing;
@@ -72,13 +72,13 @@ export function SiteAnalysis() {
       {!running && cursor.current < work.current.length && <Button size="sm" variant="outline" onClick={() => void run(true)}><Play className="mr-1 h-4 w-4" />继续未分析项</Button>}
       {results.length > 0 && <Button size="sm" variant="outline" onClick={download}><Download className="mr-1 h-4 w-4" />下载报告</Button>}
     </div>
-    <p>全站 {totals.pages} 个页面范围；已返回 {totals.processed}/{totals.expected} 项，成功返回 {totals.completed} 项，失败 {totals.failures} 项，冲突或疑点 {totals.findings} 项。</p>
+    <p>{siteName} 全站 {totals.pages} 个页面范围；已返回 {totals.processed}/{totals.expected} 项，成功返回 {totals.completed} 项，失败 {totals.failures} 项，冲突或疑点 {totals.findings} 项。</p>
     {expected > 0 && <p className={totals.complete ? 'text-foreground' : 'text-destructive'}>证据完整的注释 {totals.completeNotes}/{totals.boundNotes}；{totals.complete ? '本次静态核查范围已完成' : '未完成，不能认定全站一致'}。</p>}
     <p role="status">{phase}</p>
     {error && <p role="alert" className="text-destructive">{error}</p>}
-    <p className="text-muted-foreground">范围：全部页面代码、已绑定整页／元素注释及各自直接关联注释。未绑定页面、缺失代码和未实测状态列为未完成；无关联注释不作任意两两比较。逐项分析会产生 AI 费用。</p>
+    <p className="text-muted-foreground">范围：{siteName} 的全部页面代码、已绑定全站／整页／元素注释及各自直接关联注释。未绑定页面、缺失代码和未实测状态列为未完成；无关联注释不作任意两两比较。逐项分析会产生 AI 费用。</p>
     {pages.map(page => <details key={page.path} className="border-b border-border pb-2">
-      <summary className={`cursor-pointer break-words ${results.some(r => r.page === page.path && (r.error || r.report?.findings.length)) ? 'text-destructive' : ''}`}>{page.path} · 整页绑定 {page.pageNotes} · 元素绑定 {page.elementNotes} · 已返回 {results.filter(r => r.page === page.path).length} 项 · 冲突或疑点 {results.filter(r => r.page === page.path).reduce((sum, r) => sum + (r.report?.findings.length || (r.error ? 1 : 0)), 0)}</summary>
+      <summary className={`cursor-pointer break-words ${results.some(r => r.page === page.path && (r.error || r.report?.findings.length)) ? 'text-destructive' : ''}`}>{page.path} · 全站绑定 {page.siteNotes} · 整页绑定 {page.pageNotes} · 元素绑定 {page.elementNotes} · 已返回 {results.filter(r => r.page === page.path).length} 项 · 冲突或疑点 {results.filter(r => r.page === page.path).reduce((sum, r) => sum + (r.report?.findings.length || (r.error ? 1 : 0)), 0)}</summary>
       <div className="mt-2 space-y-2">{results.filter(r => r.page === page.path).map((result, index) => <div key={index}>
         <p>注释 {result.noteId ? `#${result.noteId}` : '未绑定'} · 代码分片 {result.chunk}/{result.chunks}</p>
         {result.error && <p role="alert" className="text-destructive">{result.error}</p>}

@@ -169,6 +169,48 @@ it.each(["b55", "b56"] as const)(
     });
   },
 );
+it.each(["b55", "b56"] as const)(
+  "selects a %s site note and retains its element and page bindings together in a59",
+  async (noteType) => {
+    const f = fixture();
+    await selectNote({
+      key: "page|/care-circle/46/tasks",
+      id: "10567",
+      scope: "page",
+      page: "/care-circle/46/tasks",
+      label: "Care Tasks",
+    });
+    await selectNote({
+      key: "el|/inbox|components/Inbox.tsx:20|button",
+      id: "10567",
+      scope: "element",
+      page: "/inbox",
+      label: "Inbox button",
+    });
+    const selected = await selectNote({
+      key: "site|challenged",
+      id: "10567",
+      scope: "site",
+      page: "/",
+      label: "ChallengeD 全站",
+      noteType,
+      tabOrder: 1,
+    });
+
+    expect(selected).toMatchObject({ id: "10567", key: "site|challenged", scope: "site", noteType, locked: true });
+    const stored = JSON.parse(String(f.getRow().a59)) as typeof original;
+    expect(stored.inspectorBindings).toEqual([
+      binding,
+      { key: "page|/care-circle/46/tasks", id: "10567", scope: "page", page: "/care-circle/46/tasks", label: "Care Tasks", locked: true },
+      { key: "el|/inbox|components/Inbox.tsx:20|button", id: "10567", scope: "element", page: "/inbox", label: "Inbox button", locked: true },
+      { key: "site|challenged", id: "10567", scope: "site", page: "/", label: "ChallengeD 全站", locked: true },
+    ]);
+    expect(await readNotesForPosition("site|challenged")).toMatchObject([
+      { id: "10567", key: "site|challenged", scope: "site", noteType },
+    ]);
+    expect(f.getRow()).toMatchObject({ a55: "个人设置表单", a56: "不可改变的原正文", a57: "ChallengeD" });
+  },
+);
 it("plugin normalization of an empty verification field does not report a false binding-save failure", async () => {
   fixture(true);
   expect(await selectNote(binding)).toMatchObject({

@@ -14,20 +14,20 @@ export function positionBindings(raw: unknown, id: string): NoteBinding[] {
   const entries = bindingDocument(raw)["inspectorBindings"];
   if (entries === undefined) return [];
   if (!Array.isArray(entries))
-    throw new Error(`注释 #${id} 的元素绑定格式异常。`);
+    throw new Error(`注释 #${id} 的位置绑定格式异常。`);
   return entries.map((value: unknown) => {
     if (!value || typeof value !== "object")
-      throw new Error(`注释 #${id} 的元素绑定格式异常。`);
+      throw new Error(`注释 #${id} 的位置绑定格式异常。`);
     const b = value as NoteBinding;
     if (
       typeof b.key !== "string" ||
       !b.key ||
       b.id !== id ||
-      !["page", "element"].includes(b.scope) ||
+      !["page", "element", "site"].includes(b.scope) ||
       typeof b.page !== "string" ||
       typeof b.label !== "string"
     )
-      throw new Error(`注释 #${id} 的元素绑定格式异常。`);
+      throw new Error(`注释 #${id} 的位置绑定格式异常。`);
     return b;
   });
 }

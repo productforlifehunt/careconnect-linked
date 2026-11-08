@@ -4,7 +4,12 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserSafe } from "@/features/cared-ones/source.wordpress-extended";
-import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
+import {
+  fetchAppProfileRowsForUsers,
+  fetchWPUserPublicProfile,
+  fetchWPUserPublicProfilesBatch,
+} from "@/features/shared/wp-users";
+import { APP_PROFILE_F } from "@/features/shared/app-profile-fields";
 import {
   encodeRel72Meta,
   decodeRel72Meta,
@@ -280,15 +285,23 @@ export async function inviteToGroupWordPress(
 export async function fetchGroupInvitationsWordPress(groupId: string): Promise<any[]> {
   try {
     const normalizedGroupId = normalizeWpObjectId(groupId);
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`);
-    const pending = (Array.isArray(rels) ? rels : [])
-      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending");
-    return Promise.all(pending.map(async (r: any) => {
+    const rels = await wordpressFetch<any[]>(
+      `jet-rel/${REL_GROUP_MEMBER}/children/${normalizedGroupId}`,
+    );
+    const pending = (Array.isArray(rels) ? rels : []).filter(
+      (r: any) => decodeRel72Meta(r?.meta).invitationStatus === "pending",
+    );
+    const missingNames = pending
+      .filter((r) => !decodeRel72Meta(r?.meta).displayName)
+      .map((r) => Number(r.child_object_id))
+      .filter((id) => Number.isFinite(id) && id > 0);
+    const profiles = await fetchWPUserPublicProfilesBatch(missingNames);
+    return pending.map((r: any) => {
       const decoded = decodeRel72Meta(r?.meta);
-      let name = decoded.displayName || "";
-      if (!name) {
-        try { name = (await fetchWPUserPublicProfile(Number(r.child_object_id))).full_name || ""; } catch { /* name stays empty */ }
-      }
+      const name =
+        decoded.displayName ||
+        profiles.profiles.get(Number(r.child_object_id))?.full_name ||
+        "";
       return {
         id: `${normalizedGroupId}:${r.child_object_id}`,
         group_id: groupId,
@@ -299,8 +312,10 @@ export async function fetchGroupInvitationsWordPress(groupId: string): Promise<a
         invited_email: null,
         created_at: null,
       };
-    }));
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
+    });
+  } catch (e) {
+    throw e instanceof Error ? e : new Error(String(e));
+  }
 }
 
 export async function cancelInvitationWordPress(invitationId: string): Promise<void> {
@@ -1141,24 +1156,32 @@ export async function searchProfilesWordPress(query: string): Promise<any[]> {
     if (!Array.isArray(users)) return [];
     // WordPress user search only finds accounts; the displayed name comes
     // exclusively from this app's own column on CCT 151 (relation 152).
-    // All profile reads run in parallel — never one after another.
-    const profiles = await Promise.all(
-      users.map(async (u: any) => {
-        try {
-          return await fetchWPUserPublicProfile(u.id);
-        } catch {
-          return null;
-        }
-      }),
-    );
-    return users.map((u: any, i: number) => ({
-      id: `wp-${u.id}`,
-      user_id: `wp-${u.id}`,
-      full_name: profiles[i]?.full_name || "",
-      email: u.email || null,
-      avatar_url: profiles[i]?.avatar_url || u.avatar_urls?.["96"] || null,
-    }));
-  } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
+    // Reuse these already-fetched account rows while batch-reading linked app profiles.
+    const userIds = users
+      .map((user) => Number(user.id))
+      .filter((id) => Number.isFinite(id) && id > 0);
+    const { profiles, relationErrors } =
+      await fetchAppProfileRowsForUsers(userIds);
+    return users.map((user) => {
+      const userId = Number(user.id);
+      const profile = profiles.get(userId);
+      const appName = profile?.[APP_PROFILE_F.NAME];
+      const fullName = typeof appName === "string" ? appName.trim() : "";
+      const name =
+        !Number.isFinite(userId) || userId <= 0 || relationErrors.has(userId)
+          ? ""
+          : fullName || (user.name || "").trim() || user.slug || "";
+      return {
+        id: `wp-${user.id}`,
+        user_id: `wp-${user.id}`,
+        full_name: name,
+        email: user.email || null,
+        avatar_url: user.avatar_urls?.["96"] || user.avatar || null,
+      };
+    });
+  } catch (e) {
+    throw e instanceof Error ? e : new Error(String(e));
+  }
 }
 
 // ─── Add Cared One to Group ─────────────────────────────────

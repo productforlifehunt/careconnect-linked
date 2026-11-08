@@ -15,9 +15,10 @@ function pathFromRouteFile(file: string): string {
   return `/${segments.join('/')}`;
 }
 
-export async function discoverSitePages(bindings: SiteBinding[]): Promise<SitePage[]> {
+export async function discoverSitePages(bindings: SiteBinding[], siteId?: string): Promise<SitePage[]> {
   const routes: { path: string; files: string[] }[] = [];
-  const routeEntries = Object.entries(ROUTES);
+  const sharedSite = siteId === 'challenged' || siteId === 'carecnc';
+  const routeEntries = !siteId || sharedSite ? Object.entries(ROUTES) : [];
   for (let index = 0; index < routeEntries.length; index += 6) {
     await Promise.all(routeEntries.slice(index, index + 6).map(async ([file, load]) => {
     const text = await load();
@@ -25,13 +26,19 @@ export async function discoverSitePages(bindings: SiteBinding[]): Promise<SitePa
     if (path !== '/*') routes.push({ path, files: [file.replace('/src/', '')] });
     }));
   }
-  for (const [file, load] of Object.entries(APPS)) {
+  const appEntries = Object.entries(APPS).filter(([file]) => {
+    if (!siteId) return true;
+    if (sharedSite) return false;
+    const folder = siteId === 'notchsafety' ? 'safety' : siteId === 'esm_survey' ? 'esm' : siteId;
+    return file.includes(`/pages/${folder}/`);
+  });
+  for (const [file, load] of appEntries) {
     const text = await load();
     const site = text.match(/__site[=",\s]+([a-z_]+)/)?.[1] || (file.includes('/safety/') ? 'notchsafety' : file.includes('/esm/') ? 'esm_survey' : file.split('/')[3]) || 'unknown';
     const paths = [...text.matchAll(/<Route\s+path=["']([^"']+)["']/g)].map(m => m[1]).filter((path): path is string => !!path && path !== '*');
     for (const path of paths.length ? paths : ['/']) routes.push({ path: `${path}?__site=${site}`, files: [file.replace('/src/', '')] });
   }
-  return siteInventory(routes, bindings);
+  return siteInventory(routes, bindings, siteId);
 }
 
 /** Traverse current local imports, not a saved code map. Runtime state is not fabricated. */

@@ -5,7 +5,7 @@ import { z } from "zod";
 /** One bounded part of a site audit. Every call verifies WP identity and re-reads CCT324 + REL325. */
 /** Researcher-only dialog about one suggestion. Related notes and code are re-read on the server; nothing is saved. */
 
-export const explainReadWriteInput = z.object({ context: z.string().min(2), mode: z.enum(["full", "origin"]).optional(), scope: z.enum(['page', 'element']).optional(), noteKeys: z.array(z.string().max(2000)).max(3).optional(), noteId: z.string().regex(/^\d+$/).optional(), draft: z.object({ title: z.string().max(240), text: z.string() }).optional() });
+export const explainReadWriteInput = z.object({ context: z.string().min(2), mode: z.enum(["full", "origin"]).optional(), scope: z.enum(['page', 'element', 'site']).optional(), noteKeys: z.array(z.string().max(2000)).max(3).optional(), noteId: z.string().regex(/^\d+$/).optional(), draft: z.object({ title: z.string().max(240), text: z.string() }).optional() });
 export const analyzeSiteNoteInput = z.object({ page: z.string().max(500), noteId: z.string().regex(/^\d+$/), pageNoteIds: z.array(z.string().regex(/^\d+$/)).max(100).optional(), evidence: z.string().min(1), chunk: z.number().int().min(1), chunks: z.number().int().min(1), omissions: z.array(z.string().max(1000)).max(1000) }).refine(v => v.chunk <= v.chunks);
 
 export async function explainReadWrite(rawData: unknown, request: Request) {
@@ -24,19 +24,19 @@ export async function explainReadWrite(rawData: unknown, request: Request) {
       const { readCCTNoteForKey, readRelatedNotes, readNoteById } = await import("./inspector-notes.server");
       const all = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
         const note = data.noteId ? await readNoteById(data.noteId, token) : await readCCTNoteForKey(key, token);
-        return { key: data.noteId && data.scope === 'page' ? 'page|current-selection' : key, note, related: note ? await readRelatedNotes(note.id, token) : [] };
+        return { key: data.noteId && (data.scope === 'page' || data.scope === 'site') ? `${data.scope}|current-selection` : key, note, related: note ? await readRelatedNotes(note.id, token) : [] };
       }));
       // Element identity + its old line-based key describe one element: keep one entry (the bound one).
-      const elements = all.filter((f) => !f.key.startsWith('page|'));
+      const elements = all.filter((f) => !f.key.startsWith('page|') && !f.key.startsWith('site|'));
       const element = elements.find((f) => f.note) || elements[0];
-      const found = all.filter((f) => f.key.startsWith('page|') || f === element);
+      const found = all.filter((f) => f.key.startsWith('page|') || f.key.startsWith('site|') || f === element);
       noteIds = [...new Set(found.flatMap(({note, related}) => [...(note ? [note.id] : []), ...related.map(r => r.id)]))];
       for (const { key, note, related } of found) {
-        if (note) originals.push({ ...note, current: true, role: noteRole(note.title, key.startsWith('page|') ? 'page_note' : 'element_note') });
+        if (note) originals.push({ ...note, current: true, role: noteRole(note.title, key.startsWith('page|') || key.startsWith('site|') ? 'page_note' : 'element_note') });
         originals.push(...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
       }
       notes = JSON.stringify(found.map(({ key, note, related }) => ({
-        scope: key.startsWith("page|") ? "page" : "element", role: note ? originals.find(n => n.id === note.id)?.role : null, cct: note ? `CCT324 #${note.id}` : null, a55: data.draft?.title ?? note?.title ?? null, a56: data.draft?.text ?? note?.text ?? null, unsavedDraft: !!data.draft,
+        scope: key.startsWith("page|") ? "page" : key.startsWith("site|") ? "site" : "element", role: note ? originals.find(n => n.id === note.id)?.role : null, cct: note ? `CCT324 #${note.id}` : null, a55: data.draft?.title ?? note?.title ?? null, a56: data.draft?.text ?? note?.text ?? null, unsavedDraft: !!data.draft,
         relatedNotesREL325: [...new Map(related.map(r => [r.id, r])).values()].map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })),
       })));
     } catch (error) { return { error: `手动注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }

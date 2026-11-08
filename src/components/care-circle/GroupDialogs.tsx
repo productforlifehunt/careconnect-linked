@@ -206,9 +206,11 @@ export function AddCaredOneDialog({
     if (selectedPerson?.id && !ids.includes(selectedPerson.id)) ids.push(selectedPerson.id);
     if (ids.length === 0) return;
     try {
-      for (const caredOneId of ids) {
-        await addCaredOne.mutateAsync({ groupId: activeGroupId, caredOneId });
-      }
+      await Promise.all(
+        ids.map((caredOneId) =>
+          addCaredOne.mutateAsync({ groupId: activeGroupId, caredOneId }),
+        ),
+      );
       onOpenChange(false); reset();
       toast({ title: Z("已加入护理群组！", "Added to the care group!") });
     } catch (err: any) {

@@ -14,7 +14,7 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
+import { fetchWPUserPublicProfilesBatch } from "@/features/shared/wp-users";
 import { R, T, WP } from "@/integrations/wp-schema";
 
 const SLUG = T.careTask.slug;
@@ -90,11 +90,10 @@ export async function fetchHelpTaskPostersWordPress(
   ids: Array<number | string>,
 ): Promise<Record<string, HelpTaskPosterProfile | null>> {
   const posterIds = [...new Set(ids.map(numId).filter(Boolean))];
-  const profiles = await Promise.all(posterIds.map(async (id) => {
-    try { return [String(id), await fetchWPUserPublicProfile(id)] as const; }
-    catch { return [String(id), null] as const; }
-  }));
-  return Object.fromEntries(profiles);
+  const { profiles } = await fetchWPUserPublicProfilesBatch(posterIds);
+  return Object.fromEntries(
+    posterIds.map((id) => [String(id), profiles.get(id) ?? null]),
+  );
 }
 
 /** Every task its owner shared out for help, including poster details. */
@@ -123,19 +122,27 @@ export async function fetchMyHelpTasksWordPress(): Promise<any[]> {
 export async function fetchTaskApplicantsWordPress(taskId: string): Promise<any[]> {
   const tid = numId(taskId);
   if (!tid) throw new Error("Invalid task id");
-  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/children/${tid}`);
-  if (!Array.isArray(rels)) throw new Error(`Relation ${REL_TASK_ASSIGNEE} returned an invalid response`);
-  const profiles = await Promise.all(rels.map(async (r: any) => {
-    if (!r.child_object_id) return null;
-    try { return await fetchWPUserPublicProfile(r.child_object_id); } catch { return null; }
-  }));
-  return rels.map((r: any, i: number) => {
+  const rels = await wordpressFetch<any[]>(
+    `jet-rel/${REL_TASK_ASSIGNEE}/children/${tid}`,
+  );
+  if (!Array.isArray(rels))
+    throw new Error(
+      `Relation ${REL_TASK_ASSIGNEE} returned an invalid response`,
+    );
+  const applicantIds = rels
+    .map((row) => numId(row.child_object_id))
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const { profiles } = await fetchWPUserPublicProfilesBatch(applicantIds);
+  return rels.map((r: any) => {
     const meta = r.meta || r.meta_fields || null;
+    const profile = profiles.get(numId(r.child_object_id));
     return {
       id: `${tid}:${numId(r.child_object_id)}`,
       task_id: String(tid),
       applicant_id: r.child_object_id ? `wp-${numId(r.child_object_id)}` : null,
-      applicant: profiles[i] ? { full_name: profiles[i]!.full_name, avatar_url: profiles[i]!.avatar_url } : null,
+      applicant: profile
+        ? { full_name: profile.full_name, avatar_url: profile.avatar_url }
+        : null,
       status: RESPONSE_LABEL[String(meta?.[ASSIGNEE_FIELD])] || "pending",
       created_at: r.created_at || null,
     };

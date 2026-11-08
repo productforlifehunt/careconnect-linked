@@ -1,8 +1,9 @@
-import { readLinkedCCTRows } from '@/features/shared/cct-rows';
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
-import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
-import { APP_PROFILE_F, currentAppId } from "@/features/shared/app-profile";
+import { fetchRelChildrenOf } from "@/features/shared/rel-batch";
+import { currentAppId } from "@/features/shared/app-id";
+import { APP_PROFILE_F } from "@/features/shared/app-profile-fields";
 
 export interface WPUserRecord {
   id: number;
@@ -152,59 +153,82 @@ function fetchCCTRowsBatched(cctSlug: string, id: string): Promise<any | null> {
   return batch.wait.then((m) => m.get(id) ?? null);
 }
 
-/**
- * One-to-one child CCT row of a user (Relation 152 / 259).
- *
- * Reads the relation through the batched whole-relation map and resolves the
- * row from a single whole-CCT read, so a screen with N people costs ~2
- * requests total instead of 2N+ sequential round-trips.
- */
-async function fetchOneToOneChild(relationId: number, userId: number, cctSlug: string): Promise<any | null> {
-  let childId: string | number | null = null;
-  const map = await fetchRelChildrenMap(relationId);
-  if (map.loaded) {
-    childId = map.get(String(userId))?.[0]?.childId ?? null;
-  } else {
-    const rels = await dedupeRead(`rel-children:${relationId}:${userId}`, () =>
-      wordpressFetch<any[]>(`jet-rel/${relationId}/children/${userId}`),
-    );
-    if (!Array.isArray(rels)) throw new Error(`Relation ${relationId} returned an invalid response`);
-    childId = rels[0]?.child_object_id ?? null;
-  }
-  if (!childId) return null;
-  return fetchCCTRowsBatched(cctSlug, String(childId));
+/** Reads only one user's Relation 152 children. */
+async function fetchAppProfileChildScoped(userId: number): Promise<any | null> {
+  const rels = await fetchRelChildrenOf(R.userProfileRel, userId);
+  return fetchAppProfileChildRows(rels.map((relation) => relation.childId));
 }
 
-/**
- * A user's CCT 151 row FOR THIS APP (column a01), joined through Relation 152.
- * Every app keeps its own row, so the child list is filtered by app id instead
- * of taking the first child.
- */
-async function fetchAppProfileChild(userId: number): Promise<any | null> {
-  const app = currentAppId();
-  const slug = T.userProfile.slug;
-  let childIds: string[] = [];
-  const map = await fetchRelChildrenMap(R.userProfileRel);
-  if (map.loaded) {
-    childIds = (map.get(String(userId)) ?? []).map((c: any) => String(c.childId));
-  } else {
-    const rels = await dedupeRead(`rel-children:${R.userProfileRel}:${userId}`, () =>
-      wordpressFetch<any[]>(`jet-rel/${R.userProfileRel}/children/${userId}`),
-    );
-    if (!Array.isArray(rels)) throw new Error(`Relation ${R.userProfileRel} returned an invalid response`);
-    childIds = rels.map((r) => String(r?.child_object_id ?? "")).filter(Boolean);
-  }
+async function fetchOneToOneChildScoped(
+  relationId: number,
+  userId: number,
+  cctSlug: string,
+): Promise<any | null> {
+  const rels = await fetchRelChildrenOf(relationId, userId);
+  const childId = rels[0]?.childId;
+  return childId ? fetchCCTRowsBatched(cctSlug, childId) : null;
+}
+
+type AppProfileRow = Record<string, unknown>;
+
+async function fetchAppProfileChildRows(
+  childIds: string[],
+): Promise<AppProfileRow | null> {
   if (childIds.length === 0) return null;
 
-  const rows = await Promise.all(childIds.map((id) => fetchCCTRowsBatched(slug, id).catch(() => null)));
-  const present = rows.filter(Boolean) as any[];
-  const mine = present.find((r) => String(r?.[APP_PROFILE_F.APP] ?? "").toLowerCase() === app);
+  const rows = await Promise.all(
+    childIds.map((id) =>
+      fetchCCTRowsBatched(T.userProfile.slug, id).catch(() => null),
+    ),
+  );
+  return selectAppProfileRow(rows.filter(Boolean) as AppProfileRow[]);
+}
+
+function selectAppProfileRow(present: AppProfileRow[]): AppProfileRow | null {
+  const app = currentAppId();
+  const mine = present.find(
+    (r) => String(r?.[APP_PROFILE_F.APP] ?? "").toLowerCase() === app,
+  );
   // Rows written before a01 existed have no app stamp; they still belong to the
   // person and carry their only name.
   return mine ?? present.find((r) => !String(r?.[APP_PROFILE_F.APP] ?? "").trim()) ?? null;
 }
 
-
+export async function fetchAppProfileRowsForUsers(userIds: number[]): Promise<{
+  profiles: Map<number, AppProfileRow | null>;
+  relationErrors: Map<number, unknown>;
+}> {
+  const relationErrors = new Map<number, unknown>();
+  const relations = await Promise.all(
+    userIds.map(async (userId) => {
+      try {
+        const children = await fetchRelChildrenOf(R.userProfileRel, userId);
+        return { userId, childIds: children.map(({ childId }) => childId) };
+      } catch (error) {
+        relationErrors.set(userId, error);
+        return { userId, childIds: [] as string[] };
+      }
+    }),
+  );
+  const childIds = [...new Set(relations.flatMap(({ childIds }) => childIds))];
+  const rows = await readLinkedCCTRows(T.userProfile.slug, childIds).catch(
+    () => [],
+  );
+  const rowsById = new Map<string, AppProfileRow>(
+    rows.map((row): [string, AppProfileRow] => [
+      String(row?.id ?? row?._ID ?? ""),
+      row as AppProfileRow,
+    ]),
+  );
+  const profiles = new Map<number, AppProfileRow | null>();
+  for (const { userId, childIds: profileIds } of relations) {
+    const linkedRows = profileIds
+      .map((id) => rowsById.get(id))
+      .filter(Boolean) as AppProfileRow[];
+    profiles.set(userId, selectAppProfileRow(linkedRows));
+  }
+  return { profiles, relationErrors };
+}
 
 /**
  * Forum display names for this app only (CCT 151 a56, Relation 152).
@@ -219,14 +243,15 @@ export async function fetchForumNames(ids: Array<number | string>): Promise<Map<
     ),
   );
   const out = new Map<number, string>();
-  await Promise.all(
-    numeric.map(async (id) => {
-      const row = await fetchAppProfileChild(id).catch(() => null);
-      const forum = String(row?.[APP_PROFILE_F.COMMUNITY_NAME] ?? "").trim();
-      const name = forum || String(row?.[APP_PROFILE_F.NAME] ?? "").trim();
-      if (name) out.set(id, name);
-    }),
-  );
+  const { profiles, relationErrors } =
+    await fetchAppProfileRowsForUsers(numeric);
+  for (const id of numeric) {
+    if (relationErrors.has(id)) continue;
+    const row = profiles.get(id);
+    const forum = String(row?.[APP_PROFILE_F.COMMUNITY_NAME] ?? "").trim();
+    const name = forum || String(row?.[APP_PROFILE_F.NAME] ?? "").trim();
+    if (name) out.set(id, name);
+  }
   return out;
 }
 
@@ -250,8 +275,8 @@ export async function fetchWPUserProfile(id: number | string): Promise<WPUserPro
   // the user record read — all three go out at once instead of in a waterfall.
   const [user, profile, profile2] = await Promise.all([
     fetchWPUser(numeric),
-    fetchAppProfileChild(numeric),
-    fetchOneToOneChild(R.userProfile2Rel, numeric, T.userProfile2.slug),
+    fetchAppProfileChildScoped(numeric),
+    fetchOneToOneChildScoped(R.userProfile2Rel, numeric, T.userProfile2.slug),
   ]);
 
   // Display name comes ONLY from the per-app column on CCT 151
@@ -292,19 +317,24 @@ export async function fetchWPUserProfiles(ids: Array<number | string>): Promise<
  * cannot use it. Public discovery only needs the display name (CCT 151 app
  * column, joined via relation 152) plus the public user record (slug/avatar).
  */
-export async function fetchWPUserPublicProfile(id: number | string): Promise<{
+export interface WPUserPublicProfile {
   id: number;
   slug: string;
   avatar_url: string | null;
   full_name: string;
-}> {
+}
+
+export async function fetchWPUserPublicProfile(
+  id: number | string,
+): Promise<WPUserPublicProfile> {
   const numeric = Number(String(id ?? "").replace(/^wp-/, ""));
-  if (!Number.isFinite(numeric) || numeric <= 0) throw new Error(`Invalid WordPress user id: ${id}`);
+  if (!Number.isFinite(numeric) || numeric <= 0)
+    throw new Error(`Invalid WordPress user id: ${id}`);
   // The user record goes through the ~25ms micro-batch queue, so N cards on one
   // screen share ONE `wp/v2/users?include=` request instead of N single reads.
   const [users, profile] = await Promise.all([
     fetchWPUsers([numeric]).catch(() => new Map<number, WPUserRecord>()),
-    fetchAppProfileChild(numeric),
+    fetchAppProfileChildScoped(numeric),
   ]);
   const user = users.get(numeric);
 
@@ -318,5 +348,59 @@ export async function fetchWPUserPublicProfile(id: number | string): Promise<{
     // fall back to their WordPress account name, then their login slug.
     full_name: displayName || (user?.name || "").trim() || user?.slug || "",
   };
+}
 
+export interface WPUserPublicProfilesBatch {
+  profiles: Map<number, WPUserPublicProfile>;
+  relationErrors: Map<number, unknown>;
+}
+
+/** Resolves public profiles together so their linked CCT rows share one batch read. */
+export async function fetchWPUserPublicProfilesBatch(
+  ids: Array<number | string>,
+): Promise<WPUserPublicProfilesBatch> {
+  const numeric = Array.from(
+    new Set(
+      ids
+        .map((id) => Number(String(id ?? "").replace(/^wp-/, "")))
+        .filter((id) => Number.isFinite(id) && id > 0),
+    ),
+  );
+  if (numeric.length === 0) {
+    return { profiles: new Map(), relationErrors: new Map() };
+  }
+
+  const usersPromise = fetchWPUsers(numeric).catch(
+    () => new Map<number, WPUserRecord>(),
+  );
+  const { profiles, relationErrors } =
+    await fetchAppProfileRowsForUsers(numeric);
+  const users = await usersPromise;
+  const out = new Map<number, WPUserPublicProfile>();
+  for (const id of numeric) {
+    if (relationErrors.has(id)) continue;
+    const user = users.get(id);
+    const profile = profiles.get(id);
+    const profileName = profile?.[APP_PROFILE_F.NAME];
+    const displayName =
+      typeof profileName === "string" ? profileName.trim() : "";
+    out.set(id, {
+      id,
+      slug: user?.slug || "",
+      avatar_url: user?.avatar_url || null,
+      full_name: displayName || (user?.name || "").trim() || user?.slug || "",
+    });
+  }
+  return { profiles: out, relationErrors };
+}
+
+/** Strict variant for a screen whose original parallel reads fail as a group. */
+export async function fetchWPUserPublicProfiles(
+  ids: Array<number | string>,
+): Promise<Map<number, WPUserPublicProfile>> {
+  const result = await fetchWPUserPublicProfilesBatch(ids);
+  if (result.relationErrors.size > 0) {
+    throw result.relationErrors.values().next().value;
+  }
+  return result.profiles;
 }

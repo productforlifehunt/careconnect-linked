@@ -90,7 +90,7 @@ export function ManualNotes({
   legacyKeys?: string[];
   alias?: string;
   fingerprint?: string | undefined;
-  scope: "element" | "page";
+  scope: "element" | "page" | "site";
   page: string;
   label: string;
   source?: string | undefined;
@@ -99,6 +99,7 @@ export function ManualNotes({
   buildEvidence?: () => string;
   evidenceReady?: boolean;
 }) {
+  const noteScopeLabel = scope === "site" ? "全站" : "页面";
   const loadOne = loadInspectorNotes;
   const save = saveInspectorNote;
   const select = selectInspectorNote;
@@ -720,6 +721,11 @@ export function ManualNotes({
             ? `当前注释：${savedTitle} · ${version ? `v${version} · ` : "未设置版本 · "}CCT324 #${selected}`
             : "当前没有已保存的注释"}
       </p>
+      {scope === "site" && (
+        <p className="text-muted-foreground">
+          此处的注释关联到 {label}；同一注释可同时保留多个页面、元素和全站关联。
+        </p>
+      )}
       {state.warning && (
         <div className="space-y-1 rounded-md border border-amber-500/50 bg-amber-50 p-2 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100">
           <p role="status">{state.warning}</p>
@@ -743,7 +749,7 @@ export function ManualNotes({
           aria-selected={activeType === "b55"}
           onClick={() => changeNoteType("b55")}
         >
-          页面说明注释
+          {noteScopeLabel}说明注释
         </Button>
         <Button
           type="button"
@@ -753,7 +759,7 @@ export function ManualNotes({
           aria-selected={activeType === "b56"}
           onClick={() => changeNoteType("b56")}
         >
-          页面关联注释
+          {noteScopeLabel}关联注释
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -804,10 +810,10 @@ export function ManualNotes({
       </div>
       <div className="space-y-1" data-rw-inspector>
         <p className="text-muted-foreground">
-          {activeType === "b55" ? "页面说明注释" : "页面关联注释"} · {activePositionNotes.length} 条
+          {activeType === "b55" ? `${noteScopeLabel}说明注释` : `${noteScopeLabel}关联注释`} · {activePositionNotes.length} 条
         </p>
         {activePositionNotes.length > 0 && (
-          <div className="flex gap-1 overflow-x-auto rounded-md border bg-muted/20 p-1" role="tablist" aria-label={activeType === "b55" ? "页面说明注释列表" : "页面关联注释列表"}>
+          <div className="flex gap-1 overflow-x-auto rounded-md border bg-muted/20 p-1" role="tablist" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释列表` : `${noteScopeLabel}关联注释列表`}>
             {activePositionNotes.map((note, index) => (
               <Button
                 key={note.id}
@@ -835,7 +841,7 @@ export function ManualNotes({
         )}
       </div>
       {selected && (
-      <section role="tabpanel" aria-label={activeType === "b55" ? "页面说明注释内容" : "页面关联注释内容"} className="space-y-2">
+      <section role="tabpanel" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释内容` : `${noteScopeLabel}关联注释内容`} className="space-y-2">
       {choice && choice !== selected && (
         <p>
           待锁定：{picked?.id === choice ? picked.title : ""} · #{choice} ·{" "}
@@ -881,8 +887,8 @@ export function ManualNotes({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="b55">页面说明注释（B55）</SelectItem>
-            <SelectItem value="b56">页面关联注释（B56）</SelectItem>
+            <SelectItem value="b55">{noteScopeLabel}说明注释（B55）</SelectItem>
+            <SelectItem value="b56">{noteScopeLabel}关联注释（B56）</SelectItem>
           </SelectContent>
         </Select>
         {draftNoteType !== savedNoteType && (

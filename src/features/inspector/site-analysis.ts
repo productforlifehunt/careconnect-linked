@@ -1,7 +1,7 @@
 import type { ConflictReport } from './conflict-report';
 
-export interface SiteBinding { key: string; id?: string | undefined; page?: string | undefined; source?: { file: string } | undefined; title?: string | undefined }
-export interface SitePage { path: string; files: string[]; noteIds: string[]; elementNotes: number; pageNotes: number; pageNoteIds?: string[] }
+export interface SiteBinding { key: string; scope?: 'element' | 'page' | 'site' | undefined; id?: string | undefined; page?: string | undefined; source?: { file: string } | undefined; title?: string | undefined }
+export interface SitePage { path: string; files: string[]; noteIds: string[]; elementNotes: number; pageNotes: number; siteNotes: number; pageNoteIds?: string[]; siteNoteIds?: string[] }
 export interface SiteResult { page: string; noteId?: string | undefined; chunk: number; chunks: number; report?: ConflictReport | undefined; error?: string | undefined }
 export const normaliseSitePath = (path: string) => {
   const [pathname, search = ''] = path.split('?');
@@ -11,17 +11,30 @@ export const normaliseSitePath = (path: string) => {
 };
 
 /** Route source and explicit bindings both contribute; unbound routes must remain visible. */
-export function siteInventory(routes: { path: string; files: string[] }[], bindings: SiteBinding[]): SitePage[] {
+export function siteInventory(routes: { path: string; files: string[] }[], bindings: SiteBinding[], siteId?: string): SitePage[] {
   const pages = new Map<string, SitePage>();
   const get = (path: string) => {
     const key = normaliseSitePath(path);
     let page = pages.get(key);
-    if (!page) { page = { path: key, files: [], noteIds: [], elementNotes: 0, pageNotes: 0 }; pages.set(key, page); }
+    if (!page) { page = { path: key, files: [], noteIds: [], elementNotes: 0, pageNotes: 0, siteNotes: 0 }; pages.set(key, page); }
     return page;
   };
   for (const route of routes) get(route.path).files.push(...route.files);
   for (const binding of bindings) {
     const parts = binding.key.split('|');
+    if (parts[0] === 'site') {
+      if (binding.scope !== 'site' || !binding.id || !siteId || parts[1] !== siteId) continue;
+      for (const page of pages.values()) {
+        const routeSite = new URLSearchParams(page.path.split('?')[1] || '').get('__site');
+        const belongs = routeSite ? routeSite === siteId : siteId === 'challenged' || siteId === 'carecnc';
+        if (!belongs) continue;
+        page.noteIds.push(binding.id);
+        page.siteNoteIds = [...new Set([...(page.siteNoteIds || []), binding.id])];
+        page.pageNoteIds = [...new Set([...(page.pageNoteIds || []), binding.id])];
+        page.siteNotes = page.siteNoteIds.length;
+      }
+      continue;
+    }
     if (parts[0] !== 'page' && parts[0] !== 'el') continue;
     const path = parts[1] || binding.page;
     if (!path) continue;
@@ -62,9 +75,9 @@ export function siteTotals(pages: SitePage[], results: SiteResult[], expected: n
 
 export function siteMarkdownReport(pages: SitePage[], results: SiteResult[], expected: number): string {
   const totals = siteTotals(pages, results, expected);
-  const lines = ['# 全站读写冲突报告', `生成时间：${new Date().toISOString()}`, '', '范围：当前源代码、保存的整页与元素注释及各自直接 REL325 关联注释。不是逐页真实运行测试；未关联注释不作任意两两比较。', '', `页面范围 ${totals.pages}；已返回 ${totals.processed}/${totals.expected} 项；失败 ${totals.failures} 项；冲突或疑点 ${totals.findings} 项；证据完整的注释 ${totals.completeNotes}/${totals.boundNotes}。`, `完成状态：${totals.complete ? '本次静态核查范围已完成' : '未完成，不能认定全站一致'}`];
+  const lines = ['# 全站读写冲突报告', `生成时间：${new Date().toISOString()}`, '', '范围：当前源代码、保存的全站／整页／元素注释及各自直接 REL325 关联注释。不是逐页真实运行测试；未关联注释不作任意两两比较。', '', `页面范围 ${totals.pages}；已返回 ${totals.processed}/${totals.expected} 项；失败 ${totals.failures} 项；冲突或疑点 ${totals.findings} 项；证据完整的注释 ${totals.completeNotes}/${totals.boundNotes}。`, `完成状态：${totals.complete ? '本次静态核查范围已完成' : '未完成，不能认定全站一致'}`];
   for (const page of pages) {
-    lines.push('', `## ${page.path}`, `整页绑定 ${page.pageNotes}；元素绑定 ${page.elementNotes}`);
+    lines.push('', `## ${page.path}`, `全站绑定 ${page.siteNotes}；整页绑定 ${page.pageNotes}；元素绑定 ${page.elementNotes}`);
     const rows = results.filter(r => r.page === page.path);
     if (!rows.length) lines.push('尚未分析。');
     for (const row of rows) {

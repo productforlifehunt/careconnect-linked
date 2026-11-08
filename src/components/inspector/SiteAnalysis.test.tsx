@@ -9,18 +9,18 @@ afterEach(() => { cleanup(); vi.resetAllMocks(); });
 const report = { summary:'冲突已确认',comparedNoteIds:['1','2'],comparedCodeNoteIds:['1','2'],comparedPairs:[['1','2']],codeCompared:true,findings:[{kind:'conflict',title:'讨论来源错误',noteIds:['1','2'],evidence:'code CCT202, note CCT16',verdict:'实际使用CCT202',fix:'先核对需求'}] };
 it('one click processes all page roots and leaves unbound pages red without extra AI calls', async () => {
   mocks.load.mockResolvedValue({notes:[]});
-  mocks.discover.mockResolvedValue([{path:'/circle',files:['pages/CareCircle.tsx'],noteIds:['1','3'],elementNotes:1,pageNotes:1},{path:'/inbox',files:[],noteIds:[],elementNotes:0,pageNotes:0}]);
+  mocks.discover.mockResolvedValue([{path:'/circle',files:['pages/CareCircle.tsx'],noteIds:['1','3'],elementNotes:1,pageNotes:1,siteNotes:0},{path:'/inbox',files:[],noteIds:[],elementNotes:0,pageNotes:0,siteNotes:0}]);
   mocks.evidence.mockResolvedValue({chunks:['code'],omissions:[],files:1});
   mocks.analyze.mockResolvedValue({report});
   render(<SiteAnalysis />); fireEvent.click(screen.getByRole('button',{name:'一键全站 AI 分析'}));
   await waitFor(() => expect(mocks.analyze).toHaveBeenCalledTimes(2));
   await waitFor(() => expect(screen.getByText(/已返回 3\/3 项/)).toBeDefined());
   expect(mocks.analyze.mock.calls.map(call => call[0].data.noteId)).toEqual(['1','3']);
-  expect(screen.getByText(/此页面没有绑定的整页或元素注释/)).toBeDefined();
+  expect(screen.getByText(/此页面没有绑定的全站、整页或元素注释/)).toBeDefined();
 });
 it('pauses on failure, continues remaining work only, and never automatically retries a billed attempt', async () => {
   mocks.load.mockResolvedValue({notes:[]});
-  mocks.discover.mockResolvedValue([{path:'/circle',files:[],noteIds:['1','3'],elementNotes:1,pageNotes:1}]);
+  mocks.discover.mockResolvedValue([{path:'/circle',files:[],noteIds:['1','3'],elementNotes:1,pageNotes:1,siteNotes:0}]);
   mocks.evidence.mockResolvedValue({chunks:['code'],omissions:[],files:1});
   mocks.analyze.mockResolvedValueOnce({error:'AI timeout'}).mockResolvedValueOnce({report});
   render(<SiteAnalysis />); fireEvent.click(screen.getByRole('button',{name:'一键全站 AI 分析'}));

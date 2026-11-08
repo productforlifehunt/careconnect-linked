@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  fetchProviderDirectoryWordPress,
   filterProviders,
   type ProviderFilters,
-} from "@/features/providers/source.wordpress";
+} from "@/features/providers/filter";
 
 export function useProviders(
   filters?: ProviderFilters,
@@ -12,7 +11,10 @@ export function useProviders(
   return useQuery({
     // Share one directory read; filtering and sorting stay local.
     queryKey: ["providers"],
-    queryFn: fetchProviderDirectoryWordPress,
+    queryFn: async () =>
+      (
+        await import("@/features/providers/source.wordpress")
+      ).fetchProviderDirectoryWordPress(),
     staleTime: 60_000,
     enabled: options?.enabled ?? true,
     select: (list) => filterProviders(list, filters),

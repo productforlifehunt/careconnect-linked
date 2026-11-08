@@ -7,7 +7,11 @@ vi.mock("@/features/shared/wordpress-client", () => ({
   wordpressCCTFetch: (...a: any[]) => fetchCCT(...a),
   wordpressFetch: (...a: any[]) => fetchWP(...a),
 }));
-vi.mock("@/features/shared/rel-batch", () => ({ fetchRelChildrenMap: (...a: any[]) => relMap(...a), fetchRelChildrenOf: async (rel: any, pid: any) => ((await relMap(rel)).get(String(pid)) || []) }));
+vi.mock("@/features/shared/rel-batch", () => ({
+  dedupeRead: (_key: string, fn: () => unknown) => fn(),
+  fetchRelChildrenMap: (...a: any[]) => relMap(...a),
+  fetchRelChildrenOf: async (rel: any, pid: any) => ((await relMap(rel)).get(String(pid)) || []),
+}));
 vi.mock("@/features/shared/current-user", () => ({ getCurrentUserId: () => "7" }));
 
 import { R } from "@/integrations/wp-schema";

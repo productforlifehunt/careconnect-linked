@@ -1,3 +1,4 @@
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { fetchRelChildrenOf, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { R, T } from "@/integrations/wp-schema";
@@ -47,9 +48,7 @@ async function loadMap(relationId: number) {
   return map;
 }
 
-async function readComment(id: string): Promise<CommentRow> {
-  const c = await wordpressCCTFetch<any>(SLUG, { id });
-  if (!c) throw new Error(`Comment ${id} is linked but could not be read`);
+function mapComment(c: any): CommentRow {
   return {
     id: String(c.id ?? c._ID),
     author_id: c.author_id ?? null,
@@ -61,15 +60,34 @@ async function readComment(id: string): Promise<CommentRow> {
   };
 }
 
+async function readComments(ids: string[]): Promise<CommentRow[]> {
+  if (ids.length === 0) return [];
+  const rows = await readLinkedCCTRows(SLUG, ids);
+  const byId = new Map(rows.map((row) => [String(row.id ?? row._ID), row]));
+  return ids.map((id) => {
+    const row = byId.get(id);
+    if (!row) throw new Error(`Comment ${id} is linked but could not be read`);
+    return mapComment(row);
+  });
+}
+
 /** Top-level comments of one parent plus their REL 142 replies (two levels). */
 export async function fetchCommentsWordPress(relationId: number, parentId: string): Promise<CommentRow[]> {
   assertCommentRelation(relationId);
   const ids = (await fetchRelChildrenOf(relationId, strip(parentId))).map((c) => c.childId);
-  const comments = await Promise.all(ids.map(readComment));
-  await Promise.all(comments.map(async (c) => {
-    const replyIds = (await fetchRelChildrenOf(R.commentReplies, c.id)).map((r) => r.childId);
-    c.replies = (await Promise.all(replyIds.map(readComment))).sort((a, b) => a.created_at.localeCompare(b.created_at));
-  }));
+  const [comments, replyLinks] = await Promise.all([
+    readComments(ids),
+    Promise.all(ids.map((id) => fetchRelChildrenOf(R.commentReplies, id))),
+  ]);
+  const replyIdsByComment = replyLinks.map((links) => links.map((link) => link.childId));
+  const replies = await readComments(replyIdsByComment.flat());
+  const repliesById = new Map(replies.map((reply) => [reply.id, reply]));
+  comments.forEach((comment, index) => {
+    comment.replies = (replyIdsByComment[index] || [])
+      .map((id) => repliesById.get(id))
+      .filter((reply): reply is CommentRow => Boolean(reply))
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  });
   return comments.sort((a, b) => a.created_at.localeCompare(b.created_at));
 }
 
@@ -108,8 +126,7 @@ export async function updateCommentWordPress(id: string, content: string): Promi
 
 /** Deletes the comment and its REL 142 replies (the UI promises both). */
 export async function deleteCommentWordPress(id: string): Promise<void> {
-  for (const r of await fetchRelChildrenOf(R.commentReplies, strip(id))) {
-    await wordpressCCTFetch(SLUG, { id: r.childId, method: "DELETE" });
-  }
+  const replies = await fetchRelChildrenOf(R.commentReplies, strip(id));
+  await Promise.all(replies.map((reply) => wordpressCCTFetch(SLUG, { id: reply.childId, method: "DELETE" })));
   await wordpressCCTFetch(SLUG, { id: strip(id), method: "DELETE" });
 }

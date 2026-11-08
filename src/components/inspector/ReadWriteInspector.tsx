@@ -61,6 +61,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { ConflictReportView } from "./ConflictReportView";
 import type { ConflictReport } from "@/features/inspector/conflict-report";
 import { SiteAnalysis } from "./SiteAnalysis";
+import { useSite } from "@/contexts/SiteContext";
 
 /** Text that comes from the signed-in account saved at login (no request on this page). */
 function accountMatches(text: string): string[] {
@@ -385,13 +386,17 @@ function AiExplain({
 }
 
 export default function ReadWriteInspector() {
+  const site = useSite();
+  const inspectorSiteId = site.id === "researcher" ? "challenged" : site.id;
+  const inspectorSiteName = site.id === "researcher" ? "ChallengeD" : site.name;
   const [on, setOn] = useState(inspectModeOn());
   const [interact, setInteract] = useState(false);
   const [tab, setTab] = useState<Tab>("element");
   const [sub, setSub] = useState<Sub>("rw");
-  const [notes, setNotes] = useState<{ element: string; page: string }>({
+  const [notes, setNotes] = useState<{ element: string; page: string; site: string }>({
     element: "",
     page: "",
+    site: "",
   });
   const [selected, setSelected] = useState<Element | null>(null);
   const [hoverBox, setHoverBox] = useState<DOMRect | null>(null);
@@ -1286,14 +1291,8 @@ export default function ReadWriteInspector() {
               </Button>
             ))}
           </div>
-          <div
-            className={
-              tab === "site"
-                ? "hidden"
-                : "flex gap-1 border-b border-border p-2 text-xs"
-            }
-          >
-            {(["rw", "ai", "notes"] as Sub[]).map((t) => (
+          <div className="flex gap-1 border-b border-border p-2 text-xs">
+            {(tab === "site" ? (["rw", "notes"] as Sub[]) : (["rw", "ai", "notes"] as Sub[])).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -1301,10 +1300,10 @@ export default function ReadWriteInspector() {
                 className={`rounded-md border px-2 py-1 ${sub === t ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}
               >
                 {t === "rw"
-                  ? "读写分析"
+                  ? tab === "site" ? "全站 AI 分析" : "读写分析"
                   : t === "ai"
                     ? "AI 分析"
-                    : `手动注释${(tab === "element" ? notes.element : notes.page) ? " ●" : ""}`}
+                    : `手动注释${(tab === "element" ? notes.element : tab === "page" ? notes.page : notes.site) ? " ●" : ""}`}
               </button>
             ))}
           </div>
@@ -1312,9 +1311,21 @@ export default function ReadWriteInspector() {
             className="flex-1 space-y-4 overflow-y-auto p-3 text-sm"
             style={{ zoom: scale }}
           >
-            <div className={tab === "site" ? "" : "hidden"}>
-              <SiteAnalysis />
+            <div className={tab === "site" && sub === "rw" ? "" : "hidden"}>
+              <SiteAnalysis siteId={inspectorSiteId} siteName={inspectorSiteName} />
             </div>
+            {on && (
+              <div className={tab === "site" && sub === "notes" ? "" : "hidden"}>
+                <ManualNotes
+                  key={`site|${inspectorSiteId}`}
+                  noteKey={`site|${inspectorSiteId}`}
+                  scope="site"
+                  page="/"
+                  label={`全站 / ${inspectorSiteName}`}
+                  onChange={(t) => setNotes((n) => ({ ...n, site: t }))}
+                />
+              </div>
+            )}
             {interact && (
               <p className="rounded-md bg-muted p-2 text-xs">
                 浏览模式：可以正常点击和跳转。要查看某个元素，切回「选择」。 /

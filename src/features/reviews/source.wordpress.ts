@@ -10,9 +10,13 @@ import { readLinkedCCTRows } from '@/features/shared/cct-rows';
  * No WooCommerce/Dokan reviews, no custom foreign keys.
  */
 import { R, T } from "@/integrations/wp-schema";
-import { dedupeRead, fetchRelChildrenOf } from "@/features/shared/rel-batch";
+import {
+  dedupeRead,
+  fetchRelChildrenMap,
+  fetchRelChildrenOf,
+} from "@/features/shared/rel-batch";
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
+import { fetchWPUserPublicProfiles } from "@/features/shared/wp-users";
 
 const REVIEW = T.review;
 const F = REVIEW.f;
@@ -76,15 +80,6 @@ async function fetchProviderReviewRows(providerUserId: number): Promise<any[]> {
   return fetchReviewRows(providerUserId, REL_PROVIDER_REVIEWS);
 }
 
-async function resolveAuthorName(authorId: number): Promise<string> {
-  if (!authorId) return "";
-  // Display name comes from the app profile CCT (joined by relation 152) —
-  // read directly from WordPress, no edge function in the path.
-  const profile = await fetchWPUserPublicProfile(authorId);
-  return profile.full_name;
-}
-
-
 export async function fetchEntityReviewsWordPress(
   entityId?: string | undefined,
   entityType?: string | undefined,
@@ -95,12 +90,10 @@ export async function fetchEntityReviewsWordPress(
   const rows = await fetchReviewRows(parentId, relForEntity(entityType));
   if (rows.length === 0) return [];
 
-  const authorNames = new Map<number, string>();
-  await Promise.all(
-    Array.from(new Set(rows.map((r: any) => Number(r.author_id || r.cct_author_id) || 0)))
-      .filter(Boolean)
-      .map(async (id) => authorNames.set(id, await resolveAuthorName(id))),
-  );
+  const authorIds = Array.from(
+    new Set(rows.map((r: any) => Number(r.author_id || r.cct_author_id) || 0)),
+  ).filter(Boolean);
+  const authorProfiles = await fetchWPUserPublicProfiles(authorIds);
 
   return rows
     .map((row: any) => {
@@ -111,9 +104,10 @@ export async function fetchEntityReviewsWordPress(
         content: String(row[F.CONTENT] ?? ""),
         rating: Number(row[F.RATING] ?? 0) || 0,
         author_id: authorId ? `wp-${authorId}` : null,
-        author_name: authorNames.get(authorId) || "",
+        author_name: authorProfiles.get(authorId)?.full_name || "",
         created_at: row.cct_created ?? row.created_at ?? null,
-        updated_at: row.cct_modified ?? row.updated_at ?? row.created_at ?? null,
+        updated_at:
+          row.cct_modified ?? row.updated_at ?? row.created_at ?? null,
       };
     })
     .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
@@ -158,13 +152,25 @@ export async function fetchProviderRatingSummaries(
   );
   if (parentIds.length === 0) return summaries;
 
-  const linkedReviews = await Promise.all(
-    parentIds.map(async (parentId) => ({
-      parentId,
-      children: await fetchRelChildrenOf(REL_PROVIDER_REVIEWS, parentId),
-    })),
-  );
-  const reviewIds = [...new Set(linkedReviews.flatMap(({ children }) => children.map(({ childId }) => childId)))];
+  const relationMap = await fetchRelChildrenMap(REL_PROVIDER_REVIEWS);
+  const linkedReviews = relationMap.loaded
+    ? parentIds.map((parentId) => ({
+        parentId,
+        children: relationMap.get(parentId) ?? [],
+      }))
+    : await Promise.all(
+        parentIds.map(async (parentId) => ({
+          parentId,
+          children: await fetchRelChildrenOf(REL_PROVIDER_REVIEWS, parentId),
+        })),
+      );
+  const reviewIds = [
+    ...new Set(
+      linkedReviews.flatMap(({ children }) =>
+        children.map(({ childId }) => childId),
+      ),
+    ),
+  ];
   if (reviewIds.length === 0) return summaries;
 
   const reviewRows = await readLinkedCCTRows(REVIEW.slug, reviewIds);

@@ -66,22 +66,24 @@ export function LocationSharingAgent() {
             const pos = await getCurrentPosition({ timeout: 15000 });
             if (pos) {
               const ext = await locationSource;
-              for (const n of emergencies) {
-                const requester = new URL(
-                  String(n.action_url),
-                  window.location.origin,
-                ).searchParams.get("request_from");
-                if (requester)
-                  await ext
-                    .answerEmergencyRequestWordPress({
-                      requesterId: requester,
-                      position: pos,
-                    })
-                    .catch(() => {});
-                await runNotificationSkill("mark-notification-read", {
-                  id: n.id,
-                }).catch(() => {});
-              }
+              await Promise.all(
+                emergencies.map(async (n) => {
+                  const requester = new URL(
+                    String(n.action_url),
+                    window.location.origin,
+                  ).searchParams.get("request_from");
+                  if (requester)
+                    await ext
+                      .answerEmergencyRequestWordPress({
+                        requesterId: requester,
+                        position: pos,
+                      })
+                      .catch(() => {});
+                  await runNotificationSkill("mark-notification-read", {
+                    id: n.id,
+                  }).catch(() => {});
+                }),
+              );
               await qc.invalidateQueries({ queryKey: notificationKey });
               lastShare.current = Date.now();
               qc.invalidateQueries({ queryKey: ["caredOneLocation"] });

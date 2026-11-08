@@ -10,7 +10,8 @@
  * CCT column — no custom user/vote link is invented.
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchRelChildrenOf, fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
+import { fetchRelChildrenOf } from "@/features/shared/rel-batch";
 import { getCurrentUserId } from "@/features/shared/current-user";
 import { R, T } from "@/integrations/wp-schema";
 
@@ -44,7 +45,13 @@ function toRow(raw: any): VoteRow {
 }
 
 async function fetchVoteRows(ids: string[]): Promise<VoteRow[]> {
-  return Promise.all(ids.map(async (id) => toRow(await wordpressCCTFetch<any>(SLUG, { id }))));
+  if (ids.length === 0) return [];
+  const rows = await readLinkedCCTRows(SLUG, ids);
+  const byId = new Map(rows.map((row) => [String(row.id ?? row._ID), row]));
+  return ids.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [toRow(row)] : [];
+  });
 }
 
 /** Pure tally — exported for tests. */
@@ -58,21 +65,23 @@ export function summarize(rows: Array<Pick<VoteRow, "value" | "authorId">>, me: 
   return { score: upvotes - downvotes, upvotes, downvotes, userVote };
 }
 
-async function loadRelation(relationId: number) {
-  const map = await fetchRelChildrenMap(relationId);
-  if (!map.loaded) throw new Error(`Could not read JetEngine relation ${relationId}`);
-  return map;
-}
-
 export async function fetchVoteSummaries(relationId: number, parentIds: string[]): Promise<Record<string, VoteSummary>> {
   assertRelation(relationId);
   const me = getCurrentUserId() ? strip(getCurrentUserId()!) : null;
   const out: Record<string, VoteSummary> = {};
-  await Promise.all(parentIds.map(async (pid) => {
-    const children = await fetchRelChildrenOf(relationId, strip(pid));
-    const rows = await fetchVoteRows(children.map((c) => c.childId));
-    out[pid] = summarize(rows, me);
-  }));
+  const linked = await Promise.all(parentIds.map(async (parentId) => ({
+    parentId,
+    childIds: (await fetchRelChildrenOf(relationId, strip(parentId))).map((child) => child.childId),
+  })));
+  const voteIds = [...new Set(linked.flatMap((item) => item.childIds))];
+  const voteRows = await fetchVoteRows(voteIds);
+  const rowsById = new Map(voteRows.map((row) => [row.id, row]));
+  for (const item of linked) {
+    const rows = item.childIds
+      .map((id) => rowsById.get(id))
+      .filter((row): row is VoteRow => Boolean(row));
+    out[item.parentId] = summarize(rows, me);
+  }
   return out;
 }
 
@@ -94,8 +103,8 @@ export async function toggleVote(relationId: number, parentId: string, value: -1
   const parent = Number(strip(parentId));
   if (!Number.isFinite(parent) || parent <= 0) throw new Error(`Invalid item id: ${parentId}`);
 
-  const map = await loadRelation(relationId);
-  const rows = await fetchVoteRows((map.get(String(parent)) || []).map((c) => c.childId));
+  const children = await fetchRelChildrenOf(relationId, parent);
+  const rows = await fetchVoteRows(children.map((child) => child.childId));
   const mine = rows.filter((r) => r.authorId === me);
 
   if (mine.length) {

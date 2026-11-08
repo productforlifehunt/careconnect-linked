@@ -4,7 +4,7 @@ import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
 import { dedupeRead, fetchRelChildrenMap, fetchRelChildrenOf } from "@/features/shared/rel-batch";
-import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
+import { fetchWPUserPublicProfilesBatch } from "@/features/shared/wp-users";
 import { setReadMark, unreadFlag } from "@/features/conversations/read-state";
 import { getStoredWPUser } from "@/services/wp-auth";
 
@@ -206,16 +206,14 @@ async function fetchUserDirectory(ids: number[]): Promise<ConversationDirectory>
   const out: ConversationDirectory = new Map();
   const unique = Array.from(new Set(ids.filter(Boolean)));
   if (unique.length === 0) return out;
-  await Promise.all(
-    unique.map(async (id) => {
-      try {
-        const p = await fetchWPUserPublicProfile(id);
-        out.set(Number(id), { name: p.full_name, avatar: p.avatar_url });
-      } catch {
-        out.set(Number(id), { name: "", avatar: null });
-      }
-    }),
-  );
+  const { profiles } = await fetchWPUserPublicProfilesBatch(unique);
+  for (const id of unique) {
+    const profile = profiles.get(Number(id));
+    out.set(Number(id), {
+      name: profile?.full_name || "",
+      avatar: profile?.avatar_url || null,
+    });
+  }
   return out;
 }
 

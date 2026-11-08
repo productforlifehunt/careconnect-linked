@@ -1,4 +1,5 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { R, T, WP } from "@/integrations/wp-schema";
 import { fetchRatingSummary } from "@/features/reviews/source.wordpress";
 import { toCodeList } from "@/lib/facility-options";
@@ -244,13 +245,14 @@ export async function fetchFacilityOwnershipClaimsWordPress(facilityId: string):
   if (!fid) throw new Error("Invalid facility ID");
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_FACILITY_CLAIM}/children/${fid}`);
   if (!Array.isArray(rels)) throw new Error(`Relation ${REL_FACILITY_CLAIM} returned an invalid response`);
-  const rows = await Promise.all(
-    rels
-      .map((r: any) => String(r.child_object_id || ""))
-      .filter(Boolean)
-      .map((cid) => wordpressCCTFetch<any>(CLAIM.slug, { id: cid })),
-  );
-  return rows.filter(Boolean).map((row) => mapClaim(row, facilityId));
+  const claimIds = rels.map((row: any) => String(row.child_object_id || "")).filter(Boolean);
+  const claims = await readLinkedCCTRows(CLAIM.slug, claimIds);
+  const claimsById = new Map(claims.map((claim) => [String(claim.id ?? claim._ID), claim]));
+  return claimIds.map((claimId) => {
+    const claim = claimsById.get(claimId);
+    if (!claim) throw new Error("Invalid ownership claim status code: ");
+    return mapClaim(claim, facilityId);
+  });
 }
 
 /** Claims only (is dispute = No). */

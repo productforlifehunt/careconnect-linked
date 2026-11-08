@@ -7,6 +7,7 @@
  *            meta a55 = "User has finished learning this lesson" { b55 Yes | b56 No }
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { getCurrentUserIdNumber } from "@/features/shared/current-user";
 import { R, T, WP } from "@/integrations/wp-schema";
 
@@ -42,18 +43,18 @@ export async function fetchStudyNotesForArticle(articleId: string | number): Pro
     const rels = await wordpressFetch<any[]>(`jet-rel/${REL_ARTICLE_NOTES}/children/${aid}`);
     const noteIds = (Array.isArray(rels) ? rels : []).map((r: any) => Number(r.child_object_id)).filter(Boolean);
     if (noteIds.length === 0) return [];
-    const fetched = await Promise.all(
-      noteIds.map((nid) => wordpressCCTFetch<any>(SLUG, { id: nid }))
-    );
-    return fetched
-      .filter((n: any) => !userId || Number(n.author_id) === userId)
-      .map((n: any) => ({
-        id: String(n.id ?? n._ID),
-        title: n[F.title] ?? "",
-        content: n[F.content] ?? "",
+    const fetched = await readLinkedCCTRows(SLUG, noteIds.map(String));
+    const rowsById = new Map(fetched.map((row) => [String(row.id ?? row._ID), row]));
+    return noteIds
+      .map((noteId) => rowsById.get(String(noteId)))
+      .filter((note: any) => note && (!userId || Number(note.author_id) === userId))
+      .map((note: any) => ({
+        id: String(note.id ?? note._ID),
+        title: note[F.title] ?? "",
+        content: note[F.content] ?? "",
         article_id: String(articleId),
-        created_at: n.created_at ?? null,
-        updated_at: n.updated_at ?? null,
+        created_at: note.created_at ?? null,
+        updated_at: note.updated_at ?? null,
       }));
 }
 

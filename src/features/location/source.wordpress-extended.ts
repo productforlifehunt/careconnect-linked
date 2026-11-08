@@ -8,6 +8,7 @@
  */
 
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
@@ -242,9 +243,11 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
     fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId)),
     fetchLocationReceiverIds(userId),
   ]);
+  const zoneRows = await readLinkedCCTRows(T.safeZone.slug, zoneIds.map(String));
+  const zoneRowsById = new Map(zoneRows.map((row) => [String(row.id ?? row._ID), row]));
   const zones = await Promise.all(
     zoneIds.map(async (zoneId) => {
-      const zone = await wordpressCCTFetch<any>(T.safeZone.slug, { id: zoneId });
+      const zone = zoneRowsById.get(String(zoneId));
       // A relation can outlive its row (zone deleted elsewhere): JetEngine then
       // answers `false`/an empty body. Those ghosts must never reach the UI.
       if (!zone || typeof zone !== "object" || Array.isArray(zone)) return null;

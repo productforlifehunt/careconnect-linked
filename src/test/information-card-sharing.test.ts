@@ -60,7 +60,7 @@ describe("all four information-card visibility scopes", () => {
           if (endpoint === `jet-rel/${R.caredOneInfoCards}/parents/42`) return [{ parent_object_id: 46 }];
           if (endpoint === `jet-rel/${R.userCaredOnes}/children/${scenario.user}`) return scenario.status ? [{ child_object_id: 46, meta: { [REL219_STATUS_FIELD]: REL219_STATUS_CODE[scenario.status] } }] : [];
           if (endpoint === `jet-rel/${R.careGroupMembers}/parents/${scenario.user}`) return scenario.group ? [{ parent_object_id: 200 }] : [];
-          if (endpoint === `jet-rel/${R.careGroupMembers}/children/200`) return [{ child_object_id: 46 }];
+          if (endpoint === `jet-rel/${R.careGroupMembers}/parents/46`) return scenario.group ? [{ parent_object_id: 200 }] : [];
           return [];
         });
         if (scenario.expected[index]) expect((await fetchSharedInformationCardWordPress("42"))?.id).toBe("42");
