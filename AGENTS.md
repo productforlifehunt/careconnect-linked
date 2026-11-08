@@ -79,4 +79,5 @@ These replace the older TanStack-specific architecture notes below as the user's
     - Before reporting ready, run supported project type checks and relevant tests, inspect actual changed preview flows, and verify production client/server output for dependency, routing or server changes. After Draftbit Save, inspect the saved preview and run Recommended Changes/Recheck; list every remaining warning/error. HTTP 200 or a blank screen is not success.
     - Never claim the other editor is compatible without its real install/build/runtime evidence. Missing dist may indicate hosting-output expectations: inspect actual job logs and supported deployment adapters, never create an empty dist, fake success, remove SSR or silently migrate frameworks.
     - Edit in one environment at a time. Pause writes during concurrent editing or repository-replacement prompts; preserve the intended latest repository version, never automatically restore old work or force-push. Report tested items, failures and unverified environments separately.
+- 严禁画蛇添足，严禁添加没有明确要求的功能，严禁添加没有明确要求的限制性代码和指令，严禁把声明性文字，比如我已100%完成，100%显示真实数据，没有mock这种开发会话写入前端UI，前端UI是对普通用户使用的，不是给开发者交流的，严禁画蛇添足
     
