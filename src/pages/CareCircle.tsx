@@ -1,9 +1,8 @@
 import { getStoredWPUser } from "@/services/wp-auth";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { Suspense, useState, useMemo, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, useLocation } from "@/lib/router-compat";
 import { parseCareGroupLink, groupIdFromPath } from "@/features/care-groups/join-link";
-import { GroupOnboarding, JoinRequestPanel } from "@/components/care-circle/GroupOnboarding";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,24 +31,82 @@ import {
 import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { lazyRetry } from "@/lib/lazy-retry";
 
 // Sub-components
-import { EditPostDialog, AddCaredOneDialog } from "@/components/care-circle/GroupDialogs";
 import { GroupTabsBar } from "@/components/care-circle/GroupTabsBar";
-import { HomeTab } from "@/components/care-circle/tabs/HomeTab";
-import { CalendarTab } from "@/components/care-circle/tabs/CalendarTab";
-import { AnnouncementsTab } from "@/components/care-circle/tabs/AnnouncementsTab";
-import { TasksTab } from "@/components/care-circle/tabs/TasksTab";
-import { CaredOnesTab } from "@/components/care-circle/tabs/CaredOnesTab";
-import { MessagesTab } from "@/components/care-circle/tabs/MessagesTab";
-import { WishesTab } from "@/components/care-circle/tabs/WishesTab";
-import { MembersTab } from "@/components/care-circle/tabs/MembersTab";
-import { GalleryTab } from "@/components/care-circle/tabs/GalleryTab";
-import { InviteMembersTab } from "@/components/care-circle/tabs/InviteMembersTab";
-import { MemberGroupsTab } from "@/components/care-circle/tabs/MemberGroupsTab";
-import { GroupLocationTab } from "@/components/care-circle/tabs/GroupLocationTab";
-import { GroupSettingsTab } from "@/components/care-circle/tabs/GroupSettingsTab";
-import { GroupHelpTab } from "@/components/care-circle/tabs/GroupHelpTab";
+const GroupOnboarding = lazyRetry(
+  () => import("@/components/care-circle/GroupOnboarding").then((m) => ({ default: m.GroupOnboarding })),
+  "CareCircleGroupOnboarding",
+);
+const JoinRequestPanel = lazyRetry(
+  () => import("@/components/care-circle/GroupOnboarding").then((m) => ({ default: m.JoinRequestPanel })),
+  "CareCircleJoinRequestPanel",
+);
+const EditPostDialog = lazyRetry(
+  () => import("@/components/care-circle/GroupDialogs").then((m) => ({ default: m.EditPostDialog })),
+  "CareCircleEditPostDialog",
+);
+const AddCaredOneDialog = lazyRetry(
+  () => import("@/components/care-circle/GroupDialogs").then((m) => ({ default: m.AddCaredOneDialog })),
+  "CareCircleAddCaredOneDialog",
+);
+const HomeTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/HomeTab").then((m) => ({ default: m.HomeTab })),
+  "CareCircleHomeTab",
+);
+const CalendarTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/CalendarTab").then((m) => ({ default: m.CalendarTab })),
+  "CareCircleCalendarTab",
+);
+const AnnouncementsTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/AnnouncementsTab").then((m) => ({ default: m.AnnouncementsTab })),
+  "CareCircleAnnouncementsTab",
+);
+const TasksTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/TasksTab").then((m) => ({ default: m.TasksTab })),
+  "CareCircleTasksTab",
+);
+const CaredOnesTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/CaredOnesTab").then((m) => ({ default: m.CaredOnesTab })),
+  "CareCircleCaredOnesTab",
+);
+const MessagesTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/MessagesTab").then((m) => ({ default: m.MessagesTab })),
+  "CareCircleMessagesTab",
+);
+const WishesTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/WishesTab").then((m) => ({ default: m.WishesTab })),
+  "CareCircleWishesTab",
+);
+const MembersTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/MembersTab").then((m) => ({ default: m.MembersTab })),
+  "CareCircleMembersTab",
+);
+const GalleryTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/GalleryTab").then((m) => ({ default: m.GalleryTab })),
+  "CareCircleGalleryTab",
+);
+const InviteMembersTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/InviteMembersTab").then((m) => ({ default: m.InviteMembersTab })),
+  "CareCircleInviteMembersTab",
+);
+const MemberGroupsTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/MemberGroupsTab").then((m) => ({ default: m.MemberGroupsTab })),
+  "CareCircleMemberGroupsTab",
+);
+const GroupLocationTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/GroupLocationTab").then((m) => ({ default: m.GroupLocationTab })),
+  "CareCircleLocationTab",
+);
+const GroupSettingsTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/GroupSettingsTab").then((m) => ({ default: m.GroupSettingsTab })),
+  "CareCircleSettingsTab",
+);
+const GroupHelpTab = lazyRetry(
+  () => import("@/components/care-circle/tabs/GroupHelpTab").then((m) => ({ default: m.GroupHelpTab })),
+  "CareCircleHelpTab",
+);
 
 
 export default function CareCircle() {
@@ -145,7 +202,10 @@ export default function CareCircle() {
     useCareGroupMembers(membersGroupId);
   const membersLoading = !!membersGroupId && membersLoadingRaw;
   const { data: tasks, isLoading: tasksLoadingRaw } =
-    useCareTasks(tasksGroupId);
+    // A missing groupId means "all of my tasks" in dashboard consumers.
+    // Care Teams must wait until an accepted group is selected, or this page
+    // starts an unrelated multi-relation task read while its groups load.
+    useCareTasks(tasksGroupId, !!tasksGroupId);
   // Disabled react-query queries stay `isLoading` forever — only treat them as
   // loading when a group is actually selected, otherwise skeletons never clear.
   const tasksLoading = !!tasksGroupId && tasksLoadingRaw;
@@ -336,7 +396,9 @@ export default function CareCircle() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{site.navLabels.careGroups}</h1>
         </div>
         {groupChips}
-        <GroupOnboarding key={pathGroup} groupId={pathGroup} inviteToken={inviteToken} onClearInvite={() => dropParam("invite")} />
+        <Suspense fallback={tabLoading}>
+          <GroupOnboarding key={pathGroup} groupId={pathGroup} inviteToken={inviteToken} onClearInvite={() => dropParam("invite")} />
+        </Suspense>
       </div>
     );
   }
@@ -406,13 +468,23 @@ export default function CareCircle() {
         </div>
       </div>
 
-      <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
-      <AddCaredOneDialog open={addCaredOneOpen} onOpenChange={setAddCaredOneOpen} activeGroupId={activeGroupId} />
+      {editingPost && (
+        <Suspense fallback={null}>
+          <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
+        </Suspense>
+      )}
+      {addCaredOneOpen && (
+        <Suspense fallback={null}>
+          <AddCaredOneDialog open={addCaredOneOpen} onOpenChange={setAddCaredOneOpen} activeGroupId={activeGroupId} />
+        </Suspense>
+      )}
 
       {groupChips}
 
       {requesterId && isAdmin && activeGroupId && (
-        <JoinRequestPanel groupId={idOf(activeGroupId)} groupName={activeGroup?.name || ""} requesterId={requesterId} onDone={() => dropParam("request")} />
+        <Suspense fallback={null}>
+          <JoinRequestPanel groupId={idOf(activeGroupId)} groupName={activeGroup?.name || ""} requesterId={requesterId} onDone={() => dropParam("request")} />
+        </Suspense>
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -442,100 +514,138 @@ export default function CareCircle() {
 
 
         <TabsContent value="home" className="mt-4">
-          <HomeTab
-            statsLoading={membersLoading || tasksLoading}
-            pendingTasksCount={pendingTasks.length}
-            membersCount={(members || []).length}
-            caredOnesCount={caredOnesCount}
-            allPosts={allPostsWithAuthors}
-            activeGroupId={activeGroupId}
-            userId={currentUserId}
-            isAdmin={!!isAdmin}
-            memberCategories={memberCategories || []}
-            members={members || []}
-            createPost={createPost}
-            onEditPost={setEditingPost}
-            onTogglePin={handleTogglePin}
-            onDeletePost={handleDeletePost}
-            onNavigateTab={setActiveTab}
-          />
+          <Suspense fallback={tabLoading}>
+            <HomeTab
+              statsLoading={membersLoading || tasksLoading}
+              pendingTasksCount={pendingTasks.length}
+              membersCount={(members || []).length}
+              caredOnesCount={caredOnesCount}
+              allPosts={allPostsWithAuthors}
+              activeGroupId={activeGroupId}
+              userId={currentUserId}
+              isAdmin={!!isAdmin}
+              memberCategories={memberCategories || []}
+              members={members || []}
+              createPost={createPost}
+              onEditPost={setEditingPost}
+              onTogglePin={handleTogglePin}
+              onDeletePost={handleDeletePost}
+              onNavigateTab={setActiveTab}
+            />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4">
-          {tasksLoading ? tabLoading : <CalendarTab tasks={tasks || []} />}
+          {tasksLoading ? tabLoading : <Suspense fallback={tabLoading}><CalendarTab tasks={tasks || []} /></Suspense>}
         </TabsContent>
-        <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} /></TabsContent>
+        <TabsContent value="tasks" className="mt-4">
+          <Suspense fallback={tabLoading}>
+            <TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} />
+          </Suspense>
+        </TabsContent>
         <TabsContent value="location" className="mt-4">
           {groupCaredOnesLoading ? (
             tabLoading
           ) : (
-            <GroupLocationTab groupCaredOnes={groupCaredOnes || []} />
+            <Suspense fallback={tabLoading}>
+              <GroupLocationTab groupCaredOnes={groupCaredOnes || []} />
+            </Suspense>
           )}
         </TabsContent>
         <TabsContent value="messages" className="mt-4">
           {groupMessagesLoading ? (
             tabLoading
           ) : (
-            <MessagesTab
-              groupMessages={messagesWithSenders}
-              userId={currentUserId}
-              activeGroupId={activeGroupId}
-              sendMessage={sendMessage}
-            />
+            <Suspense fallback={tabLoading}>
+              <MessagesTab
+                groupMessages={messagesWithSenders}
+                userId={currentUserId}
+                activeGroupId={activeGroupId}
+                sendMessage={sendMessage}
+              />
+            </Suspense>
           )}
         </TabsContent>
-        <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
-        <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
+        <TabsContent value="announcements" className="mt-4">
+          <Suspense fallback={tabLoading}>
+            <AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="wishes" className="mt-4">
+          <Suspense fallback={tabLoading}>
+            <WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} />
+          </Suspense>
+        </TabsContent>
         <TabsContent value="gallery" className="mt-4">
           {galleryLoading ? (
             tabLoading
           ) : (
-            <GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} />
+            <Suspense fallback={tabLoading}>
+              <GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} />
+            </Suspense>
           )}
         </TabsContent>
         <TabsContent value="cared-ones" className="mt-4">
           {groupCaredOnesLoading || membersLoading ? (
             tabLoading
           ) : (
-            <CaredOnesTab
-              groupCaredOnes={groupCaredOnes || []}
-              isAdmin={!!(isAdmin || currentMember)}
-              onAddCaredOne={() => setAddCaredOneOpen(true)}
-            />
+            <Suspense fallback={tabLoading}>
+              <CaredOnesTab
+                groupCaredOnes={groupCaredOnes || []}
+                isAdmin={!!(isAdmin || currentMember)}
+                onAddCaredOne={() => setAddCaredOneOpen(true)}
+              />
+            </Suspense>
           )}
         </TabsContent>
-        <TabsContent value="members" className="mt-4"><MembersTab members={members || []} membersLoading={membersLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} updateRole={updateRole} removeMember={removeMember} /></TabsContent>
+        <TabsContent value="members" className="mt-4">
+          <Suspense fallback={tabLoading}>
+            <MembersTab members={members || []} membersLoading={membersLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} updateRole={updateRole} removeMember={removeMember} />
+          </Suspense>
+        </TabsContent>
         <TabsContent value="invite" className="mt-4">
           {invitationsLoading || membersLoading ? (
             tabLoading
           ) : (
-            <InviteMembersTab
-              members={members || []}
-              activeGroupId={activeGroupId}
-              isAdmin={!!isAdmin}
-              pendingInvitations={pendingInvitations || []}
-              inviteToGroup={inviteToGroup}
-              cancelInvitation={cancelInvitation}
-            />
+            <Suspense fallback={tabLoading}>
+              <InviteMembersTab
+                members={members || []}
+                activeGroupId={activeGroupId}
+                isAdmin={!!isAdmin}
+                pendingInvitations={pendingInvitations || []}
+                inviteToGroup={inviteToGroup}
+                cancelInvitation={cancelInvitation}
+              />
+            </Suspense>
           )}
         </TabsContent>
         <TabsContent value="member-groups" className="mt-4">
           {memberCategoriesLoading || membersLoading ? (
             tabLoading
           ) : (
-            <MemberGroupsTab
-              members={members || []}
-              memberCategories={memberCategories || []}
-              activeGroupId={activeGroupId}
-              userId={currentUserId}
-              isAdmin={!!isAdmin}
-              createCategory={createCategory}
-              deleteCategory={deleteCategory}
-            />
+            <Suspense fallback={tabLoading}>
+              <MemberGroupsTab
+                members={members || []}
+                memberCategories={memberCategories || []}
+                activeGroupId={activeGroupId}
+                userId={currentUserId}
+                isAdmin={!!isAdmin}
+                createCategory={createCategory}
+                deleteCategory={deleteCategory}
+              />
+            </Suspense>
           )}
         </TabsContent>
-        <TabsContent value="settings" className="mt-4"><GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { navigate(base, { replace: true }); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} /></TabsContent>
-        <TabsContent value="help" className="mt-4"><GroupHelpTab groupName={activeGroup?.name} groupId={activeGroup?.id ? String(activeGroup.id) : undefined} /></TabsContent>
+        <TabsContent value="settings" className="mt-4">
+          <Suspense fallback={tabLoading}>
+            <GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { navigate(base, { replace: true }); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="help" className="mt-4">
+          <Suspense fallback={tabLoading}>
+            <GroupHelpTab groupName={activeGroup?.name} groupId={activeGroup?.id ? String(activeGroup.id) : undefined} />
+          </Suspense>
+        </TabsContent>
       </Tabs>
 
     </div>

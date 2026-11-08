@@ -215,9 +215,9 @@ export default function Inbox() {
 
         <TabsContent value="all" className="mt-0 focus-visible:outline-hidden">
           <div className="max-w-3xl mx-auto px-4 py-4">
-            {counts.error ? (
+            {counts.error && feed.length === 0 && !notifsLoading && !convosLoading ? (
               <p role="alert" className="py-4 text-destructive">{Z("未能读取收件箱，请刷新重试。", "Couldn't load your inbox. Please refresh to retry.")}</p>
-            ) : notifsLoading || convosLoading ? (
+            ) : feed.length === 0 && (notifsLoading || convosLoading) ? (
               <div className="space-y-3 py-2">
                 {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
               </div>
@@ -228,6 +228,11 @@ export default function Inbox() {
               </div>
             ) : (
               <>
+                {counts.error && (
+                  <p role="alert" className="mb-3 text-sm text-destructive">
+                    {Z("部分收件箱内容未能读取，请刷新重试。", "Some inbox items couldn't load. Please refresh to try again.")}
+                  </p>
+                )}
                 {counts.unread > 0 && (
                   <div className="flex justify-end mb-2">
                     <Button variant="ghost" size="sm" disabled={markingAll} onClick={markEverythingRead}>
@@ -283,6 +288,16 @@ export default function Inbox() {
                     </Card>
                   ))}
                 </div>
+                {(notifsLoading || convosLoading) && (
+                  <div
+                    className="mt-2 space-y-2"
+                    role="status"
+                    aria-label={Z("正在加载其余收件箱内容", "Loading the rest of your inbox")}
+                    aria-busy="true"
+                  >
+                    {[1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+                  </div>
+                )}
               </>
             )}
           </div>

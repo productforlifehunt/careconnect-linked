@@ -7,7 +7,7 @@ vi.mock('@/features/shared/own-profile-row', () => ({ findOwnRow: mocks.own, lin
 vi.mock('@/features/shared/app-scope', () => ({ currentAppScope: () => 'challenged' }));
 vi.mock('@/contexts/SiteContext', () => ({ detectSite: () => 'challenged' }));
 vi.mock('@/features/profile/app-user-name', () => ({ fetchMyAppUserName: mocks.name, saveMyAppUserName: vi.fn() }));
-import { getAppProfileRow } from './app-profile';
+import { fetchOnboardingDone, getAppProfileRow, getCachedOnboardingDone } from './app-profile';
 import { fetchMyProfileWordPress } from '@/features/profile/source.wordpress';
 
 beforeEach(() => {
@@ -23,6 +23,17 @@ it('header, settings and credits share one app-profile resolution', async () => 
   expect(rows.map(row => row.a55)).toEqual(['Care name', 'Care name', 'Care name']);
   expect(mocks.fetch).toHaveBeenCalledTimes(1);
   expect(mocks.cct).toHaveBeenCalledTimes(1);
+});
+it('caches a completed onboarding check for the current app account', async () => {
+  mocks.cct.mockResolvedValueOnce({
+    id: '151',
+    a01: 'challenged',
+    a70: 'b55',
+  });
+  expect(getCachedOnboardingDone('challenged')).toBeUndefined();
+  await expect(fetchOnboardingDone('challenged')).resolves.toBe(true);
+  expect(getCachedOnboardingDone('challenged')).toBe(true);
+  expect(getCachedOnboardingDone('carecnc')).toBeUndefined();
 });
 it('starts the three independent own-profile reads before the core account finishes', async () => {
   let finish: ((value: object) => void) | undefined;

@@ -11,6 +11,7 @@
 import { wordpressFetch } from "@/features/shared/wordpress-client";
 import { createReadCache } from './read-cache';
 import { getWPToken } from '@/services/wp-auth';
+import { getCurrentUserIdNumber } from '@/features/shared/current-user';
 
 export interface RelChild {
   childId: string;
@@ -32,7 +33,12 @@ if (typeof window !== "undefined") {
  * Failed reads are never cached.
  */
 export function dedupeRead<T>(key: string, fn: () => Promise<T>, ttlMs = READ_TTL_MS): Promise<T> {
-  const owner = typeof window === 'undefined' ? '' : getWPToken() || 'guest';
+  const userId = typeof window === 'undefined' ? null : getCurrentUserIdNumber();
+  const owner = typeof window === 'undefined'
+    ? ''
+    : userId
+      ? `wp-user-${userId}`
+      : getWPToken() || 'guest';
   return cache.read(`${owner}|${key}`, fn, ttlMs) as Promise<T>;
 }
 

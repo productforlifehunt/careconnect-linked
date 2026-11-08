@@ -92,6 +92,18 @@ async function fetchCaredOneId(taskId: string): Promise<string | null> {
   return id ? `wp-${id}` : null;
 }
 
+function fetchAssigneesByTaskId(taskIds: string[]) {
+  return Promise.all(
+    taskIds.map(async (taskId) => ({ taskId, assignees: await fetchAssignees(taskId) })),
+  ).then((rows) => new Map(rows.map(({ taskId, assignees }) => [taskId, assignees])));
+}
+
+function fetchCaredOneIdsByTaskId(taskIds: string[]) {
+  return Promise.all(
+    taskIds.map(async (taskId) => ({ taskId, caredOneId: await fetchCaredOneId(taskId) })),
+  ).then((rows) => new Map(rows.map(({ taskId, caredOneId }) => [taskId, caredOneId])));
+}
+
 
 function mapTask(t: any, groupId?: string | null | undefined) {
   const id = String(t._ID || t.id || "");
@@ -182,35 +194,40 @@ async function fetchCaredOneScopedTasks(
   if (options.visibleToCurrentUser && !applyVisibilityFilter) {
     applyVisibilityFilter = prepareTaskVisibilityFilter(taskIds);
   }
-  const [rows, assigned] = await Promise.all([
+  // Task IDs are already scoped through the current user's cared-one links.
+  // Start their relation reads alongside task details so the list does not
+  // wait for the CCT round trip before it can load assignees.
+  const assigneesPromise = options.includeAssignees
+    ? fetchAssigneesByTaskId(taskIds)
+    : Promise.resolve(new Map<string, Array<{ user_id: string; response: string }>>());
+  const [rows, assigned, assigneesByTaskId] = await Promise.all([
     readLinkedCCTRows(CCT_SLUG, taskIds),
     options.includeAssignmentStatus && !options.includeAssignees
       ? wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${userId}`)
       : Promise.resolve([]),
+    assigneesPromise,
   ]);
   const assignedTaskIds = new Set(
     (Array.isArray(assigned) ? assigned : [])
       .map((row) => String(normalizeWpObjectId(row?.parent_object_id)))
       .filter((id) => id !== "0"),
   );
-  const mapped = await Promise.all(
-    rows.map(async (task: any) => {
-      const base = mapTask(task);
-      const assignees = options.includeAssignees ? await fetchAssignees(base.id) : [];
-      const assignedIds = options.includeAssignees
-        ? assignees.map((assignee) => assignee.user_id)
-        : options.includeAssignmentStatus && assignedTaskIds.has(String(normalizeWpObjectId(base.id)))
-          ? [`wp-${normalizeWpObjectId(userId)}`]
-          : [];
-      return {
-        ...base,
-        assigned_to: assignedIds[0] || null,
-        assigned_to_ids: assignedIds,
-        assignees,
-        cared_one_id: caredOneByTaskId.get(String(normalizeWpObjectId(base.id))) || null,
-      };
-    }),
-  );
+  const mapped = rows.map((task: any) => {
+    const base = mapTask(task);
+    const assignees = assigneesByTaskId.get(base.id) || [];
+    const assignedIds = options.includeAssignees
+      ? assignees.map((assignee) => assignee.user_id)
+      : options.includeAssignmentStatus && assignedTaskIds.has(String(normalizeWpObjectId(base.id)))
+        ? [`wp-${normalizeWpObjectId(userId)}`]
+        : [];
+    return {
+      ...base,
+      assigned_to: assignedIds[0] || null,
+      assigned_to_ids: assignedIds,
+      assignees,
+      cared_one_id: caredOneByTaskId.get(String(normalizeWpObjectId(base.id))) || null,
+    };
+  });
 
   return applyVisibilityFilter ? applyVisibilityFilter(mapped) : mapped;
 }
@@ -239,7 +256,7 @@ export async function fetchCareTasksWordPress(
     let taskIds: string[] = [];
     let ownRows: any[] = [];
     let assignedTaskIds = new Set<string>();
-    let caredOneByTaskId = new Map<string, string>();
+    const caredOneByTaskId = new Map<string, string>();
     let applyVisibilityFilter: ReturnType<typeof prepareTaskVisibilityFilter> | undefined;
     const prepareVisibilityWhenTasksArrive = (ids: unknown[]) => {
       if (
@@ -342,16 +359,29 @@ export async function fetchCareTasksWordPress(
     if (options.visibleToCurrentUser && uniqueTaskIds.length > 0 && !applyVisibilityFilter) {
       applyVisibilityFilter = prepareTaskVisibilityFilter();
     }
+    // Once relations identify candidate tasks, fetch the CCT rows and their
+    // task-scoped metadata together. This preserves the same per-task access
+    // checks while removing the serial wait between those reads.
+    const assigneesPromise = includeAssignees
+      ? fetchAssigneesByTaskId(uniqueTaskIds)
+      : Promise.resolve(new Map<string, Array<{ user_id: string; response: string }>>());
+    const caredOneIdsPromise = groupId
+      ? fetchCaredOneIdsByTaskId(uniqueTaskIds)
+      : Promise.resolve(new Map<string, string | null>());
     const ownById = new Map(
       ownRows.flatMap((task) => {
         const id = normalizeWpObjectId(task._ID || task.id);
         return id > 0 ? [[String(id), task] as const] : [];
       }),
     );
-    const linkedRows = await readLinkedCCTRows(
-      CCT_SLUG,
-      uniqueTaskIds.filter((id) => !ownById.has(id)),
-    );
+    const [linkedRows, assigneesByTaskId, caredOneIdsByTaskId] = await Promise.all([
+      readLinkedCCTRows(
+        CCT_SLUG,
+        uniqueTaskIds.filter((id) => !ownById.has(id)),
+      ),
+      assigneesPromise,
+      caredOneIdsPromise,
+    ]);
     const linkedById = new Map(
       linkedRows.map((task) => [String(task.id ?? task._ID), task]),
     );
@@ -359,13 +389,13 @@ export async function fetchCareTasksWordPress(
       .map((id) => ownById.get(id) || linkedById.get(id))
       .filter(Boolean);
 
-    const mapped = await Promise.all(taskList.map(async (t: any) => {
+    const mapped = taskList.map((t: any) => {
       const base = mapTask(t, groupId);
-      const [caredOne, assignees] = await Promise.all([
+      const caredOne =
         caredOneByTaskId.get(String(normalizeWpObjectId(base.id))) ||
-          (groupId ? fetchCaredOneId(base.id) : Promise.resolve(null)),
-        includeAssignees ? fetchAssignees(base.id) : Promise.resolve([]),
-      ]);
+        caredOneIdsByTaskId.get(String(normalizeWpObjectId(base.id))) ||
+        null;
+      const assignees = assigneesByTaskId.get(String(normalizeWpObjectId(base.id))) || [];
       const assignedIds = includeAssignees
         ? assignees.map((a) => a.user_id)
         : assignedTaskIds.has(String(normalizeWpObjectId(base.id)))
@@ -378,7 +408,7 @@ export async function fetchCareTasksWordPress(
         assignees, // [{ user_id, response: "pending"|"accepted"|"rejected" }]
         cared_one_id: caredOne,
       };
-    }));
+    });
 
     return applyVisibilityFilter ? applyVisibilityFilter(mapped) : mapped;
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { createElement, useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import FullCalendar from "@fullcalendar/react";
@@ -247,43 +247,60 @@ export default function CalendarPage() {
         [&_.fc-list-event:hover_td]:!bg-accent/40
         [&_.fc-event]:!rounded-md [&_.fc-event]:!border-0 [&_.fc-event]:!px-1.5 [&_.fc-event]:!text-[10px] [&_.fc-event]:!font-medium">
         <div ref={calendarRootRef} data-inspector-scope="calendar">
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, rrulePlugin]}
-          initialView="dayGridMonth"
-          locale={isZh ? "zh-cn" : "en"}
-          firstDay={isZh ? 1 : 0}
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,listWeek",
-          }}
-          buttonText={
-            isZh
-              ? { today: "今天", month: "月", week: "周", day: "日", list: "列表" }
-              : { today: "Today", month: "Month", week: "Week", day: "Day", list: "List" }
-          }
-          allDayText={isZh ? "全天" : "all-day"}
-          noEventsText={isZh ? "本周没有日程" : "No events this week"}
-          events={fcEvents}
-          height="auto"
-          datesSet={() => requestAnimationFrame(markCalendarToolbar)}
-          nowIndicator
-          dayMaxEvents={2}
-          fixedWeekCount={false}
-          dayCellDidMount={markCalendarDay}
-          dayHeaderDidMount={markCalendarWeekday}
-          eventDidMount={(arg) => {
-            const identity = `components/pages/Calendar/event/${arg.event.id}`;
-            arg.el.setAttribute("data-inspector-id", identity);
-            arg.el.querySelector("a")?.setAttribute("data-inspector-id", identity);
-            markCalendarToolbar();
-          }}
-          dateClick={openCreate}
-          eventClick={(info) => {
-            setSelectedEvent(info.event.extendedProps as CalendarEvent);
-          }}
-
-        />
+          {createElement(FullCalendar, {
+            plugins: [
+              dayGridPlugin,
+              timeGridPlugin,
+              listPlugin,
+              interactionPlugin,
+              rrulePlugin,
+            ],
+            initialView: "dayGridMonth",
+            locale: isZh ? "zh-cn" : "en",
+            firstDay: isZh ? 1 : 0,
+            headerToolbar: {
+              left: "prev,next today",
+              center: "title",
+              right: "dayGridMonth,timeGridWeek,listWeek",
+            },
+            buttonText: isZh
+              ? {
+                  today: "今天",
+                  month: "月",
+                  week: "周",
+                  day: "日",
+                  list: "列表",
+                }
+              : {
+                  today: "Today",
+                  month: "Month",
+                  week: "Week",
+                  day: "Day",
+                  list: "List",
+                },
+            allDayText: isZh ? "全天" : "all-day",
+            noEventsText: isZh ? "本周没有日程" : "No events this week",
+            events: fcEvents,
+            height: "auto",
+            datesSet: () => requestAnimationFrame(markCalendarToolbar),
+            nowIndicator: true,
+            dayMaxEvents: 2,
+            fixedWeekCount: false,
+            dayCellDidMount: markCalendarDay,
+            dayHeaderDidMount: markCalendarWeekday,
+            eventDidMount: (arg) => {
+              const identity = `components/pages/Calendar/event/${arg.event.id}`;
+              arg.el.setAttribute("data-inspector-id", identity);
+              arg.el
+                .querySelector("a")
+                ?.setAttribute("data-inspector-id", identity);
+              markCalendarToolbar();
+            },
+            dateClick: openCreate,
+            eventClick: (info) => {
+              setSelectedEvent(info.event.extendedProps as CalendarEvent);
+            },
+          })}
         </div>
       </Card>
 

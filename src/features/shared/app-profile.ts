@@ -49,6 +49,39 @@ export const APP_PROFILE_F = {
   HELP_HIDDEN: "a92",
 } as const;
 
+const ONBOARDING_DONE_CACHE_PREFIX = "app-onboarding-done-v1";
+
+function onboardingDoneCacheKey(app: AppId, userId: number): string {
+  return `${ONBOARDING_DONE_CACHE_PREFIX}:${app}:${userId}`;
+}
+
+/** A previously server-confirmed completion is safe to reuse per account/app. */
+export function getCachedOnboardingDone(
+  app: AppId = currentAppId(),
+): boolean | undefined {
+  const userId = getCurrentUserIdNumber();
+  if (typeof window === "undefined" || !userId) return undefined;
+  try {
+    return window.localStorage.getItem(onboardingDoneCacheKey(app, userId)) ===
+      "true"
+      ? true
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function storeOnboardingDone(app: AppId, userId: number, done: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = onboardingDoneCacheKey(app, userId);
+    if (done) window.localStorage.setItem(key, "true");
+    else window.localStorage.removeItem(key);
+  } catch {
+    // Storage is an optimization only; the server check remains authoritative.
+  }
+}
+
 export const YES = "b55";
 export const NO = "b56";
 
@@ -202,8 +235,11 @@ export async function ensureAppProfile(app: AppId = currentAppId()): Promise<Ens
 
 /** True once the user finished or skipped this app's onboarding. */
 export async function fetchOnboardingDone(app: AppId = currentAppId()): Promise<boolean> {
+  const userId = getCurrentUserIdNumber();
   const row = await getAppProfileRow(app);
-  return isFilled(row?.[APP_PROFILE_F.ONBOARDING]);
+  const done = isFilled(row?.[APP_PROFILE_F.ONBOARDING]);
+  if (userId && getCurrentUserIdNumber() === userId) storeOnboardingDone(app, userId, done);
+  return done;
 }
 
 /**
@@ -215,6 +251,7 @@ export async function completeOnboarding(
   values: { name?: string | undefined; communityName?: string | undefined } = {},
   app: AppId = currentAppId(),
 ): Promise<number> {
+  const userId = getCurrentUserIdNumber();
   const ensured = await ensureAppProfile(app);
   if (!ensured) throw new Error("No signed-in user");
   const row = ensured.row;
@@ -230,6 +267,7 @@ export async function completeOnboarding(
     body[APP_PROFILE_F.AI_CREDITS] = String((Number.isFinite(current) ? current : 0) + grant);
   }
   await wordpressCCTFetch(SLUG, { id: rowId(row), method: "PUT", body });
+  if (userId && getCurrentUserIdNumber() === userId) storeOnboardingDone(app, userId, true);
   return grant;
 }
 

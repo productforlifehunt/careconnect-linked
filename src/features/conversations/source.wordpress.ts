@@ -3,7 +3,7 @@ import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-c
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, appScopeParams, filterAppScope } from "@/features/shared/app-scope";
-import { fetchRelChildrenMap } from "@/features/shared/rel-batch";
+import { dedupeRead, fetchRelChildrenMap, fetchRelChildrenOf } from "@/features/shared/rel-batch";
 import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import { setReadMark, unreadFlag } from "@/features/conversations/read-state";
 import { getStoredWPUser } from "@/services/wp-auth";
@@ -168,9 +168,8 @@ export async function getOrCreateGroupConversationWordPress(groupId: string | nu
 
 async function fetchConversationMemberIds(convoId: string | number): Promise<number[]> {
   try {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/children/${numId(convoId)}`);
-    if (!Array.isArray(rels)) return [];
-    return rels.map((r: any) => Number(r.child_object_id)).filter(Boolean);
+    const rels = await fetchRelChildrenOf(REL_CONV_MEMBER, numId(convoId));
+    return rels.map((relation) => Number(relation.childId)).filter(Boolean);
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
@@ -201,8 +200,10 @@ async function fetchConversationMemberMap(): Promise<{ loaded: boolean; get: (id
  * 152). The shared WordPress account name / login is never read. All profile
  * reads run in parallel and share the transport-level dedupe.
  */
-async function fetchUserDirectory(ids: number[]): Promise<Map<number, { name: string; avatar: string | null }>> {
-  const out = new Map<number, { name: string; avatar: string | null }>();
+type ConversationDirectory = Map<number, { name: string; avatar: string | null }>;
+
+async function fetchUserDirectory(ids: number[]): Promise<ConversationDirectory> {
+  const out: ConversationDirectory = new Map();
   const unique = Array.from(new Set(ids.filter(Boolean)));
   if (unique.length === 0) return out;
   await Promise.all(
@@ -267,7 +268,10 @@ async function fetchLastMessageMap(): Promise<Map<string, LastMessage>> {
 
 /** The current user's own conversations only: REL137 parents of the user, then those rows by ID. */
 async function fetchMyConversationScope(myId: number) {
-  const parents = await wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/parents/${myId}`);
+  const parents = await dedupeRead(
+    `rel-parent-of:${REL_CONV_MEMBER}:${myId}`,
+    () => wordpressFetch<any[]>(`jet-rel/${REL_CONV_MEMBER}/parents/${myId}`),
+  );
   const ids = [...new Set((Array.isArray(parents) ? parents : []).map((r: any) => String(r.parent_object_id)).filter((v) => /^\d+$/.test(v)))];
   const convos = filterAppScope("chatConversation", await readLinkedCCTRows(CONV, ids)).filter((c: any) => c[CF.CHAT_TYPE] !== CT.AI);
   const members = new Map<string, number[]>();
@@ -276,21 +280,40 @@ async function fetchMyConversationScope(myId: number) {
     const id = String(c.id ?? c._ID);
     const [m, msgs] = await Promise.all([
       fetchConversationMemberIds(id),
-      wordpressFetch<any[]>(`jet-rel/${REL_CONV_MESSAGE}/children/${id}`).catch(() => []),
+      fetchRelChildrenOf(REL_CONV_MESSAGE, id).catch(() => []),
     ]);
     members.set(id, m);
     // Newest message = highest row ID among this conversation's own messages.
-    const latest = (Array.isArray(msgs) ? msgs : []).map((r: any) => Number(r.child_object_id)).filter(Boolean).sort((a, b) => b - a)[0];
+    const latest = (Array.isArray(msgs) ? msgs : []).map((relation) => Number(relation.childId)).filter(Boolean).sort((a, b) => b - a)[0];
     if (latest) lastIds.set(id, String(latest));
   }));
-  const lastRows = await readLinkedCCTRows(MSG, [...lastIds.values()]);
+  // Participant display data and latest-message rows are independent once the
+  // caller's existing membership relations have identified authorized chats.
+  // Start both reads together instead of making the Inbox wait for message
+  // CCT reads before it even begins loading names and avatars.
+  const participantIds = convos.flatMap((c: any) => {
+    const id = String(c.id ?? c._ID);
+    const memberIds = members.get(id) || [];
+    if (!memberIds.includes(myId)) return [];
+    const otherId = memberIds.find((memberId) => memberId !== myId);
+    return otherId ? [otherId] : [];
+  });
+  const [lastRows, directory] = await Promise.all([
+    readLinkedCCTRows(MSG, [...lastIds.values()]),
+    fetchUserDirectory(participantIds),
+  ]);
   const byMsg = new Map(lastRows.map((m: any) => [String(m.id ?? m._ID), m]));
   const lastMessages = new Map<string, LastMessage>();
   for (const [cid, mid] of lastIds) {
     const best = byMsg.get(mid); if (!best) continue;
     lastMessages.set(cid, { id: mid, sender_id: authorOf(best) ? `wp-${authorOf(best)}` : null, message_content: best[MF.CHAT_MESSAGE_TYPE] === MT.IMAGE ? "[Image]" : String(best[MF.CHAT_MESSAGE_CONTENT] || ""), created_at: best.created_at ?? best.cct_created ?? null });
   }
-  return { convos, memberMap: { loaded: true, get: (id: string) => members.get(id) || [] }, lastMessages };
+  return {
+    convos,
+    memberMap: { loaded: true, get: (id: string) => members.get(id) || [] },
+    lastMessages,
+    directory,
+  };
 }
 
 /**
@@ -304,11 +327,12 @@ export async function fetchConversationCountsWordPress(
   const myId = numId(currentUserId || getStoredWPUser()?.user_id);
   if (!myId) return { total: 0, unread: 0 };
 
-  const parents = await wordpressFetch<
-    Array<{
-      parent_object_id?: string | number | null;
-    }>
-  >(`jet-rel/${REL_CONV_MEMBER}/parents/${myId}`);
+  const parents = await dedupeRead(
+    `rel-parent-of:${REL_CONV_MEMBER}:${myId}`,
+    () => wordpressFetch<Array<{ parent_object_id?: string | number | null }>>(
+      `jet-rel/${REL_CONV_MEMBER}/parents/${myId}`,
+    ),
+  );
   const ids = [
     ...new Set(
       (Array.isArray(parents) ? parents : [])
@@ -329,13 +353,9 @@ export async function fetchConversationCountsWordPress(
   await Promise.all(
     conversations.map(async (conversation) => {
       const id = String(conversation.id ?? conversation._ID);
-      const relations = await wordpressFetch<
-        Array<{
-          child_object_id?: string | number | null;
-        }>
-      >(`jet-rel/${REL_CONV_MESSAGE}/children/${id}`).catch(() => []);
+      const relations = await fetchRelChildrenOf(REL_CONV_MESSAGE, id).catch(() => []);
       const latest = relations
-        .map((relation) => Number(relation.child_object_id))
+        .map((relation) => Number(relation.childId))
         .filter(Boolean)
         .sort((a, b) => b - a)[0];
       if (latest) latestIds.set(id, String(latest));
@@ -376,13 +396,25 @@ export async function fetchConversationCountsWordPress(
 export async function fetchConversationsWordPress(currentUserId?: string | undefined): Promise<any[]> {
   try {
     const mine = numId(currentUserId);
-    const [convos, memberMap, lastMessages] = mine
-      ? await fetchMyConversationScope(mine).then((r) => [r.convos, r.memberMap, r.lastMessages] as const)
-      : await Promise.all([
-          wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
-          fetchConversationMemberMap(),
-          fetchLastMessageMap(),
-        ]);
+    let directory: ConversationDirectory | null = null;
+    let conversationsData: {
+      convos: any[];
+      memberMap: { loaded: boolean; get: (id: string) => number[] };
+      lastMessages: Map<string, LastMessage>;
+    };
+    if (mine) {
+      const scoped = await fetchMyConversationScope(mine);
+      directory = scoped.directory;
+      conversationsData = scoped;
+    } else {
+      const [convos, memberMap, lastMessages] = await Promise.all([
+        wordpressCCTFetch<any[]>(CONV, { params: { _limit: 200, ...appScopeParams("chatConversation") } }),
+        fetchConversationMemberMap(),
+        fetchLastMessageMap(),
+      ]);
+      conversationsData = { convos, memberMap, lastMessages };
+    }
+    const { convos, memberMap, lastMessages } = conversationsData;
     if (!Array.isArray(convos)) return [];
     const myId = numId(currentUserId);
 
@@ -416,9 +448,9 @@ export async function fetchConversationsWordPress(currentUserId?: string | undef
     }))).filter(Boolean) as any[];
 
     // Resolve participant display names in one request.
-    const directory = await fetchUserDirectory(rows.map((r) => Number(r._other_raw_id)));
+    const resolvedDirectory = directory ?? await fetchUserDirectory(rows.map((r) => Number(r._other_raw_id)));
     for (const r of rows) {
-      const info = r._other_raw_id ? directory.get(Number(r._other_raw_id)) : null;
+      const info = r._other_raw_id ? resolvedDirectory.get(Number(r._other_raw_id)) : null;
       if (info?.name) r.other_user_name = info.name;
       if (info?.avatar) r.other_user_avatar = info.avatar;
       delete r._other_raw_id;

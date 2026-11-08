@@ -95,6 +95,38 @@ describe("private lists resolve user relations, not whole-app CCT lists", () => 
     expect(m.fetch.mock.calls.some(([path]) => path === `jet-rel/${R.careTaskAssignees}/parents/88`)).toBe(false);
     expect(m.fetch.mock.calls.some(([path]) => path === `jet-rel/${R.careGroupTasks}`)).toBe(false);
   });
+  it("starts task-scoped assignee reads before waiting for task details", async () => {
+    m.caredOneIds.mockResolvedValue(["wp-99"]);
+    m.fetch.mockImplementation(async (path: string) =>
+      path === `jet-rel/${R.careTaskCaredOnes}/parents/99`
+        ? [{ parent_object_id: "27" }]
+        : [],
+    );
+
+    let resolveTask!: (task: Record<string, unknown>) => void;
+    m.cct.mockImplementation(
+      () => new Promise((resolve) => { resolveTask = resolve; }),
+    );
+    const taskLoad = fetchCareTasksWordPress(undefined, {
+      caredOneOnly: true,
+      includeAssignees: true,
+      includeAssignmentStatus: false,
+    });
+
+    await vi.waitFor(() => {
+      expect(m.fetch).toHaveBeenCalledWith(`jet-rel/${R.careTaskAssignees}/children/27`);
+    });
+    resolveTask({
+      _ID: 27,
+      [T.careTask.f.TITLE]: "Cared-one task",
+      [T.careTask.f.TASK_FINISH_STATUS]: T.careTask.opt.TASK_FINISH_STATUS.NOT_FINISHED,
+      [T.careTask.f.TASK_HELP_STATUS]: T.careTask.opt.TASK_HELP_STATUS.TASK_DOESN_T_NEED_HELP,
+    });
+
+    await expect(taskLoad).resolves.toMatchObject([
+      { id: "27", cared_one_id: "wp-99", title: "Cared-one task", assignees: [] },
+    ]);
+  });
   it("empty group task relation downloads no CCT rows", async () => {
     expect(await fetchCareTasksWordPress("200")).toEqual([]);
     expect(m.cct).not.toHaveBeenCalled();

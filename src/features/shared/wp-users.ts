@@ -141,7 +141,9 @@ function fetchCCTRowsBatched(cctSlug: string, id: string): Promise<any | null> {
     const ids = new Set<string>();
     const wait = new Promise<Map<string, any>>((resolve, reject) => setTimeout(() => {
       pendingRows.delete(cctSlug);
-      readLinkedCCTRows(cctSlug, [...ids]).then((rows) => resolve(new Map(rows.map((r: any) => [String(r?.id ?? r?._ID), r])))).catch(reject);
+      readLinkedCCTRows(cctSlug, [...ids])
+        .then((rows) => resolve(new Map(rows.map((r: any) => [String(r?.id ?? r?._ID), r]))))
+        .catch(reject);
     }, 0));
     batch = { ids, wait };
     pendingRows.set(cctSlug, batch);
