@@ -208,20 +208,47 @@ async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
     ),
   );
 }
-async function storedBinding(key: string, token?: string): Promise<NoteBinding | undefined> {
-  const bindings = (await bindingRows(key, token)).flatMap((row) =>
-    positionBindings(row.a59, String(row._ID)),
+async function storedBindingRow(
+  key: string,
+  token?: string,
+): Promise<{ binding: NoteBinding; row: CCTRow } | undefined> {
+  const rows = await bindingRows(key, token);
+  const entries = rows.flatMap((row) =>
+    positionBindings(row.a59, String(row._ID)).map((binding) => ({
+      binding,
+      row,
+    })),
   );
-  return bindings.find((binding) => binding.key === key) ||
-    bindings.find((binding) => samePosition(binding.key, key));
+  return (
+    entries.find(({ binding }) => binding.key === key) ||
+    entries.find(({ binding }) => samePosition(binding.key, key))
+  );
+}
+async function storedBinding(
+  key: string,
+  token?: string,
+): Promise<NoteBinding | undefined> {
+  return (await storedBindingRow(key, token))?.binding;
 }
 
-async function notesBoundToPosition(key: string, token?: string): Promise<CCTNote[]> {
+async function notesBoundToPosition(
+  key: string,
+  token?: string,
+): Promise<(CCTNote & NoteBinding)[]> {
   const rows = await bindingRows(key, token);
-  return rows.flatMap((row) => {
-    const binding = positionBindings(row.a59, String(row._ID)).find((entry) => samePosition(entry.key, key));
-    return binding ? [{ ...mapRow(row), ...binding }] : [];
-  }).sort((a, b) => (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) || Number(a.id) - Number(b.id));
+  return rows
+    .flatMap((row) => {
+      const binding = positionBindings(row.a59, String(row._ID)).find((entry) =>
+        samePosition(entry.key, key),
+      );
+      return binding ? [{ ...mapRow(row), ...binding }] : [];
+    })
+    .sort(
+      (a, b) =>
+        (a.tabOrder ?? Number.MAX_SAFE_INTEGER) -
+          (b.tabOrder ?? Number.MAX_SAFE_INTEGER) ||
+        Number(a.id) - Number(b.id),
+    );
 }
 
 async function writeNoteTypeAndOrder(
@@ -234,24 +261,39 @@ async function writeNoteTypeAndOrder(
   const typeField = NOTE_FIELDS["笔记类型"];
   const orderField = NOTE_FIELDS["笔记标签顺序"];
   if (row[typeField] === noteType && Number(row[orderField]) === tabOrder) return;
-  await wp(`/${id}`, "POST", { [typeField]: noteType, [orderField]: String(tabOrder) }, token);
+  await wp(
+    `/${id}`,
+    "POST",
+    { [typeField]: noteType, [orderField]: String(tabOrder) },
+    token,
+  );
   const saved = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
-  if (String(saved._ID) !== id || saved[typeField] !== noteType || String(saved[orderField]) !== String(tabOrder))
+  if (
+    String(saved._ID) !== id ||
+    saved[typeField] !== noteType ||
+    String(saved[orderField]) !== String(tabOrder)
+  )
     throw new Error(`笔记 #${id} 的类型或标签顺序保存后核对不一致。`);
 }
 
 /** Backfill a63/a64 for notes already bound to this position in a59. */
-export async function readNotesForPosition(key: string, token?: string): Promise<CCTNote[]> {
-  let notes = await notesBoundToPosition(key, token);
+export async function readNotesForPosition(
+  key: string,
+  token?: string,
+): Promise<(CCTNote & NoteBinding)[]> {
+  const notes = await notesBoundToPosition(key, token);
   const nextOrder: Record<"b55" | "b56", number> = { b55: 1, b56: 1 };
+  const backfills: Promise<void>[] = [];
   for (const note of notes) {
     const noteType = note.noteType || "b55";
     const tabOrder = note.tabOrder ?? nextOrder[noteType];
     nextOrder[noteType] = Math.max(nextOrder[noteType], tabOrder + 1);
-    await writeNoteTypeAndOrder(note.id, noteType, tabOrder, token);
+    if (note.noteType !== noteType || note.tabOrder !== tabOrder)
+      backfills.push(writeNoteTypeAndOrder(note.id, noteType, tabOrder, token));
   }
-  notes = await notesBoundToPosition(key, token);
-  return notes;
+  if (!backfills.length) return notes;
+  await Promise.all(backfills);
+  return notesBoundToPosition(key, token);
 }
 
 export async function reorderPositionNotes(
@@ -261,20 +303,41 @@ export async function reorderPositionNotes(
   token?: string,
 ): Promise<CCTNote[]> {
   const seen = new Set<string>();
-  for (const [index, id] of ids.entries()) {
+  for (const id of ids) {
     if (seen.has(id)) throw new Error("笔记顺序包含重复编号。");
     seen.add(id);
-    const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
-    if (String(row._ID) !== id || row[NOTE_FIELDS["笔记类型"]] !== noteType ||
-      !positionBindings(row.a59, id).some((binding) => samePosition(binding.key, key)))
-        throw new Error(`笔记 #${id} 已不属于当前分类或位置，请重新读取。`);
+  }
+  const linkedRows = await bindingRows(key, token);
+  const rows = new Map(linkedRows.map((row) => [String(row._ID), row]));
+  const orderField = NOTE_FIELDS["笔记标签顺序"];
+  const pending: { id: string; tabOrder: string }[] = [];
+  for (const [index, id] of ids.entries()) {
+    const row = rows.get(id);
+    if (!row) throw new Error(`笔记 #${id} 不存在。`);
+    if (
+      String(row._ID) !== id ||
+      row[NOTE_FIELDS["笔记类型"]] !== noteType ||
+      !positionBindings(row.a59, id).some((binding) =>
+        samePosition(binding.key, key),
+      )
+    )
+      throw new Error(`笔记 #${id} 已不属于当前分类或位置，请重新读取。`);
     const tabOrder = String(index + 1);
-    if (row[NOTE_FIELDS["笔记标签顺序"]] !== tabOrder) {
-      await wp(`/${id}`, "POST", { [NOTE_FIELDS["笔记标签顺序"]]: tabOrder }, token);
-      const fresh = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
-      if (String(fresh._ID) !== id || fresh[NOTE_FIELDS["笔记标签顺序"]] !== tabOrder)
-        throw new Error(`笔记 #${id} 的标签顺序保存后核对不一致。`);
-    }
+    if (String(row[orderField] || "") !== tabOrder)
+      pending.push({ id, tabOrder });
+  }
+  for (let offset = 0; offset < pending.length; offset += 4) {
+    await Promise.all(
+      pending.slice(offset, offset + 4).map(async ({ id, tabOrder }) => {
+        await wp(`/${id}`, "POST", { [orderField]: tabOrder }, token);
+        const fresh = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+        if (
+          String(fresh._ID) !== id ||
+          String(fresh[orderField] || "") !== tabOrder
+        )
+          throw new Error(`笔记 #${id} 的标签顺序保存后核对不一致。`);
+      }),
+    );
   }
   return readNotesForPosition(key, token);
 }
@@ -344,9 +407,9 @@ export async function readNoteForKey(
   key: string,
   token?: string,
 ): Promise<InspectorNote | null> {
-  const binding = await storedBinding(key, token);
-  if (!binding?.id) return null;
-  const row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
+  const stored = await storedBindingRow(key, token);
+  if (!stored?.binding.id) return null;
+  const { binding, row } = stored;
   if (String(row._ID) !== binding.id) throw new Error("绑定的注释不存在。");
   return { ...mapRow(row), ...binding, key };
 }
@@ -655,9 +718,9 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   relationDetails: string;
   version: string;
 } | null> {
-  const binding = await storedBinding(key, token);
-  if (!binding?.id) return null;
-  const row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
+  const stored = await storedBindingRow(key, token);
+  if (!stored?.binding.id) return null;
+  const { binding, row } = stored;
   if (String(row._ID) !== binding.id) return null;
   return {
     id: binding.id,
@@ -724,6 +787,42 @@ async function relIds(
     )
     .filter((v) => /^\d+$/.test(v));
 }
+async function readCCTRowsByIds(
+  ids: string[],
+  token?: string,
+): Promise<Map<string, CCTRow>> {
+  const clean = [...new Set(ids.filter((id) => /^\d+$/.test(id)))];
+  const rowsById = new Map<string, CCTRow>();
+  const batches: string[][] = [];
+  for (let offset = 0; offset < clean.length; offset += 100)
+    batches.push(clean.slice(offset, offset + 100));
+  await Promise.all(
+    batches.map(async (batch) => {
+      const path =
+        batch.length === 1
+          ? `/${batch[0]}`
+          : `?_limit=${batch.length}&_filters=${encodeURIComponent(
+              JSON.stringify([
+                { field: "_ID", operator: "IN", value: batch, type: "integer" },
+              ]),
+            )}`;
+      const result = await wp(path, "GET", undefined, token);
+      const rows = Array.isArray(result)
+        ? (result as CCTRow[])
+        : [result as CCTRow];
+      const allowed = new Set(batch);
+      for (const row of rows) {
+        const rowId = String(row?._ID ?? "");
+        if (!allowed.has(rowId))
+          throw new Error("关联注释批量读取返回了无关记录。");
+        rowsById.set(rowId, row);
+      }
+      if (batch.some((id) => !rowsById.has(id)))
+        throw new Error("关联注释读取失败，请重试。");
+    }),
+  );
+  return rowsById;
+}
 /** Parent (REL325 父) and children (REL325 子) of one CCT324 note, read fresh with their a55/a56. */
 export async function readRelatedNotes(
   id: string,
@@ -737,23 +836,26 @@ export async function readRelatedNotes(
     ...parents.map((p) => [p, "parent"] as [string, "parent"]),
     ...children.map((c) => [c, "child"] as [string, "child"]),
   ];
-  return Promise.all(
-    entries.map(async ([nid, side]) => {
-      const row = (await wp(`/${nid}`, "GET", undefined, token)) as CCTRow;
-      return {
-        id: nid,
-        title: row.a55 || "",
-        text: row.a56 || "",
-        side,
-        verified: row.a58 === "b55",
-        relationVerified:
-          row[NOTE_FIELDS["已手动核对笔记关联"]] ===
-          NOTE_RELATION_VERIFIED["YES"],
-        relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
-        version: row[NOTE_FIELDS["版本"]] || "",
-      };
-    }),
+  const rows = await readCCTRowsByIds(
+    entries.map(([nid]) => nid),
+    token,
   );
+  return entries.map(([nid, side]) => {
+    const row = rows.get(nid);
+    if (!row) throw new Error("关联注释读取失败，请重试。");
+    return {
+      id: nid,
+      title: row.a55 || "",
+      text: row.a56 || "",
+      side,
+      verified: row.a58 === "b55",
+      relationVerified:
+        row[NOTE_FIELDS["已手动核对笔记关联"]] ===
+        NOTE_RELATION_VERIFIED["YES"],
+      relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
+      version: row[NOTE_FIELDS["版本"]] || "",
+    };
+  });
 }
 /** Edit a related CCT324 note's a55/a56/a58 in place; never touches element/page bindings. */
 export async function updatePlainNote(
@@ -819,10 +921,11 @@ export async function linkNotes(
   ]);
   if (String(p._ID) !== parent || String(c._ID) !== child)
     throw new Error("所选注释不存在。");
-  const before = await relIds("parents", child, token);
-  const alreadyLinked =
-    before.includes(parent) ||
-    (await relIds("parents", parent, token)).includes(child);
+  const [before, parentParents] = await Promise.all([
+    relIds("parents", child, token),
+    relIds("parents", parent, token),
+  ]);
+  const alreadyLinked = before.includes(parent) || parentParents.includes(child);
   if (!alreadyLinked || meta) {
     await rel(
       "",

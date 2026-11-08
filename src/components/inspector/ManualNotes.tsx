@@ -31,7 +31,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { NoteSearchList, type NotePick } from "./NoteSearchList";
-import { ChevronsUpDown, Plus, Lock, Copy } from "lucide-react";
+import { ChevronsUpDown, Plus, Copy } from "lucide-react";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import { ConflictReportView } from "./ConflictReportView";
 import type { ConflictReport } from "@/features/inspector/conflict-report";
@@ -47,11 +47,12 @@ type MigrationCandidate = {
 
 type OneLoad = {
   note: CCTNote | null;
+  positionNotes?: CCTNote[];
   warning?: string;
   migrationCandidates?: MigrationCandidate[];
 };
 
-/** Per-element read cache for this browser session; cleared on save/lock/retry so it never shows stale bindings. */
+/** Per-element read cache for this browser session; successful writes update it so reopening never repeats reads. */
 const oneCache = new Map<string, OneLoad>();
 /** Deduplicate overlapping reads while recorder updates cause the inspector to render again. */
 const onePending = new Map<string, Promise<OneLoad>>();
@@ -110,7 +111,6 @@ export function ManualNotes({
     report?: ConflictReport;
     error?: string;
   }>({});
-  const [picked, setPicked] = useState<NotePick>();
   const [selected, setSelected] = useState<string>();
   const [activeType, setActiveType] = useState<InspectorNoteType>("b55");
   const [draftNoteType, setDraftNoteType] = useState<InspectorNoteType>("b55");
@@ -129,13 +129,14 @@ export function ManualNotes({
     error?: string;
     saving?: boolean;
   } | null>(null);
-  const [choice, setChoice] = useState<string>();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [saved, setSaved] = useState("");
   const [state, setState] = useState<{
     loading?: boolean;
     saving?: boolean;
+    activity?: string | undefined;
+    successMessage?: string | undefined;
     saveStatus?: "saved" | undefined;
     saveError?: string | undefined;
     error?: string | undefined;
@@ -252,7 +253,6 @@ export function ManualNotes({
     setLoadedFor(undefined);
     setSelected(undefined);
     setPositionNotes([]);
-    setChoice(undefined);
     setActiveType("b55");
     setDraftNoteType("b55");
     setSavedNoteType("b55");
@@ -291,6 +291,7 @@ export function ManualNotes({
           label: string;
           reason: string;
         }>;
+        positionNotes?: CCTNote[];
       },
     ) => {
       if (!live || session !== (getWPToken() || "")) return;
@@ -298,10 +299,13 @@ export function ManualNotes({
       // and published builds. No source line, no alias, no carry-over: different elements never share a note.
       const n = findSameElementNote(map, noteKey);
       if (!live || session !== (getWPToken() || "")) return;
+      const hasPositionNotes = migration?.positionNotes !== undefined;
+      if (hasPositionNotes) setPositionNotes(migration.positionNotes || []);
       setText(n?.text || "");
       setSaved(n?.text || "");
       onChange?.(n?.text || "");
       setState({
+        loading: !hasPositionNotes,
         at: n?.updatedAt,
         ...(migration?.warning ? { warning: migration.warning } : {}),
         ...(migration?.migrationCandidates?.length
@@ -309,7 +313,6 @@ export function ManualNotes({
           : {}),
       });
       setSelected(n?.id);
-      setChoice(n?.id);
       setActiveType(n?.noteType || "b55");
       setDraftNoteType(n?.noteType || "b55");
       setSavedNoteType(n?.noteType || "b55");
@@ -322,9 +325,44 @@ export function ManualNotes({
       setRelationVerified(!!(n as CCTNote | undefined)?.relationVerified);
       setSavedRelationVerified(!!(n as CCTNote | undefined)?.relationVerified);
       setRelationDetails((n as CCTNote | undefined)?.relationDetails || "");
-      setSavedRelationDetails((n as CCTNote | undefined)?.relationDetails || "");
+      setSavedRelationDetails(
+        (n as CCTNote | undefined)?.relationDetails || "",
+      );
       setStale(false);
       setLoadedFor(noteKey);
+      if (!hasPositionNotes) {
+        listInspectorPositionNotes({ data: { key: noteKey } })
+          .then((result) => {
+            if (!live || session !== (getWPToken() || "")) return;
+            if (result.error) {
+              setState((current) => ({
+                ...current,
+                loading: false,
+                error: result.error,
+              }));
+              return;
+            }
+            const notes = (result.notes || []) as CCTNote[];
+            setPositionNotes(notes);
+            const current = notes.find(
+              (note) => note.id === correctionState.current.selected,
+            );
+            if (current) setActiveType(current.noteType || "b55");
+            setState((currentState) => ({
+              ...currentState,
+              loading: false,
+              error: undefined,
+            }));
+          })
+          .catch((error) => {
+            if (live && session === (getWPToken() || ""))
+              setState((current) => ({
+                ...current,
+                loading: false,
+                error: String(error),
+              }));
+          });
+      }
     };
     // Old scoped positions are equivalent across pages. Source-based recovery requires an exact,
     // unique build fingerprint and never downloads the full catalogue.
@@ -332,7 +370,9 @@ export function ManualNotes({
     const hit = oneCache.get(cacheKey);
     if (hit !== undefined)
       void apply(
-        new Map(hit.note ? [[noteKey, hit.note]] : []) as Parameters<typeof apply>[0],
+        new Map(hit.note ? [[noteKey, hit.note]] : []) as Parameters<
+          typeof apply
+        >[0],
         hit,
       );
     else {
@@ -357,23 +397,36 @@ export function ManualNotes({
             if ("error" in r && r.error) throw new Error(r.error);
             const result: OneLoad = {
               note: (r.notes as CCTNote[])[0] || null,
-              ...( "warning" in r && r.warning ? { warning: r.warning } : {}),
-              ...( "migrationCandidates" in r && r.migrationCandidates?.length
+              ...("positionNotes" in r && Array.isArray(r.positionNotes)
+                ? { positionNotes: r.positionNotes as CCTNote[] }
+                : {}),
+              ...("warning" in r && r.warning ? { warning: r.warning } : {}),
+              ...("migrationCandidates" in r && r.migrationCandidates?.length
                 ? { migrationCandidates: r.migrationCandidates }
                 : {}),
             };
-            oneCache.set(cacheKey, result);
+            oneCache.set(cacheKey, {
+              note: result.note,
+              ...(result.positionNotes !== undefined ? { positionNotes: result.positionNotes } : {}),
+              ...(result.warning ? { warning: result.warning } : {}),
+              ...(result.migrationCandidates
+                ? { migrationCandidates: result.migrationCandidates }
+                : {}),
+            });
             return result;
           })
           .finally(() => {
-            if (onePending.get(cacheKey) === pending) onePending.delete(cacheKey);
+            if (onePending.get(cacheKey) === pending)
+              onePending.delete(cacheKey);
           });
         onePending.set(cacheKey, pending);
       }
       pending
         .then((result) =>
           apply(
-            new Map(result.note ? [[noteKey, result.note]] : []) as Parameters<typeof apply>[0],
+            new Map(result.note ? [[noteKey, result.note]] : []) as Parameters<
+              typeof apply
+            >[0],
             result,
           ),
         )
@@ -383,29 +436,6 @@ export function ManualNotes({
       live = false;
     };
   }, [noteKey, priorKey, legacyKey, legacySourceKey, legacyKeysKey, alias, fingerprint, tag, retry]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    let live = true;
-    const sessionToken = getWPToken() || "";
-    if (!ready) return () => { live = false; };
-    setState((current) => ({ ...current, loading: true }));
-    listInspectorPositionNotes({ data: { key: noteKey } })
-      .then((result) => {
-        if (!live) return;
-        if (getWPToken() !== sessionToken) return;
-        if (result.error) {
-          setState((current) => ({ ...current, loading: false, error: result.error }));
-          return;
-        }
-        const notes = (result.notes || []) as CCTNote[];
-        setPositionNotes(notes);
-        const current = notes.find((note) => note.id === correctionState.current.selected);
-        if (current) setActiveType(current.noteType || "b55");
-        setState((currentState) => ({ ...currentState, loading: false, error: undefined }));
-      })
-      .catch((error) => live && setState((current) => ({ ...current, loading: false, error: String(error) })));
-    return () => { live = false; };
-  }, [noteKey, ready, retry]);
 
   const activePositionNotes = positionNotes
     .filter((note) => note.noteType === activeType)
@@ -443,7 +473,6 @@ export function ManualNotes({
   const activateNote = (note: CCTNote) => {
     if (note.id === selected) return;
     stashActiveDraft();
-    setChoice(undefined);
     const current = positionNotes.find((item) => item.id === note.id);
     if (current) setFieldsFromPositionNote(current);
   };
@@ -452,7 +481,6 @@ export function ManualNotes({
     if (noteType === activeType) return;
     stashActiveDraft();
     setActiveType(noteType);
-    setChoice(undefined);
     const note = positionNotes
       .filter((item) => item.noteType === noteType)
       .sort((a, b) => (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) || Number(a.id) - Number(b.id))[0];
@@ -488,25 +516,30 @@ export function ManualNotes({
     setPositionNotes((notes) => notes.map((note) =>
       orderById.has(note.id) ? { ...note, tabOrder: orderById.get(note.id) } : note,
     ));
-    setState((current) => ({ ...current, saving: true, error: undefined }));
+    setState((current) => ({ ...current, saving: true, activity: "正在保存注释顺序…", successMessage: undefined, error: undefined }));
     try {
       const result = await reorderInspectorPositionNotes({
         data: { key: noteKey, noteType: activeType, ids: reordered.map((note) => note.id) },
       });
       if (result.error) throw new Error(result.error);
-      setPositionNotes(result.notes || []);
+      const notes = (result.notes || []) as CCTNote[];
+      setPositionNotes(notes);
+      const cacheKey = `${getWPToken() || ""}|${noteKey}`;
+      const cached = oneCache.get(cacheKey);
+      if (cached) oneCache.set(cacheKey, { ...cached, note: notes.find((note) => note.id === selected) || cached.note, positionNotes: notes });
+      setState((current) => ({ ...current, activity: undefined, successMessage: "注释顺序已保存。" }));
     } catch (error) {
       setPositionNotes(previous);
-      setState((current) => ({ ...current, error: error instanceof Error ? error.message : String(error) }));
+      setState((current) => ({ ...current, activity: undefined, error: error instanceof Error ? error.message : String(error) }));
     } finally {
-      setState((current) => ({ ...current, saving: false }));
+      setState((current) => ({ ...current, saving: false, activity: undefined }));
     }
   };
 
   const createLinkedNote = async () => {
     stashActiveDraft();
     const tabOrder = Math.max(0, ...activePositionNotes.map((note) => note.tabOrder || 0)) + 1;
-    setState((current) => ({ ...current, saving: true, saveError: undefined }));
+    setState((current) => ({ ...current, saving: true, activity: "正在创建并关联注释…", successMessage: undefined, saveError: undefined }));
     try {
       const result = await save({
         data: {
@@ -529,19 +562,20 @@ export function ManualNotes({
       });
       if (!result.note) throw new Error(result.error || "新注释创建失败。");
       const created = result.note as CCTNote;
-      setPositionNotes((notes) => [...notes.filter((note) => note.id !== created.id), created]);
+      const nextPositionNotes = [...positionNotes.filter((note) => note.id !== created.id), created];
+      setPositionNotes(nextPositionNotes);
+      oneCache.set(`${getWPToken() || ""}|${noteKey}`, { note: created, positionNotes: nextPositionNotes });
       setDrafts((current) => {
         const next = { ...current };
         delete next[created.id];
         return next;
       });
       setFieldsFromPositionNote(created, false);
-      setChoice(undefined);
-      setState((current) => ({ ...current, saveStatus: "saved" }));
+      setState((current) => ({ ...current, activity: undefined, saveStatus: "saved", successMessage: `已创建并关联「${created.title}」（CCT324 #${created.id}）。` }));
     } catch (error) {
-      setState((current) => ({ ...current, saveError: error instanceof Error ? error.message : String(error) }));
+      setState((current) => ({ ...current, activity: undefined, saveError: error instanceof Error ? error.message : String(error) }));
     } finally {
-      setState((current) => ({ ...current, saving: false }));
+      setState((current) => ({ ...current, saving: false, activity: undefined }));
     }
   };
   const stableAnchor = async () => {
@@ -557,12 +591,13 @@ export function ManualNotes({
       ...current,
       saveStatus: undefined,
       saveError: undefined,
+      successMessage: undefined,
     }));
   const doSave = async () => {
     if (stale || !ready || !selected) return;
     const session = getWPToken() || "";
     const key = noteKey;
-    setState((s) => ({ ...s, saving: true, error: undefined, saveError: undefined, saveStatus: undefined }));
+    setState((s) => ({ ...s, saving: true, activity: "正在保存并核对注释…", successMessage: undefined, error: undefined, saveError: undefined, saveStatus: undefined }));
     try {
       const result = await updateBoundInspectorNote({
         data: {
@@ -593,41 +628,45 @@ export function ManualNotes({
       const updated = result.note as CCTNote;
       inspectorNotesCache.put(session, updated);
       oneCache.forEach((cached, cacheKey) => {
-        if (cached.note?.id === updated.id) oneCache.delete(cacheKey);
+        const positionNotes = cached.positionNotes?.map((note) => note.id === updated.id ? { ...note, ...updated } : note);
+        if (cached.note?.id === updated.id || positionNotes?.some((note) => note.id === updated.id))
+          oneCache.set(cacheKey, { ...cached, note: cached.note?.id === updated.id ? { ...cached.note, ...updated } : cached.note, ...(positionNotes ? { positionNotes } : {}) });
       });
-      setPositionNotes((notes) => notes.map((note) => note.id === updated.id ? updated : note));
+      const nextPositionNotes = positionNotes.map((note) => note.id === updated.id ? updated : note);
+      setPositionNotes(nextPositionNotes);
+      oneCache.set(`${session}|${key}`, { note: updated, positionNotes: nextPositionNotes });
       setDrafts((current) => {
         const next = { ...current };
         delete next[updated.id];
         return next;
       });
       setFieldsFromPositionNote(updated, false);
-      setChoice(undefined);
-      setState({ at: updated.updatedAt, saveStatus: "saved" });
+      setState({ at: updated.updatedAt, saveStatus: "saved", successMessage: `「${updated.title}」已保存并读回确认。` });
     } catch (e) {
       if (activeKey.current === key)
         setState((s) => ({
           ...s,
+          activity: undefined,
           saveError: e instanceof Error ? e.message : String(e),
           saveStatus: undefined,
         }));
     } finally {
       if (activeKey.current === key)
-        setState((s) => ({ ...s, saving: false }));
+        setState((s) => ({ ...s, saving: false, activity: undefined }));
     }
   };
-  const lockChoice = async () => {
-    if (!choice || !ready) return;
+  const linkPickedNote = async (note: NotePick) => {
+    if (!ready || state.saving) return;
     stashActiveDraft();
     const key = noteKey;
     const session = getWPToken() || "";
-    setState((s) => ({ ...s, saving: true, error: undefined }));
+    setState((s) => ({ ...s, saving: true, activity: `正在关联「${note.title}」…`, successMessage: undefined, error: undefined, saveError: undefined }));
     try {
       const tabOrder = Math.max(0, ...activePositionNotes.map((note) => note.tabOrder || 0)) + 1;
       const result = await select({
         data: {
           key,
-          id: choice,
+          id: note.id,
           scope,
           page,
           label,
@@ -637,22 +676,26 @@ export function ManualNotes({
           ...(await stableAnchor()),
         },
       });
-      if (session !== (getWPToken() || "") || activeKey.current !== key) return;
+      if (activeKey.current !== key) return;
+      if (session !== (getWPToken() || "")) throw new Error("登录状态已变化，请重新打开注释后再关联。");
       if (!result.note) throw new Error(result.error || "选择未保存");
       inspectorNotesCache.put(session, result.note);
-      oneCache.delete(`${session}|${key}`);
-      setSelected(result.note.id);
-      setPositionNotes((notes) => [...notes.filter((note) => note.id !== result.note!.id), result.note as CCTNote]);
-      setFieldsFromPositionNote(result.note as CCTNote, false);
-      setChoice(undefined);
-      setState({ at: result.note.updatedAt });
+      const linked = result.note as CCTNote;
+      const nextPositionNotes = [...positionNotes.filter((item) => item.id !== linked.id), linked];
+      setPositionNotes(nextPositionNotes);
+      oneCache.set(`${session}|${key}`, { note: linked, positionNotes: nextPositionNotes });
+      setFieldsFromPositionNote(linked, false);
+      setState({ at: result.note.updatedAt, successMessage: `已关联「${result.note.title}」（CCT324 #${result.note.id}），列表已更新。` });
     } catch (e) {
-      if (activeKey.current === key) setState({ error: String(e) });
+      if (activeKey.current === key) setState((current) => ({ ...current, activity: undefined, error: e instanceof Error ? e.message : String(e) }));
+    } finally {
+      if (activeKey.current === key) setState((current) => ({ ...current, saving: false, activity: undefined }));
     }
   };
   const createVersionCopy = async () => {
     if (!selected || !copyVersion.trim()) return;
     setVersionCopy({ version: copyVersion, saving: true });
+    setState((current) => ({ ...current, saving: true, activity: `正在创建 v${copyVersion.trim()}…`, successMessage: undefined, error: undefined }));
     try {
       const result = await duplicate({
         data: { id: selected, version: copyVersion.trim() },
@@ -660,18 +703,22 @@ export function ManualNotes({
       if (!result.note) throw new Error(result.error || "新版本创建失败。");
       setVersionCopy({ version: copyVersion.trim(), note: result.note });
       setCopyVersion("");
+      setState((current) => ({ ...current, activity: undefined, successMessage: `新版本 v${result.note!.version} 已创建。` }));
     } catch (error) {
       setVersionCopy({
         version: copyVersion,
         error: error instanceof Error ? error.message : String(error),
       });
+      setState((current) => ({ ...current, activity: undefined, error: error instanceof Error ? error.message : String(error) }));
+    } finally {
+      setState((current) => ({ ...current, saving: false, activity: undefined }));
     }
   };
   const switchToVersionCopy = async (note: CCTNote) => {
     stashActiveDraft();
     const session = getWPToken() || "";
     const key = noteKey;
-    setState((s) => ({ ...s, saving: true, error: undefined, saveError: undefined }));
+    setState((s) => ({ ...s, saving: true, activity: `正在切换到 v${note.version || "新版本"}…`, successMessage: undefined, error: undefined, saveError: undefined }));
     try {
       const noteType = note.noteType || activeType;
       const tabOrder = Math.max(0, ...positionNotes.filter((item) => item.noteType === noteType).map((item) => item.tabOrder || 0)) + 1;
@@ -693,15 +740,14 @@ export function ManualNotes({
       if (activeKey.current !== key) return;
       if (!result.note) throw new Error(result.error || "切换到新版本失败。");
       inspectorNotesCache.put(session, result.note);
-      oneCache.delete(`${session}|${key}`);
       setSelected(result.note.id);
-      setChoice(result.note.id);
       const selectedNote = result.note as CCTNote;
-      setPositionNotes((notes) => [...notes.filter((item) => item.id !== selectedNote.id), selectedNote]);
+      const nextPositionNotes = [...positionNotes.filter((item) => item.id !== selectedNote.id), selectedNote];
+      setPositionNotes(nextPositionNotes);
+      oneCache.set(`${session}|${key}`, { note: selectedNote, positionNotes: nextPositionNotes });
       setFieldsFromPositionNote(selectedNote, false);
-      setChoice(undefined);
       setVersionCopy(null);
-      setState({ at: result.note.updatedAt, saveStatus: "saved" });
+      setState({ at: result.note.updatedAt, saveStatus: "saved", successMessage: `已切换到「${result.note.title}」。` });
     } catch (error) {
       setVersionCopy((copy) => ({
         ...(copy || { version: note.version || "" }),
@@ -709,7 +755,7 @@ export function ManualNotes({
       }));
     } finally {
       if (activeKey.current === key)
-        setState((s) => ({ ...s, saving: false }));
+        setState((s) => ({ ...s, saving: false, activity: undefined }));
     }
   };
   return (
@@ -721,6 +767,8 @@ export function ManualNotes({
             ? `当前注释：${savedTitle} · ${version ? `v${version} · ` : "未设置版本 · "}CCT324 #${selected}`
             : "当前没有已保存的注释"}
       </p>
+      {state.activity && <p role="status" aria-live="polite">{state.activity}</p>}
+      {state.successMessage && !state.saving && <p role="status" className="text-emerald-700">{state.successMessage}</p>}
       {scope === "site" && (
         <p className="text-muted-foreground">
           此处的注释关联到 {label}；同一注释可同时保留多个页面、元素和全站关联。
@@ -782,22 +830,12 @@ export function ManualNotes({
             <NoteSearchList
               onClose={() => setOpen(false)}
               onPick={(n) => {
-                setChoice(n.id);
-                setPicked(n);
                 setOpen(false);
+                void linkPickedNote(n);
               }}
             />
           </PopoverContent>
         </Popover>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!ready || !choice || choice === selected || state.saving}
-          onClick={lockChoice}
-        >
-          <Lock className="mr-1 h-3 w-3" />
-          锁定选择
-        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -842,14 +880,6 @@ export function ManualNotes({
       </div>
       {selected && (
       <section role="tabpanel" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释内容` : `${noteScopeLabel}关联注释内容`} className="space-y-2">
-      {choice && choice !== selected && (
-        <p>
-          待锁定：{picked?.id === choice ? picked.title : ""} · #{choice} ·{" "}
-          {picked?.id === choice && picked.verified
-            ? "已手动核对"
-            : "未手动核对"}
-        </p>
-      )}
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
         <label className="block space-y-1">
           <span className="text-muted-foreground">标题</span>
@@ -975,8 +1005,7 @@ export function ManualNotes({
           </span>
         )}
       </div>
-      {state.saving && <p role="status">修改中…</p>}
-      {state.saveStatus === "saved" && !state.saving && (
+      {state.saveStatus === "saved" && !state.saving && !state.successMessage && (
         <p role="status" className="text-emerald-700">修改成功，已读回确认。</p>
       )}
       {state.saveError && <p role="alert" className="text-destructive">修改失败：{state.saveError}</p>}

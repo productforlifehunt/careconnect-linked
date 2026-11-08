@@ -104,7 +104,7 @@ it("loads and saves the relation review fields when editing a page note", async 
     }),
   });
   expect(await screen.findByDisplayValue("保存后的核对依据")).toBeDefined();
-  expect(await screen.findByText("修改成功，已读回确认。")).toBeDefined();
+  expect(await screen.findByText("「群组注释」已保存并读回确认。")).toBeDefined();
 });
 
 it("enables save after one character in the note body and reports failures", async () => {

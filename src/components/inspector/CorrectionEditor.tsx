@@ -24,6 +24,17 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
   const [ask, setAsk] = useState('');
   const [thinking, setThinking] = useState(false);
   const [chatError, setChatError] = useState('');
+  const [clipboardStatus, setClipboardStatus] = useState('');
+  const [editorStatus, setEditorStatus] = useState('');
+  const copy = async (value: string) => {
+    setClipboardStatus('正在复制…');
+    try {
+      await navigator.clipboard.writeText(value);
+      setClipboardStatus('已复制到剪贴板。');
+    } catch (e) {
+      setClipboardStatus(e instanceof Error ? `复制失败：${e.message}` : '复制失败。');
+    }
+  };
   const send = async () => {
     const q = ask.trim(); if (!q || thinking) return;
     const next: Msg[] = [...messages, { role: 'user', content: q }];
@@ -58,7 +69,8 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
     {!code && <details><summary>查看修改前的完整笔记</summary><p className="whitespace-pre-wrap">{original?.text || '缺少原笔记，不能提交'}</p></details>}
     {!code && <Input aria-label="建议修改或补充标题" value={title} maxLength={240} disabled={busy || saved} onChange={e => { setTitle(e.target.value); setConfirm(false); }} />}
     <Textarea aria-label={code ? '页面逻辑建议修改或补充' : '建议修改或补充完整正文'} rows={10} value={text} disabled={busy || saved} onChange={e => { setText(e.target.value); setConfirm(false); }} />
-    {code ? <><p>仅供手动修改页面逻辑；不会写入笔记，也不会自动执行代码。</p><Button size="sm" variant="outline" onClick={() => { const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' })); const a = document.createElement('a'); a.href = url; a.download = '页面逻辑建议修改或补充.txt'; a.click(); URL.revokeObjectURL(url); }}>下载</Button><Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(text)}>复制</Button></> : <>
+    {editorStatus && <p role="status">{editorStatus}</p>}
+    {code ? <><p>仅供手动修改页面逻辑；不会写入笔记，也不会自动执行代码。</p><Button size="sm" variant="outline" onClick={() => { const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' })); const a = document.createElement('a'); a.href = url; a.download = '页面逻辑建议修改或补充.txt'; a.click(); URL.revokeObjectURL(url); setEditorStatus('页面逻辑建议已下载。'); }}>下载</Button><Button size="sm" variant="outline" disabled={clipboardStatus === '正在复制…'} onClick={() => void copy(text)}>{clipboardStatus === '正在复制…' ? '复制中…' : '复制'}</Button></> : <>
       {original?.verified && <p className="text-destructive">这条笔记已手动核对。只有你明确确认后才会修改，核对状态保持不变。</p>}
       {!confirm && !saved && <Button size="sm" variant="outline" disabled={!original || !title.trim() || !text.trim() || busy} onClick={() => setConfirm(true)}>提交修改到 #{original?.id}</Button>}
       {confirm && <div className="space-y-2"><p>确认用上面完整正文替换 CCT324 #{original?.id} 的名字和正文？不改变关联及核对状态。</p><div className="flex flex-wrap gap-2"><Button size="sm" disabled={busy} onClick={save}>{busy ? '提交中…' : '确认提交修改'}</Button><Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirm(false)}>取消</Button></div></div>}
@@ -73,12 +85,13 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
         {m.role === 'assistant' && m.text && <div className="mt-1 space-y-1">
           <pre className="max-h-60 overflow-auto rounded bg-background p-2 text-[11px] whitespace-pre-wrap">{m.text}</pre>
           <div className="flex flex-wrap gap-2">
-            {!saved && <Button size="sm" variant="outline" onClick={() => { setText(m.text || ''); if (m.title && !code) setTitle(m.title); setConfirm(false); }}>放进上面的编辑框</Button>}
-            <Button size="sm" variant="ghost" onClick={() => navigator.clipboard?.writeText(m.text || '')}>复制</Button>
+            {!saved && <Button size="sm" variant="outline" onClick={() => { setText(m.text || ''); if (m.title && !code) setTitle(m.title); setConfirm(false); setEditorStatus('建议已放进上方编辑框，尚未提交保存。'); }}>放进上面的编辑框</Button>}
+            <Button size="sm" variant="ghost" disabled={clipboardStatus === '正在复制…'} onClick={() => void copy(m.text || '')}>{clipboardStatus === '正在复制…' ? '复制中…' : '复制'}</Button>
           </div>
         </div>}
       </div>)}
       {thinking && <p className="text-muted-foreground">AI 正在回复…</p>}
+      {clipboardStatus && <p role="status">{clipboardStatus}</p>}
       {chatError && <p role="alert" className="text-destructive">{chatError}</p>}
       <Textarea aria-label="对 AI 说" rows={2} value={ask} placeholder="例如：再补上推送写入的 CCT 和 Column；或给我可以复制的代码修改" disabled={thinking} onChange={e => setAsk(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void send(); } }} />
       <Button size="sm" disabled={!ask.trim() || thinking} onClick={() => void send()}>{thinking ? '回复中…' : '发送'}</Button>

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   unlink: vi.fn(),
   update: vi.fn(),
   duplicate: vi.fn(),
+  search: vi.fn(),
 }));
 vi.mock("@/lib/inspector-ai.functions", () => ({ explainReadWrite: vi.fn() }));
 vi.mock("@/lib/inspector-notes.functions", () => ({
@@ -21,12 +22,32 @@ vi.mock("@/lib/inspector-notes.functions", () => ({
   unlinkRelatedNote: mocks.unlink,
   updateRelatedNote: mocks.update,
   duplicateInspectorNoteVersion: mocks.duplicate,
+  searchInspectorNotes: mocks.search,
 }));
 import { RelatedNotes } from "./RelatedNotes";
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+});
+
+it("links a picked note immediately, shows progress, and updates the list after success", async () => {
+  const linked = { id: "202", title: "已有关联说明", version: "1.0", text: "正文", side: "child" as const, verified: false, relationVerified: true, relationDetails: "" };
+  mocks.list.mockResolvedValue({ notes: [] });
+  mocks.search.mockResolvedValue({ notes: [{ id: "202", title: "已有关联说明", version: "1.0", verified: false }] });
+  let finishLink!: (result: { notes: typeof linked[] }) => void;
+  mocks.link.mockReturnValue(new Promise((resolve) => { finishLink = resolve; }));
+
+  render(<RelatedNotes noteId="101" />);
+  await screen.findByText("关联注释 · 0 条");
+  fireEvent.click(screen.getByRole("button", { name: "关联已有注释" }));
+  fireEvent.click(await screen.findByRole("button", { name: /已有关联说明.*#202/ }));
+  expect(await screen.findByText("正在关联「已有关联说明」…")).toBeDefined();
+  expect(mocks.link).toHaveBeenCalledWith({ data: { id: "101", otherId: "202" } });
+
+  finishLink({ notes: [linked] });
+  expect(await screen.findByRole("button", { name: /#202 · 已有关联说明/ })).toBeDefined();
+  expect(await screen.findByText("关联成功，列表已更新。")).toBeDefined();
 });
 
 it("creates a linked note with relation review fields", async () => {

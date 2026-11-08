@@ -40,11 +40,30 @@ export async function loadInspectorNotes(rawData: unknown, request: Request) {
   }
 
   const notesService = await import("./inspector-notes.server");
-  const { readNoteForKey, readNoteForFingerprint, rebindRecoveredNote } = notesService;
+  const {
+    readNoteForKey,
+    readNoteForFingerprint,
+    readNotesForPosition,
+    rebindRecoveredNote,
+  } = notesService;
   try {
-    const notes = (await Promise.all(data.keys.map((key) => readNoteForKey(key, token)))).filter((note) => !!note);
+    const positionNotesByKey = await Promise.all(
+      data.keys.map((key) => readNotesForPosition(key, token)),
+    );
+    const positionNotes = positionNotesByKey[0] || [];
+    const notes: NonNullable<Awaited<ReturnType<typeof readNoteForKey>>>[] =
+      data.keys.flatMap((key, index) => {
+        const candidates = positionNotesByKey[index] || [];
+        const exact = candidates.filter((note) => note.key === key);
+        const matches = exact.length ? exact : candidates;
+        const selected = [...matches].sort(
+          (a, b) => Number(a.id) - Number(b.id),
+        )[0];
+        return selected ? [selected] : [];
+      });
     const { matchingLegacyLabel } = await import("@/features/inspector/legacy-match");
     let warning: string | undefined;
+    let bindingsChanged = false;
     const migrationCandidates: Array<{ key: string; id: string; title: string; label: string; reason: string }> = [];
     const seen = new Set<string>();
     const listCandidate = (note: Awaited<ReturnType<typeof readNoteForKey>>, key: string, label: string, reason: string) => {
@@ -54,10 +73,23 @@ export async function loadInspectorNotes(rawData: unknown, request: Request) {
       seen.add(signature);
       migrationCandidates.push({ key, id: note.id, title: note.title || "（无标题）", label, reason });
     };
-    const rebind = async (note: NonNullable<Awaited<ReturnType<typeof readNoteForKey>>>, label: string) => {
+    const rebind = async (
+      note: NonNullable<Awaited<ReturnType<typeof readNoteForKey>>>,
+      label: string,
+    ) => {
       const recovered = { ...note, key: data.keys[0]! };
       try {
-        return await rebindRecoveredNote(recovered, data.keys[0]!, "element", data.page || "", label, data.alias, token);
+        const rebound = await rebindRecoveredNote(
+          recovered,
+          data.keys[0]!,
+          "element",
+          data.page || "",
+          label,
+          data.alias,
+          token,
+        );
+        bindingsChanged = true;
+        return rebound;
       } catch (error) {
         warning = `已读回 CCT324 #${note.id}，但 a59 关联没有写入：${error instanceof Error ? error.message : String(error)}`;
         return recovered;
@@ -106,7 +138,15 @@ export async function loadInspectorNotes(rawData: unknown, request: Request) {
       const recovered = await readNoteForFingerprint(data.keys[0]!, data.fingerprint, data.tag, data.page, currentLabel, token);
       if (recovered) notes.push(await rebind(recovered, recovered.label || ""));
     }
-    return { notes, ...(warning ? { warning } : {}), ...(migrationCandidates.length ? { migrationCandidates } : {}) };
+    const currentPositionNotes = bindingsChanged
+      ? await readNotesForPosition(data.keys[0]!, token)
+      : positionNotes;
+    return {
+      notes,
+      positionNotes: currentPositionNotes,
+      ...(warning ? { warning } : {}),
+      ...(migrationCandidates.length ? { migrationCandidates } : {}),
+    };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "读取失败", notes: [] };
   }
@@ -259,14 +299,16 @@ export async function linkRelatedNote(rawData: unknown, request: Request) {
     const token = wpToken(request);
     const s = await import('./inspector-notes.server');
     try {
-      const currentTitle = await s.noteTitle(data.id, token);
-      const otherId = data.otherId || await s.createPlainNote({
-        title: data.create!.title,
-        text: data.create!.text,
-        ...(data.create!.version === undefined ? {} : { version: data.create!.version }),
-        relationVerified: data.create!.relationVerified ?? false,
-        relationDetails: data.create!.relationDetails ?? "",
-      }, token);
+      const [currentTitle, otherId] = await Promise.all([
+        s.noteTitle(data.id, token),
+        data.otherId || s.createPlainNote({
+          title: data.create!.title,
+          text: data.create!.text,
+          ...(data.create!.version === undefined ? {} : { version: data.create!.version }),
+          relationVerified: data.create!.relationVerified ?? false,
+          relationDetails: data.create!.relationDetails ?? "",
+        }, token),
+      ]);
       const otherTitle = data.otherId ? await s.noteTitle(otherId, token) : data.create!.title;
       const { parent, child } = s.relationDirection({ id: data.id, title: currentTitle }, { id: otherId, title: otherTitle });
       try { await s.linkNotes(parent, child, token); }

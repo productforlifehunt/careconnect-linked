@@ -391,6 +391,8 @@ export default function ReadWriteInspector() {
   const inspectorSiteName = site.id === "researcher" ? "ChallengeD" : site.name;
   const [on, setOn] = useState(inspectModeOn());
   const [interact, setInteract] = useState(false);
+  const [toolStatus, setToolStatus] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<Tab>("element");
   const [sub, setSub] = useState<Sub>("rw");
   const [notes, setNotes] = useState<{ element: string; page: string; site: string }>({
@@ -1261,7 +1263,10 @@ export default function ReadWriteInspector() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={clearRecorded}
+              onClick={() => {
+                clearRecorded();
+                setToolStatus("请求记录已清空。");
+              }}
               aria-label="清空记录 / Clear"
             >
               <Trash2 className="h-4 w-4" />
@@ -1269,12 +1274,18 @@ export default function ReadWriteInspector() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => window.location.reload()}
+              disabled={refreshing}
+              onClick={() => {
+                setRefreshing(true);
+                setToolStatus("正在刷新页面…");
+                window.setTimeout(() => window.location.reload(), 80);
+              }}
               aria-label="刷新 / Refresh"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className={refreshing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
             </Button>
           </div>
+          {toolStatus && <p role="status" className="px-3 py-1 text-xs text-muted-foreground">{toolStatus}</p>}
           <div className="flex gap-1 border-b border-border p-2 text-xs">
             {(["element", "page", "site"] as Tab[]).map((t) => (
               <Button

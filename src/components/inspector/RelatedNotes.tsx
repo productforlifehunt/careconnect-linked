@@ -23,7 +23,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
   const [edits, setEdits] = useState<Record<string, Edit>>({}); const compare = explainReadWrite;
   const [notes, setNotes] = useState<Related[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [state, setState] = useState<{ loading?: boolean; busy?: boolean; error?: string | undefined; success?: string | undefined }>({ loading: true });
+  const [state, setState] = useState<{ loading?: boolean; busy?: boolean; activity?: string | undefined; error?: string | undefined; success?: string | undefined }>({ loading: true });
   const [pick, setPick] = useState(false);
   const [draft, setDraft] = useState<{ title: string; version: string; text: string; relationVerified: boolean; relationDetails: string } | null>(null);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
@@ -44,19 +44,20 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
     return () => { live = false; };
   }, [noteId, correctionRevision]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>, success = "操作成功"): Promise<boolean> => {
-    const id = noteId; setState({ busy: true });
+  const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>, success = "操作成功", activity = "正在保存修改…"): Promise<boolean> => {
+    const id = noteId; setState({ busy: true, activity });
     try {
       const r = await fn(); if (active.current !== id) return false;
       if (r.notes) { setNotes(r.notes); setState({ success }); setAi({}); return true; }
       setState({ error: r.error || "失败" }); return false;
     } catch (e) { if (active.current === id) setState({ error: String(e) }); return false; }
+    finally { if (active.current === id) setState((current) => ({ ...current, busy: false, activity: undefined })); }
   };
   const createVersion = async (note: Related) => {
     const version = (copyVersion[note.id] || "").trim();
     if (!version) return;
     setCopyState({ sourceId: note.id, version, saving: true });
-    setState({ busy: true });
+    setState({ busy: true, activity: `正在创建 v${version} 并更新关联列表…` });
     try {
       const result = await duplicate({ data: { id: note.id, version } });
       if (!result.note) throw new Error(result.error || "新版本创建失败。");
@@ -70,6 +71,8 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
     } catch (error) {
       setCopyState({ sourceId: note.id, version, error: error instanceof Error ? error.message : String(error) });
       setState({ error: error instanceof Error ? error.message : String(error) });
+    } finally {
+      if (active.current === noteId) setState((current) => ({ ...current, busy: false, activity: undefined }));
     }
   };
   const linked = new Set([noteId, ...notes.map((n) => n.id)]);
@@ -231,6 +234,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                                 },
                               }),
                               "修改成功",
+                              "正在保存关联注释…",
                             )
                           )
                             setEdits((m) => {
@@ -264,6 +268,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                           : { id: noteId, parent: noteId, child: n.id },
                     }),
                     "关联已取消",
+                    "正在取消关联…",
                   )
                 }
               >
@@ -292,7 +297,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
               exclude={new Set([...linked, noteId])}
               onPick={(c) => {
                 setPick(false);
-                void run(() => link({ data: { id: noteId, otherId: c.id } }), "关联成功");
+                void run(() => link({ data: { id: noteId, otherId: c.id } }), "关联成功，列表已更新。", `正在关联「${c.title}」…`);
               }}
             />
           </PopoverContent>
@@ -345,7 +350,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
           {ai.loading ? "AI 比较中…" : "AI 三方核对实际代码与注释"}
         </Button>
       </div>
-      {state.busy && <p role="status">修改中…</p>}
+      {state.busy && <p role="status" aria-live="polite">{state.activity || "正在处理…"}</p>}
       {state.success && !state.busy && <p role="status" className="text-emerald-700">{state.success}</p>}
       {draft && (
         <div className="space-y-2 rounded border p-2">
@@ -415,7 +420,8 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                         },
                       },
                     }),
-                    "新注释已创建并关联",
+                    "新注释已创建并关联，列表已更新。",
+                    "正在创建并关联新注释…",
                   )
                 )
                   setDraft(null);

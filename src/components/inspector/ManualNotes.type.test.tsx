@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   load: vi.fn(),
   list: vi.fn(),
   update: vi.fn(),
+  session: "test-session-0",
 }));
 
 vi.mock("@/lib/inspector-ai.functions", () => ({ explainReadWrite: vi.fn() }));
@@ -22,7 +23,7 @@ vi.mock("@/lib/inspector-notes.functions", () => ({
   selectInspectorNote: vi.fn(),
   duplicateInspectorNoteVersion: vi.fn(),
 }));
-vi.mock("@/services/wp-auth", () => ({ getWPToken: () => "test-session" }));
+vi.mock("@/services/wp-auth", () => ({ getWPToken: () => mocks.session }));
 vi.mock("@/features/inspector/notes-cache", () => ({
   inspectorNotesCache: { put: vi.fn(), reset: vi.fn() },
 }));
@@ -33,6 +34,7 @@ import { ManualNotes } from "./ManualNotes";
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  mocks.session = `test-session-${Number(mocks.session.slice("test-session-".length)) + 1}`;
 });
 
 beforeEach(() => {
@@ -40,6 +42,31 @@ beforeEach(() => {
     configurable: true,
     value: vi.fn(),
   });
+});
+
+it("uses the position list returned with the initial note read", async () => {
+  const note = {
+    key: "page|/care-circle-performance",
+    id: "100",
+    title: "群组注释",
+    text: "已有内容",
+    noteType: "b55",
+    tabOrder: 1,
+    updatedAt: "2026-11-08T00:00:00Z",
+  };
+  mocks.load.mockResolvedValue({ notes: [note], positionNotes: [note] });
+
+  render(
+    <ManualNotes
+      noteKey="page|/care-circle-performance"
+      scope="page"
+      page="/care-circle-performance"
+      label="群组"
+    />,
+  );
+
+  await screen.findByDisplayValue("已有内容");
+  expect(mocks.list).not.toHaveBeenCalled();
 });
 
 it("saves a selected note under the chosen type and moves it to that type's tabs", async () => {

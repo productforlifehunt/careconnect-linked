@@ -22,10 +22,32 @@ export async function explainReadWrite(rawData: unknown, request: Request) {
     const originals: import('@/features/inspector/conflict-report').ReportNote[] = [];
     try {
       const { readCCTNoteForKey, readRelatedNotes, readNoteById } = await import("./inspector-notes.server");
-      const all = await Promise.all((data.noteId ? ['current-selection'] : data.noteKeys || []).map(async (key) => {
-        const note = data.noteId ? await readNoteById(data.noteId, token) : await readCCTNoteForKey(key, token);
-        return { key: data.noteId && (data.scope === 'page' || data.scope === 'site') ? `${data.scope}|current-selection` : key, note, related: note ? await readRelatedNotes(note.id, token) : [] };
-      }));
+      const all = await Promise.all(
+        (data.noteId ? ["current-selection"] : data.noteKeys || []).map(
+          async (key) => {
+            if (data.noteId) {
+              const [note, related] = await Promise.all([
+                readNoteById(data.noteId, token),
+                readRelatedNotes(data.noteId, token),
+              ]);
+              return {
+                key:
+                  data.scope === "page" || data.scope === "site"
+                    ? `${data.scope}|current-selection`
+                    : key,
+                note,
+                related,
+              };
+            }
+            const note = await readCCTNoteForKey(key, token);
+            return {
+              key,
+              note,
+              related: note ? await readRelatedNotes(note.id, token) : [],
+            };
+          },
+        ),
+      );
       // Element identity + its old line-based key describe one element: keep one entry (the bound one).
       const elements = all.filter((f) => !f.key.startsWith('page|') && !f.key.startsWith('site|'));
       const element = elements.find((f) => f.note) || elements[0];
@@ -91,9 +113,30 @@ export async function analyzeSiteNote(rawData: unknown, request: Request) {
       const rootIds = [...new Set([data.noteId, ...(data.pageNoteIds || [])])];
       const { attachCorrectionNotes, noteRole } = await import('@/features/inspector/corrections');
       const collected: import('@/features/inspector/conflict-report').ReportNote[] = [];
-      for (const id of rootIds) {
-        const [note, related] = await Promise.all([readNoteById(id, token), readRelatedNotes(id, token)]);
-        collected.push({ ...note, current: true, role: noteRole(note.title, data.pageNoteIds?.includes(id) ? 'page_note' : 'element_note') }, ...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
+      for (let offset = 0; offset < rootIds.length; offset += 4) {
+        const rows = await Promise.all(
+          rootIds.slice(offset, offset + 4).map(async (id) => {
+            const [note, related] = await Promise.all([
+              readNoteById(id, token),
+              readRelatedNotes(id, token),
+            ]);
+            return [
+              {
+                ...note,
+                current: true,
+                role: noteRole(
+                  note.title,
+                  data.pageNoteIds?.includes(id) ? "page_note" : "element_note",
+                ),
+              },
+              ...related.map((n) => ({
+                ...n,
+                role: noteRole(n.title, "related_note"),
+              })),
+            ];
+          }),
+        );
+        collected.push(...rows.flat());
       }
       const notes = attachCorrectionNotes({ summary: '正在准备', comparedNoteIds: [], comparedPairs: [], comparedCodeNoteIds: [], codeCompared: false, findings: [] }, collected).notes || [];
       const { WP, R, T } = await import('@/integrations/wp-schema');
@@ -128,8 +171,12 @@ export async function chatAboutCorrection(rawData: unknown, request: Request) {
     catch (error) { return { error: error instanceof Error ? error.message : 'Forbidden' }; }
     try {
       const { readNoteById, readRelatedNotes } = await import('./inspector-notes.server');
-      const current = data.noteId ? await readNoteById(data.noteId, token) : null;
-      const related = data.noteId ? await readRelatedNotes(data.noteId, token) : [];
+      const [current, related] = data.noteId
+        ? await Promise.all([
+            readNoteById(data.noteId, token),
+            readRelatedNotes(data.noteId, token),
+          ])
+        : [null, []];
       const basis = await Promise.all(data.basisNoteIds.filter(id => !related.some(r => r.id === id)).map(id => readNoteById(id, token).catch(() => null)));
       const baseline = [...related, ...basis.filter((n): n is NonNullable<typeof n> => !!n)];
       const { readInspectionSource } = await import('./inspector-source.server');
