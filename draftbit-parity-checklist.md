@@ -87,3 +87,5 @@
 - [ ] 其他独立AI：首页简报、群组上下文、信息卡、亲友声音、研究员核对/冲突/全站分析逐个完成。
 
 准备状态：AI_MESSAGES=[]、AI_BUSY=false已通过GUI保存为App变量；尚未接线，不是多轮实现。试验用消息追加动作已删除，未保留错误或未配置动作。没有修改原App、WordPress笔记正文、a59绑定或REL325。
+
+2026-11-08：GUI新建 AIChatBody；Assistant 与 AssistantFabs 改用此同一Block，悬浮窗保留独立X关闭键。AI_INPUT/AI_REPLY共享空字符串变量已保存。刷新后4项具体配置断言通过：请求AI_INPUT、条件Trim、回复response.reply→AI_REPLY、输入/回复展示绑定。共用主体已在Web出现，但实际发送仍停在Updating、输入未清空，随后运行iframe卸载；不能沿用旧版发送通过结论。多轮追加试验已删除，无实际多轮/语音/任务/持久化新增完成项。
