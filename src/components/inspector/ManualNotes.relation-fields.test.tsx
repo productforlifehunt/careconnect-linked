@@ -68,6 +68,11 @@ it("loads and saves the relation review fields when editing a page note", async 
   const detail = await screen.findByRole("textbox", {
     name: "已手动核对笔记关联详情",
   });
+  expect(screen.getByText("笔记关联核对")).toBeDefined();
+  expect(screen.getByText("关联核对详情")).toBeDefined();
+  expect(detail.getAttribute("placeholder")).toBe(
+    "记录关联关系的说明或核对依据…",
+  );
   expect((detail as HTMLTextAreaElement).value).toBe("原有核对依据");
   expect(
     screen

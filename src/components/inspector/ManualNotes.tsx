@@ -541,34 +541,40 @@ export function ManualNotes({
           <span className="text-muted-foreground">（未保存）</span>
         )}
       </label>
-      <label className="flex items-center gap-2">
-        <Switch
-          checked={relationVerified}
-          onCheckedChange={setRelationVerified}
-          disabled={state.loading || state.saving}
-          aria-label="已手动核对笔记关联"
-        />
-        <span>
-          {relationVerified
-            ? "已手动核对笔记关联"
-            : "未手动核对笔记关联"}
-        </span>
-        {relationVerified !== savedRelationVerified && (
-          <span className="text-muted-foreground">（未保存）</span>
+      <fieldset className="space-y-2 rounded-md border bg-muted/20 p-3">
+        <legend className="px-1 text-sm font-medium">笔记关联核对</legend>
+        <label className="flex items-center gap-2">
+          <Switch
+            checked={relationVerified}
+            onCheckedChange={setRelationVerified}
+            disabled={state.loading || state.saving}
+            aria-label="已手动核对笔记关联"
+          />
+          <span>
+            {relationVerified ? "已手动核对笔记关联" : "未手动核对笔记关联"}
+          </span>
+          {relationVerified !== savedRelationVerified && (
+            <span className="text-muted-foreground">（未保存）</span>
+          )}
+        </label>
+        <label className="block space-y-1 text-sm">
+          <span>关联核对详情</span>
+          <Textarea
+            aria-label="已手动核对笔记关联详情"
+            value={relationDetails}
+            onChange={(event) => setRelationDetails(event.target.value)}
+            rows={4}
+            maxLength={100_000}
+            disabled={state.loading || state.saving}
+            placeholder="记录关联关系的说明或核对依据…"
+          />
+        </label>
+        {relationDetails !== savedRelationDetails && (
+          <p className="text-xs text-muted-foreground">
+            关联核对详情有未保存的修改
+          </p>
         )}
-      </label>
-      <Textarea
-        aria-label="已手动核对笔记关联详情"
-        value={relationDetails}
-        onChange={(event) => setRelationDetails(event.target.value)}
-        rows={4}
-        maxLength={100_000}
-        disabled={state.loading || state.saving}
-        placeholder="记录为什么这些注释相关，以及核对依据…"
-      />
-      {relationDetails !== savedRelationDetails && (
-        <p className="text-muted-foreground">关联核对详情有未保存的修改</p>
-      )}
+      </fieldset>
       <div className="flex items-center gap-2">
         <Button
           size="sm"

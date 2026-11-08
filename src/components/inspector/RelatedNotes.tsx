@@ -53,56 +53,313 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
 
   return (
     <div className="space-y-2 rounded-md border p-2" data-rw-inspector>
-      <p className="font-medium">关联注释（REL325 One manual note can have many related manual notes）· {state.loading ? "读取中…" : `${notes.length} 条`}</p>
+      <p className="font-medium">
+        关联注释 ·{" "}
+        {state.loading ? "读取中…" : `${notes.length} 条`}
+      </p>
       {notes.map((n) => (
         <div key={`${n.side}-${n.id}`} className="rounded border">
-          <Button type="button" variant="ghost" aria-expanded={!!open[n.id]} className="h-auto w-full justify-start whitespace-normal rounded-none p-2 text-left" onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}>
-            {open[n.id] ? <ChevronDown className="mt-0.5 h-3 w-3 shrink-0" /> : <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />}
-            <span><span className="text-muted-foreground">#{n.id} · </span>{n.title}<span className="text-muted-foreground"> · {n.verified ? "已手动核对" : "未手动核对"} · 关联{n.relationVerified ? "已核对" : "未核对"}</span></span>
+          <Button
+            type="button"
+            variant="ghost"
+            aria-expanded={!!open[n.id]}
+            className="h-auto w-full justify-start whitespace-normal rounded-none p-2 text-left"
+            onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}
+          >
+            {open[n.id] ? (
+              <ChevronDown className="mt-0.5 h-3 w-3 shrink-0" />
+            ) : (
+              <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />
+            )}
+            <span>
+              <span className="text-muted-foreground">#{n.id} · </span>
+              {n.title}
+              <span className="text-muted-foreground">
+                {" "}
+                · {n.verified ? "已手动核对" : "未手动核对"} · 关联
+                {n.relationVerified ? "已核对" : "未核对"}
+              </span>
+            </span>
           </Button>
           {open[n.id] && (
             <div className="space-y-2 border-t p-2">
-              {(() => { const e = edits[n.id] || { title: n.title, text: n.text, verified: n.verified, relationVerified: n.relationVerified, relationDetails: n.relationDetails }; const set = (v: Partial<Edit>) => setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } }));
-                const dirty = e.title !== n.title || e.text !== n.text || e.verified !== n.verified || e.relationVerified !== n.relationVerified || e.relationDetails !== n.relationDetails;
-                return (<>
-                  <Input aria-label="关联注释名字" value={e.title} maxLength={240} disabled={busy} onChange={(ev) => set({ title: ev.target.value })} />
-                  <Textarea aria-label="关联注释内容" rows={8} value={e.text} disabled={busy} onChange={(ev) => set({ text: ev.target.value })} />
-                  <label className="flex items-center gap-2"><Switch checked={e.verified} disabled={busy} onCheckedChange={(v) => set({ verified: v })} aria-label="关联注释已手动核对" /><span>{e.verified ? "已手动核对" : "未手动核对"}</span></label>
-                  <label className="flex items-center gap-2"><Switch checked={e.relationVerified} disabled={busy} onCheckedChange={(v) => set({ relationVerified: v })} aria-label="关联注释已手动核对笔记关联" /><span>{e.relationVerified ? "已手动核对笔记关联" : "未手动核对笔记关联"}</span></label>
-                  <Textarea aria-label="关联注释已手动核对笔记关联详情" rows={4} maxLength={100_000} value={e.relationDetails} disabled={busy} onChange={(ev) => set({ relationDetails: ev.target.value })} placeholder="记录关联关系的核对依据…" />
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" disabled={busy || !dirty || !e.title.trim()} onClick={async () => { if (await run(() => update({ data: { id: noteId, otherId: n.id, title: e.title.trim(), text: e.text, verified: e.verified, relationVerified: e.relationVerified, relationDetails: e.relationDetails } }))) setEdits((m) => { const c = { ...m }; delete c[n.id]; return c; }); }}>保存</Button>
-                    {dirty && <span className="text-muted-foreground">有未保存的修改</span>}
-                  </div>
-                </>); })()}
-              <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => unlink({ data: n.side === "parent" ? { id: noteId, parent: n.id, child: noteId } : { id: noteId, parent: noteId, child: n.id } }))}><Unlink className="mr-1 h-3 w-3" />取消关联</Button>
+              {(() => {
+                const e = edits[n.id] || {
+                  title: n.title,
+                  text: n.text,
+                  verified: n.verified,
+                  relationVerified: n.relationVerified,
+                  relationDetails: n.relationDetails,
+                };
+                const set = (v: Partial<Edit>) =>
+                  setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } }));
+                const dirty =
+                  e.title !== n.title ||
+                  e.text !== n.text ||
+                  e.verified !== n.verified ||
+                  e.relationVerified !== n.relationVerified ||
+                  e.relationDetails !== n.relationDetails;
+                return (
+                  <>
+                    <Input
+                      aria-label="关联注释名字"
+                      value={e.title}
+                      maxLength={240}
+                      disabled={busy}
+                      onChange={(ev) => set({ title: ev.target.value })}
+                    />
+                    <Textarea
+                      aria-label="关联注释内容"
+                      rows={8}
+                      value={e.text}
+                      disabled={busy}
+                      onChange={(ev) => set({ text: ev.target.value })}
+                    />
+                    <label className="flex items-center gap-2">
+                      <Switch
+                        checked={e.verified}
+                        disabled={busy}
+                        onCheckedChange={(v) => set({ verified: v })}
+                        aria-label="关联注释已手动核对"
+                      />
+                      <span>{e.verified ? "已手动核对" : "未手动核对"}</span>
+                    </label>
+                    <fieldset className="space-y-2 rounded-md border bg-muted/20 p-3">
+                      <legend className="px-1 text-sm font-medium">
+                        笔记关联核对
+                      </legend>
+                      <label className="flex items-center gap-2">
+                        <Switch
+                          checked={e.relationVerified}
+                          disabled={busy}
+                          onCheckedChange={(v) => set({ relationVerified: v })}
+                          aria-label="关联注释已手动核对笔记关联"
+                        />
+                        <span>
+                          {e.relationVerified
+                            ? "已手动核对笔记关联"
+                            : "未手动核对笔记关联"}
+                        </span>
+                      </label>
+                      <label className="block space-y-1 text-sm">
+                        <span>关联核对详情</span>
+                        <Textarea
+                          aria-label="关联注释已手动核对笔记关联详情"
+                          rows={4}
+                          maxLength={100_000}
+                          value={e.relationDetails}
+                          disabled={busy}
+                          onChange={(ev) =>
+                            set({ relationDetails: ev.target.value })
+                          }
+                          placeholder="记录关联关系的说明或核对依据…"
+                        />
+                      </label>
+                    </fieldset>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        disabled={busy || !dirty || !e.title.trim()}
+                        onClick={async () => {
+                          if (
+                            await run(() =>
+                              update({
+                                data: {
+                                  id: noteId,
+                                  otherId: n.id,
+                                  title: e.title.trim(),
+                                  text: e.text,
+                                  verified: e.verified,
+                                  relationVerified: e.relationVerified,
+                                  relationDetails: e.relationDetails,
+                                },
+                              }),
+                            )
+                          )
+                            setEdits((m) => {
+                              const c = { ...m };
+                              delete c[n.id];
+                              return c;
+                            });
+                        }}
+                      >
+                        保存
+                      </Button>
+                      {dirty && (
+                        <span className="text-muted-foreground">
+                          有未保存的修改
+                        </span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() =>
+                  run(() =>
+                    unlink({
+                      data:
+                        n.side === "parent"
+                          ? { id: noteId, parent: n.id, child: noteId }
+                          : { id: noteId, parent: noteId, child: n.id },
+                    }),
+                  )
+                }
+              >
+                <Unlink className="mr-1 h-3 w-3" />
+                取消关联
+              </Button>
             </div>
           )}
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
         <Popover open={pick} onOpenChange={setPick}>
-          <PopoverTrigger asChild><Button size="sm" variant="outline" disabled={busy}><Link2 className="mr-1 h-3 w-3" />关联已有注释</Button></PopoverTrigger>
-          <PopoverContent data-rw-inspector className="z-[10001] w-80 p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-            <NoteSearchList onClose={() => setPick(false)} exclude={new Set([...linked, noteId])} onPick={(c) => { setPick(false); void run(() => link({ data: { id: noteId, otherId: c.id } })); }} />
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" disabled={busy}>
+              <Link2 className="mr-1 h-3 w-3" />
+              关联已有注释
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            data-rw-inspector
+            className="z-[10001] w-80 p-0"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            <NoteSearchList
+              onClose={() => setPick(false)}
+              exclude={new Set([...linked, noteId])}
+              onPick={(c) => {
+                setPick(false);
+                void run(() => link({ data: { id: noteId, otherId: c.id } }));
+              }}
+            />
           </PopoverContent>
         </Popover>
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => setDraft({ title: "", text: "", relationVerified: false, relationDetails: "" })}><Plus className="mr-1 h-3 w-3" />新建关联注释</Button>
-        <Button size="sm" variant="outline" disabled={busy || !notes.length || ai.loading} onClick={async () => {
-          const id = noteId; setAi({ loading: true });
-          try { const r = await compare({ data: { noteId: id, context: JSON.stringify({ page: window.location.pathname + window.location.search }) } }); if (active.current === id) setAi(r.report ? { report: r.report } : { error: r.error || "失败" }); }
-          catch (e) { if (active.current === id) setAi({ error: String(e) }); }
-        }}><Sparkles className="mr-1 h-3 w-3" />{ai.loading ? "AI 比较中…" : "AI 三方核对实际代码与注释"}</Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={() =>
+            setDraft({
+              title: "",
+              text: "",
+              relationVerified: false,
+              relationDetails: "",
+            })
+          }
+        >
+          <Plus className="mr-1 h-3 w-3" />
+          新建关联注释
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy || !notes.length || ai.loading}
+          onClick={async () => {
+            const id = noteId;
+            setAi({ loading: true });
+            try {
+              const r = await compare({
+                data: {
+                  noteId: id,
+                  context: JSON.stringify({
+                    page: window.location.pathname + window.location.search,
+                  }),
+                },
+              });
+              if (active.current === id)
+                setAi(
+                  r.report
+                    ? { report: r.report }
+                    : { error: r.error || "失败" },
+                );
+            } catch (e) {
+              if (active.current === id) setAi({ error: String(e) });
+            }
+          }}
+        >
+          <Sparkles className="mr-1 h-3 w-3" />
+          {ai.loading ? "AI 比较中…" : "AI 三方核对实际代码与注释"}
+        </Button>
       </div>
       {draft && (
         <div className="space-y-2 rounded border p-2">
-          <Input aria-label="关联注释名字" placeholder="名字" value={draft.title} maxLength={240} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-          <Textarea rows={6} placeholder="内容" value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
-          <label className="flex items-center gap-2"><Switch checked={draft.relationVerified} onCheckedChange={(relationVerified) => setDraft({ ...draft, relationVerified })} aria-label="新关联注释已手动核对笔记关联" /><span>{draft.relationVerified ? "已手动核对笔记关联" : "未手动核对笔记关联"}</span></label>
-          <Textarea aria-label="新关联注释已手动核对笔记关联详情" rows={4} maxLength={100_000} placeholder="记录关联关系的核对依据…" value={draft.relationDetails} onChange={(e) => setDraft({ ...draft, relationDetails: e.target.value })} />
+          <Input
+            aria-label="关联注释名字"
+            placeholder="名字"
+            value={draft.title}
+            maxLength={240}
+            onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+          />
+          <Textarea
+            rows={6}
+            placeholder="内容"
+            value={draft.text}
+            onChange={(e) => setDraft({ ...draft, text: e.target.value })}
+          />
+          <fieldset className="space-y-2 rounded-md border bg-muted/20 p-3">
+            <legend className="px-1 text-sm font-medium">笔记关联核对</legend>
+            <label className="flex items-center gap-2">
+              <Switch
+                checked={draft.relationVerified}
+                onCheckedChange={(relationVerified) =>
+                  setDraft({ ...draft, relationVerified })
+                }
+                aria-label="新关联注释已手动核对笔记关联"
+              />
+              <span>
+                {draft.relationVerified
+                  ? "已手动核对笔记关联"
+                  : "未手动核对笔记关联"}
+              </span>
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span>关联核对详情</span>
+              <Textarea
+                aria-label="新关联注释已手动核对笔记关联详情"
+                rows={4}
+                maxLength={100_000}
+                placeholder="记录关联关系的说明或核对依据…"
+                value={draft.relationDetails}
+                onChange={(e) =>
+                  setDraft({ ...draft, relationDetails: e.target.value })
+                }
+              />
+            </label>
+          </fieldset>
           <div className="flex gap-2">
-            <Button size="sm" disabled={busy || !draft.title.trim()} onClick={async () => { const d = draft; if (await run(() => link({ data: { id: noteId, create: { title: d.title.trim(), text: d.text, relationVerified: d.relationVerified, relationDetails: d.relationDetails } } }))) setDraft(null); }}>保存并关联</Button>
-            <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>取消</Button>
+            <Button
+              size="sm"
+              disabled={busy || !draft.title.trim()}
+              onClick={async () => {
+                const d = draft;
+                if (
+                  await run(() =>
+                    link({
+                      data: {
+                        id: noteId,
+                        create: {
+                          title: d.title.trim(),
+                          text: d.text,
+                          relationVerified: d.relationVerified,
+                          relationDetails: d.relationDetails,
+                        },
+                      },
+                    }),
+                  )
+                )
+                  setDraft(null);
+              }}
+            >
+              保存并关联
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+              取消
+            </Button>
           </div>
         </div>
       )}
