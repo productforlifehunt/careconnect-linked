@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 /** Shared at the start of page content; direct-entry pages return to the site's home. */
 export function PageBackButton() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { i18n } = useTranslation();
   const label = i18n.language?.startsWith("zh") ? "返回" : "Back";
+  // The homepage is the starting point, so it has nothing to go back to.
+  if (pathname === "/") return null;
   return (
     <Button
       type="button"

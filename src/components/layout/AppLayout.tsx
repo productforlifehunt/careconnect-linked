@@ -12,7 +12,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppHeader />
         {/* The page scrolls with the window, so the header stays pinned at the top. */}
         <main className="flex-1 overflow-x-hidden pb-16">
-          <div className="mx-auto w-full max-w-6xl px-4 pt-2">
+          <div className="mx-auto w-full max-w-6xl px-4 pt-2 empty:hidden">
             <PageBackButton />
           </div>
           {children}
