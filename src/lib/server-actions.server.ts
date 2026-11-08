@@ -32,6 +32,8 @@ export async function runServerAction(name: string, data: unknown, request: Requ
       return (await import("@/lib/inspector-notes.functions.server")).unlinkRelatedNote(data, request);
     case "updateRelatedNote":
       return (await import("@/lib/inspector-notes.functions.server")).updateRelatedNote(data, request);
+    case "duplicateInspectorNoteVersion":
+      return (await import("@/lib/inspector-notes.functions.server")).duplicateInspectorNoteVersion(data, request);
     default:
       throw new Response("Unknown server action", { status: 404 });
   }

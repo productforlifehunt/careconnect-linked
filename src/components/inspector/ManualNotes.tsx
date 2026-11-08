@@ -7,6 +7,7 @@ import {
   loadInspectorNotes,
   saveInspectorNote,
   selectInspectorNote,
+  duplicateInspectorNoteVersion,
 } from "@/lib/inspector-notes.functions";
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
 import { getWPToken } from "@/services/wp-auth";
@@ -20,7 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { NoteSearchList, type NotePick } from "./NoteSearchList";
-import { ChevronsUpDown, Plus, Lock } from "lucide-react";
+import { ChevronsUpDown, Plus, Lock, Copy } from "lucide-react";
 import { RelatedNotes } from "./RelatedNotes";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import { ConflictReportView } from "./ConflictReportView";
@@ -81,6 +82,7 @@ export function ManualNotes({
   const loadOne = loadInspectorNotes;
   const save = saveInspectorNote;
   const select = selectInspectorNote;
+  const duplicate = duplicateInspectorNoteVersion;
   const analyze = explainReadWrite;
   const [ai, setAi] = useState<{
     loading?: boolean;
@@ -92,6 +94,15 @@ export function ManualNotes({
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [savedTitle, setSavedTitle] = useState("");
+  const [version, setVersion] = useState("");
+  const [savedVersion, setSavedVersion] = useState("");
+  const [copyVersion, setCopyVersion] = useState("");
+  const [versionCopy, setVersionCopy] = useState<{
+    version: string;
+    note?: CCTNote;
+    error?: string;
+    saving?: boolean;
+  } | null>(null);
   const [choice, setChoice] = useState<string>();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -99,6 +110,8 @@ export function ManualNotes({
   const [state, setState] = useState<{
     loading?: boolean;
     saving?: boolean;
+    saveStatus?: "saved" | undefined;
+    saveError?: string | undefined;
     error?: string | undefined;
     warning?: string | undefined;
     migrationCandidates?: Array<{
@@ -123,14 +136,15 @@ export function ManualNotes({
   const ready = loadedFor === noteKey;
   const activeKey = useRef(noteKey);
   activeKey.current = noteKey;
-  const revision = `${noteKey}|${selected}|${title}|${text}|${verified}|${relationVerified}|${relationDetails}`;
+  const revision = `${noteKey}|${selected}|${title}|${version}|${text}|${verified}|${relationVerified}|${relationDetails}`;
   const activeRevision = useRef(revision);
   activeRevision.current = revision;
-  const correctionState = useRef({ selected, title, text, savedTitle, saved, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
-  correctionState.current = { selected, title, text, savedTitle, saved, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
+  const correctionState = useRef({ selected, title, text, savedTitle, saved, version, savedVersion, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
+  correctionState.current = { selected, title, text, savedTitle, saved, version, savedVersion, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
   const hasUnsavedChanges =
     text !== saved ||
     title !== savedTitle ||
+    version !== savedVersion ||
     verified !== savedVerified ||
     relationVerified !== savedRelationVerified ||
     relationDetails !== savedRelationDetails;
@@ -152,6 +166,7 @@ export function ManualNotes({
       if (
         current.text !== current.saved ||
         current.title !== current.savedTitle ||
+        current.version !== current.savedVersion ||
         current.verified !== current.savedVerified ||
         current.relationVerified !== current.savedRelationVerified ||
         current.relationDetails !== current.savedRelationDetails
@@ -213,6 +228,10 @@ export function ManualNotes({
     setSaved("");
     setTitle(label.slice(0, 240));
     setSavedTitle("");
+    setVersion("");
+    setSavedVersion("");
+    setCopyVersion("");
+    setVersionCopy(null);
     setVerified(false);
     setSavedVerified(false);
     setRelationVerified(false);
@@ -260,6 +279,8 @@ export function ManualNotes({
       setChoice(n?.id);
       setTitle(n?.title || label.slice(0, 240));
       setSavedTitle(n?.title || label.slice(0, 240));
+      setVersion((n as CCTNote | undefined)?.version || "");
+      setSavedVersion((n as CCTNote | undefined)?.version || "");
       setVerified(!!(n as CCTNote | undefined)?.verified);
       setSavedVerified(!!(n as CCTNote | undefined)?.verified);
       setRelationVerified(!!(n as CCTNote | undefined)?.relationVerified);
@@ -335,43 +356,51 @@ export function ManualNotes({
       source: { file: match[1]!, line, endLine: line, tag, digest: match[3]! },
     };
   };
+  const clearSaveNotice = () =>
+    setState((current) => ({
+      ...current,
+      saveStatus: undefined,
+      saveError: undefined,
+    }));
   const doSave = async () => {
     if (stale || !ready) return;
     const session = getWPToken() || "";
     const key = noteKey;
-    setState((s) => ({ ...s, saving: true, error: undefined }));
-    const anchor = await stableAnchor();
-    const r = await save({
-      data: {
-        key: noteKey,
-        scope,
-        page,
-        label,
-        title,
-        id: selected,
-        create: creating,
-        verified,
-        relationVerified,
-        relationDetails,
-        text,
-        ...(alias ? { alias } : {}),
-        ...anchor,
-      },
-    }).catch(
-      (e) => ({ error: String(e) }) as { error: string; note?: undefined },
-    );
-    if (session !== (getWPToken() || "")) return;
-    if ("note" in r && r.note) {
+    setState((s) => ({ ...s, saving: true, error: undefined, saveError: undefined, saveStatus: undefined }));
+    try {
+      const anchor = await stableAnchor();
+      const r = await save({
+        data: {
+          key: noteKey,
+          scope,
+          page,
+          label,
+          title,
+          version,
+          id: selected,
+          create: creating,
+          verified,
+          relationVerified,
+          relationDetails,
+          text,
+          ...(alias ? { alias } : {}),
+          ...anchor,
+        },
+      });
+      if (activeKey.current !== key) return;
+      if (session !== (getWPToken() || ""))
+        throw new Error("登录状态已变化，请重新打开注释后再保存。");
+      if (!r.note) throw new Error(r.error || "保存失败，请重试。");
       inspectorNotesCache.put(session, r.note);
       oneCache.delete(`${session}|${key}`);
-      if (activeKey.current !== key) return;
       setSaved(r.note.text);
       onChange?.(r.note.text);
-      setState({ at: r.note.updatedAt });
       setSelected(r.note.id);
       setChoice(r.note.id);
       setTitle(r.note.title || title);
       setSavedTitle(r.note.title || title);
+      setVersion(r.note.version || "");
+      setSavedVersion(r.note.version || "");
       setVerified(!!r.note.verified);
       setSavedVerified(!!r.note.verified);
       setRelationVerified(!!r.note.relationVerified);
@@ -379,8 +408,18 @@ export function ManualNotes({
       setRelationDetails(r.note.relationDetails || "");
       setSavedRelationDetails(r.note.relationDetails || "");
       setCreating(false);
-    } else if (activeKey.current === key)
-      setState({ error: r.error || "保存失败" });
+      setState({ at: r.note.updatedAt, saveStatus: "saved" });
+    } catch (e) {
+      if (activeKey.current === key)
+        setState((s) => ({
+          ...s,
+          saveError: e instanceof Error ? e.message : String(e),
+          saveStatus: undefined,
+        }));
+    } finally {
+      if (activeKey.current === key)
+        setState((s) => ({ ...s, saving: false }));
+    }
   };
   const lockChoice = async () => {
     if (!choice || !ready) return;
@@ -408,6 +447,8 @@ export function ManualNotes({
       setSaved(result.note.text);
       setTitle(result.note.title || "");
       setSavedTitle(result.note.title || "");
+      setVersion(result.note.version || "");
+      setSavedVersion(result.note.version || "");
       setVerified(!!result.note.verified);
       setSavedVerified(!!result.note.verified);
       setRelationVerified(!!result.note.relationVerified);
@@ -420,13 +461,80 @@ export function ManualNotes({
       if (activeKey.current === key) setState({ error: String(e) });
     }
   };
+  const createVersionCopy = async () => {
+    if (!selected || !copyVersion.trim()) return;
+    setVersionCopy({ version: copyVersion, saving: true });
+    try {
+      const result = await duplicate({
+        data: { id: selected, version: copyVersion.trim() },
+      });
+      if (!result.note) throw new Error(result.error || "新版本创建失败。");
+      setVersionCopy({ version: copyVersion.trim(), note: result.note });
+      setCopyVersion("");
+    } catch (error) {
+      setVersionCopy({
+        version: copyVersion,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+  const switchToVersionCopy = async (note: CCTNote) => {
+    const session = getWPToken() || "";
+    const key = noteKey;
+    setState((s) => ({ ...s, saving: true, error: undefined, saveError: undefined }));
+    try {
+      const result = await select({
+        data: {
+          key,
+          id: note.id,
+          scope,
+          page,
+          label,
+          ...(alias ? { alias } : {}),
+          ...(await stableAnchor()),
+        },
+      });
+      if (session !== (getWPToken() || ""))
+        throw new Error("登录状态已变化，请重新打开注释。");
+      if (activeKey.current !== key) return;
+      if (!result.note) throw new Error(result.error || "切换到新版本失败。");
+      inspectorNotesCache.put(session, result.note);
+      oneCache.delete(`${session}|${key}`);
+      setSelected(result.note.id);
+      setChoice(result.note.id);
+      setText(result.note.text);
+      setSaved(result.note.text);
+      setTitle(result.note.title || "");
+      setSavedTitle(result.note.title || "");
+      setVersion(result.note.version || "");
+      setSavedVersion(result.note.version || "");
+      setVerified(!!result.note.verified);
+      setSavedVerified(!!result.note.verified);
+      setRelationVerified(!!result.note.relationVerified);
+      setSavedRelationVerified(!!result.note.relationVerified);
+      setRelationDetails(result.note.relationDetails || "");
+      setSavedRelationDetails(result.note.relationDetails || "");
+      setCreating(false);
+      onChange?.(result.note.text);
+      setVersionCopy(null);
+      setState({ at: result.note.updatedAt, saveStatus: "saved" });
+    } catch (error) {
+      setVersionCopy((copy) => ({
+        ...(copy || { version: note.version || "" }),
+        error: error instanceof Error ? error.message : String(error),
+      }));
+    } finally {
+      if (activeKey.current === key)
+        setState((s) => ({ ...s, saving: false }));
+    }
+  };
   return (
     <div className="space-y-2 text-xs">
       <p className="text-muted-foreground">
         {state.loading
           ? "正在读取已保存的注释…"
           : selected
-            ? `当前注释：${savedTitle} · CCT324 #${selected}`
+            ? `当前注释：${savedTitle} · ${version ? `v${version} · ` : "未设置版本 · "}CCT324 #${selected}`
             : "当前没有已保存的注释"}
       </p>
       {state.warning && (
@@ -489,6 +597,9 @@ export function ManualNotes({
             setChoice(undefined);
             setTitle(label.slice(0, 240));
             setSavedTitle("");
+            setVersion("");
+            setSavedVersion("");
+            setVersionCopy(null);
             setVerified(false);
             setSavedVerified(false);
             setRelationVerified(false);
@@ -513,18 +624,35 @@ export function ManualNotes({
             : "未手动核对"}
         </p>
       )}
-      <Input
-        aria-label="注释名字"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        maxLength={240}
-        disabled={state.loading || state.saving}
-      />
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
+        <label className="block space-y-1">
+          <span className="text-muted-foreground">标题</span>
+          <Input
+            aria-label="注释名字"
+            value={title}
+            onChange={(e) => { setTitle(e.target.value); clearSaveNotice(); }}
+            maxLength={240}
+            disabled={state.loading || state.saving}
+          />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-muted-foreground">版本</span>
+          <Input
+            aria-label="注释版本"
+            value={version}
+            onChange={(e) => { setVersion(e.target.value); clearSaveNotice(); }}
+            maxLength={80}
+            placeholder="例如 1.0"
+            disabled={state.loading || state.saving}
+          />
+        </label>
+      </div>
       <Textarea
+        aria-label="注释内容"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => { setText(e.target.value); clearSaveNotice(); }}
         rows={8}
-        disabled={state.loading}
+        disabled={state.loading || state.saving}
         placeholder={
           state.loading ? "读取中…" : "写下这里应该怎么读写、怎么判定…"
         }
@@ -532,7 +660,7 @@ export function ManualNotes({
       <label className="flex items-center gap-2">
         <Switch
           checked={verified}
-          onCheckedChange={setVerified}
+          onCheckedChange={(value) => { setVerified(value); clearSaveNotice(); }}
           disabled={state.loading || state.saving}
           aria-label="已手动核对"
         />
@@ -546,7 +674,7 @@ export function ManualNotes({
         <label className="flex items-center gap-2">
           <Switch
             checked={relationVerified}
-            onCheckedChange={setRelationVerified}
+            onCheckedChange={(value) => { setRelationVerified(value); clearSaveNotice(); }}
             disabled={state.loading || state.saving}
             aria-label="已手动核对笔记关联"
           />
@@ -562,7 +690,7 @@ export function ManualNotes({
           <Textarea
             aria-label="已手动核对笔记关联详情"
             value={relationDetails}
-            onChange={(event) => setRelationDetails(event.target.value)}
+            onChange={(event) => { setRelationDetails(event.target.value); clearSaveNotice(); }}
             rows={4}
             maxLength={100_000}
             disabled={state.loading || state.saving}
@@ -590,8 +718,8 @@ export function ManualNotes({
         >
           {state.saving ? "保存中…" : "保存注释"}
         </Button>
-        {selected !== undefined && hasUnsavedChanges && (
-          <span className="text-muted-foreground">有未保存的修改</span>
+        {hasUnsavedChanges && !state.saving && (
+          <span role="status" className="text-muted-foreground">有未保存的修改</span>
         )}
         {selected !== undefined && !hasUnsavedChanges && state.at && (
           <span className="text-muted-foreground">
@@ -599,6 +727,51 @@ export function ManualNotes({
           </span>
         )}
       </div>
+      {state.saving && <p role="status">修改中…</p>}
+      {state.saveStatus === "saved" && !state.saving && (
+        <p role="status" className="text-emerald-700">修改成功，已读回确认。</p>
+      )}
+      {state.saveError && <p role="alert" className="text-destructive">修改失败：{state.saveError}</p>}
+      {selected && !creating && (
+        <div className="space-y-2 rounded-md border p-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={state.loading || state.saving}
+            onClick={() => { setVersionCopy({ version: "" }); setCopyVersion(""); }}
+          >
+            <Copy className="mr-1 h-3 w-3" />复制为新版本
+          </Button>
+          {versionCopy && !versionCopy.note && (
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="space-y-1 text-sm">
+                <span>新版本号</span>
+                <Input
+                  aria-label="新版本号"
+                  value={copyVersion}
+                  onChange={(event) => setCopyVersion(event.target.value)}
+                  maxLength={80}
+                  placeholder="例如 2.0"
+                />
+              </label>
+              <Button size="sm" disabled={versionCopy.saving || !copyVersion.trim()} onClick={createVersionCopy}>
+                {versionCopy.saving ? "创建中…" : "创建新版本"}
+              </Button>
+              <Button size="sm" variant="ghost" disabled={versionCopy.saving} onClick={() => setVersionCopy(null)}>取消</Button>
+            </div>
+          )}
+          {versionCopy?.error && <p role="alert" className="text-destructive">新版本创建失败：{versionCopy.error}</p>}
+          {versionCopy?.note && (
+            <div className="space-y-2" role="status">
+              <p>新版本 v{versionCopy.note.version} 已创建，标题、正文和关联已复制。是否切换到新版本继续编辑？</p>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => void switchToVersionCopy(versionCopy.note!)}>是，切换</Button>
+                <Button size="sm" variant="outline" onClick={() => { setVersionCopy(null); setState((s) => ({ ...s, saveStatus: "saved" })); }}>否，保留当前笔记</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <Button
         size="sm"
         variant="outline"

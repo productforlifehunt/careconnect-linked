@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { searchInspectorNotes } from "@/lib/inspector-notes.functions";
 
-export type NotePick = { id: string; title: string; verified: boolean };
+export type NotePick = { id: string; title: string; version?: string | undefined; verified: boolean };
 export type NoteSearch = (q: string, status: "all" | "verified" | "unverified") => Promise<NotePick[]>;
 
 /**
@@ -55,7 +55,7 @@ export function NoteSearchList({ onPick, exclude, search, onClose }: { onPick: (
         {found.loading && results.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">搜索中…</p> : found.error ? <p className="py-6 text-center text-sm text-destructive">{found.error}</p> : results.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">没有找到注释</p> :
           results.map((n) => (
             <Button key={n.id} type="button" variant="ghost" onClick={() => onPick(n)} className="flex h-auto w-full justify-start gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-normal">
-              <span className="min-w-0 truncate">{n.title} · #{n.id}</span>
+              <span className="min-w-0 truncate">{n.title}{n.version ? ` · v${n.version}` : " · 未设置版本"} · #{n.id}</span>
               <span className="ml-auto shrink-0 pl-2 text-xs text-muted-foreground">{n.verified ? "已手动核对" : "未手动核对"}</span>
             </Button>
           ))}

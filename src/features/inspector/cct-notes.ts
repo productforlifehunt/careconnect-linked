@@ -14,6 +14,7 @@ export interface NoteBinding {
 export interface CCTNote extends SourceAnnotation {
   id: string;
   title: string;
+  version?: string | undefined;
   locked?: boolean | undefined;
   /** CCT324 已手动核对 (a58): b55 是 / b56 否。 */
   verified?: boolean | undefined;
@@ -43,6 +44,7 @@ export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CC
         ...note,
         text: updated.text,
         title: updated.title,
+        version: updated.version,
         updatedAt: updated.updatedAt,
         verified: updated.verified,
         relationVerified: updated.relationVerified,

@@ -39,3 +39,7 @@ export function unlinkRelatedNote(args?: { data?: unknown }) {
 export function updateRelatedNote(args?: { data?: unknown }) {
   return invokeServerAction("updateRelatedNote", args?.data);
 }
+
+export function duplicateInspectorNoteVersion(args?: { data?: unknown }) {
+  return invokeServerAction("duplicateInspectorNoteVersion", args?.data);
+}

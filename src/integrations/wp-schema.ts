@@ -26,6 +26,7 @@ export const WP = {
         "内容": "a56",
         "已手动核对笔记关联": "a60",
         "已手动核对笔记关联详情": "a61",
+        "版本": "a62",
       },
       opt: { "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" } },
     },

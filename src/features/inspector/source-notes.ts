@@ -5,6 +5,7 @@ export interface SourceAnnotation {
   updatedAt: string;
   id?: string | undefined;
   title?: string | undefined;
+  version?: string | undefined;
   locked?: boolean | undefined;
   verified?: boolean | undefined;
   relationVerified?: boolean | undefined;

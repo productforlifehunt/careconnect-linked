@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   linkNotes: vi.fn(),
   unlinkNotes: vi.fn(),
   updatePlainNote: vi.fn(),
+  duplicateNoteVersion: vi.fn(),
 }));
 
 vi.mock("./inspector-ai.server", () => ({ verifyResearcher: mocks.verify }));
@@ -20,12 +21,14 @@ vi.mock("./inspector-notes.server", () => ({
   linkNotes: mocks.linkNotes,
   unlinkNotes: mocks.unlinkNotes,
   updatePlainNote: mocks.updatePlainNote,
+  duplicateNoteVersion: mocks.duplicateNoteVersion,
 }));
 
 import {
   linkRelatedNote,
   listRelatedNotes,
   updateRelatedNote,
+  duplicateInspectorNoteVersion,
 } from "./inspector-notes.functions.server";
 
 const request = new Request("http://localhost/api/server-actions", {
@@ -140,4 +143,13 @@ it("saves relation review edits to the selected related CCT324 note", async () =
     "test-session",
   );
   expect(result).toEqual({ notes: [] });
+});
+
+it("creates a new note version only after researcher verification", async () => {
+  const note = { id: "404", title: "Note", version: "2.0" };
+  mocks.duplicateNoteVersion.mockResolvedValue(note);
+  const result = await duplicateInspectorNoteVersion({ id: "202", version: "2.0" }, request);
+  expect(mocks.verify).toHaveBeenCalledExactlyOnceWith("test-session");
+  expect(mocks.duplicateNoteVersion).toHaveBeenCalledExactlyOnceWith("202", "2.0", "test-session");
+  expect(result).toEqual({ note });
 });

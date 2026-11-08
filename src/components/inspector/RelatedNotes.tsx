@@ -1,30 +1,34 @@
 /** REL325 related manual notes for the current CCT324 note: collapsed list, link/unlink/create, and an AI conflict check. */
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Link2, Plus, Sparkles, Unlink } from "lucide-react";
+import { ChevronDown, ChevronRight, Link2, Plus, Sparkles, Unlink, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NoteSearchList } from "./NoteSearchList";
-import { linkRelatedNote, listRelatedNotes, unlinkRelatedNote, updateRelatedNote } from "@/lib/inspector-notes.functions";
+import { duplicateInspectorNoteVersion, linkRelatedNote, listRelatedNotes, unlinkRelatedNote, updateRelatedNote } from "@/lib/inspector-notes.functions";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import type { ConflictReport } from '@/features/inspector/conflict-report';
+import type { CCTNote } from '@/features/inspector/cct-notes';
 import { ConflictReportView } from './ConflictReportView';
 
-type Related = { id: string; title: string; text: string; side: "parent" | "child"; verified: boolean; relationVerified: boolean; relationDetails: string };
-type Edit = { title: string; text: string; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Related = { id: string; title: string; version: string; text: string; side: "parent" | "child"; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Edit = { title: string; version: string; text: string; verified: boolean; relationVerified: boolean; relationDetails: string };
 
 export function RelatedNotes({ noteId }: { noteId: string }) {
   const list = listRelatedNotes; const link = linkRelatedNote;
   const unlink = unlinkRelatedNote; const update = updateRelatedNote;
+  const duplicate = duplicateInspectorNoteVersion;
   const [edits, setEdits] = useState<Record<string, Edit>>({}); const compare = explainReadWrite;
   const [notes, setNotes] = useState<Related[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const [state, setState] = useState<{ loading?: boolean; busy?: boolean; error?: string | undefined }>({ loading: true });
+  const [state, setState] = useState<{ loading?: boolean; busy?: boolean; error?: string | undefined; success?: string | undefined }>({ loading: true });
   const [pick, setPick] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; text: string; relationVerified: boolean; relationDetails: string } | null>(null);
+  const [draft, setDraft] = useState<{ title: string; version: string; text: string; relationVerified: boolean; relationDetails: string } | null>(null);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
+  const [copyVersion, setCopyVersion] = useState<Record<string, string>>({});
+  const [copyState, setCopyState] = useState<{ sourceId: string; version: string; note?: CCTNote; error?: string; saving?: boolean } | null>(null);
   const active = useRef(noteId); active.current = noteId;
   const [correctionRevision, setCorrectionRevision] = useState(0);
   useEffect(() => {
@@ -40,13 +44,33 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
     return () => { live = false; };
   }, [noteId, correctionRevision]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>): Promise<boolean> => {
+  const run = async (fn: () => Promise<{ notes?: Related[]; error?: string }>, success = "操作成功"): Promise<boolean> => {
     const id = noteId; setState({ busy: true });
     try {
       const r = await fn(); if (active.current !== id) return false;
-      if (r.notes) { setNotes(r.notes); setState({}); setAi({}); return true; }
+      if (r.notes) { setNotes(r.notes); setState({ success }); setAi({}); return true; }
       setState({ error: r.error || "失败" }); return false;
     } catch (e) { if (active.current === id) setState({ error: String(e) }); return false; }
+  };
+  const createVersion = async (note: Related) => {
+    const version = (copyVersion[note.id] || "").trim();
+    if (!version) return;
+    setCopyState({ sourceId: note.id, version, saving: true });
+    setState({ busy: true });
+    try {
+      const result = await duplicate({ data: { id: note.id, version } });
+      if (!result.note) throw new Error(result.error || "新版本创建失败。");
+      const refreshed = await list({ data: { id: noteId } });
+      if (refreshed.error) throw new Error(refreshed.error);
+      if (active.current !== noteId) return;
+      setNotes(refreshed.notes || []);
+      setCopyState({ sourceId: note.id, version, note: result.note });
+      setCopyVersion((current) => ({ ...current, [note.id]: "" }));
+      setState({ success: "新版本已创建，所有原有直接关联已复制。" });
+    } catch (error) {
+      setCopyState({ sourceId: note.id, version, error: error instanceof Error ? error.message : String(error) });
+      setState({ error: error instanceof Error ? error.message : String(error) });
+    }
   };
   const linked = new Set([noteId, ...notes.map((n) => n.id)]);
   const busy = state.loading || state.busy;
@@ -59,55 +83,86 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
       </p>
       {notes.map((n) => (
         <div key={`${n.side}-${n.id}`} className="rounded border">
-          <Button
-            type="button"
-            variant="ghost"
-            aria-expanded={!!open[n.id]}
-            className="h-auto w-full justify-start whitespace-normal rounded-none p-2 text-left"
-            onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}
-          >
-            {open[n.id] ? (
-              <ChevronDown className="mt-0.5 h-3 w-3 shrink-0" />
-            ) : (
-              <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />
-            )}
-            <span>
-              <span className="text-muted-foreground">#{n.id} · </span>
-              {n.title}
-              <span className="text-muted-foreground">
-                {" "}
-                · {n.verified ? "已手动核对" : "未手动核对"} · 关联
-                {n.relationVerified ? "已核对" : "未核对"}
+          <div className="flex items-start gap-1 p-1">
+            <Button
+              type="button"
+              variant="ghost"
+              aria-expanded={!!open[n.id]}
+              className="h-auto min-w-0 flex-1 justify-start whitespace-normal rounded-none p-2 text-left"
+              onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}
+            >
+              {open[n.id] ? (
+                <ChevronDown className="mt-0.5 h-3 w-3 shrink-0" />
+              ) : (
+                <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />
+              )}
+              <span>
+                <span className="text-muted-foreground">#{n.id} · </span>
+                {n.title}
+                <span className="font-medium text-primary"> · {n.version ? `v${n.version}` : "未设置版本"}</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · {n.verified ? "已手动核对" : "未手动核对"} · 关联
+                  {n.relationVerified ? "已核对" : "未核对"}
+                </span>
               </span>
-            </span>
-          </Button>
+            </Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => { setCopyState(null); setCopyVersion((current) => ({ ...current, [n.id]: current[n.id] || "" })); setCopyState({ sourceId: n.id, version: "" }); }}>
+              <Copy className="mr-1 h-3 w-3" />复制版本
+            </Button>
+          </div>
+          {copyState?.sourceId === n.id && !copyState.note && (
+            <div className="flex flex-wrap items-end gap-2 border-t p-2">
+              <label className="space-y-1 text-sm">
+                <span>新版本号</span>
+                <Input aria-label={`关联注释 ${n.id} 新版本号`} value={copyVersion[n.id] || ""} maxLength={80} placeholder="例如 2.0" onChange={(event) => setCopyVersion((current) => ({ ...current, [n.id]: event.target.value }))} />
+              </label>
+              <Button size="sm" disabled={copyState.saving || !(copyVersion[n.id] || "").trim()} onClick={() => void createVersion(n)}>
+                {copyState.saving ? "创建中…" : "创建新版本"}
+              </Button>
+              <Button size="sm" variant="ghost" disabled={copyState.saving} onClick={() => setCopyState(null)}>取消</Button>
+              {copyState.error && <p role="alert" className="w-full text-destructive">新版本创建失败：{copyState.error}</p>}
+            </div>
+          )}
+          {copyState?.sourceId === n.id && copyState.note && (
+            <div className="space-y-2 border-t p-2" role="status">
+              <p>新版本 v{copyState.note.version} 已创建，内容和原有直接关联已复制。是否打开新版本继续编辑？</p>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => { setOpen((current) => ({ ...current, [copyState.note!.id]: true })); setCopyState(null); setState({ success: "已打开新版本，可继续编辑。" }); }}>是，打开新版本</Button>
+                <Button size="sm" variant="outline" onClick={() => setCopyState(null)}>否，留在当前笔记</Button>
+              </div>
+            </div>
+          )}
           {open[n.id] && (
             <div className="space-y-2 border-t p-2">
               {(() => {
                 const e = edits[n.id] || {
                   title: n.title,
+                  version: n.version || "",
                   text: n.text,
                   verified: n.verified,
                   relationVerified: n.relationVerified,
                   relationDetails: n.relationDetails,
                 };
                 const set = (v: Partial<Edit>) =>
-                  setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } }));
+                  { setState((current) => ({ ...current, success: undefined, error: undefined })); setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } })); };
                 const dirty =
                   e.title !== n.title ||
+                  e.version !== (n.version || "") ||
                   e.text !== n.text ||
                   e.verified !== n.verified ||
                   e.relationVerified !== n.relationVerified ||
                   e.relationDetails !== n.relationDetails;
                 return (
                   <>
-                    <Input
-                      aria-label="关联注释名字"
-                      value={e.title}
-                      maxLength={240}
-                      disabled={busy}
-                      onChange={(ev) => set({ title: ev.target.value })}
-                    />
+                    <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
+                      <label className="block space-y-1 text-sm"><span>标题</span>
+                        <Input aria-label="关联注释名字" value={e.title} maxLength={240} disabled={busy} onChange={(ev) => set({ title: ev.target.value })} />
+                      </label>
+                      <label className="block space-y-1 text-sm"><span>版本</span>
+                        <Input aria-label="关联注释版本" value={e.version} maxLength={80} placeholder="例如 1.0" disabled={busy} onChange={(ev) => set({ version: ev.target.value })} />
+                      </label>
+                    </div>
                     <Textarea
                       aria-label="关联注释内容"
                       rows={8}
@@ -162,18 +217,20 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                         disabled={busy || !dirty || !e.title.trim()}
                         onClick={async () => {
                           if (
-                            await run(() =>
-                              update({
+                            await run(
+                              () => update({
                                 data: {
                                   id: noteId,
                                   otherId: n.id,
                                   title: e.title.trim(),
+                                  version: e.version,
                                   text: e.text,
                                   verified: e.verified,
                                   relationVerified: e.relationVerified,
                                   relationDetails: e.relationDetails,
                                 },
                               }),
+                              "修改成功",
                             )
                           )
                             setEdits((m) => {
@@ -183,10 +240,10 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                             });
                         }}
                       >
-                        保存
+                        {state.busy ? "修改中…" : "保存"}
                       </Button>
-                      {dirty && (
-                        <span className="text-muted-foreground">
+                      {dirty && !state.busy && (
+                        <span role="status" className="text-muted-foreground">
                           有未保存的修改
                         </span>
                       )}
@@ -206,6 +263,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                           ? { id: noteId, parent: n.id, child: noteId }
                           : { id: noteId, parent: noteId, child: n.id },
                     }),
+                    "关联已取消",
                   )
                 }
               >
@@ -234,7 +292,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
               exclude={new Set([...linked, noteId])}
               onPick={(c) => {
                 setPick(false);
-                void run(() => link({ data: { id: noteId, otherId: c.id } }));
+                void run(() => link({ data: { id: noteId, otherId: c.id } }), "关联成功");
               }}
             />
           </PopoverContent>
@@ -246,6 +304,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
           onClick={() =>
             setDraft({
               title: "",
+              version: "",
               text: "",
               relationVerified: false,
               relationDetails: "",
@@ -286,6 +345,8 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
           {ai.loading ? "AI 比较中…" : "AI 三方核对实际代码与注释"}
         </Button>
       </div>
+      {state.busy && <p role="status">修改中…</p>}
+      {state.success && !state.busy && <p role="status" className="text-emerald-700">{state.success}</p>}
       {draft && (
         <div className="space-y-2 rounded border p-2">
           <Input
@@ -295,6 +356,9 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
             maxLength={240}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
           />
+          <label className="block space-y-1 text-sm"><span>版本</span>
+            <Input aria-label="新关联注释版本" value={draft.version} maxLength={80} placeholder="例如 1.0" onChange={(e) => setDraft({ ...draft, version: e.target.value })} />
+          </label>
           <Textarea
             rows={6}
             placeholder="内容"
@@ -344,12 +408,14 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                         id: noteId,
                         create: {
                           title: d.title.trim(),
+                          version: d.version,
                           text: d.text,
                           relationVerified: d.relationVerified,
                           relationDetails: d.relationDetails,
                         },
                       },
                     }),
+                    "新注释已创建并关联",
                   )
                 )
                   setDraft(null);
@@ -363,7 +429,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
           </div>
         </div>
       )}
-      {state.error && <p className="text-destructive">{state.error}</p>}
+      {state.error && <p role="alert" className="text-destructive">修改失败：{state.error}</p>}
       {ai.error && <p className="text-destructive">{ai.error}</p>}
       {ai.report && <ConflictReportView report={ai.report} />}
     </div>

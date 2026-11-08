@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   link: vi.fn(),
   unlink: vi.fn(),
   update: vi.fn(),
+  duplicate: vi.fn(),
 }));
 vi.mock("@/lib/inspector-ai.functions", () => ({ explainReadWrite: vi.fn() }));
 vi.mock("@/lib/inspector-notes.functions", () => ({
@@ -19,6 +20,7 @@ vi.mock("@/lib/inspector-notes.functions", () => ({
   linkRelatedNote: mocks.link,
   unlinkRelatedNote: mocks.unlink,
   updateRelatedNote: mocks.update,
+  duplicateInspectorNoteVersion: mocks.duplicate,
 }));
 import { RelatedNotes } from "./RelatedNotes";
 
@@ -77,6 +79,7 @@ it("creates a linked note with relation review fields", async () => {
       id: "101",
       create: {
         title: "并列说明",
+        version: "",
         text: "新内容",
         relationVerified: true,
         relationDetails: "共同指向同一来源。",
@@ -92,6 +95,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
       {
         id: "202",
         title: "关联说明",
+        version: "",
         text: "旧内容",
         side: "child",
         verified: false,
@@ -105,6 +109,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
       {
         id: "202",
         title: "关联说明",
+        version: "",
         text: "旧内容",
         side: "child",
         verified: false,
@@ -127,7 +132,9 @@ it("loads and edits relation review fields on an existing linked note", async ()
     screen.getByRole("switch", { name: "关联注释已手动核对笔记关联" }),
   );
   fireEvent.change(detail, { target: { value: "新依据" } });
-  fireEvent.click(screen.getByRole("button", { name: "保存" }));
+  const save = screen.getByRole("button", { name: "保存" });
+  expect(save.hasAttribute("disabled")).toBe(false);
+  fireEvent.click(save);
 
   await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
   expect(mocks.update).toHaveBeenCalledWith({
@@ -135,6 +142,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
       id: "101",
       otherId: "202",
       title: "关联说明",
+      version: "",
       text: "旧内容",
       verified: false,
       relationVerified: false,
@@ -142,4 +150,22 @@ it("loads and edits relation review fields on an existing linked note", async ()
     },
   });
   await waitFor(() => expect(screen.getByText(/关联未核对/)).toBeDefined());
+  expect(await screen.findByText("修改成功")).toBeDefined();
+});
+
+it("copies a related note with its version and opens the copy for editing on Yes", async () => {
+  const original = { id: "202", title: "关联说明", version: "1.0", text: "正文", side: "child" as const, verified: true, relationVerified: true, relationDetails: "依据" };
+  const copied = { id: "303", title: "关联说明", version: "2.0", text: "正文", verified: true, relationVerified: true, relationDetails: "依据", key: "cct|303" };
+  mocks.list.mockResolvedValueOnce({ notes: [original] }).mockResolvedValueOnce({ notes: [original, { ...original, id: "303", version: "2.0" }] });
+  mocks.duplicate.mockResolvedValue({ note: copied });
+  render(<RelatedNotes noteId="101" />);
+  await screen.findByRole("button", { name: /#202 · 关联说明/ });
+  fireEvent.click(screen.getByRole("button", { name: "复制版本" }));
+  fireEvent.change(screen.getByRole("textbox", { name: "关联注释 202 新版本号" }), { target: { value: "2.0" } });
+  fireEvent.click(screen.getByRole("button", { name: "创建新版本" }));
+  await screen.findByText(/是否打开新版本继续编辑/);
+  expect(mocks.duplicate).toHaveBeenCalledWith({ data: { id: "202", version: "2.0" } });
+  fireEvent.click(screen.getByRole("button", { name: "是，打开新版本" }));
+  expect(screen.getByRole("button", { name: /#303 · 关联说明/ }).getAttribute("aria-expanded")).toBe("true");
+  expect(await screen.findByRole("textbox", { name: "关联注释版本" })).toHaveValue("2.0");
 });
