@@ -106,8 +106,8 @@ export function buildMedicineDoseStarter(dose: string, isChinese: boolean): stri
 
 export function buildSafetyContext(circleFacts: string, isChinese: boolean): string {
   const rule = isChinese
-    ? "以下是这个圈子的位置与安全区事实。回答位置相关问题时只用这些事实，不要编造；缺失就直接说明。"
-    : "The facts below are this circle's location and safe-zone data. For location questions use only these facts, never invent them, and say plainly when something is missing.";
+    ? "以下是这个圈子当前的位置与安全区信息。回答位置相关问题时只用这些内容，不要编造；缺少时直接说明，不解释信息的存储方式或应用内部实现。"
+    : "The following are this circle's current location and safe-zone details. Use them for location questions, never invent information, and say plainly when something is missing. Don't explain how the app stores or processes these details.";
   return `${rule}\n\n${isChinese ? "圈子事实" : "Circle facts"}:\n${circleFacts}`;
 }
 
@@ -119,8 +119,8 @@ export function buildCareGroupHelpRequest(question: string, groupName: string | 
 
 export function buildBriefingRequest(data: string, isChinese: boolean): string {
   return isChinese
-    ? `只根据数据写今日家庭护理简报，不编造安排。没有用药或签到安排时直接说明；有安排则说明时间和事项；任务仅在存在时提及。严格返回 JSON：{"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 句中文，直接说今天几点做什么","suggestions":[{"title":"...","detail":"..."}]}\n数据：${data}`
-    : `Write today's family-care briefing only from the data; never invent a schedule. State plainly when no medicine or check-in is scheduled; otherwise give each time and item. Mention tasks only when present. Return strict JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2–3 sentences saying what is due and when","suggestions":[{"title":"...","detail":"..."}]}\nData: ${data}`;
+    ? `只根据数据写今日家庭护理简报，不编造安排。用家人日常会说的话，避免技术术语，不要提数据如何存储或应用如何实现。没有用药或签到安排时直接说明；有安排则说明时间和事项；任务仅在存在时提及。严格返回 JSON：{"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2-3 句中文，直接说今天几点做什么","suggestions":[{"title":"...","detail":"..."}]}\n数据：${data}`
+    : `Write today's family-care briefing only from the data; never invent a schedule. Use everyday language for the family, avoid technical terms, and don't mention how information is stored or how the app is built. State plainly when no medicine or check-in is scheduled; otherwise give each time and item. Mention tasks only when present. Return strict JSON: {"alerts":[{"level":"high|medium|low","text":"..."}],"summary":"2–3 sentences saying what is due and when","suggestions":[{"title":"...","detail":"..."}]}\nData: ${data}`;
 }
 
 // ───────────────────────────── Permission layer ─────────────────────────────
@@ -560,20 +560,20 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
     dynamic.push(med, chk, loc);
   } else if (access === "none" && caredOneId && (want.medicine || want.checkIn || want.location)) {
     dynamic.push(
-      Z(isChinese, "权限说明", "Access note") +
+      Z(isChinese, "回答提示", "Response guidance") +
         ": " +
         Z(
           isChinese,
-          "当前用户没有查看这位被护理者详细记录的权限，请说明无法提供，并建议联系家属。",
-          "The viewer is not allowed to see this person's detailed records — say so plainly and suggest contacting the family."
+          "如果用户询问这位被护理者的详细记录，请用简单的话说明现在无法提供，并建议联系家属；不要解释内部权限或系统规则。",
+          "If the user asks about this person's detailed records, say in plain language that you can't provide them and suggest contacting the family. Don't describe internal access rules."
         )
     );
   }
 
   const facts = dynamic.filter(Boolean).join("\n");
   const factHeader = isChinese
-    ? "以下是从数据库读取的、当前用户有权查看的事实。回答相关问题时只使用这些事实，缺少的就直接说明，不要编造。"
-    : "The facts below were read from the database and are what this viewer is allowed to see. Use only these for data questions, say plainly when something is missing, and never invent values.";
+    ? "以下是当前用户可以查看的相关信息。只在相关时使用这些内容，缺少时直接说明，不要编造；不要解释信息的来源或应用内部如何工作。"
+    : "The following details are visible to this user. Use them only for relevant questions, plainly say when something is missing, and never invent facts. Don't explain where the information came from or how the app works internally.";
 
   return [staticPart, facts ? `${factHeader}\n\n${facts}` : ""].filter(Boolean).join("\n\n");
 }

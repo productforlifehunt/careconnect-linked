@@ -468,7 +468,7 @@ export function MobileBottomBar() {
     <>
       <nav
         data-bottom-nav
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t flex items-center justify-around h-14 px-1"
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t bg-card h-14 px-1 lg:hidden"
       >
         {items.map((item) => {
           return (
@@ -702,7 +702,7 @@ export function MobileBottomBar() {
             type="button"
             onClick={() => openAssistant()}
             aria-label={isChinese ? "AI 助手" : "AI Assistant"}
-            className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+              className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
           >
             <Bot className="h-5 w-5" />
           </button>
@@ -711,7 +711,7 @@ export function MobileBottomBar() {
               type="button"
               onClick={openHelp}
               aria-label={isChinese ? "使用帮助" : "App guide"}
-              className="fixed right-4 bottom-[4.75rem] z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+              className="fixed right-4 bottom-[4.75rem] z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
             >
               <HelpCircle className="h-5 w-5" />
             </button>

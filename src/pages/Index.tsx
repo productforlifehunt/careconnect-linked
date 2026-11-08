@@ -32,12 +32,20 @@ const Index = () => {
 
   // Release builds hide the paid caregiver marketplace entirely.
   const paidCare = site.features.paidCaregivers;
-  const { data: topProviders, isLoading } = useProviders(
+  const {
+    data: topProviders,
+    isLoading,
+    isError: providersError,
+    isFetching: providersFetching,
+    refetch: refetchProviders,
+  } = useProviders(
     { sortBy: "rating" },
     { enabled: paidCare && featuredVisible },
   );
-  const providersLoading = paidCare && (!featuredVisible || isLoading);
   const featuredProviders = (topProviders || []).slice(0, 3);
+  const providersLoading =
+    paidCare &&
+    (!featuredVisible || isLoading || (providersFetching && featuredProviders.length === 0 && !providersError));
 
   useEffect(() => {
     if (!paidCare) return;
@@ -187,10 +195,33 @@ const Index = () => {
 
           {providersLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+          ) : providersError && featuredProviders.length === 0 ? (
+            <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-destructive/20 bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                {isChinese ? "暂时无法加载护理人员资料，请重试。" : "Caregiver profiles couldn't load right now. Please try again."}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetchProviders()} disabled={providersFetching}>
+                {providersFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {providersFetching ? (isChinese ? "正在加载…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+              </Button>
+            </div>
           ) : (
+            <>
+            {providersError && (
+              <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+                <p className="text-sm text-muted-foreground">
+                  {isChinese ? "暂时无法刷新护理人员列表，以下是已有结果。" : "Couldn't refresh caregiver profiles. Showing the latest available results."}
+                </p>
+                <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void refetchProviders()} disabled={providersFetching}>
+                  {providersFetching ? (isChinese ? "加载中…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+                </Button>
+              </div>
+            )}
+            {featuredProviders.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredProviders.map((cg: Profile) => (
-                <Card key={cg.id} className="card-elevated cursor-pointer border-transparent overflow-hidden" onClick={() => navigate(`/caregiver/${cg.id}`)}>
+                <Link key={cg.id} to={`/caregiver/${cg.id}`} aria-label={isChinese ? `查看${cg.full_name || "护理人员"}的资料` : `View ${cg.full_name || "caregiver"}'s profile`} className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Card className="card-elevated cursor-pointer border-transparent overflow-hidden">
                   <CardContent className="p-0">
                     <div className="p-6">
                       <div className="flex items-start gap-4">
@@ -236,8 +267,15 @@ const Index = () => {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
               ))}
             </div>
+            ) : (
+              <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+                {isChinese ? "目前没有可展示的护理人员。您可以浏览全部护理人员。" : "No caregiver profiles are available right now. Browse all caregivers instead."}
+              </p>
+            )}
+            </>
           )}
 
           <div className="mt-6 text-center sm:hidden">

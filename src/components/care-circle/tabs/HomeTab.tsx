@@ -16,6 +16,10 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 
 interface HomeTabProps {
   pendingTasksCount: number;
+  pendingTasksUnavailable?: boolean | undefined;
+  tasksError?: boolean | undefined;
+  tasksRetrying?: boolean | undefined;
+  onRetryTasks?: (() => void) | undefined;
   membersCount: number;
   caredOnesCount: number;
   statsLoading?: boolean | undefined;
@@ -33,7 +37,8 @@ interface HomeTabProps {
 }
 
 export function HomeTab({
-  pendingTasksCount, membersCount, caredOnesCount, statsLoading,
+  pendingTasksCount, pendingTasksUnavailable, tasksError, tasksRetrying, onRetryTasks,
+  membersCount, caredOnesCount, statsLoading,
   allPosts, activeGroupId, userId, isAdmin, memberCategories, members,
   createPost, onEditPost, onTogglePin, onDeletePost, onNavigateTab,
 }: HomeTabProps) {
@@ -73,7 +78,7 @@ export function HomeTab({
     <div>
       <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
         {[
-          { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksCount, icon: ListTodo, tab: "tasks" },
+          { label: isCN ? "待办任务" : "Pending Tasks", value: pendingTasksUnavailable ? "—" : pendingTasksCount, icon: ListTodo, tab: "tasks" },
           { label: isCN ? "成员" : "Members", value: membersCount, icon: Users, tab: "members" },
           { label: isCN ? "被护理者" : site.navLabels.caredOnes, value: caredOnesCount, icon: Heart, tab: "cared-ones" },
         ].map(s => (
@@ -93,6 +98,18 @@ export function HomeTab({
           </button>
         ))}
       </div>
+      {tasksError && (
+        <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+          <p className="text-xs text-muted-foreground">
+            {pendingTasksUnavailable
+              ? (isCN ? "暂时无法加载任务数量。" : "Couldn't load your task count right now.")
+              : (isCN ? "暂时无法刷新任务，显示的是上次可用结果。" : "Couldn't refresh tasks. Showing the latest available count.")}
+          </p>
+          <Button variant="ghost" size="sm" className="h-8" onClick={onRetryTasks} disabled={tasksRetrying || !onRetryTasks}>
+            {tasksRetrying ? (isCN ? "加载中…" : "Loading…") : (isCN ? "重试" : "Try again")}
+          </Button>
+        </div>
+      )}
 
       <Card className="border-transparent card-elevated mb-6">
         <CardContent className="p-4">

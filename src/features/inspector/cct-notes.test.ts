@@ -17,7 +17,7 @@ const rows = [
     updatedAt: "today",
   },
 ];
-it("stores exactly one selected note per page or element, with the explicit selection winning", () => {
+it("preserves multiple notes per page and one note bound to multiple positions", () => {
   const notes = bindCCTNotes(rows, [
     {
       key: "page|/community",
@@ -34,13 +34,16 @@ it("stores exactly one selected note per page or element, with the explicit sele
       label: "社区",
       locked: true,
     },
+    {
+      key: "el|/community|Button|@button",
+      id: "1",
+      scope: "element",
+      page: "/community",
+      label: "社区按钮",
+    },
   ]);
-  expect(notes.filter((n) => n.key === "page|/community")).toHaveLength(1);
-  expect(notes.find((n) => n.key === "page|/community")).toMatchObject({
-    id: "2",
-    text: "正文二",
-    locked: true,
-  });
+  expect(notes.filter((n) => n.key === "page|/community").map((n) => n.id)).toEqual(["1", "2"]);
+  expect(notes.find((n) => n.key === "el|/community|Button|@button")).toMatchObject({ id: "1", text: "正文一" });
 });
 it("never replaces a missing selected CCT row with another note", () => {
   expect(() =>
@@ -86,11 +89,15 @@ it("editing a CCT note updates every cached position using it without changing a
     ...first,
     text: "已编辑",
     title: "新名字",
+    noteType: "b56",
+    tabOrder: 1,
   });
   expect(map.get("el|x")).toMatchObject({
     id: "1",
     text: "已编辑",
     title: "新名字",
+    noteType: "b56",
+    tabOrder: 1,
     locked: true,
   });
   expect(map.get("cct|2")?.text).toBe("正文二");

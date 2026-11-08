@@ -200,7 +200,7 @@ const en = {
       heroSubtitle: "Your all-in-one dementia care platform — knowledge guides, care coordination, GPS safety, AI companionship, and professional support.",
       ctaTitle: "Your dementia care journey starts here",
       ctaSubtitle: "Join families who trust ChallengeD to coordinate compassionate dementia care.",
-      ctaButton: "Get Started Free",
+      ctaButton: "Find Dementia Caregivers",
       searchPlaceholder: "What dementia care do you need?",
       howItWorksTitle: "How ChallengeD Works",
       footerBrand: "ChallengeD",

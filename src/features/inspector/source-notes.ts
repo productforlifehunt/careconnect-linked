@@ -6,6 +6,8 @@ export interface SourceAnnotation {
   id?: string | undefined;
   title?: string | undefined;
   version?: string | undefined;
+  noteType?: "b55" | "b56" | undefined;
+  tabOrder?: number | undefined;
   locked?: boolean | undefined;
   verified?: boolean | undefined;
   relationVerified?: boolean | undefined;

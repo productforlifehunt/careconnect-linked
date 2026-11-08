@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays, Loader2 } from "lucide-react";
 import { useMedicines, useCareTasks, useAssignedCareTaskIds, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/features/dashboard/use-dashboard-data";
 import { useMemo } from "react";
 import { findDoseLog } from "@/features/medicine/dose-slot";
@@ -32,16 +33,39 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
   const shownName = caredOneName || (isZh ? "被护理者" : site.caredOneSingular);
   const targetFor = (type: TimelineItem["type"]) =>
     type === "booking" ? "/bookings" : `/cared-ones/${personId}/${type === "medicine" ? "medicine" : type === "checkin" ? "checkin" : "tasks"}`;
-  const { data: medicines } = useMedicines(caredOneId);
-  const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
-  const { data: tasks } = useCareTasks(undefined, true, false, {
+  const medicinesQuery = useMedicines(caredOneId);
+  const todayLogsQuery = useTodayMedicineLogs(caredOneId);
+  const tasksQuery = useCareTasks(undefined, true, false, {
     caredOneOnly: true,
     includeAssignmentStatus: false,
   });
-  const { data: assignedCareTaskIds } = useAssignedCareTaskIds();
-  const { data: checkins } = useCheckins(caredOneId);
-  const { data: todayCheckinLogs } = useTodayCheckinLogs(caredOneId);
-  const { data: bookings } = useBookings();
+  const assignedCareTaskIdsQuery = useAssignedCareTaskIds();
+  const checkinsQuery = useCheckins(caredOneId);
+  const todayCheckinLogsQuery = useTodayCheckinLogs(caredOneId);
+  const bookingsQuery = useBookings();
+  const medicines = medicinesQuery.data;
+  const todayLogs = todayLogsQuery.data;
+  const tasks = tasksQuery.data;
+  const assignedCareTaskIds = assignedCareTaskIdsQuery.data;
+  const checkins = checkinsQuery.data;
+  const todayCheckinLogs = todayCheckinLogsQuery.data;
+  const bookings = bookingsQuery.data;
+  const timelineQueries = [
+    medicinesQuery,
+    todayLogsQuery,
+    tasksQuery,
+    assignedCareTaskIdsQuery,
+    checkinsQuery,
+    todayCheckinLogsQuery,
+    bookingsQuery,
+  ];
+  const timelineLoading = timelineQueries.some(
+    (query) => query.isLoading || (query.isFetching && (query.data?.length ?? 0) === 0),
+  );
+  const timelineError = timelineQueries.some((query) => !!query.error);
+  const retryTimeline = () => {
+    void Promise.all(timelineQueries.map((query) => query.refetch()));
+  };
 
   const today = new Date().toDateString();
 
@@ -176,8 +200,58 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
   };
 
 
+  const statusLabels = {
+    done: isZh ? "已完成" : "Completed",
+    pending: isZh ? "待办" : "To do",
+    missed: isZh ? "未完成" : "Missed",
+  };
+
+  if (timelineLoading || (timelineItems.length === 0 && timelineError)) {
+    return (
+      <Card className="border-transparent card-elevated">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            {isZh ? `今日事项 — ${shownName}` : `Today's Events — ${shownName}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {timelineLoading ? (
+            <div role="status" className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {isZh ? "正在加载今日事项…" : "Loading today's schedule…"}
+            </div>
+          ) : (
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 py-4">
+              <p className="text-sm text-muted-foreground">
+                {isZh ? "暂时无法加载今日安排，请重试。" : "Today's schedule couldn't load right now. Please try again."}
+              </p>
+              <Button variant="outline" size="sm" onClick={retryTimeline} disabled={timelineQueries.some((query) => query.isFetching)}>
+                {isZh ? "重试" : "Try again"}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (timelineItems.length === 0) {
-    return null;
+    return (
+      <Card className="border-transparent card-elevated">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            {isZh ? `今日事项 — ${shownName}` : `Today's Events — ${shownName}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <p className="py-5 text-center text-sm text-muted-foreground">
+            {isZh ? "今天还没有安排的事项。" : "Nothing is scheduled for today yet."}
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -204,7 +278,7 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-medium text-muted-foreground">{item.time}</span>
                     <Badge variant="outline" className={`text-[10px] ${statusColor[item.status]}`}>
-                      {isZh ? ({ done: "已完成", pending: "待办", missed: "未完成" } as const)[item.status] : item.status}
+                      {statusLabels[item.status]}
                     </Badge>
                   </div>
                   <p className="text-sm text-foreground truncate">{item.label}</p>

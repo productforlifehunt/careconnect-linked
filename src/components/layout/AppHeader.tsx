@@ -38,15 +38,30 @@ export function AppHeader() {
   const isCareCNC = site.id === "carecnc";
   const paidCare = site.features.paidCaregivers;
   const publicNav = buildPublicNav({ site, t, isChinese });
+  const headerContentWidth =
+    location.pathname.replace(/\/+$/, "") === "/dashboard"
+      ? "max-w-7xl"
+      : "max-w-6xl";
 
 
   // Keep the header on one row: show the first links inline, rest under "More".
   const PRIMARY_COUNT = 5;
   const primaryNav = publicNav.slice(0, PRIMARY_COUNT);
   const overflowNav = publicNav.slice(PRIMARY_COUNT);
+  const headerPrimaryNav = isAuthenticated
+    ? [
+        { title: t("nav.dashboard"), url: "/dashboard", icon: LayoutDashboard },
+        ...publicNav.slice(0, PRIMARY_COUNT - 1),
+      ]
+    : primaryNav;
+  const headerOverflowNav = isAuthenticated
+    ? publicNav.slice(PRIMARY_COUNT - 1)
+    : overflowNav;
   const currentUrl = `${location.pathname}${location.search}`;
   const isNavActive = (url: string) =>
-    url.includes("?") ? currentUrl === url : location.pathname === url;
+    url.includes("?")
+      ? currentUrl === url
+      : location.pathname === url || location.pathname.startsWith(`${url}/`);
 
   // Never put an email address in the header — it is on screen all day and in
   // every screenshot. Name first, then username, then a neutral label.
@@ -119,9 +134,11 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center gap-2 px-4 sm:gap-3">
+      <div
+        className={`mx-auto flex h-[72px] w-full ${headerContentWidth} items-center gap-2 px-4 sm:gap-3`}
+      >
         {/* Logo — always the first element on the left (standard convention) */}
-        <Link to="/" className="flex shrink-0 items-center">
+        <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex shrink-0 items-center">
           <BrandMark size={42} showWordmark className="[&>span:last-child]:text-xl" />
           {site.showBetaLabel && (
             <span className="px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-coral bg-coral/10 border border-coral/30 rounded-full leading-tight">
@@ -132,14 +149,12 @@ export function AppHeader() {
 
         {/* Desktop horizontal nav — primary links inline, the rest in a More menu
             so items never wrap below the header border. */}
-        {!isAuthenticated && (
-        <nav className="ml-4 hidden min-w-0 flex-nowrap items-center gap-1 lg:flex">
-
-
-          {primaryNav.map(item => (
+        <nav className="ml-4 hidden min-w-0 flex-nowrap items-center gap-1 lg:flex" aria-label={isChinese ? "主导航" : "Main navigation"}>
+          {headerPrimaryNav.map(item => (
             <Link
               key={item.url}
               to={item.url}
+              aria-current={isNavActive(item.url) ? "page" : undefined}
               className={`flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-3 text-sm transition-colors ${
                 isNavActive(item.url)
                   ? "text-primary font-medium bg-accent/50"
@@ -156,7 +171,7 @@ export function AppHeader() {
               </span>
             </Link>
           ))}
-          {overflowNav.length > 0 && (
+          {headerOverflowNav.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="shrink-0 text-sm text-muted-foreground hover:text-foreground gap-1">
@@ -165,7 +180,7 @@ export function AppHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56 bg-card border shadow-lg z-[60]">
-                {overflowNav.map(item => (
+                {headerOverflowNav.map(item => (
                   <DropdownMenuItem key={item.url} asChild>
                     <Link to={item.url}>
                       <item.icon className="mr-2 h-4 w-4" />
@@ -177,7 +192,6 @@ export function AppHeader() {
             </DropdownMenu>
           )}
         </nav>
-        )}
 
         <div className="flex-1" />
 

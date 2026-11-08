@@ -115,7 +115,15 @@ export default function CareCircle() {
   const { toast } = useToast();
   const site = useSite();
   const qc = useQueryClient();
-  const { data: groups, isLoading: groupsLoading, isFetching: groupsFetching } = useCareGroups();
+  const {
+    data: groups,
+    isLoading: groupsInitialLoading,
+    isFetching: groupsFetching,
+    error: groupsError,
+    refetch: refetchGroups,
+  } = useCareGroups();
+  const groupsLoading =
+    groupsInitialLoading || (groupsFetching && (groups?.length ?? 0) === 0);
   const createGroup = useCreateCareGroup();
   const navigate = useNavigate();
   const location = useLocation();
@@ -201,14 +209,37 @@ export default function CareCircle() {
   const { data: members, isLoading: membersLoadingRaw } =
     useCareGroupMembers(membersGroupId);
   const membersLoading = !!membersGroupId && membersLoadingRaw;
-  const { data: tasks, isLoading: tasksLoadingRaw } =
+  const {
+    data: tasks,
+    isLoading: tasksInitialLoading,
+    isFetching: tasksFetchingRaw,
+    error: tasksError,
+    refetch: refetchTasks,
+  } =
     // A missing groupId means "all of my tasks" in dashboard consumers.
     // Care Teams must wait until an accepted group is selected, or this page
     // starts an unrelated multi-relation task read while its groups load.
     useCareTasks(tasksGroupId, !!tasksGroupId);
   // Disabled react-query queries stay `isLoading` forever — only treat them as
   // loading when a group is actually selected, otherwise skeletons never clear.
-  const tasksLoading = !!tasksGroupId && tasksLoadingRaw;
+  const tasksFetching = !!tasksGroupId && tasksFetchingRaw;
+  const tasksLoading =
+    !!tasksGroupId &&
+    (tasksInitialLoading || (tasksFetchingRaw && (tasks?.length ?? 0) === 0));
+  const tasksUnavailable = !!tasksError && (tasks?.length ?? 0) === 0;
+  const taskReadNotice = tasksError ? (
+    <div role={tasksUnavailable ? "alert" : "status"} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+      <p className="text-xs text-muted-foreground">
+        {tasksUnavailable
+          ? (isCN ? "暂时无法加载任务。" : "Your tasks couldn't load right now.")
+          : (isCN ? "无法刷新任务，显示的是上次可用结果。" : "Couldn't refresh tasks. Showing the latest available results.")}
+      </p>
+      <Button variant="ghost" size="sm" className="h-8" onClick={() => void refetchTasks()} disabled={tasksFetching}>
+        {tasksFetching && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+        {tasksFetching ? (isCN ? "加载中…" : "Loading…") : (isCN ? "重试" : "Try again")}
+      </Button>
+    </div>
+  ) : null;
   const { data: allPosts } = useCareGroupPosts(postsGroupId);
   const { data: announcements, isLoading: announcementsLoading } =
     useCareGroupPosts(announcementsGroupId, "announcement");
@@ -367,6 +398,30 @@ export default function CareCircle() {
     );
   }
 
+  const cannotVerifyLinkedGroup = !!pathGroup && !!groupsError && !myUrlGroup;
+  const groupsUnavailable = !!groupsError && ((groups?.length ?? 0) === 0 || cannotVerifyLinkedGroup);
+  if (groupsUnavailable) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-5">
+        <div className="mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{site.navLabels.careGroups}</h1>
+          <p className="text-sm text-muted-foreground">{t("careCircle.coordinateCare")}</p>
+        </div>
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-warning/30 bg-warning/5 px-4 py-10 text-center">
+          <p className="max-w-md text-sm text-muted-foreground">
+            {cannotVerifyLinkedGroup
+              ? (isCN ? "暂时无法确认您是否能查看这个群组。请重试。" : "We couldn't check whether this group is available to you. Please try again.")
+              : (isCN ? "暂时无法加载您的护理群组。请重试。" : "Your care teams couldn't load right now. Please try again.")}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void refetchGroups()} disabled={groupsFetching}>
+            {groupsFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {groupsFetching ? (isCN ? "正在加载…" : "Loading…") : (isCN ? "重试" : "Try again")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const joinDialogBody = (
     <div className="space-y-4 mt-2">
       <div>
@@ -386,6 +441,17 @@ export default function CareCircle() {
       <div className="flex gap-2 flex-wrap">
         {groups.map((g: any) => (<Badge key={g.id} variant={activeGroupId === g.id ? "default" : "outline"} className="cursor-pointer whitespace-nowrap" onClick={() => navigate(groupHref(g.id))}>{g.name}</Badge>))}
       </div>
+    </div>
+  ) : null;
+  const groupRefreshNotice = groupsError ? (
+    <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+      <p className="text-xs text-muted-foreground">
+        {isCN ? "无法刷新护理群组，显示的是上次可用结果。" : "Couldn't refresh your care teams. Showing the latest available results."}
+      </p>
+      <Button variant="ghost" size="sm" className="h-8" onClick={() => void refetchGroups()} disabled={groupsFetching}>
+        {groupsFetching && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+        {groupsFetching ? (isCN ? "加载中…" : "Loading…") : (isCN ? "重试" : "Try again")}
+      </Button>
     </div>
   ) : null;
 
@@ -479,6 +545,7 @@ export default function CareCircle() {
         </Suspense>
       )}
 
+      {groupRefreshNotice}
       {groupChips}
 
       {requesterId && isAdmin && activeGroupId && (
@@ -518,6 +585,10 @@ export default function CareCircle() {
             <HomeTab
               statsLoading={membersLoading || tasksLoading}
               pendingTasksCount={pendingTasks.length}
+              pendingTasksUnavailable={!!tasksError && pendingTasks.length === 0}
+              tasksError={!!tasksError}
+              tasksRetrying={tasksFetching}
+              onRetryTasks={() => void refetchTasks()}
               membersCount={(members || []).length}
               caredOnesCount={caredOnesCount}
               allPosts={allPostsWithAuthors}
@@ -536,11 +607,16 @@ export default function CareCircle() {
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4">
-          {tasksLoading ? tabLoading : <Suspense fallback={tabLoading}><CalendarTab tasks={tasks || []} /></Suspense>}
+          {tasksLoading ? tabLoading : tasksUnavailable ? taskReadNotice : (
+            <>
+              {taskReadNotice}
+              <Suspense fallback={tabLoading}><CalendarTab tasks={tasks || []} /></Suspense>
+            </>
+          )}
         </TabsContent>
         <TabsContent value="tasks" className="mt-4">
           <Suspense fallback={tabLoading}>
-            <TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} />
+            <TasksTab tasks={tasks || []} tasksLoading={tasksLoading} tasksError={!!tasksError} tasksFetching={tasksFetching} onRetryTasks={() => void refetchTasks()} members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} />
           </Suspense>
         </TabsContent>
         <TabsContent value="location" className="mt-4">

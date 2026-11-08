@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ analyze: vi.fn(), save: vi.fn() }));
 vi.mock('@/lib/inspector-ai.functions', () => ({ explainReadWrite: mocks.analyze }));
-vi.mock('@/lib/inspector-notes.functions', () => ({ loadAllInspectorNotes: vi.fn(), loadInspectorNotes: () => Promise.resolve({ notes: [{ key:'page|/care-circle', id:'1', title:'群组逻辑', text:'已保存的说明', locked:true, verified:true, updatedAt:'2026-11-06' }] }), saveInspectorNote: mocks.save, selectInspectorNote: vi.fn() }));
+vi.mock('@/lib/inspector-notes.functions', () => ({ loadAllInspectorNotes: vi.fn(), loadInspectorNotes: () => Promise.resolve({ notes: [{ key:'page|/care-circle', id:'1', title:'群组逻辑', text:'已保存的说明', locked:true, verified:true, updatedAt:'2026-11-06' }] }), listInspectorPositionNotes: () => Promise.resolve({ notes: [{ key:'page|/care-circle', id:'1', title:'群组逻辑', text:'已保存的说明', locked:true, verified:true, updatedAt:'2026-11-06' }] }), updateBoundInspectorNote: vi.fn(), duplicateInspectorNoteVersion: vi.fn(), saveInspectorNote: mocks.save, selectInspectorNote: vi.fn() }));
 vi.mock('@/services/wp-auth', () => ({ getWPToken: () => 'test-session' }));
 vi.mock('@/features/inspector/notes-cache', () => ({ inspectorNotesCache: { put: vi.fn(), reset: vi.fn(), peek: () => new Map([['page|/care-circle', { key:'page|/care-circle', id:'1', title:'群组逻辑', text:'已保存的说明', locked:true, verified:true, updatedAt:'2026-11-06' }]]) } }));
 vi.mock('./RelatedNotes', () => ({ RelatedNotes: () => null }));

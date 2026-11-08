@@ -15,6 +15,8 @@ export interface CCTNote extends SourceAnnotation {
   id: string;
   title: string;
   version?: string | undefined;
+  noteType?: "b55" | "b56" | undefined;
+  tabOrder?: number | undefined;
   locked?: boolean | undefined;
   /** CCT324 已手动核对 (a58): b55 是 / b56 否。 */
   verified?: boolean | undefined;
@@ -24,8 +26,7 @@ export interface CCTNote extends SourceAnnotation {
 }
 export function bindCCTNotes(rows: CCTNote[], bindings: NoteBinding[]): CCTNote[] {
   const byId = new Map(rows.map(row => [row.id, row]));
-  const byKey = new Map(bindings.map(binding => [binding.key, binding]));
-  return [...rows, ...[...byKey.values()].map(binding => {
+  return [...rows, ...bindings.map(binding => {
     const row = byId.get(binding.id);
     if (!row) throw new Error(`注释 #${binding.id} 不存在，不能显示其他注释代替。`);
     return { ...row, ...binding };
@@ -45,6 +46,8 @@ export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CC
         text: updated.text,
         title: updated.title,
         version: updated.version,
+        noteType: updated.noteType,
+        tabOrder: updated.tabOrder,
         updatedAt: updated.updatedAt,
         verified: updated.verified,
         relationVerified: updated.relationVerified,

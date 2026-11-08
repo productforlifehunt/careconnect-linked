@@ -4,6 +4,18 @@ export function loadInspectorNotes(args?: { data?: unknown }) {
   return invokeServerAction("loadInspectorNotes", args?.data);
 }
 
+export function listInspectorPositionNotes(args?: { data?: unknown }) {
+  return invokeServerAction("listInspectorPositionNotes", args?.data);
+}
+
+export function reorderInspectorPositionNotes(args?: { data?: unknown }) {
+  return invokeServerAction("reorderInspectorPositionNotes", args?.data);
+}
+
+export function updateBoundInspectorNote(args?: { data?: unknown }) {
+  return invokeServerAction("updateBoundInspectorNote", args?.data);
+}
+
 export function loadAllInspectorNotes(args?: { data?: unknown }) {
   return invokeServerAction("loadAllInspectorNotes", args?.data);
 }

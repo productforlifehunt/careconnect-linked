@@ -71,7 +71,7 @@ const zhCN = {
       heroSubtitle: "用药记录、亲友协作、位置分享、走失提醒、AI陪伴、健康日志、智能记录、找寻护理、找寻陪伴——从居家到出行，从陪伴到护理，让失智症照顾的每一步更顺畅。",
       ctaTitle: "让照护之路更轻松",
       ctaSubtitle: "加入使用忆畅的家庭，让失智症照护更轻松、更有条理。",
-      ctaButton: "立即开始", searchPlaceholder: "您需要什么失智症护理？",
+      ctaButton: "寻找护理人员", searchPlaceholder: "您需要什么失智症护理？",
       howItWorksTitle: "忆畅如何运作", footerBrand: "忆畅",
       footerTagline: "失智症照护知识、协作与位置安全。",
       authSubtitle: "失智症照护，从这里开始", dashboardSubtitle: "您的失智症照护概览",

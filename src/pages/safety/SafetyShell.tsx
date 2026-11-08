@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useLocation, useNavigate } from "@/lib/router-compat";
+import { Link, useLocation, useNavigate } from "@/lib/router-compat";
 import { MapPin, Home, Users, Bell, Sparkles, User as UserIcon, MessageCircle} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { BrandMark } from "@/components/BrandMark";
@@ -34,6 +34,8 @@ export function SafetyShell({ children }: { children: ReactNode }) {
 
   const isActive = (url: string) => location.pathname === url || location.pathname.startsWith(url + "/");
   const bare = location.pathname === "/" || location.pathname.startsWith("/auth") || location.pathname.startsWith("/join");
+  const pagePath = location.pathname.replace(/\/+$/, "") || "/";
+  const showBackButton = pagePath !== "/" && pagePath !== "/dashboard" && !(isAuthenticated && pagePath === "/map");
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -53,6 +55,27 @@ export function SafetyShell({ children }: { children: ReactNode }) {
             </span>
           </button>
 
+
+          {isAuthenticated && !bare && (
+            <nav className="mx-2 hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex" aria-label={L("主导航", "Main navigation")}>
+              {tabs.map((tab) => {
+                const active = isActive(tab.url);
+                return (
+                  <Link
+                    key={tab.url}
+                    to={tab.url}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors ${
+                      active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                    }`}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
 
           <div className="ml-auto flex items-center gap-1">
             {isAuthenticated && (
@@ -90,16 +113,18 @@ export function SafetyShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className={`w-full flex-1 ${bare ? "" : "px-0 pb-20 md:px-4"}`}>
-        <div className="px-4 pt-2">
-          <PageBackButton />
-        </div>
+      <main className={`w-full flex-1 ${bare ? "" : "px-0 pb-20 md:px-4 md:pb-0"}`}>
+        {showBackButton && (
+          <div className="px-4 pt-2">
+            <PageBackButton />
+          </div>
+        )}
         {children}
       </main>
 
       {isAuthenticated && !bare && (
         <nav
-          className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)]"
+          className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
           aria-label={L("底部导航", "Bottom navigation")}
         >
           <div className="flex w-full">

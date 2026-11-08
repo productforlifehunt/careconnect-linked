@@ -5,7 +5,6 @@ import {
   type NoteBinding,
 } from "@/features/inspector/cct-notes";
 import {
-  findPositionBinding,
   positionBindings,
   samePosition,
   updatePositionBindings,
@@ -24,6 +23,8 @@ export interface InspectorNote {
   id?: string | undefined;
   title?: string | undefined;
   version?: string | undefined;
+  noteType?: "b55" | "b56" | undefined;
+  tabOrder?: number | undefined;
   locked?: boolean | undefined;
   verified?: boolean | undefined;
   relationVerified?: boolean | undefined;
@@ -114,11 +115,14 @@ type CCTRow = {
   _ID: string | number;
   a55: string;
   a56: string;
+  a57?: string;
   a58?: string;
   a59?: string;
   a60?: string;
   a61?: string;
   a62?: string;
+  a63?: string;
+  a64?: string | number | null;
   cct_modified?: string;
 };
 const NOTE_FIELDS = WP.cct["324"].f;
@@ -149,12 +153,22 @@ async function wp(
   return response.json();
 }
 function mapRow(row: CCTRow): CCTNote {
+  const rawTabOrder = row[NOTE_FIELDS["笔记标签顺序"]];
+  const tabOrder = rawTabOrder === undefined || rawTabOrder === null || rawTabOrder === ""
+    ? undefined
+    : Number(rawTabOrder);
   return {
     key: `cct|${row._ID}`,
     id: String(row._ID),
     title: row.a55,
     text: row.a56,
     version: row[NOTE_FIELDS["版本"]] || "",
+    noteType: row[NOTE_FIELDS["笔记类型"]] === WP.cct["324"].opt["NOTE_TYPE"]["PAGE_ASSOCIATION"]
+      ? "b56"
+      : row[NOTE_FIELDS["笔记类型"]] === WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]
+        ? "b55"
+        : undefined,
+    tabOrder: tabOrder !== undefined && Number.isFinite(tabOrder) ? tabOrder : undefined,
     verified: row.a58 === "b55",
     relationVerified:
       row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -195,12 +209,74 @@ async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
   );
 }
 async function storedBinding(key: string, token?: string): Promise<NoteBinding | undefined> {
-  return findPositionBinding(
-    (await bindingRows(key, token)).flatMap((row) =>
-      positionBindings(row.a59, String(row._ID)),
-    ),
-    key,
+  const bindings = (await bindingRows(key, token)).flatMap((row) =>
+    positionBindings(row.a59, String(row._ID)),
   );
+  return bindings.find((binding) => binding.key === key) ||
+    bindings.find((binding) => samePosition(binding.key, key));
+}
+
+async function notesBoundToPosition(key: string, token?: string): Promise<CCTNote[]> {
+  const rows = await bindingRows(key, token);
+  return rows.flatMap((row) => {
+    const binding = positionBindings(row.a59, String(row._ID)).find((entry) => samePosition(entry.key, key));
+    return binding ? [{ ...mapRow(row), ...binding }] : [];
+  }).sort((a, b) => (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) || Number(a.id) - Number(b.id));
+}
+
+async function writeNoteTypeAndOrder(
+  id: string,
+  noteType: "b55" | "b56",
+  tabOrder: number,
+  token?: string,
+) {
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+  const typeField = NOTE_FIELDS["笔记类型"];
+  const orderField = NOTE_FIELDS["笔记标签顺序"];
+  if (row[typeField] === noteType && Number(row[orderField]) === tabOrder) return;
+  await wp(`/${id}`, "POST", { [typeField]: noteType, [orderField]: String(tabOrder) }, token);
+  const saved = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+  if (String(saved._ID) !== id || saved[typeField] !== noteType || String(saved[orderField]) !== String(tabOrder))
+    throw new Error(`笔记 #${id} 的类型或标签顺序保存后核对不一致。`);
+}
+
+/** Backfill a63/a64 for notes already bound to this position in a59. */
+export async function readNotesForPosition(key: string, token?: string): Promise<CCTNote[]> {
+  let notes = await notesBoundToPosition(key, token);
+  const nextOrder: Record<"b55" | "b56", number> = { b55: 1, b56: 1 };
+  for (const note of notes) {
+    const noteType = note.noteType || "b55";
+    const tabOrder = note.tabOrder ?? nextOrder[noteType];
+    nextOrder[noteType] = Math.max(nextOrder[noteType], tabOrder + 1);
+    await writeNoteTypeAndOrder(note.id, noteType, tabOrder, token);
+  }
+  notes = await notesBoundToPosition(key, token);
+  return notes;
+}
+
+export async function reorderPositionNotes(
+  key: string,
+  noteType: "b55" | "b56",
+  ids: string[],
+  token?: string,
+): Promise<CCTNote[]> {
+  const seen = new Set<string>();
+  for (const [index, id] of ids.entries()) {
+    if (seen.has(id)) throw new Error("笔记顺序包含重复编号。");
+    seen.add(id);
+    const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+    if (String(row._ID) !== id || row[NOTE_FIELDS["笔记类型"]] !== noteType ||
+      !positionBindings(row.a59, id).some((binding) => samePosition(binding.key, key)))
+      throw new Error(`笔记 #${id} 已不属于当前分类或页面，请重新读取。`);
+    const tabOrder = String(index + 1);
+    if (row[NOTE_FIELDS["笔记标签顺序"]] !== tabOrder) {
+      await wp(`/${id}`, "POST", { [NOTE_FIELDS["笔记标签顺序"]]: tabOrder }, token);
+      const fresh = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+      if (String(fresh._ID) !== id || fresh[NOTE_FIELDS["笔记标签顺序"]] !== tabOrder)
+        throw new Error(`笔记 #${id} 的标签顺序保存后核对不一致。`);
+    }
+  }
+  return readNotesForPosition(key, token);
 }
 /** Picker search done by WordPress itself (name LIKE each word, or exact number): returns at most 60 names, never note bodies. */
 export async function searchNotes(
@@ -341,27 +417,13 @@ async function writeBindingsOnly(
     throw new Error("元素绑定保存后核对不一致，未确认保存。");
 }
 async function storeBinding(binding: NoteBinding, token?: string) {
-  const rows = await bindingRows(binding.key, token);
   const target = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   if (String(target._ID) !== binding.id) throw new Error("所选注释不存在。");
-  const retained = positionBindings(target.a59, binding.id).filter(
-    (b) => !samePosition(b.key, binding.key),
-  );
-  await writeBindingsOnly(target, [...retained, binding], token);
-  // Explicit user reassignment changes only this position, never other positions or REL325.
-  for (const row of rows) {
-    if (String(row._ID) === binding.id) continue;
-    const fresh = (await wp(`/${row._ID}`, "GET", undefined, token)) as CCTRow;
-    await writeBindingsOnly(
-      fresh,
-      positionBindings(fresh.a59, String(fresh._ID)).filter(
-        (b) => !samePosition(b.key, binding.key),
-      ),
-      token,
-    );
-  }
-  const saved = await storedBinding(binding.key, token);
-  if (saved?.id !== binding.id) throw new Error("元素绑定回读不一致。");
+  const retained = positionBindings(target.a59, binding.id);
+  const existing = retained.findIndex((b) => b.key === binding.key);
+  if (existing < 0) retained.push(binding);
+  else retained[existing] = binding;
+  await writeBindingsOnly(target, retained, token);
 }
 /**
  * Reads every CCT324 row in a few large pages fetched side by side.
@@ -435,9 +497,25 @@ export async function readAllNotes(token?: string): Promise<InspectorNote[]> {
     ...note,
   }));
 }
-export async function selectNote(binding: NoteBinding, token?: string): Promise<InspectorNote> {
-  const row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
+export async function selectNote(
+  binding: NoteBinding & { noteType?: "b55" | "b56" | undefined; tabOrder?: number | undefined },
+  token?: string,
+): Promise<InspectorNote> {
+  let row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== binding.id) throw new Error("所选注释不存在。");
+  if (binding.noteType && binding.tabOrder !== undefined) {
+    await updatePlainNote(binding.id, {
+      title: row.a55 || "",
+      text: row.a56 || "",
+      verified: row.a58 === "b55",
+      relationVerified: row[NOTE_FIELDS["已手动核对笔记关联"]] === NOTE_RELATION_VERIFIED["YES"],
+      relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
+      version: row[NOTE_FIELDS["版本"]] || "",
+      noteType: binding.noteType,
+      tabOrder: binding.tabOrder,
+    }, token);
+    row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
+  }
   await storeBinding({ ...binding, locked: true }, token);
   return { ...mapRow(row), ...binding, locked: true };
 }
@@ -447,11 +525,15 @@ export async function writeNote(
 ): Promise<InspectorNote> {
   const current = note.create ? undefined : await storedBinding(note.key, token);
   let id = note.create ? undefined : note.id || current?.id;
+  const isNew = !id;
   if (!id) {
     const result = (await wp("", "POST", {
       a55: note.title || note.label,
       a56: note.text,
+      a57: "ChallengeD",
       [NOTE_FIELDS["版本"]]: note.version || "",
+      [NOTE_FIELDS["笔记类型"]]: note.noteType || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
+      [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder ?? 1),
       a58: note.verified ? "b55" : "b56",
       [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
         ? NOTE_RELATION_VERIFIED["YES"]
@@ -471,6 +553,8 @@ export async function writeNote(
       a55: note.title || note.label,
       a56: note.text,
       [NOTE_FIELDS["版本"]]: note.version || "",
+      [NOTE_FIELDS["笔记类型"]]: note.noteType || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
+      [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder ?? 1),
       a58: note.verified ? "b55" : "b56",
       [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
         ? NOTE_RELATION_VERIFIED["YES"]
@@ -482,7 +566,11 @@ export async function writeNote(
   if (
     row.a56 !== note.text ||
     row.a55 !== (note.title || note.label) ||
+    (isNew && row.a57 !== "ChallengeD") ||
     (row[NOTE_FIELDS["版本"]] || "") !== (note.version || "") ||
+    (row[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) !==
+      (note.noteType || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) ||
+    (row[NOTE_FIELDS["笔记标签顺序"]] || "1") !== String(note.tabOrder ?? 1) ||
     (row.a58 === "b55") !== !!note.verified ||
     row[NOTE_FIELDS["已手动核对笔记关联"]] !==
       (note.relationVerified
@@ -504,6 +592,23 @@ export async function writeNote(
   };
   await storeBinding(binding, token);
   return { ...mapRow(row), ...binding };
+}
+
+/** Update a note already associated with a position, without changing its a59 bindings. */
+export async function updateBoundNote(
+  key: string,
+  id: string,
+  note: { title: string; text: string; version: string; noteType: "b55" | "b56"; tabOrder: number; verified: boolean; relationVerified: boolean; relationDetails: string },
+  token?: string,
+): Promise<CCTNote> {
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+  if (String(row._ID) !== id || !positionBindings(row.a59, id).some((binding) => samePosition(binding.key, key)))
+    throw new Error("此笔记未关联到当前元素或页面。");
+  await updatePlainNote(id, note, token);
+  const fresh = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+  const binding = positionBindings(fresh.a59, id).find((entry) => samePosition(entry.key, key));
+  if (!binding) throw new Error("笔记关联回读不一致。");
+  return { ...mapRow(fresh), ...binding };
 }
 
 /** Fresh CCT324 note for one exact position stored in a59; null when unbound. */
@@ -626,6 +731,8 @@ export async function updatePlainNote(
     relationVerified: boolean;
     relationDetails: string;
     version?: string | undefined;
+    noteType?: "b55" | "b56" | undefined;
+    tabOrder?: number | undefined;
   },
   token?: string,
 ): Promise<void> {
@@ -641,6 +748,8 @@ export async function updatePlainNote(
         : NOTE_RELATION_VERIFIED["NO"],
       [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails,
       ...(note.version === undefined ? {} : { [NOTE_FIELDS["版本"]]: note.version }),
+      ...(note.noteType === undefined ? {} : { [NOTE_FIELDS["笔记类型"]]: note.noteType }),
+      ...(note.tabOrder === undefined ? {} : { [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder) }),
     },
     token,
   );
@@ -656,7 +765,9 @@ export async function updatePlainNote(
         : NOTE_RELATION_VERIFIED["NO"]) ||
     (row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") !==
       note.relationDetails ||
-    (note.version !== undefined && (row[NOTE_FIELDS["版本"]] || "") !== note.version)
+    (note.version !== undefined && (row[NOTE_FIELDS["版本"]] || "") !== note.version) ||
+    (note.noteType !== undefined && row[NOTE_FIELDS["笔记类型"]] !== note.noteType) ||
+    (note.tabOrder !== undefined && String(row[NOTE_FIELDS["笔记标签顺序"]] || "") !== String(note.tabOrder))
   )
     throw new Error("保存后的内容核对不一致。");
 }
@@ -834,12 +945,15 @@ export async function duplicateNoteVersion(
     {
       a55: source.a55 || "",
       a56: source.a56 || "",
+      ...(source.a57 ? { a57: source.a57 } : {}),
       a58: source.a58 || "b56",
       [NOTE_FIELDS["版本"]]: version,
       [NOTE_FIELDS["已手动核对笔记关联"]]:
         source[NOTE_FIELDS["已手动核对笔记关联"]] || NOTE_RELATION_VERIFIED["NO"],
       [NOTE_FIELDS["已手动核对笔记关联详情"]]:
         source[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
+      [NOTE_FIELDS["笔记类型"]]: source[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
+      [NOTE_FIELDS["笔记标签顺序"]]: source[NOTE_FIELDS["笔记标签顺序"]] || "1",
       cct_status: "publish",
     },
     token,
@@ -857,12 +971,16 @@ export async function duplicateNoteVersion(
     String(fresh._ID) !== newId ||
     fresh.a55 !== (source.a55 || "") ||
     fresh.a56 !== (source.a56 || "") ||
+    (fresh.a57 || "") !== (source.a57 || "") ||
     (fresh.a58 || "b56") !== (source.a58 || "b56") ||
     (fresh[NOTE_FIELDS["版本"]] || "") !== version ||
     (fresh[NOTE_FIELDS["已手动核对笔记关联"]] || NOTE_RELATION_VERIFIED["NO"]) !==
       (source[NOTE_FIELDS["已手动核对笔记关联"]] || NOTE_RELATION_VERIFIED["NO"]) ||
     (fresh[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") !==
-      (source[NOTE_FIELDS["已手动核对笔记关联详情"]] || "")
+      (source[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") ||
+    (fresh[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) !==
+      (source[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) ||
+    (fresh[NOTE_FIELDS["笔记标签顺序"]] || "1") !== (source[NOTE_FIELDS["笔记标签顺序"]] || "1")
   )
     throw new Error(`新版本 #${newId} 的内容回读不一致，关联尚未复制。`);
 

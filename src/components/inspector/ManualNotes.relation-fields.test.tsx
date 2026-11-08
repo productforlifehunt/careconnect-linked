@@ -13,14 +13,17 @@ const mocks = vi.hoisted(() => ({
   select: vi.fn(),
   duplicate: vi.fn(),
   put: vi.fn(),
+  list: vi.fn(),
 }));
 vi.mock("@/lib/inspector-ai.functions", () => ({ explainReadWrite: vi.fn() }));
 vi.mock("@/lib/inspector-notes.functions", () => ({
   loadAllInspectorNotes: vi.fn(),
   loadInspectorNotes: mocks.load,
   saveInspectorNote: mocks.save,
+  updateBoundInspectorNote: mocks.save,
   selectInspectorNote: mocks.select,
   duplicateInspectorNoteVersion: mocks.duplicate,
+  listInspectorPositionNotes: mocks.list,
 }));
 vi.mock("@/services/wp-auth", () => ({ getWPToken: () => "test-session" }));
 vi.mock("@/features/inspector/notes-cache", () => ({
@@ -54,6 +57,7 @@ afterEach(() => {
 
 it("loads and saves the relation review fields when editing a page note", async () => {
   mocks.load.mockResolvedValue({ notes: [original] });
+  mocks.list.mockResolvedValue({ notes: [original] });
   mocks.save.mockImplementation(
     async ({ data }: { data: Record<string, unknown> }) => ({
       note: { ...original, ...data },
@@ -118,6 +122,7 @@ it("enables save after one character in the note body and reports failures", asy
 it("copies a new version and switches the current position only after Yes", async () => {
   const copied = { ...original, key: "cct|102", id: "102", version: "2.0" };
   mocks.load.mockResolvedValue({ notes: [original] });
+  mocks.list.mockResolvedValue({ notes: [original] });
   mocks.duplicate.mockResolvedValue({ note: copied });
   mocks.select.mockResolvedValue({ note: { ...copied, key: original.key } });
   render(<ManualNotes noteKey="page|/care-circle" scope="page" page="/care-circle" label="群组" />);

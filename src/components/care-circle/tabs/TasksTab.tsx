@@ -24,6 +24,9 @@ import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 interface TasksTabProps {
   tasks: any[];
   tasksLoading: boolean;
+  tasksError?: boolean | undefined;
+  tasksFetching?: boolean | undefined;
+  onRetryTasks?: (() => void) | undefined;
   members: any[];
   activeGroupId: string | null;
   userId: string | undefined;
@@ -68,7 +71,7 @@ const dateOnly = (raw?: string | null | undefined): string => {
 };
 
 export function TasksTab({
-  tasks, tasksLoading, members, activeGroupId, userId, isAdmin,
+  tasks, tasksLoading, tasksError, tasksFetching, onRetryTasks, members, activeGroupId, userId, isAdmin,
   memberCategories, createTask, updateTaskStatus, deleteTask, shareTask,
 }: TasksTabProps) {
   const { toast } = useToast();
@@ -93,6 +96,7 @@ export function TasksTab({
   // Per data model: task itself only has `k` (help status) and `l` (finish status).
   const pendingTasks = (tasks || []).filter((t: any) => String(t.finish_status) === "b55");
   const completedTasks = (tasks || []).filter((t: any) => String(t.finish_status) === "b56");
+  const tasksUnavailable = !!tasksError && (tasks || []).length === 0;
 
   const helpStatusColors: Record<string, string> = {
     b55: "bg-muted text-muted-foreground",
@@ -108,6 +112,11 @@ export function TasksTab({
     pending: "bg-warning/10 text-warning",
     accepted: "bg-success/10 text-success",
     rejected: "bg-destructive/10 text-destructive",
+  };
+  const responseLabels: Record<string, string> = {
+    pending: Z("待回应", "Awaiting response"),
+    accepted: Z("已接受", "Accepted"),
+    rejected: Z("已拒绝", "Declined"),
   };
 
   const toggleTask = (id: string, currentFinish: string) => {
@@ -232,7 +241,7 @@ export function TasksTab({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">{Z(`任务（${tasksLoading ? "—" : pendingTasks.length} 项待办）`, `Tasks (${tasksLoading ? "—" : pendingTasks.length} pending)`)}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{Z(`任务（${tasksLoading || tasksUnavailable ? "—" : pendingTasks.length} 项待办）`, `Tasks (${tasksLoading || tasksUnavailable ? "—" : pendingTasks.length} pending)`)}</h3>
         <Dialog open={addOpen} onOpenChange={(open) => {
           setAddOpen(open);
           if (!open) { setEditingTaskId(null); setForm({ ...EMPTY_FORM }); }
@@ -379,7 +388,21 @@ export function TasksTab({
       {tasksLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="space-y-2">
+        <>
+        {tasksError && (
+          <div role={tasksUnavailable ? "alert" : "status"} className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              {tasksUnavailable
+                ? Z("暂时无法加载任务。", "Your tasks couldn't load right now.")
+                : Z("无法刷新任务，显示的是上次可用结果。", "Couldn't refresh tasks. Showing the latest available results.")}
+            </p>
+            <Button variant="ghost" size="sm" className="h-8" onClick={onRetryTasks} disabled={tasksFetching || !onRetryTasks}>
+              {tasksFetching && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              {tasksFetching ? Z("加载中…", "Loading…") : Z("重试", "Try again")}
+            </Button>
+          </div>
+        )}
+        {!tasksUnavailable && <div className="space-y-2">
           {pendingTasks.map((t: any) => {
             const myAssignment = Array.isArray(t.assignees)
               ? t.assignees.find((a: any) => a.user_id === myWpId)
@@ -427,9 +450,7 @@ export function TasksTab({
                       {Array.isArray(t.assignees) && t.assignees.map((a: any) => {
                         const m = (members || []).find((mm: any) => mm.user_id === a.user_id || `wp-${mm.id}` === a.user_id);
                         const name = m?.display_name || Z("未填姓名", "No name");
-                        const respLabel = isCN
-                          ? (a.response === "accepted" ? "已接受" : a.response === "rejected" ? "已拒绝" : "待回应")
-                          : a.response;
+                        const respLabel = responseLabels[String(a.response)] || Z("待回应", "Awaiting response");
                         return (
                           <Badge key={a.user_id} variant="outline" className={`text-[10px] ${responseColors[a.response] || ""}`}>
                             {name}: {respLabel}
@@ -495,7 +516,8 @@ export function TasksTab({
             </>
           )}
           {(tasks || []).length === 0 && <p className="text-center py-8 text-muted-foreground">{Z("还没有任务。点击「添加任务」创建。", 'No tasks yet. Click "Add Task" to create one.')}</p>}
-        </div>
+        </div>}
+        </>
       )}
 
       <AlertDialog open={!!shareConfirmTask} onOpenChange={(open) => { if (!open) { setShareConfirmTask(null); setSharePaid(false); setSharePrice(""); } }}>

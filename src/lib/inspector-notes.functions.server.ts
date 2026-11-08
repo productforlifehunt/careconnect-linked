@@ -112,6 +112,34 @@ export async function loadInspectorNotes(rawData: unknown, request: Request) {
   }
 }
 
+export async function listInspectorPositionNotes(rawData: unknown, request: Request) {
+  const data = z.object({ key: z.string().min(1).max(600) }).parse(rawData);
+  const denied = await researcherOnly(request);
+  if (denied) return { error: denied, notes: [] };
+  try {
+    const { readNotesForPosition } = await import("./inspector-notes.server");
+    return { notes: await readNotesForPosition(data.key, wpToken(request)) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "读取失败", notes: [] };
+  }
+}
+
+export async function reorderInspectorPositionNotes(rawData: unknown, request: Request) {
+  const data = z.object({
+    key: z.string().min(1).max(600),
+    noteType: z.enum(["b55", "b56"]),
+    ids: z.array(noteId),
+  }).parse(rawData);
+  const denied = await researcherOnly(request);
+  if (denied) return { error: denied, notes: [] };
+  try {
+    const { reorderPositionNotes } = await import("./inspector-notes.server");
+    return { notes: await reorderPositionNotes(data.key, data.noteType, data.ids, wpToken(request)) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "顺序保存失败", notes: [] };
+  }
+}
+
 export async function loadAllInspectorNotes(rawData: unknown, request: Request) {
   const data = rawData as Record<string, any> | undefined;
   const token = wpToken(request);
@@ -142,7 +170,7 @@ export async function searchInspectorNotes(rawData: unknown, request: Request) {
 }
 
 export async function saveInspectorNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), version: z.string().max(80).optional(), id: z.string().regex(/^\d+$/).optional(), create: z.boolean().optional(), verified: z.boolean().optional(), relationVerified: z.boolean().optional(), relationDetails: z.string().max(100_000).optional(), text: z.string().max(100_000), source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input));
+  const validate = ((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), version: z.string().max(80).optional(), noteType: z.enum(["b55", "b56"]).optional(), tabOrder: z.number().int().positive().optional(), id: z.string().regex(/^\d+$/).optional(), create: z.boolean().optional(), verified: z.boolean().optional(), relationVerified: z.boolean().optional(), relationDetails: z.string().max(100_000).optional(), text: z.string().max(100_000), source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input));
   const data = validate(rawData);
 
     const { verifyResearcher } = await import("./inspector-ai.server");
@@ -153,8 +181,31 @@ export async function saveInspectorNote(rawData: unknown, request: Request) {
   
 }
 
+export async function updateBoundInspectorNote(rawData: unknown, request: Request) {
+  const data = z.object({
+    key: z.string().min(1).max(600),
+    id: noteId,
+    title: z.string().min(1).max(240),
+    text: z.string().max(100_000),
+    version: z.string().max(80),
+    noteType: z.enum(["b55", "b56"]),
+    tabOrder: z.number().int().positive(),
+    verified: z.boolean(),
+    relationVerified: z.boolean(),
+    relationDetails: z.string().max(100_000),
+  }).parse(rawData);
+  const denied = await researcherOnly(request);
+  if (denied) return { error: denied };
+  try {
+    const { updateBoundNote } = await import("./inspector-notes.server");
+    return { note: await updateBoundNote(data.key, data.id, data, wpToken(request)) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "保存失败" };
+  }
+}
+
 export async function selectInspectorNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ key: z.string().min(1).max(600), id: z.string().regex(/^\d+$/), scope: z.enum(['element', 'page']), page: z.string().max(400), label: z.string().max(400) , source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input));
+  const validate = ((input: unknown) => z.object({ key: z.string().min(1).max(600), id: z.string().regex(/^\d+$/), scope: z.enum(['element', 'page']), page: z.string().max(400), label: z.string().max(400), noteType: z.enum(['b55', 'b56']).optional(), tabOrder: z.number().int().positive().optional(), source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input));
   const data = validate(rawData);
 
     const { verifyResearcher } = await import('./inspector-ai.server');

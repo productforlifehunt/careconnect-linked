@@ -15,6 +15,7 @@ import {
   Navigation,
   Sparkles,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -1259,6 +1260,14 @@ export default function ReadWriteInspector() {
               aria-label="清空记录 / Clear"
             >
               <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => window.location.reload()}
+              aria-label="刷新 / Refresh"
+            >
+              <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
           <div className="flex gap-1 border-b border-border p-2 text-xs">

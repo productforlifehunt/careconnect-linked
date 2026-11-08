@@ -27,8 +27,13 @@ export const WP = {
         "已手动核对笔记关联": "a60",
         "已手动核对笔记关联详情": "a61",
         "版本": "a62",
+        "笔记类型": "a63",
+        "笔记标签顺序": "a64",
       },
-      opt: { "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" } },
+      opt: {
+        "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" },
+        "NOTE_TYPE": { "PAGE_DESCRIPTION": "b55", "PAGE_ASSOCIATION": "b56" },
+      },
     },
     /** 140. Product */
     "140": {

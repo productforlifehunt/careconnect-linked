@@ -51,6 +51,13 @@ function nowWPDateTime() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
+function withUserFacingGuidance(contextPrompt?: string | undefined, language?: string | undefined): string {
+  const guidance = language?.toLowerCase().startsWith("zh")
+    ? "用普通用户听得懂的日常语言回答。不要主动解释 AI 模型、提示词、数据库、接口、代码或应用实现；用户直接问技术问题时，再用通俗的话解释。"
+    : "Use everyday language for the person using the app. Don't volunteer explanations of AI models, prompts, databases, APIs, code, or app implementation; if asked directly, explain plainly.";
+  return [contextPrompt?.trim(), guidance].filter(Boolean).join("\n\n");
+}
+
 function conversationStorageKey(threadKey: string, caredOneId?: string | number | null | undefined) {
   return `ai_conversation:${threadKey || "chat"}:${caredOneId ?? "none"}`;
 }
@@ -119,8 +126,9 @@ async function touchConversation(conversationId: string) {
 
 /** Call the single `ai` edge function (Lovable AI Gateway) */
 async function callAI(messages: AIChatMessage[], contextPrompt?: string | undefined, language?: string | undefined): Promise<string> {
+  const requestContext = withUserFacingGuidance(contextPrompt, language);
   const { data, error } = await supabase.functions.invoke("ai?task=chat-chat", {
-    body: { messages, stream: false, site: detectSite(), ...(contextPrompt ? { contextPrompt } : {}), ...(language ? { language } : {}) },
+    body: { messages, stream: false, site: detectSite(), contextPrompt: requestContext, ...(language ? { language } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -451,7 +459,7 @@ export function streamChatWithVoice(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
       },
-      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
+      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: withUserFacingGuidance(handlers.contextPrompt, handlers.language) }),
       signal: handlers.signal ?? null,
     });
 
@@ -651,7 +659,7 @@ export function streamChatTextOnly(
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
       },
-      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
+      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: withUserFacingGuidance(handlers.contextPrompt, handlers.language) }),
       signal,
     });
 

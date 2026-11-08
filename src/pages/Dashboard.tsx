@@ -11,7 +11,7 @@ import {
 } from "@/features/dashboard/use-dashboard-data";
 
 import {
-  CalendarDays, Users, MapPin, ArrowRight, CheckCircle, AlertCircle, MessageSquare,
+  CalendarDays, Users, MapPin, ArrowRight, CheckCircle, AlertCircle, MessageSquare, Loader2,
   ShoppingBag, Heart, BookOpen, Wand2, Briefcase, Bell, Calendar as CalIcon,
   Settings2,
 } from "lucide-react";
@@ -125,14 +125,37 @@ export default function Dashboard() {
     show("stats") || show("care-tasks") || show("patient-summaries") || show("daily-timeline");
   const bookingsNeeded =
     ((show("upcoming-bookings") || show("stats")) && paidCare) || show("daily-timeline");
-  const { data: bookings, isLoading: bookingsLoading } = useBookings(bookingsNeeded);
-  const { data: tasks, isLoading: tasksLoading, error: tasksError } = useCareTasks(
+  const {
+    data: bookings,
+    isLoading: bookingsInitialLoading,
+    isFetching: bookingsFetching,
+    error: bookingsError,
+    refetch: refetchBookings,
+  } = useBookings(bookingsNeeded);
+  const {
+    data: tasks,
+    isLoading: tasksInitialLoading,
+    isFetching: tasksFetching,
+    error: tasksError,
+    refetch: refetchTasks,
+  } = useCareTasks(
     undefined,
     tasksNeeded,
     false,
     { caredOneOnly: true, includeAssignmentStatus: false },
   );
-  const { data: myCareGroups, isLoading: careGroupsLoading } = useCareGroups(show("stats"));
+  const {
+    data: myCareGroups,
+    isLoading: careGroupsInitialLoading,
+    isFetching: careGroupsFetching,
+    error: careGroupsError,
+    refetch: refetchCareGroups,
+  } = useCareGroups(show("stats"));
+  const tasksLoading =
+    tasksInitialLoading || (tasksFetching && (tasks?.length ?? 0) === 0);
+  const careGroupsLoading =
+    careGroupsInitialLoading ||
+    (careGroupsFetching && (myCareGroups?.length ?? 0) === 0);
   const { unread: unreadInbox, isLoading: inboxLoading, error: inboxError } = useInboxCounts(show("stats"));
   const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes(caredOnesNeeded);
   const { data: communityPosts, isLoading: postsQueryLoading } = usePosts(
@@ -159,6 +182,11 @@ export default function Dashboard() {
     })
     .sort((a: any, b: any) => bookingStart(a) - bookingStart(b));
   const upcomingBookings = myUpcomingBookings.slice(0, 4);
+  const bookingsLoading =
+    bookingsInitialLoading ||
+    (bookingsFetching && myUpcomingBookings.length === 0);
+  const bookingsUnavailable = !!bookingsError && myUpcomingBookings.length === 0;
+  const careGroupsUnavailable = !!careGroupsError && (myCareGroups?.length ?? 0) === 0;
   // Task loading has already resolved the viewer's REL 219 cared-one scope.
   // Use those scoped task links immediately instead of waiting for names and
   // profile details from the separate cared-one query.
@@ -185,6 +213,13 @@ export default function Dashboard() {
     completed: "bg-muted text-muted-foreground",
     cancelled: "bg-destructive text-destructive-foreground",
     in_progress: "bg-primary text-primary-foreground",
+  };
+  const bookingStatusLabel = (status: unknown) => {
+    const value = String(status ?? "");
+    const readableFallback = value
+      .replace(/[_-]+/g, " ")
+      .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+    return t(`bookings.status.${value}`, { defaultValue: readableFallback });
   };
 
   // Placeholder that holds a widget's slot while its data loads, so the
@@ -253,22 +288,37 @@ export default function Dashboard() {
     ) : caredOnesLoading ? slotSkeleton(t("nav.myLovedOnes") || site.navLabels.caredOnes, "h-40") : null,
 
     "stats": (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        {[
-          ...(paidCare ? [{ id: "upcoming-bookings", label: t("dashboard.upcomingBookings"), value: bookingsLoading ? "—" : myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
-          { id: "care-groups", label: careGroupsLabel, value: careGroupsLoading ? "—" : myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
-          { id: "pending-tasks", label: t("dashboard.pendingTasks"), value: tasksLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
-          { id: "unread-inbox", label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
-        ].map((s) => (
-          <button key={s.id} onClick={() => navigate(s.to)}
-            className="text-left rounded-lg border border-transparent card-elevated p-3 hover:border-primary/30 transition-colors">
-            <div className="flex items-center gap-2">
-              <s.icon className={`h-4 w-4 ${s.color}`} />
-              <p className="text-lg font-bold text-foreground">{s.value}</p>
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{s.label}</p>
-          </button>
-        ))}
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          {[
+            ...(paidCare ? [{ id: "upcoming-bookings", label: t("dashboard.upcomingBookings"), value: bookingsLoading || bookingsUnavailable ? "—" : myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
+            { id: "care-groups", label: careGroupsLabel, value: careGroupsLoading || careGroupsUnavailable ? "—" : myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
+            { id: "pending-tasks", label: t("dashboard.pendingTasks"), value: tasksLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
+            { id: "unread-inbox", label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
+          ].map((s) => (
+            <button key={s.id} onClick={() => navigate(s.to)}
+              className="text-left rounded-lg border border-transparent card-elevated p-3 hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2">
+                <s.icon className={`h-4 w-4 ${s.color}`} />
+                <p className="text-lg font-bold text-foreground">{s.value}</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{s.label}</p>
+            </button>
+          ))}
+        </div>
+        {careGroupsError && (
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              {careGroupsUnavailable
+                ? (isChinese ? "暂时无法加载护理群组数量。" : "Couldn't load your care team count right now.")
+                : (isChinese ? "暂时无法刷新护理群组数量，显示的是上次可用结果。" : "Couldn't refresh your care team count. Showing the latest available result.")}
+            </p>
+            <Button variant="ghost" size="sm" className="h-8" onClick={() => void refetchCareGroups()} disabled={careGroupsFetching}>
+              {careGroupsFetching && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              {careGroupsFetching ? (isChinese ? "加载中…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+            </Button>
+          </div>
+        )}
       </div>
     ),
 
@@ -289,7 +339,27 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))
-            ) : upcomingBookings.length > 0 ? upcomingBookings.map((b: any) => (
+            ) : bookingsUnavailable ? (
+              <div role="alert" className="flex flex-col items-center gap-3 py-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {isChinese ? "暂时无法加载预约，请重试。" : "Your bookings couldn't load right now. Please try again."}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => void refetchBookings()} disabled={bookingsFetching}>
+                  {bookingsFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {bookingsFetching ? (isChinese ? "正在加载…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+                </Button>
+              </div>
+            ) : (
+              <>
+              {bookingsError && (
+                <div role="status" className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-2 py-2">
+                  <p className="text-xs text-muted-foreground">{isChinese ? "无法刷新预约，显示的是上次可用结果。" : "Couldn't refresh bookings. Showing the latest available results."}</p>
+                  <Button variant="ghost" size="sm" className="h-8 shrink-0" onClick={() => void refetchBookings()} disabled={bookingsFetching}>
+                    {bookingsFetching ? (isChinese ? "加载中…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+                  </Button>
+                </div>
+              )}
+              {upcomingBookings.length > 0 ? upcomingBookings.map((b: any) => (
               <button
                 key={b.id}
                 type="button"
@@ -303,10 +373,12 @@ export default function Dashboard() {
                   <p className="font-medium text-sm text-foreground truncate">{b.provider?.full_name || t("common.provider")}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{[b.appointment_time, b.service_type].filter(Boolean).join(" · ")}</p>
                 </div>
-                <Badge className={`${statusColors[b.status] || "bg-muted text-muted-foreground"} text-[10px]`}>{t(`bookings.status.${b.status}`, { defaultValue: String(b.status ?? "") })}</Badge>
+                <Badge className={`${statusColors[b.status] || "bg-muted text-muted-foreground"} text-[10px]`}>{bookingStatusLabel(b.status)}</Badge>
               </button>
-            )) : (
+              )) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noUpcomingBookings")}</p>
+              )}
+              </>
             )}
             <Button variant="ghost" size="sm" className="w-full h-8 text-xs" onClick={() => navigate("/bookings")}>
               {t("common.viewAll")} <ArrowRight className="ml-1 h-3 w-3" />
@@ -323,7 +395,7 @@ export default function Dashboard() {
         </h2>
         <Card className="border-transparent card-elevated">
           <CardContent className="p-3 space-y-2">
-            {tasksError ? <p role="alert" className="text-sm text-destructive">{isChinese ? "任务读取失败，请刷新重试。" : "Tasks could not be loaded. Please refresh and try again."}</p> : tasksLoading ? (
+            {tasksLoading ? (
               [1,2,3].map(i => (
                 <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
                   <Skeleton className="h-4 w-4 rounded-full" />
@@ -332,7 +404,25 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))
-            ) : pendingTasks.length > 0 ? pendingTasks.map((tk: any) => {
+            ) : tasksError && pendingTasks.length === 0 ? (
+              <div role="alert" className="flex flex-col items-center gap-3 py-6 text-center">
+                <p className="text-sm text-muted-foreground">{isChinese ? "暂时无法加载任务，请重试。" : "Your tasks couldn't load right now. Please try again."}</p>
+                <Button variant="outline" size="sm" onClick={() => void refetchTasks()} disabled={tasksFetching}>
+                  {tasksFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {tasksFetching ? (isChinese ? "正在加载…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+                </Button>
+              </div>
+            ) : (
+              <>
+              {tasksError && (
+                <div role="status" className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-2 py-2">
+                  <p className="text-xs text-muted-foreground">{isChinese ? "无法刷新任务，显示的是上次可用结果。" : "Couldn't refresh tasks. Showing the latest available results."}</p>
+                  <Button variant="ghost" size="sm" className="h-8 shrink-0" onClick={() => void refetchTasks()} disabled={tasksFetching}>
+                    {tasksFetching ? (isChinese ? "加载中…" : "Loading…") : (isChinese ? "重试" : "Try again")}
+                  </Button>
+                </div>
+              )}
+              {pendingTasks.length > 0 ? pendingTasks.map((tk: any) => {
               const caredOneId = String(tk.cared_one_id).replace(/^wp-/, "");
               const caredOne = (caredOnes || []).find((co: any) => String(co.user_id).replace(/^wp-/, "") === caredOneId);
               const caredOneName = caredOne?.cared_one?.full_name || site.caredOneSingular;
@@ -354,8 +444,10 @@ export default function Dashboard() {
                   </div>
                 </button>
               );
-            }) : (
+              }) : (
               <p className="text-sm text-muted-foreground text-center py-6">{t("dashboard.noPendingTasks")}</p>
+              )}
+              </>
             )}
             <Button variant="ghost" size="sm" className="w-full h-8 text-xs" onClick={() => navigate(pendingTasksTarget)}>
               {t("common.viewAll")}
