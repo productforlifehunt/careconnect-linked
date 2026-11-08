@@ -278,35 +278,62 @@ export async function reorderPositionNotes(
   }
   return readNotesForPosition(key, token);
 }
-/** Picker search done by WordPress itself (name LIKE each word, or exact number): returns at most 60 names, never note bodies. */
+/** Picker search uses partial keyword matches (or an exact number): returns at most 60 names, never note bodies. */
 export async function searchNotes(
   q: string,
   status: "all" | "verified" | "unverified",
   token?: string,
-): Promise<{ id: string; title: string; version: string; verified: boolean }[]> {
+): Promise<
+  { id: string; title: string; version: string; verified: boolean }[]
+> {
   const words = q
     .trim()
     .replace(/^#/, "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 6);
-  const filters: { field: string; operator: string; value: string }[] = [];
+  const statusFilter:
+    { field: string; operator: string; value: string } | undefined =
+    status === "all"
+      ? undefined
+      : {
+          field: "a58",
+          operator: "=",
+          value: status === "verified" ? "b55" : "b56",
+        };
   const firstWord = words[0];
-  if (words.length === 1 && firstWord && /^\d+$/.test(firstWord))
-    filters.push({ field: "_ID", operator: "=", value: firstWord });
-  else
-    for (const w of words)
-      filters.push({ field: "a55", operator: "LIKE", value: w });
-  if (status !== "all")
-    filters.push({
-      field: "a58",
-      operator: "=",
-      value: status === "verified" ? "b55" : "b56",
-    });
-  const qs = `?_limit=60&_orderby=_ID&_order=desc${filters.length ? `&_filters=${encodeURIComponent(JSON.stringify(filters))}` : ""}`;
-  const rows = (await wp(qs, "GET", undefined, token)) as CCTRow[];
-  if (!Array.isArray(rows)) return [];
-  return rows.map((r) => ({
+  const exactId = words.length === 1 && !!firstWord && /^\d+$/.test(firstWord);
+  const searchWords = exactId && firstWord ? [firstWord] : words;
+  const queryRows = await Promise.all(
+    (searchWords.length ? searchWords : [""]).map(async (word) => {
+      const filters: { field: string; operator: string; value: string }[] = [];
+      if (exactId && word)
+        filters.push({ field: "_ID", operator: "=", value: word });
+      else if (word)
+        filters.push({ field: "a55", operator: "LIKE", value: word });
+      if (statusFilter) filters.push(statusFilter);
+      const qs = `?_limit=60&_orderby=_ID&_order=desc${filters.length ? `&_filters=${encodeURIComponent(JSON.stringify(filters))}` : ""}`;
+      const rows = (await wp(qs, "GET", undefined, token)) as CCTRow[];
+      return Array.isArray(rows) ? rows : [];
+    }),
+  );
+  const rowsById = new Map<string, CCTRow>();
+  for (const rows of queryRows)
+    for (const row of rows) rowsById.set(String(row._ID), row);
+  const rows = [...rowsById.values()];
+  const normalizedWords = words.map((word) => word.toLocaleLowerCase());
+  rows.sort((a, b) => {
+    const titleA = String(a.a55 || "").toLocaleLowerCase();
+    const titleB = String(b.a55 || "").toLocaleLowerCase();
+    const matchesA = normalizedWords.filter((word) =>
+      titleA.includes(word),
+    ).length;
+    const matchesB = normalizedWords.filter((word) =>
+      titleB.includes(word),
+    ).length;
+    return matchesB - matchesA || Number(b._ID) - Number(a._ID);
+  });
+  return rows.slice(0, 60).map((r) => ({
     id: String(r._ID),
     title: r.a55 || "",
     version: r[NOTE_FIELDS["版本"]] || "",
