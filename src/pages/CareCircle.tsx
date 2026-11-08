@@ -27,7 +27,7 @@ import {
   useUpdateCareGroup, useDeleteCareGroup,
   useGroupInvitations, useCancelInvitation,
   useMemberCategories, useCreateMemberCategory, useDeleteMemberCategory,
-  useDeleteTask, useLeaveGroup, useShareTask, useMyProfile,
+  useDeleteTask, useLeaveGroup, useShareTask,
 } from "@/hooks/use-care-data";
 import { useSite } from "@/contexts/SiteContext";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +57,6 @@ export default function CareCircle() {
   const isCN = i18n.language?.startsWith("zh");
   const { toast } = useToast();
   const site = useSite();
-  const { data: profile } = useMyProfile();
   const qc = useQueryClient();
   const { data: groups, isLoading: groupsLoading, isFetching: groupsFetching } = useCareGroups();
   const createGroup = useCreateCareGroup();
@@ -117,20 +116,71 @@ export default function CareCircle() {
   const activeGroupId: string | null = myUrlGroup ? myUrlGroup.id : (!urlGroup && groups && groups.length > 0 ? groups[0]!.id : null);
   const activeGroup = (groups || []).find((g: any) => g.id === activeGroupId);
 
-  const { data: members, isLoading: membersLoadingRaw } = useCareGroupMembers(activeGroupId);
-  const membersLoading = !!activeGroupId && membersLoadingRaw;
-  const { data: tasks, isLoading: tasksLoadingRaw } = useCareTasks(activeGroupId);
+  // Load data for the visible group tab only. Mounting every tab's query here
+  // caused a large burst of unrelated WordPress reads when entering Care Teams.
+  const isHomeTab = activeTab === "home";
+  const needsTasks =
+    isHomeTab || activeTab === "calendar" || activeTab === "tasks";
+  const needsMemberCategories =
+    isHomeTab ||
+    ["tasks", "announcements", "wishes", "member-groups"].includes(activeTab);
+  // The roster supplies the user's accepted relationship role used to gate
+  // admin controls on every tab, so it remains a page-level permission read.
+  const membersGroupId = activeGroupId;
+  const tasksGroupId = needsTasks ? activeGroupId : null;
+  const memberCategoriesGroupId = needsMemberCategories ? activeGroupId : null;
+  const caredOnesGroupId =
+    activeTab === "location" || activeTab === "cared-ones"
+      ? activeGroupId
+      : null;
+  const postsGroupId = isHomeTab ? activeGroupId : null;
+  const announcementsGroupId =
+    activeTab === "announcements" ? activeGroupId : null;
+  const wishesGroupId = activeTab === "wishes" ? activeGroupId : null;
+  const galleryGroupId = activeTab === "gallery" ? activeGroupId : null;
+  const messagesGroupId = activeTab === "messages" ? activeGroupId : null;
+  const invitationsGroupId = activeTab === "invite" ? activeGroupId : null;
+
+  const { data: members, isLoading: membersLoadingRaw } =
+    useCareGroupMembers(membersGroupId);
+  const membersLoading = !!membersGroupId && membersLoadingRaw;
+  const { data: tasks, isLoading: tasksLoadingRaw } =
+    useCareTasks(tasksGroupId);
   // Disabled react-query queries stay `isLoading` forever — only treat them as
   // loading when a group is actually selected, otherwise skeletons never clear.
-  const tasksLoading = !!activeGroupId && tasksLoadingRaw;
-  const { data: allPosts } = useCareGroupPosts(activeGroupId);
-  const { data: announcements, isLoading: announcementsLoading } = useCareGroupPosts(activeGroupId, "announcement");
-  const { data: wishes, isLoading: wishesLoading } = useCareGroupPosts(activeGroupId, "wish");
-  const { data: gallery } = useCareGroupGallery(activeGroupId);
-  const { data: groupCaredOnes } = useGroupCaredOnes(activeGroupId);
-  const { data: groupMessages } = useGroupMessages(activeGroupId);
-  const { data: pendingInvitations } = useGroupInvitations(activeGroupId);
-  const { data: memberCategories } = useMemberCategories(activeGroupId);
+  const tasksLoading = !!tasksGroupId && tasksLoadingRaw;
+  const { data: allPosts } = useCareGroupPosts(postsGroupId);
+  const { data: announcements, isLoading: announcementsLoading } =
+    useCareGroupPosts(announcementsGroupId, "announcement");
+  const { data: wishes, isLoading: wishesLoading } = useCareGroupPosts(
+    wishesGroupId,
+    "wish",
+  );
+  const { data: gallery, isLoading: galleryLoadingRaw } =
+    useCareGroupGallery(galleryGroupId);
+  const galleryLoading = !!galleryGroupId && galleryLoadingRaw;
+  const { data: groupCaredOnes, isLoading: groupCaredOnesLoadingRaw } =
+    useGroupCaredOnes(caredOnesGroupId);
+  const groupCaredOnesLoading = !!caredOnesGroupId && groupCaredOnesLoadingRaw;
+  const { data: groupMessages, isLoading: groupMessagesLoadingRaw } =
+    useGroupMessages(messagesGroupId);
+  const groupMessagesLoading = !!messagesGroupId && groupMessagesLoadingRaw;
+  const { data: pendingInvitations, isLoading: invitationsLoadingRaw } =
+    useGroupInvitations(invitationsGroupId);
+  const invitationsLoading = !!invitationsGroupId && invitationsLoadingRaw;
+  const { data: memberCategories, isLoading: memberCategoriesLoadingRaw } =
+    useMemberCategories(memberCategoriesGroupId);
+  const memberCategoriesLoading =
+    !!memberCategoriesGroupId && memberCategoriesLoadingRaw;
+  const tabLoading = (
+    <div
+      className="flex justify-center py-12"
+      role="status"
+      aria-label={t("common.loading", "Loading")}
+    >
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  );
 
   /**
    * Posts carry only the WP author id (CCT `cct_author_id`); the display name
@@ -177,9 +227,9 @@ export default function CareCircle() {
   const leaveGroup = useLeaveGroup();
   const shareTask = useShareTask();
 
-  // The logged-in WordPress account id is the identity on Rel 223 — profile
-  // ids can be a CCT row id, so they are only a fallback.
-  const currentUserId = String(getStoredWPUser()?.user_id || profile?.user_id || profile?.id || "").replace(/^wp-/, "");
+  // The logged-in WordPress account id is the identity on Rel 223; profile CCT
+  // ids can be unrelated row ids and are not needed on this page.
+  const currentUserId = String(getStoredWPUser()?.user_id || "").replace(/^wp-/, "");
   const currentMember = (members || []).find((m: any) => {
     const memberUserId = String(m.user_id || m.id || "").replace(/^wp-/, "");
     return currentUserId && memberUserId === currentUserId;
@@ -187,6 +237,9 @@ export default function CareCircle() {
   const isAdmin = currentMember?.is_owner || currentMember?.is_admin;
   const isOwner = currentMember?.is_owner;
   const pendingTasks = (tasks || []).filter((t: any) => t.status !== "completed");
+  const caredOnesCount = (members || []).filter(
+    (member: any) => member.is_cared_one,
+  ).length;
 
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
@@ -214,7 +267,7 @@ export default function CareCircle() {
   };
 
   const handleLeaveGroup = () => {
-    if (!activeGroupId || !profile?.id) return;
+    if (!activeGroupId || !currentUserId) return;
     leaveGroup.mutate(activeGroupId, {
       onSuccess: () => { navigate(base, { replace: true }); toast({ title: t("careCircle.leftGroup") }); },
       onError: (err: any) => toast({ title: t("common.error"), description: err.message, variant: "destructive" }),
@@ -231,7 +284,28 @@ export default function CareCircle() {
     deletePost.mutate(postId, { onSuccess: () => toast({ title: t("careCircle.postDeleted") }) });
   };
 
-  if (groupsLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (groupsLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-5">
+        <div className="mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+            {site.navLabels.careGroups}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("careCircle.coordinateCare")}
+          </p>
+        </div>
+        <div
+          className="flex items-center justify-center gap-2 rounded-xl border py-16 text-sm text-muted-foreground"
+          role="status"
+          aria-label={t("common.loading", "Loading")}
+        >
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>{isCN ? "正在加载护理团队…" : "Loading your care teams…"}</span>
+        </div>
+      </div>
+    );
+  }
 
   const joinDialogBody = (
     <div className="space-y-4 mt-2">
@@ -285,7 +359,7 @@ export default function CareCircle() {
               <div className="space-y-4 mt-2">
                 <div><Label>{t("careCircle.groupName")} *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={site.family === "challenged" ? "e.g. Dad's Dementia Team" : "e.g. Mom's Care Team"} /></div>
                 <div><Label>{t("common.description")}</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={t("careCircle.groupDesc")} /></div>
-                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={newGroupMyName} onChange={e => setNewGroupMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
+                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={newGroupMyName} onChange={e => setNewGroupMyName(e.target.value)} placeholder={isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)"} /></div>
                 <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>{t("common.create")} {site.careGroupSingular}</Button>
               </div>
             </DialogContent>
@@ -324,7 +398,7 @@ export default function CareCircle() {
               <div className="space-y-4 mt-2">
                 <div><Label>{t("careCircle.groupName")} *</Label><Input value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={site.family === "challenged" ? "e.g. Dad's Dementia Team" : "e.g. Mom's Care Team"} /></div>
                 <div><Label>{t("common.description")}</Label><Textarea value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} placeholder={t("careCircle.groupDesc")} /></div>
-                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={newGroupMyName} onChange={e => setNewGroupMyName(e.target.value)} placeholder={profile?.full_name || (isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)")} /></div>
+                <div><Label>{isCN ? "我在此群组的显示名" : "My name in this group"}</Label><Input value={newGroupMyName} onChange={e => setNewGroupMyName(e.target.value)} placeholder={isCN ? "例如：大女儿 小丽" : "e.g. Lily (daughter)"} /></div>
                 <Button variant="coral" className="w-full" onClick={handleCreateGroup} disabled={createGroup.isPending || !newGroupName.trim()}>{t("common.create")} {site.careGroupSingular}</Button>
               </div>
             </DialogContent>
@@ -368,20 +442,98 @@ export default function CareCircle() {
 
 
         <TabsContent value="home" className="mt-4">
-          <HomeTab statsLoading={membersLoading || tasksLoading} pendingTasksCount={pendingTasks.length} membersCount={(members || []).length} caredOnesCount={(groupCaredOnes || []).length} allPosts={allPostsWithAuthors} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} onNavigateTab={setActiveTab} />
+          <HomeTab
+            statsLoading={membersLoading || tasksLoading}
+            pendingTasksCount={pendingTasks.length}
+            membersCount={(members || []).length}
+            caredOnesCount={caredOnesCount}
+            allPosts={allPostsWithAuthors}
+            activeGroupId={activeGroupId}
+            userId={currentUserId}
+            isAdmin={!!isAdmin}
+            memberCategories={memberCategories || []}
+            members={members || []}
+            createPost={createPost}
+            onEditPost={setEditingPost}
+            onTogglePin={handleTogglePin}
+            onDeletePost={handleDeletePost}
+            onNavigateTab={setActiveTab}
+          />
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-4"><CalendarTab tasks={tasks || []} /></TabsContent>
+        <TabsContent value="calendar" className="mt-4">
+          {tasksLoading ? tabLoading : <CalendarTab tasks={tasks || []} />}
+        </TabsContent>
         <TabsContent value="tasks" className="mt-4"><TasksTab tasks={tasks || []} tasksLoading={tasksLoading} members={members || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} createTask={createTask} updateTaskStatus={updateTaskStatus} deleteTask={deleteTask} shareTask={shareTask} /></TabsContent>
-        <TabsContent value="location" className="mt-4"><GroupLocationTab groupCaredOnes={groupCaredOnes || []} /></TabsContent>
-        <TabsContent value="messages" className="mt-4"><MessagesTab groupMessages={messagesWithSenders} userId={currentUserId} activeGroupId={activeGroupId} sendMessage={sendMessage} /></TabsContent>
+        <TabsContent value="location" className="mt-4">
+          {groupCaredOnesLoading ? (
+            tabLoading
+          ) : (
+            <GroupLocationTab groupCaredOnes={groupCaredOnes || []} />
+          )}
+        </TabsContent>
+        <TabsContent value="messages" className="mt-4">
+          {groupMessagesLoading ? (
+            tabLoading
+          ) : (
+            <MessagesTab
+              groupMessages={messagesWithSenders}
+              userId={currentUserId}
+              activeGroupId={activeGroupId}
+              sendMessage={sendMessage}
+            />
+          )}
+        </TabsContent>
         <TabsContent value="announcements" className="mt-4"><AnnouncementsTab announcements={announcementsWithAuthors} announcementsLoading={announcementsLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
         <TabsContent value="wishes" className="mt-4"><WishesTab wishes={wishesWithAuthors} wishesLoading={wishesLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} memberCategories={memberCategories || []} members={members || []} createPost={createPost} onEditPost={setEditingPost} onTogglePin={handleTogglePin} onDeletePost={handleDeletePost} /></TabsContent>
-        <TabsContent value="gallery" className="mt-4"><GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} /></TabsContent>
-        <TabsContent value="cared-ones" className="mt-4"><CaredOnesTab groupCaredOnes={groupCaredOnes || []} isAdmin={!!(isAdmin || currentMember)} onAddCaredOne={() => setAddCaredOneOpen(true)} /></TabsContent>
+        <TabsContent value="gallery" className="mt-4">
+          {galleryLoading ? (
+            tabLoading
+          ) : (
+            <GalleryTab gallery={gallery || []} activeGroupId={activeGroupId} />
+          )}
+        </TabsContent>
+        <TabsContent value="cared-ones" className="mt-4">
+          {groupCaredOnesLoading || membersLoading ? (
+            tabLoading
+          ) : (
+            <CaredOnesTab
+              groupCaredOnes={groupCaredOnes || []}
+              isAdmin={!!(isAdmin || currentMember)}
+              onAddCaredOne={() => setAddCaredOneOpen(true)}
+            />
+          )}
+        </TabsContent>
         <TabsContent value="members" className="mt-4"><MembersTab members={members || []} membersLoading={membersLoading} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} isOwner={!!isOwner} currentMember={currentMember} updateRole={updateRole} removeMember={removeMember} /></TabsContent>
-        <TabsContent value="invite" className="mt-4"><InviteMembersTab members={members || []} activeGroupId={activeGroupId} isAdmin={!!isAdmin} pendingInvitations={pendingInvitations || []} inviteToGroup={inviteToGroup} cancelInvitation={cancelInvitation} /></TabsContent>
-        <TabsContent value="member-groups" className="mt-4"><MemberGroupsTab members={members || []} memberCategories={memberCategories || []} activeGroupId={activeGroupId} userId={currentUserId} isAdmin={!!isAdmin} createCategory={createCategory} deleteCategory={deleteCategory} /></TabsContent>
+        <TabsContent value="invite" className="mt-4">
+          {invitationsLoading || membersLoading ? (
+            tabLoading
+          ) : (
+            <InviteMembersTab
+              members={members || []}
+              activeGroupId={activeGroupId}
+              isAdmin={!!isAdmin}
+              pendingInvitations={pendingInvitations || []}
+              inviteToGroup={inviteToGroup}
+              cancelInvitation={cancelInvitation}
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="member-groups" className="mt-4">
+          {memberCategoriesLoading || membersLoading ? (
+            tabLoading
+          ) : (
+            <MemberGroupsTab
+              members={members || []}
+              memberCategories={memberCategories || []}
+              activeGroupId={activeGroupId}
+              userId={currentUserId}
+              isAdmin={!!isAdmin}
+              createCategory={createCategory}
+              deleteCategory={deleteCategory}
+            />
+          )}
+        </TabsContent>
         <TabsContent value="settings" className="mt-4"><GroupSettingsTab activeGroup={activeGroup} activeGroupId={activeGroupId} isAdmin={!!isAdmin} isOwner={!!isOwner} myDisplayName={currentMember?.display_name || ""} updateGroup={updateGroup} deleteGroup={deleteGroup} onDeleteSuccess={() => { navigate(base, { replace: true }); setActiveTab("home"); }} onLeaveGroup={handleLeaveGroup} /></TabsContent>
         <TabsContent value="help" className="mt-4"><GroupHelpTab groupName={activeGroup?.name} groupId={activeGroup?.id ? String(activeGroup.id) : undefined} /></TabsContent>
       </Tabs>

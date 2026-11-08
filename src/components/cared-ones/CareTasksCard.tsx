@@ -23,7 +23,12 @@ export function CareTasksCard({ caredOneId }: { caredOneId: string }) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
-  const { data: allTasks, isLoading, error, refetch } = useCareTasks();
+  const { data: allTasks, isLoading, error, refetch } = useCareTasks(
+    undefined,
+    true,
+    false,
+    { caredOneOnly: true, includeAssignmentStatus: false },
+  );
   const createTask = useCreateTask();
   const updateTask = useUpdateTaskStatus();
   const del = useDeleteTask();

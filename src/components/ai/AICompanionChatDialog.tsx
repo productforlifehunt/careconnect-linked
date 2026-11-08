@@ -1,14 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bot, History, Plus, X, MessageSquare, Pencil, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
 import { useSite } from "@/contexts/SiteContext";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
-import { AICompanionChat } from "@/components/ai/AICompanionChat";
+import { lazyRetry } from "@/lib/lazy-retry";
+import { AIChatWarmup } from "@/components/ai/AIChatWarmup";
 import { createAiThread, listAiThreads, touchAiThread, type AiThread } from "@/lib/ai-threads";
 
 const ACTIVE_THREAD_KEY = "ai-active-thread";
+const AICompanionChat = lazyRetry(
+  () => import("@/components/ai/AICompanionChat").then((module) => ({ default: module.AICompanionChat })),
+  "AICompanionChat",
+);
+
+function readActiveThread(): string | undefined {
+  try { return localStorage.getItem(ACTIVE_THREAD_KEY) || undefined; }
+  catch { return undefined; }
+}
 
 /**
  * The floating assistant — the app's single AI entry point. General chats are
@@ -20,10 +30,20 @@ export function AICompanionChatDialog({
   open,
   onOpenChange,
   request = {},
+  draft = "",
+  queuedPrompt = null,
+  onDraftChange = () => undefined,
+  onQueuePrompt = () => undefined,
+  onPromptConsumed = () => undefined,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   request?: AssistantRequest | undefined;
+  draft?: string | undefined;
+  queuedPrompt?: string | null | undefined;
+  onDraftChange?: ((value: string) => void) | undefined;
+  onQueuePrompt?: ((value: string) => void) | undefined;
+  onPromptConsumed?: (() => void) | undefined;
 }) {
   const { i18n } = useTranslation();
   const site = useSite();
@@ -32,12 +52,13 @@ export function AICompanionChatDialog({
   // Only the general floating chat gets saved threads; task chats don't.
   const threaded = !request.onComplete && !request.starterPrompt && !request.appGuide;
   const [threads, setThreads] = useState<AiThread[]>([]);
-  const [activeThread, setActiveThread] = useState<string | undefined>();
+  const [activeThread, setActiveThread] = useState<string | undefined>(readActiveThread);
+  const [conversationVersion, setConversationVersion] = useState(0);
+  const activeThreadRef = useRef(activeThread);
+  activeThreadRef.current = activeThread;
   const [listOpen, setListOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  // True once the thread bootstrap finished, so the chat never mounts with a
-  // temporary key and gets remounted (wiping an in-flight message) afterwards.
-  const [booted, setBooted] = useState(false);
+  const chatEngaged = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -50,8 +71,18 @@ export function AICompanionChatDialog({
   }, []);
 
   const pick = useCallback((id: string) => {
+    chatEngaged.current = true;
     setActiveThread(id);
+    setConversationVersion((version) => version + 1);
     setListOpen(false);
+    try { localStorage.setItem(ACTIVE_THREAD_KEY, id); } catch { /* ignore */ }
+  }, []);
+
+  const onThreadCreated = useCallback((id: string) => {
+    setActiveThread(id);
+    setThreads((current) => current.some((thread) => thread.id === id)
+      ? current
+      : [{ id, title: "", updatedAt: new Date().toISOString() }, ...current]);
     try { localStorage.setItem(ACTIVE_THREAD_KEY, id); } catch { /* ignore */ }
   }, []);
 
@@ -66,37 +97,40 @@ export function AICompanionChatDialog({
     finally { setBusy(false); }
   }, [busy, refresh, pick]);
 
-  // On open: restore the last thread, or the latest one, or create the first.
+  // Restore history in the background. The chat and composer remain usable
+  // while WordPress returns the thread list.
   useEffect(() => {
     if (!open || !threaded) return;
     let alive = true;
-    void (async () => {
-      const list = await refresh();
-      if (!alive) return;
-      if (list) {
-        let saved: string | null = null;
-        try { saved = localStorage.getItem(ACTIVE_THREAD_KEY); } catch { /* ignore */ }
-        if (saved && list.some((t) => t.id === saved)) setActiveThread(saved);
-        else if (list[0]) pick(list[0].id);
+    chatEngaged.current = false;
+    void refresh().then((list) => {
+      if (!alive || !list || chatEngaged.current) return;
+      const saved = readActiveThread();
+      if (saved && list.some((thread) => thread.id === saved)) {
+        if (saved !== activeThreadRef.current) {
+          setActiveThread(saved);
+          activeThreadRef.current = saved;
+          setConversationVersion((version) => version + 1);
+        }
+      } else if (list[0] && !activeThreadRef.current) {
+        pick(list[0].id);
+      } else if (saved && !list.some((thread) => thread.id === saved)) {
+        try { localStorage.removeItem(ACTIVE_THREAD_KEY); } catch { /* ignore */ }
+        if (list[0]) pick(list[0].id);
         else {
-          try {
-            const id = await createAiThread();
-            if (!alive) return;
-            await refresh();
-            pick(id);
-          } catch { /* unsaved chat still works */ }
+          setActiveThread(undefined);
+          activeThreadRef.current = undefined;
         }
       }
-      if (alive) setBooted(true);
-    })();
+    });
     return () => { alive = false; };
   }, [open, threaded, refresh, pick]);
 
   const untitled = isZh ? "新对话" : "New conversation";
   const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [threadNameDraft, setThreadNameDraft] = useState("");
   const saveName = async (id: string) => {
-    const name = draft.trim();
+    const name = threadNameDraft.trim();
     setEditing(null);
     if (!name) return;
     setThreads((list) => list.map((t) => (t.id === id ? { ...t, title: name } : t)));
@@ -165,8 +199,8 @@ export function AICompanionChatDialog({
                   {editing === t.id ? (
                     <input
                       autoFocus
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
+                      value={threadNameDraft}
+                      onChange={(e) => setThreadNameDraft(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") void saveName(t.id); if (e.key === "Escape") setEditing(null); }}
                       className="flex-1 min-w-0 rounded-sm border bg-background px-1.5 py-0.5 text-sm text-foreground"
                     />
@@ -180,7 +214,7 @@ export function AICompanionChatDialog({
                       <Check className="h-3.5 w-3.5" />
                     </button>
                   ) : (
-                    <button type="button" onClick={() => { setEditing(t.id); setDraft(t.title); }} className="p-1 rounded-sm hover:bg-accent text-muted-foreground" aria-label={isZh ? "改名" : "Rename"}>
+                    <button type="button" onClick={() => { setEditing(t.id); setThreadNameDraft(t.title); }} className="p-1 rounded-sm hover:bg-accent text-muted-foreground" aria-label={isZh ? "改名" : "Rename"}>
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -189,15 +223,38 @@ export function AICompanionChatDialog({
             </div>
           )}
 
-          {(!threaded || booted) && (
+          <Suspense
+            fallback={
+              <AIChatWarmup
+                isChinese={!!isZh}
+                autoFocus={open}
+                value={draft}
+                queuedPrompt={queuedPrompt}
+                onChange={(value) => {
+                  if (value) chatEngaged.current = true;
+                  onDraftChange(value);
+                }}
+                onSubmit={(message) => {
+                  chatEngaged.current = true;
+                  onQueuePrompt(message);
+                }}
+              />
+            }
+          >
             <AICompanionChat
-              key={threaded ? activeThread ?? "unsaved" : request.id}
+              key={threaded ? conversationVersion : request.id}
               active={open}
               request={request}
               threadId={threaded ? activeThread : undefined}
+              initialDraft={draft}
+              initialPrompt={queuedPrompt}
+              onInitialPromptConsumed={onPromptConsumed}
+              onChatEngaged={() => { chatEngaged.current = true; }}
+              onDraftChange={onDraftChange}
+              onThreadCreated={onThreadCreated}
               onThreadUpdated={() => void refresh()}
             />
-          )}
+          </Suspense>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

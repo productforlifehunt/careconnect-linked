@@ -3,7 +3,10 @@ import type { Profile } from "@/types/care-connector";
 import { T } from "@/integrations/wp-schema";
 
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
-import { fetchProviderRatingSummary } from "@/features/reviews/source.wordpress";
+import {
+  fetchProviderRatingSummaries,
+  fetchProviderRatingSummary,
+} from "@/features/reviews/source.wordpress";
 import { careServiceIdsToSlugs, deliveryIdsToSlugs } from "@/lib/care-service-types";
 import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 
@@ -116,19 +119,15 @@ export interface ProviderFilters {
 
 /** Listed providers with their ratings — read once and shared; filters/sorting run on this list without re-downloading. */
 export async function fetchProviderDirectoryWordPress(): Promise<Profile[]> {
-    const sourceProfiles = await fetchDictionaryProviderProfiles();
-    const ratingSummaries = new Map<string, { average: number | null; count: number }>();
-    await Promise.all(
-      sourceProfiles.map(async (p) => {
-        const uid = String(p.id).replace(/^wp-/, "");
-         ratingSummaries.set(uid, await fetchProviderRatingSummary(uid));
-      }),
-    );
-    return sourceProfiles.map((p) => {
-      const numericId = String(p.id).replace(/^wp-/, "");
-      const rating = ratingSummaries.get(numericId) || { average: null, count: 0 };
-      return { ...p, rating_average: rating.average, rating_count: rating.count } as Profile;
-    });
+  const sourceProfiles = await fetchDictionaryProviderProfiles();
+  const ratingSummaries = await fetchProviderRatingSummaries(
+    sourceProfiles.map((profile) => profile.id),
+  );
+  return sourceProfiles.map((profile) => {
+    const numericId = String(profile.id).replace(/^wp-/, "");
+    const rating = ratingSummaries.get(numericId) || { average: null, count: 0 };
+    return { ...profile, rating_average: rating.average, rating_count: rating.count } as Profile;
+  });
 }
 
 export async function fetchProvidersWordPress(filters?: ProviderFilters | undefined): Promise<Profile[]> {

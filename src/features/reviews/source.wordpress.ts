@@ -148,6 +148,41 @@ export async function fetchProviderRatingSummary(
   return fetchRatingSummary(providerUserId, "provider");
 }
 
+/** Read ratings for a directory with one CCT batch instead of one per provider. */
+export async function fetchProviderRatingSummaries(
+  providerUserIds: Array<string | number>,
+): Promise<Map<string, { average: number | null; count: number }>> {
+  const parentIds = [...new Set(providerUserIds.map(numericId).filter(Boolean).map(String))];
+  const summaries = new Map<string, { average: number | null; count: number }>(
+    parentIds.map((id) => [id, { average: null, count: 0 }]),
+  );
+  if (parentIds.length === 0) return summaries;
+
+  const linkedReviews = await Promise.all(
+    parentIds.map(async (parentId) => ({
+      parentId,
+      children: await fetchRelChildrenOf(REL_PROVIDER_REVIEWS, parentId),
+    })),
+  );
+  const reviewIds = [...new Set(linkedReviews.flatMap(({ children }) => children.map(({ childId }) => childId)))];
+  if (reviewIds.length === 0) return summaries;
+
+  const reviewRows = await readLinkedCCTRows(REVIEW.slug, reviewIds);
+  const reviewsById = new Map(reviewRows.map((row) => [String(row.id ?? row._ID), row]));
+  for (const { parentId, children } of linkedReviews) {
+    const ratings = [...new Set(children.map(({ childId }) => childId))]
+      .map((childId) => Number(reviewsById.get(childId)?.[F.RATING]))
+      .filter((rating) => Number.isFinite(rating) && rating > 0);
+    if (ratings.length > 0) {
+      summaries.set(parentId, {
+        average: ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length,
+        count: ratings.length,
+      });
+    }
+  }
+  return summaries;
+}
+
 export async function createReviewWordPress(review: {
   entity_id: string;
   entity_type?: string | undefined;

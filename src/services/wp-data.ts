@@ -234,8 +234,7 @@ export async function wpFetchBookings(): Promise<WPBooking[]> {
 // ─── Care Tasks ─────────────────────────────────────────────
 export async function wpFetchCareTasks(): Promise<any[]> {
   const { fetchCareTasksWordPress } = await import("@/features/care-tasks/source.wordpress");
-  const { filterVisibleTasks } = await import("@/features/care-groups/visibility");
-  return filterVisibleTasks(await fetchCareTasksWordPress());
+  return fetchCareTasksWordPress(undefined, { visibleToCurrentUser: true });
 }
 
 // ─── Cared Ones ─────────────────────────────────────────────

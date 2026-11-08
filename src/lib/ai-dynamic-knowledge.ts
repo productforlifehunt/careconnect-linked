@@ -149,15 +149,16 @@ export async function resolveCaredOneAccess(
     /* fall through */
   }
   try {
-    const { wpFetchCareGroups } = await import("@/services/wp-data");
+    const [{ wpFetchCareGroups }, { fetchGroupCaredOneIdsWordPress }] = await Promise.all([
+      import("@/services/wp-data"),
+      import("@/features/care-groups/source.wordpress"),
+    ]);
     const groups = await wpFetchCareGroups();
-    const { fetchGroupCaredOneIdsWordPress } = await import("@/features/care-groups/source.wordpress-extended").catch(() => ({} as any));
-    if (typeof fetchGroupCaredOneIdsWordPress === "function") {
-      for (const g of groups) {
-        const ids: string[] = await fetchGroupCaredOneIdsWordPress(String(g.id)).catch(() => []);
-        if (ids.some((id) => String(id) === String(caredOneId))) return "full";
-      }
-    }
+    const groupCaredOneIds: string[][] = await Promise.all(
+      groups.map((group: any) => fetchGroupCaredOneIdsWordPress(String(group.id)).catch((): string[] => [])),
+    );
+    const normalizedCaredOneId = String(caredOneId).replace(/^wp-/, "");
+    if (groupCaredOneIds.some((ids) => ids.includes(normalizedCaredOneId))) return "full";
   } catch {
     /* fall through */
   }
@@ -425,14 +426,16 @@ export async function resolveGroupFacts(
   groupName: string | undefined,
   { isChinese }: Lang
 ): Promise<string> {
-  const access = await resolveGroupAccess(groupId);
-  if (access !== "full") {
+  if (!groupId) {
     return line(Z(isChinese, "当前群组", "Current group"), groupName || Z(isChinese, "未指定", "unspecified"));
   }
   try {
     const { wpFetchCareGroups } = await import("@/services/wp-data");
     const groups = await wpFetchCareGroups();
     const g = groups.find((x: any) => String(x.id) === String(groupId));
+    if (!g) {
+      return line(Z(isChinese, "当前群组", "Current group"), groupName || Z(isChinese, "未指定", "unspecified"));
+    }
     return join([
       line(Z(isChinese, "群组名称", "Group name"), g?.name || groupName),
       line(Z(isChinese, "群组说明", "Group description"), g?.description),
@@ -534,8 +537,17 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
     fallbackToIndex: false,
   });
 
-  const dynamic: string[] = [];
-  const access = await resolveCaredOneAccess(caredOneId, { sharedCard });
+  // Independent facts load together. In particular, the global viewer profile
+  // no longer waits behind the cared-one access check before the AI request can
+  // start building its context.
+  const [access, taskFacts, settingFacts, groupFacts, viewerFacts] = await Promise.all([
+    resolveCaredOneAccess(caredOneId, { sharedCard }),
+    want.tasks ? resolveTaskFacts(lang) : Promise.resolve(""),
+    want.settings && !sharedCard ? resolveSettingFacts(lang) : Promise.resolve(""),
+    groupId || groupName ? resolveGroupFacts(groupId, groupName, lang) : Promise.resolve(""),
+    !sharedCard ? resolveViewerFacts(lang) : Promise.resolve(""),
+  ]);
+  const dynamic: string[] = [taskFacts, settingFacts, groupFacts, viewerFacts];
 
   if (access === "full" && caredOneId) {
     const [med, chk, loc] = await Promise.all([
@@ -557,12 +569,6 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
         )
     );
   }
-
-  if (want.tasks) dynamic.push(await resolveTaskFacts(lang));
-  if (want.settings && !sharedCard) dynamic.push(await resolveSettingFacts(lang));
-
-  if (groupId || groupName) dynamic.push(await resolveGroupFacts(groupId, groupName, lang));
-  if (!sharedCard) dynamic.push(await resolveViewerFacts(lang));
 
   const facts = dynamic.filter(Boolean).join("\n");
   const factHeader = isChinese

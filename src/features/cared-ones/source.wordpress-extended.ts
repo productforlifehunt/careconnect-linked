@@ -99,10 +99,18 @@ async function fetchRelatedCctChildren(relationId: number, parentId: string, cct
   return dedupeRead(`rel-children:${relationId}:${pid}:${cctSlug}`, async () => {
     const rels = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${pid}`);
     if (!Array.isArray(rels) || rels.length === 0) return [];
-    const rows = await Promise.all(rels.map((r: any) => wordpressCCTFetch<any>(cctSlug, { id: r.child_object_id })));
+    const ids = rels
+      .map((r: any) => String(normalizeWpObjectId(r?.child_object_id)))
+      .filter((id) => /^\d+$/.test(id) && id !== "0");
+    const rows = await readLinkedCCTRows(cctSlug, ids);
+    const rowsById = new Map(
+      rows.map((row) => [String(row?.id ?? row?._ID), row]),
+    );
     // A relation row can outlive the CCT row it points at (JetEngine answers
     // `false` for a deleted item). Drop those instead of failing the whole list.
-    return rows.filter((row: any) => row && typeof row === "object");
+    return ids
+      .map((id) => rowsById.get(id))
+      .filter((row) => row && typeof row === "object");
   });
 
 }

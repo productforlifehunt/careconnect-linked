@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useNavigate, useSearchParams } from "@/lib/router-compat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,17 +8,18 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Bell, Inbox as InboxIcon, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime } from "@/lib/locale";
-import Messages from "./Messages";
-import Notifications from "./Notifications";
 import {
   useNotifications,
   useConversations,
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
-  useMyProfile,
   useInboxCounts,
   useMarkMessagesRead,
 } from "@/hooks/use-care-data";
+import { getStoredWPUser } from "@/services/wp-auth";
+
+const Messages = lazy(() => import("./Messages"));
+const Notifications = lazy(() => import("./Notifications"));
 
 /**
  * Unified Inbox — 3 tabs:
@@ -47,12 +48,20 @@ export default function Inbox() {
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
 
   const { data: notifications, isLoading: notifsLoading } = useNotifications();
-  const { data: conversations, isLoading: convosLoading } = useConversations();
-  const { data: profile } = useMyProfile();
+  const {
+    data: conversations,
+    isLoading: convosLoading,
+    error: convosError,
+  } = useConversations();
+  const myUserId = getStoredWPUser()?.user_id;
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const markMessagesRead = useMarkMessagesRead();
-  const counts = useInboxCounts();
+  const counts = useInboxCounts(true, {
+    data: conversations,
+    isLoading: convosLoading,
+    error: convosError,
+  });
   const selectedTotal = tab === "notifications" ? (notifications || []).length : tab === "messages" ? (conversations || []).length : counts.total;
   const selectedUnread = tab === "notifications" ? counts.unreadNotifications : tab === "messages" ? counts.unreadMessages : counts.unread;
   const [markingAll, setMarkingAll] = useState(false);
@@ -100,7 +109,10 @@ export default function Inbox() {
         (c.chat_name && !String(c.chat_name).startsWith("__group:") ? String(c.chat_name) : "") ||
         (numeric ? (isChinese ? `用户 ${numeric}` : `User ${numeric}`) : Z("对话", "Conversation"));
       const last = c.last_message?.message_content || "";
-      const mine = c.last_message?.sender_id && profile?.id && c.last_message.sender_id === profile.id;
+      const mine =
+        c.last_message?.sender_id &&
+        myUserId &&
+        String(c.last_message.sender_id).replace(/^wp-/, "") === String(myUserId);
       return {
         kind: "message" as const,
         id: `c-${c.id}`,
@@ -228,7 +240,15 @@ export default function Inbox() {
                   {feed.map((row) => (
                     <Card
                       key={row.id}
-                      className={`cursor-pointer transition-colors border-transparent ${row.unread ? "card-elevated" : "opacity-70"}`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openRow(row);
+                        }
+                      }}
+                      className={`cursor-pointer border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${row.unread ? "card-elevated" : "bg-muted/30"}`}
                       onClick={() => openRow(row)}
                     >
                       <CardContent className="p-4 flex items-start gap-3">
@@ -241,20 +261,20 @@ export default function Inbox() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          <Badge variant="outline" className="bg-background px-1.5 py-0 text-[10px] text-foreground">
                               {row.kind === "notification" ? Z("通知", "Notification") : Z("消息", "Message")}
                             </Badge>
-                            <h3
-                              className={`text-sm truncate ${row.unread ? "font-semibold text-foreground" : "font-normal text-muted-foreground"}`}
+                            <h2
+                              className={`truncate text-sm ${row.unread ? "font-semibold text-foreground" : "font-normal text-foreground/70"}`}
                             >
                               {row.title}
-                            </h3>
+                            </h2>
                             {row.unread && <div className="w-2 h-2 rounded-full bg-coral shrink-0" />}
                           </div>
                           {row.body && (
-                            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{row.body}</p>
+                            <p className="mt-0.5 line-clamp-2 text-sm text-foreground/70">{row.body}</p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 text-xs text-foreground/70">
                             {formatDate(row.at, i18n.language, { month: "short", day: "numeric" })}{" "}
                             {formatTime(row.at, "en", { hour: "numeric", minute: "2-digit" })}
                           </p>
@@ -268,10 +288,40 @@ export default function Inbox() {
           </div>
         </TabsContent>
         <TabsContent value="notifications" className="mt-0 focus-visible:outline-hidden">
-          <Notifications embedded readFilter={readFilter} />
+          <Suspense
+            fallback={
+              <div
+                className="max-w-3xl mx-auto space-y-3 px-4 py-5"
+                role="status"
+                aria-label={Z("正在加载通知", "Loading notifications")}
+                aria-busy="true"
+              >
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-20 rounded-xl" />
+                ))}
+              </div>
+            }
+          >
+            <Notifications embedded readFilter={readFilter} />
+          </Suspense>
         </TabsContent>
         <TabsContent value="messages" className="mt-0 focus-visible:outline-hidden">
-          <Messages embedded readFilter={readFilter} />
+          <Suspense
+            fallback={
+              <div
+                className="max-w-3xl mx-auto space-y-3 px-4 py-5"
+                role="status"
+                aria-label={Z("正在加载消息", "Loading messages")}
+                aria-busy="true"
+              >
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-16 rounded-xl" />
+                ))}
+              </div>
+            }
+          >
+            <Messages embedded readFilter={readFilter} />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>

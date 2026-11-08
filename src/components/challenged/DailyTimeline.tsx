@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pill, ClipboardCheck, CheckSquare, Clock, CalendarDays } from "lucide-react";
-import { useMedicines, useCareTasks, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/features/dashboard/use-dashboard-data";
+import { useMedicines, useCareTasks, useAssignedCareTaskIds, useCheckins, useTodayCheckinLogs, useTodayMedicineLogs, useBookings } from "@/features/dashboard/use-dashboard-data";
 import { useMemo } from "react";
 import { findDoseLog } from "@/features/medicine/dose-slot";
 import { useTranslation } from "react-i18next";
@@ -34,7 +34,11 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
     type === "booking" ? "/bookings" : `/cared-ones/${personId}/${type === "medicine" ? "medicine" : type === "checkin" ? "checkin" : "tasks"}`;
   const { data: medicines } = useMedicines(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
-  const { data: tasks } = useCareTasks();
+  const { data: tasks } = useCareTasks(undefined, true, false, {
+    caredOneOnly: true,
+    includeAssignmentStatus: false,
+  });
+  const { data: assignedCareTaskIds } = useAssignedCareTaskIds();
   const { data: checkins } = useCheckins(caredOneId);
   const { data: todayCheckinLogs } = useTodayCheckinLogs(caredOneId);
   const { data: bookings } = useBookings();
@@ -83,12 +87,17 @@ export function DailyTimeline({ caredOneId, caredOneName }: DailyTimelineProps) 
 
     // Today's tasks for this cared one (Relation task → cared one)
     const coId = String(caredOneId).replace(/^wp-/, "");
-    const me = String(getStoredWPUser()?.user_id ?? "");
+    const me = String(getStoredWPUser()?.user_id ?? "").replace(/^wp-/, "");
+    const assignedTaskIds = new Set((assignedCareTaskIds || []).map((id) => String(id).replace(/^wp-/, "")));
     const todaysTasks = (tasks || []).filter((t: any) => {
       if (String(t.cared_one_id ?? "").replace(/^wp-/, "") !== coId) return false;
       // Only the viewer's own tasks: created by them, or assigned to them.
-      const assignees = (t.assigned_to_ids || []).map((x: any) => String(x));
-      if (me && String(t.created_by ?? "") !== me && !assignees.includes(me)) return false;
+      const taskId = String(t.id ?? "").replace(/^wp-/, "");
+      if (
+        me &&
+        String(t.created_by ?? "").replace(/^wp-/, "") !== me &&
+        !assignedTaskIds.has(taskId)
+      ) return false;
       const when = t.task_date || t.due_date;
       if (!when) return false;
       return new Date(when).toDateString() === today;

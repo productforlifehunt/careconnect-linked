@@ -20,7 +20,10 @@ export function PatientSummaryCard({ caredOneId, name, avatarUrl, relationship, 
   const { data: todayCheckinLogs } = useTodayCheckinLogs(caredOneId);
   const { data: medicines } = useMedicines(caredOneId);
   const { data: location } = useCaredOneLocation(caredOneId);
-  const { data: tasks } = useCareTasks();
+  const { data: tasks } = useCareTasks(undefined, true, false, {
+    caredOneOnly: true,
+    includeAssignmentStatus: false,
+  });
 
   const latestCheckinLog = todayCheckinLogs?.[0];
   const hasCheckinToday = !!todayCheckinLogs?.some((log: any) => log.status === "taken");

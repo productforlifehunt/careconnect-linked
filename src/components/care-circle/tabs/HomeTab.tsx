@@ -96,7 +96,14 @@ export function HomeTab({
 
       <Card className="border-transparent card-elevated mb-6">
         <CardContent className="p-4">
-          <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder={isCN ? "与团队分享一条更新…" : "Share an update with your care team..."} className="mb-3" rows={2} />
+          <Textarea
+            aria-label={isCN ? "与团队分享一条更新" : "Share an update with your care team"}
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder={isCN ? "与团队分享一条更新…" : "Share an update with your care team..."}
+            className="mb-3"
+            rows={2}
+          />
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex gap-2 flex-wrap">
               <Select value={postType} onValueChange={setPostType}>

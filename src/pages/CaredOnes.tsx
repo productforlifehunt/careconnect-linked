@@ -79,7 +79,12 @@ export default function CaredOnes() {
   const { toast } = useToast();
   const site = useSite();
   const { data: caredOnes, isLoading } = useUserCaredOnes();
-  const { data: careTasks, isLoading: tasksLoading, error: tasksError } = useCareTasks();
+  const { data: careTasks, isLoading: tasksLoading, error: tasksError } = useCareTasks(
+    undefined,
+    true,
+    false,
+    { caredOneOnly: true, includeAssignmentStatus: false },
+  );
   const createUserCaredOne = useCreateUserCaredOne();
   const deleteUserCaredOne = useDeleteUserCaredOne();
   // Notification rows link straight here, e.g. /cared-ones?person=12&card=medicine

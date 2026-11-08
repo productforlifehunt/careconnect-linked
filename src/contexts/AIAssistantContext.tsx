@@ -3,23 +3,39 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Bot, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { WriteSkillName, WriteTarget } from "@/lib/ai-dynamic-knowledge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 import { lazyRetry } from "@/lib/lazy-retry";
+import { useSite } from "@/contexts/SiteContext";
+import { aiBrand } from "../../supabase/functions/_shared/ai-prompts";
+import { AIChatWarmup } from "@/components/ai/AIChatWarmup";
 
+const loadAssistantDialog = () =>
+  import("@/components/ai/AICompanionChatDialog").then((module) => ({
+    default: module.AICompanionChatDialog,
+  }));
 const AICompanionChatDialog = lazyRetry(
-  () =>
-    import("@/components/ai/AICompanionChatDialog").then((module) => ({
-      default: module.AICompanionChatDialog,
-    })),
+  loadAssistantDialog,
   "AICompanionChatDialog",
 );
+
+function warmAssistant() {
+  // Prepare the full chat after the initial page is idle, so opening the
+  // dialog does not wait on its code bundle before the composer is usable.
+  void loadAssistantDialog()
+    .then(() => import("@/components/ai/AICompanionChat"))
+    .catch(() => undefined);
+}
 
 export type AssistantResult = { status?: string | undefined; summary?: string | undefined };
 /**
@@ -72,6 +88,69 @@ type AIAssistantValue = {
   openWriteAssistant: (request: WriteRequest) => void;
   closeAssistant: () => void;
 } | null;
+
+function AssistantOpeningPanel({
+  open,
+  request,
+  draft,
+  queuedPrompt,
+  onOpenChange,
+  onDraftChange,
+  onSubmit,
+}: {
+  open: boolean;
+  request: AssistantRequest;
+  draft: string;
+  queuedPrompt: string | null;
+  onOpenChange: (open: boolean) => void;
+  onDraftChange: (value: string) => void;
+  onSubmit: (value: string) => void;
+}) {
+  const { i18n: translation } = useTranslation();
+  const site = useSite();
+  const isChinese = translation.language?.startsWith("zh");
+
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+        <DialogPrimitive.Content
+          data-inspector-scope="ai-chat-dialog"
+          className="fixed inset-x-3 top-16 bottom-[4.5rem] z-50 flex flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl md:inset-auto md:left-1/2 md:top-1/2 md:h-[640px] md:w-[440px] md:-translate-x-1/2 md:-translate-y-1/2"
+        >
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Bot className="h-4 w-4" />
+              </div>
+              <DialogPrimitive.Title className="truncate text-sm font-semibold">
+                {request.title || aiBrand(isChinese ? "zh" : "en", site.id)}
+              </DialogPrimitive.Title>
+            </div>
+            <DialogPrimitive.Close asChild>
+              <button
+                type="button"
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"
+                aria-label={isChinese ? "关闭" : "Close"}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </DialogPrimitive.Close>
+          </div>
+          <AIChatWarmup
+            isChinese={!!isChinese}
+            autoFocus={open}
+            value={draft}
+            queuedPrompt={queuedPrompt}
+            onChange={onDraftChange}
+            onSubmit={onSubmit}
+          />
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+  );
+}
+
 // Reuse one context object across hot reloads; a re-evaluated module would otherwise
 // create a second context that the already-mounted provider does not supply.
 const ctxStore = globalThis as typeof globalThis & { __aiAssistantContext?: React.Context<AIAssistantValue> };
@@ -81,8 +160,33 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [assistantActivated, setAssistantActivated] = useState(false);
   const [request, setRequest] = useState<AssistantRequest>({});
+  const [draft, setDraft] = useState("");
+  const [queuedPrompt, setQueuedPrompt] = useState<string | null>(null);
+
+  // Warm just the small dialog shell during idle time. The full chat stays
+  // split out and is fetched only after the user opens the assistant.
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    let idleId: number | undefined;
+    const browser = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (browser.requestIdleCallback) {
+      idleId = browser.requestIdleCallback(warmAssistant, { timeout: 2500 });
+    } else {
+      timeoutId = window.setTimeout(warmAssistant, 1200);
+    }
+    return () => {
+      if (idleId !== undefined) browser.cancelIdleCallback?.(idleId);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, []);
+
   const openAssistant = useCallback((next: AssistantRequest = {}) => {
     setRequest({ ...next, id: next.id || `general-${Date.now()}` });
+    setDraft("");
+    setQueuedPrompt(null);
     setAssistantActivated(true);
     setOpen(true);
   }, []);
@@ -133,11 +237,34 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     <AIAssistantContext.Provider value={value}>
       {children}
       {assistantActivated && (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <AssistantOpeningPanel
+              open={open}
+              request={request}
+              draft={draft}
+              queuedPrompt={queuedPrompt}
+              onOpenChange={setOpen}
+              onDraftChange={setDraft}
+              onSubmit={(message) => {
+                setDraft("");
+                setQueuedPrompt(message);
+              }}
+            />
+          }
+        >
           <AICompanionChatDialog
             open={open}
             onOpenChange={setOpen}
             request={request}
+            draft={draft}
+            queuedPrompt={queuedPrompt}
+            onDraftChange={setDraft}
+            onQueuePrompt={(message) => {
+              setDraft("");
+              setQueuedPrompt(message);
+            }}
+            onPromptConsumed={() => setQueuedPrompt(null)}
           />
         </Suspense>
       )}

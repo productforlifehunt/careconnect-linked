@@ -132,10 +132,24 @@ export async function wpLogin(usernameOrEmail: string, password: string): Promis
 /**
  * Validate a stored token against WordPress.
  */
-export async function wpValidateToken(): Promise<WPUser | null> {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) return null;
+let validationInflight: {
+  token: string;
+  promise: Promise<WPUser | null>;
+} | null = null;
 
+export function wpValidateToken(): Promise<WPUser | null> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return Promise.resolve(null);
+  if (validationInflight?.token === token) return validationInflight.promise;
+
+  const promise = validateToken(token).finally(() => {
+    if (validationInflight?.promise === promise) validationInflight = null;
+  });
+  validationInflight = { token, promise };
+  return promise;
+}
+
+async function validateToken(token: string): Promise<WPUser | null> {
   try {
     const payload = decodeJwtPayload(token);
     if (!payload) {
@@ -155,6 +169,9 @@ export async function wpValidateToken(): Promise<WPUser | null> {
     }
 
     const verifiedUser = await fetchCurrentWpUser(token);
+    // A different account may sign in while this background check is running.
+    // Never let the previous account overwrite the newer stored session.
+    if (localStorage.getItem(TOKEN_KEY) !== token) return getStoredWPUser();
     if (verifiedUser) {
       localStorage.setItem(USER_KEY, JSON.stringify(verifiedUser));
       return verifiedUser;
@@ -168,6 +185,7 @@ export async function wpValidateToken(): Promise<WPUser | null> {
 
     return storedUser;
   } catch {
+    if (localStorage.getItem(TOKEN_KEY) !== token) return getStoredWPUser();
     wpLogout();
     return null;
   }

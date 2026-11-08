@@ -1,7 +1,8 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
-import { fetchCareGroupsWordPress } from "@/features/care-groups/source.wordpress";
-import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
+import { fetchMyCareGroupIdsWordPress } from "@/features/care-groups/source.wordpress";
+import { prepareTaskVisibilityFilter } from "@/features/care-groups/visibility";
+import { fetchUserCaredOneIdsWordPress } from "@/features/cared-ones/source.wordpress";
 import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { R, T, WP } from "@/integrations/wp-schema";
 
@@ -137,33 +138,197 @@ function mapTask(t: any, groupId?: string | null | undefined) {
   };
 }
 
-export async function fetchCareTasksWordPress(groupId?: string | null | undefined): Promise<any[]> {
+export async function fetchUserAssignedCareTaskIdsWordPress(): Promise<string[]> {
+  const userId = getStoredWPUser()?.user_id;
+  if (!userId) return [];
+  const rows = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${userId}`);
+  return [...new Set(
+    (Array.isArray(rows) ? rows : [])
+      .map((row) => normalizeWpObjectId(row?.parent_object_id))
+      .filter((id) => Number.isFinite(id) && id > 0)
+      .map(String),
+  )];
+}
+
+async function fetchCaredOneScopedTasks(
+  userId: string | number,
+  options: { includeAssignees: boolean; includeAssignmentStatus: boolean; visibleToCurrentUser: boolean },
+): Promise<any[]> {
+  const caredOneIds = await fetchUserCaredOneIdsWordPress();
+  if (caredOneIds.length === 0) return [];
+
+  let applyVisibilityFilter: ReturnType<typeof prepareTaskVisibilityFilter> | undefined;
+  const caredOneTaskLinks = await Promise.all(
+    caredOneIds.map(async (caredOneId) => {
+      const rows = await wordpressFetch<any[]>(
+        `jet-rel/${REL_TASK_CARED_ONE}/parents/${normalizeWpObjectId(caredOneId)}`,
+      );
+      return { caredOneId, rows };
+    }),
+  );
+
+  const caredOneByTaskId = new Map<string, string>();
+  for (const { caredOneId, rows } of caredOneTaskLinks) {
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const taskId = normalizeWpObjectId(row?.parent_object_id);
+      if (taskId > 0 && !caredOneByTaskId.has(String(taskId))) {
+        caredOneByTaskId.set(String(taskId), `wp-${normalizeWpObjectId(caredOneId)}`);
+      }
+    }
+  }
+  const taskIds = [...caredOneByTaskId.keys()];
+  if (taskIds.length === 0) return [];
+
+  if (options.visibleToCurrentUser && !applyVisibilityFilter) {
+    applyVisibilityFilter = prepareTaskVisibilityFilter(taskIds);
+  }
+  const [rows, assigned] = await Promise.all([
+    readLinkedCCTRows(CCT_SLUG, taskIds),
+    options.includeAssignmentStatus && !options.includeAssignees
+      ? wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${userId}`)
+      : Promise.resolve([]),
+  ]);
+  const assignedTaskIds = new Set(
+    (Array.isArray(assigned) ? assigned : [])
+      .map((row) => String(normalizeWpObjectId(row?.parent_object_id)))
+      .filter((id) => id !== "0"),
+  );
+  const mapped = await Promise.all(
+    rows.map(async (task: any) => {
+      const base = mapTask(task);
+      const assignees = options.includeAssignees ? await fetchAssignees(base.id) : [];
+      const assignedIds = options.includeAssignees
+        ? assignees.map((assignee) => assignee.user_id)
+        : options.includeAssignmentStatus && assignedTaskIds.has(String(normalizeWpObjectId(base.id)))
+          ? [`wp-${normalizeWpObjectId(userId)}`]
+          : [];
+      return {
+        ...base,
+        assigned_to: assignedIds[0] || null,
+        assigned_to_ids: assignedIds,
+        assignees,
+        cared_one_id: caredOneByTaskId.get(String(normalizeWpObjectId(base.id))) || null,
+      };
+    }),
+  );
+
+  return applyVisibilityFilter ? applyVisibilityFilter(mapped) : mapped;
+}
+
+export async function fetchCareTasksWordPress(
+  groupId?: string | null | undefined,
+  options: {
+    includeAssignees?: boolean | undefined;
+    includeAssignmentStatus?: boolean | undefined;
+    visibleToCurrentUser?: boolean | undefined;
+    caredOneOnly?: boolean | undefined;
+  } = {},
+): Promise<any[]> {
     const userId = getStoredWPUser()?.user_id;
     if (!userId) return [];
+    const includeAssignees = options.includeAssignees !== false;
+    const includeAssignmentStatus = options.includeAssignmentStatus !== false;
+    const visibleToCurrentUser = options.visibleToCurrentUser === true;
+    if (options.caredOneOnly) {
+      return fetchCaredOneScopedTasks(userId, {
+        includeAssignees,
+        includeAssignmentStatus,
+        visibleToCurrentUser,
+      });
+    }
     let taskIds: string[] = [];
     let ownRows: any[] = [];
+    let assignedTaskIds = new Set<string>();
+    let caredOneByTaskId = new Map<string, string>();
+    let applyVisibilityFilter: ReturnType<typeof prepareTaskVisibilityFilter> | undefined;
+    const prepareVisibilityWhenTasksArrive = (ids: unknown[]) => {
+      if (
+        options.visibleToCurrentUser &&
+        !applyVisibilityFilter &&
+        ids.some((id) => normalizeWpObjectId(String(id ?? "")) > 0)
+      ) {
+        applyVisibilityFilter = prepareTaskVisibilityFilter();
+      }
+    };
     if (groupId) {
       const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(groupId)}`);
       taskIds = (Array.isArray(rels) ? rels : []).map((r) => String(r.child_object_id || "")).filter(Boolean);
     } else {
       // Resolve existing JetEngine relations first; never download all tasks.
-      const [groups, people, assigned, visible, authored] = await Promise.all([
-        fetchCareGroupsWordPress(),
-        fetchUserCaredOnesWordPress(),
-        wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${userId}`),
-        wordpressFetch<any[]>(`jet-rel/${REL_TASK_USERS}/parents/${userId}`),
-        // cct_author_id is JetEngine's native ownership, not a custom relation.
-        wordpressCCTFetch<any[]>(CCT_SLUG, { params: { cct_author_id: userId, _limit: 100 } }),
+      // Start the second relation hop as soon as each membership list arrives;
+      // don't make it wait for the unrelated authored/assigned task requests.
+      const groupIdsPromise = fetchMyCareGroupIdsWordPress();
+      const groupTaskLinksPromise = groupIdsPromise.then(async (groupIds) => ({
+        groupIds,
+        taskLinks: await Promise.all(
+          groupIds.map((id) => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(id)}`)),
+        ),
+      }));
+      const caredOneIdsPromise = fetchUserCaredOneIdsWordPress();
+      const caredOneTaskLinksPromise = caredOneIdsPromise.then(async (caredOneIds) => ({
+        caredOneIds,
+        taskLinks: await Promise.all(
+          caredOneIds.map((id) => wordpressFetch<any[]>(`jet-rel/${REL_TASK_CARED_ONE}/parents/${normalizeWpObjectId(id)}`)),
+        ),
+      }));
+      const assignedPromise = includeAssignmentStatus
+        ? wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${userId}`).then((rows) => {
+            prepareVisibilityWhenTasksArrive(
+              (Array.isArray(rows) ? rows : []).map((row) => row?.parent_object_id),
+            );
+            return rows;
+          })
+        : Promise.resolve([]);
+      const visiblePromise = wordpressFetch<any[]>(`jet-rel/${REL_TASK_USERS}/parents/${userId}`).then((rows) => {
+        prepareVisibilityWhenTasksArrive(
+          (Array.isArray(rows) ? rows : []).map((row) => row?.parent_object_id),
+        );
+        return rows;
+      });
+      const authoredPromise = wordpressCCTFetch<any[]>(CCT_SLUG, {
+        params: { cct_author_id: userId, _limit: 100 },
+      }).then((rows) => {
+        const ownedRows = (Array.isArray(rows) ? rows : []).filter(
+          (task) => Number(task.cct_author_id ?? task.author_id) === Number(userId),
+        );
+        ownRows = ownedRows;
+        prepareVisibilityWhenTasksArrive(ownedRows.map((task) => task._ID || task.id));
+        return ownedRows;
+      });
+      const [groupIds, caredOneIds, assigned, visible, authored] = await Promise.all([
+        groupIdsPromise,
+        caredOneIdsPromise,
+        assignedPromise,
+        visiblePromise,
+        authoredPromise,
       ]);
-      ownRows = (Array.isArray(authored) ? authored : []).filter((t) => Number(t.cct_author_id) === Number(userId));
-      const links = await Promise.all([
-        ...groups.map((g) => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_TASK}/children/${normalizeWpObjectId(g.id)}`)),
-        ...people.map((p) => wordpressFetch<any[]>(`jet-rel/${REL_TASK_CARED_ONE}/parents/${normalizeWpObjectId(p.user_id)}`)),
+      ownRows = authored;
+      assignedTaskIds = new Set(
+        (Array.isArray(assigned) ? assigned : [])
+          .map((r) => normalizeWpObjectId(r?.parent_object_id))
+          .filter((id) => Number.isFinite(id) && id > 0)
+          .map(String),
+      );
+      const [groupTaskLinks, caredOneTaskLinks] = await Promise.all([
+        groupTaskLinksPromise,
+        caredOneTaskLinksPromise,
       ]);
+      const groupScope = { groupIds, taskLinks: groupTaskLinks.taskLinks };
+      const caredOneScope = { caredOneIds, taskLinks: caredOneTaskLinks.taskLinks };
+      caredOneScope.caredOneIds.forEach((caredOneId, personIndex) => {
+        const rows = caredOneScope.taskLinks[personIndex];
+        for (const row of Array.isArray(rows) ? rows : []) {
+          const taskId = String(normalizeWpObjectId(row?.parent_object_id));
+          if (taskId !== "0" && !caredOneByTaskId.has(taskId)) {
+            caredOneByTaskId.set(taskId, `wp-${normalizeWpObjectId(caredOneId)}`);
+          }
+        }
+      });
       taskIds = [
         ...ownRows.map((t) => String(t._ID || t.id || "")),
         ...[assigned, visible].flatMap((rows) => (Array.isArray(rows) ? rows : []).map((r) => String(r.parent_object_id || ""))),
-        ...links.flatMap((rows, index) => (Array.isArray(rows) ? rows : []).map((r) => String(index < groups.length ? r.child_object_id || "" : r.parent_object_id || ""))),
+        ...groupScope.taskLinks.flatMap((rows) => (Array.isArray(rows) ? rows : []).map((r) => String(r.child_object_id || ""))),
+        ...caredOneScope.taskLinks.flatMap((rows) => (Array.isArray(rows) ? rows : []).map((r) => String(r.parent_object_id || ""))),
       ].filter(Boolean);
     }
     const uniqueTaskIds = [
@@ -174,6 +339,9 @@ export async function fetchCareTasksWordPress(groupId?: string | null | undefine
           .map(String),
       ),
     ];
+    if (options.visibleToCurrentUser && uniqueTaskIds.length > 0 && !applyVisibilityFilter) {
+      applyVisibilityFilter = prepareTaskVisibilityFilter();
+    }
     const ownById = new Map(
       ownRows.flatMap((task) => {
         const id = normalizeWpObjectId(task._ID || task.id);
@@ -193,10 +361,16 @@ export async function fetchCareTasksWordPress(groupId?: string | null | undefine
 
     const mapped = await Promise.all(taskList.map(async (t: any) => {
       const base = mapTask(t, groupId);
-      const [assignees, caredOne] = await Promise.all([
-        fetchAssignees(base.id), fetchCaredOneId(base.id),
+      const [caredOne, assignees] = await Promise.all([
+        caredOneByTaskId.get(String(normalizeWpObjectId(base.id))) ||
+          (groupId ? fetchCaredOneId(base.id) : Promise.resolve(null)),
+        includeAssignees ? fetchAssignees(base.id) : Promise.resolve([]),
       ]);
-      const assignedIds = assignees.map((a) => a.user_id);
+      const assignedIds = includeAssignees
+        ? assignees.map((a) => a.user_id)
+        : assignedTaskIds.has(String(normalizeWpObjectId(base.id)))
+          ? [`wp-${normalizeWpObjectId(userId)}`]
+          : [];
       return {
         ...base,
         assigned_to: assignedIds[0] || null,
@@ -206,7 +380,7 @@ export async function fetchCareTasksWordPress(groupId?: string | null | undefine
       };
     }));
 
-    return mapped;
+    return applyVisibilityFilter ? applyVisibilityFilter(mapped) : mapped;
 }
 
 export async function createCareTaskWordPress(task: {

@@ -183,6 +183,7 @@ export default function Root() {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta charSet="utf-8" />
         <Meta />
         <Links />
         <script dangerouslySetInnerHTML={{ __html: FAVICON_BOOTSTRAP }} />

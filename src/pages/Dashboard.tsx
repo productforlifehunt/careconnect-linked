@@ -1,4 +1,4 @@
-import { Suspense, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
+import { Suspense, useState, useCallback, useMemo, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,13 +49,6 @@ export default function Dashboard() {
   const { user } = useAuth();
   const site = useSite();
   const careGroupsLabel = isChinese ? t("nav.united", { defaultValue: "护理群组" }) : site.navLabels.careGroups;
-  const { data: bookings, isLoading: bookingsLoading } = useBookings();
-  const { data: tasks, isLoading: tasksLoading, error: tasksError } = useCareTasks();
-  const { data: myCareGroups } = useCareGroups();
-  const { unread: unreadInbox, isLoading: inboxLoading, error: inboxError } = useInboxCounts();
-  const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes();
-  const { data: communityPosts, isLoading: postsLoading } = usePosts("care_community_post");
-
   const isChallenged = site.family === "challenged";
   const isLovedOne = user?.general_user_role?.includes("cared one") === true;
   const isProvider = user?.is_care_provider === true;
@@ -79,6 +72,8 @@ export default function Dashboard() {
     resolveOrder(availableWidgets, getWidgetOrder())
   );
   const [showWidgetConfig, setShowWidgetConfig] = useState(false);
+  const [communityFeedVisible, setCommunityFeedVisible] = useState(false);
+  const communityFeedRef = useRef<HTMLDivElement>(null);
 
   // Keep order in sync when available widgets change (role/site switch)
   useEffect(() => {
@@ -100,7 +95,57 @@ export default function Dashboard() {
 
   const show = (id: string) =>
     visibility[id] !== false && availableWidgets.some((w) => w.id === id);
+  const communityFeedEnabled =
+    visibility["community-feed"] !== false &&
+    availableWidgets.some((widget) => widget.id === "community-feed");
 
+  useEffect(() => {
+    if (!communityFeedEnabled || !site.features.community) return;
+    const node = communityFeedRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setCommunityFeedVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setCommunityFeedVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [communityFeedEnabled, site.features.community]);
+
+  const paidCare = site.features.paidCaregivers;
+  const caredOnesNeeded =
+    show("stats") || show("patient-summaries") || show("daily-timeline") || show("care-tasks");
+  const tasksNeeded =
+    show("stats") || show("care-tasks") || show("patient-summaries") || show("daily-timeline");
+  const bookingsNeeded =
+    ((show("upcoming-bookings") || show("stats")) && paidCare) || show("daily-timeline");
+  const { data: bookings, isLoading: bookingsLoading } = useBookings(bookingsNeeded);
+  const { data: tasks, isLoading: tasksLoading, error: tasksError } = useCareTasks(
+    undefined,
+    tasksNeeded,
+    false,
+    { caredOneOnly: true, includeAssignmentStatus: false },
+  );
+  const { data: myCareGroups, isLoading: careGroupsLoading } = useCareGroups(show("stats"));
+  const { unread: unreadInbox, isLoading: inboxLoading, error: inboxError } = useInboxCounts(show("stats"));
+  const { data: caredOnes, isLoading: caredOnesLoading } = useUserCaredOnes(caredOnesNeeded);
+  const { data: communityPosts, isLoading: postsQueryLoading } = usePosts(
+    "care_community_post",
+    undefined,
+    undefined,
+    5,
+    communityFeedEnabled && site.features.community && communityFeedVisible,
+  );
+  const postsLoading =
+    communityFeedEnabled &&
+    site.features.community &&
+    (!communityFeedVisible || postsQueryLoading);
   const displayName = user?.full_name || (isChinese ? "朋友" : "friend");
   // Only this user's own bookings, and only ones still ahead of us, sorted by
   // when they start. Nothing from other people's calendars.
@@ -114,10 +159,13 @@ export default function Dashboard() {
     })
     .sort((a: any, b: any) => bookingStart(a) - bookingStart(b));
   const upcomingBookings = myUpcomingBookings.slice(0, 4);
-  // The dashboard is person-centred: only tasks connected through the task →
-  // cared-one relation to someone in this user's cared-one list belong here.
-  // Unlinked/test tasks and tasks for other people's cared ones must never leak in.
-  const myCaredOneIds = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
+  // Task loading has already resolved the viewer's REL 219 cared-one scope.
+  // Use those scoped task links immediately instead of waiting for names and
+  // profile details from the separate cared-one query.
+  const myCaredOneIds = new Set([
+    ...(caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")),
+    ...(tasks || []).map((task: any) => String(task.cared_one_id ?? "").replace(/^wp-/, "")),
+  ].filter(Boolean));
   const myTasks = (tasks || []).filter((tk: any) => {
     const co = String(tk.cared_one_id ?? "").replace(/^wp-/, "");
     return !!co && myCaredOneIds.has(co);
@@ -138,8 +186,6 @@ export default function Dashboard() {
     cancelled: "bg-destructive text-destructive-foreground",
     in_progress: "bg-primary text-primary-foreground",
   };
-
-  const paidCare = site.features.paidCaregivers;
 
   // Placeholder that holds a widget's slot while its data loads, so the
   // dashboard never re-shuffles blocks as requests finish at different times.
@@ -209,9 +255,9 @@ export default function Dashboard() {
     "stats": (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
-          ...(paidCare ? [{ id: "upcoming-bookings", label: t("dashboard.upcomingBookings"), value: myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
-          { id: "care-groups", label: careGroupsLabel, value: myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
-          { id: "pending-tasks", label: t("dashboard.pendingTasks"), value: tasksLoading || caredOnesLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
+          ...(paidCare ? [{ id: "upcoming-bookings", label: t("dashboard.upcomingBookings"), value: bookingsLoading ? "—" : myUpcomingBookings.length, icon: CalendarDays, color: "text-primary", to: "/bookings" }] : []),
+          { id: "care-groups", label: careGroupsLabel, value: careGroupsLoading ? "—" : myCareGroupCount, icon: Users, color: "text-success", to: "/care-circle" },
+          { id: "pending-tasks", label: t("dashboard.pendingTasks"), value: tasksLoading || tasksError ? "—" : myPendingTasks.length, icon: AlertCircle, color: "text-warning", to: pendingTasksTarget },
           { id: "unread-inbox", label: isChinese ? "收件箱未读" : "Unread Inbox", value: inboxLoading || inboxError ? "—" : unreadInbox, icon: MessageSquare, color: "text-coral", to: "/inbox" },
         ].map((s) => (
           <button key={s.id} onClick={() => navigate(s.to)}
@@ -277,7 +323,7 @@ export default function Dashboard() {
         </h2>
         <Card className="border-transparent card-elevated">
           <CardContent className="p-3 space-y-2">
-            {tasksError ? <p role="alert" className="text-sm text-destructive">{isChinese ? "任务读取失败，请刷新重试。" : "Tasks could not be loaded. Please refresh and try again."}</p> : tasksLoading || caredOnesLoading ? (
+            {tasksError ? <p role="alert" className="text-sm text-destructive">{isChinese ? "任务读取失败，请刷新重试。" : "Tasks could not be loaded. Please refresh and try again."}</p> : tasksLoading ? (
               [1,2,3].map(i => (
                 <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
                   <Skeleton className="h-4 w-4 rounded-full" />
@@ -433,7 +479,14 @@ export default function Dashboard() {
         if (!show(id)) return null;
         const block = blocks[id];
         if (!block) return null;
-        return <div key={id}>{block}</div>;
+        return (
+          <div
+            key={id}
+            ref={id === "community-feed" ? communityFeedRef : undefined}
+          >
+            {block}
+          </div>
+        );
       })}
     </div>
   );

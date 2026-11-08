@@ -130,25 +130,34 @@ export default function Auth() {
               <TabsTrigger value="signup" className="text-xs sm:text-sm px-1.5 py-1.5">{t("common.signUp")}</TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="space-y-4 mt-4">
-              <div>
-                <Label>{t("auth.emailOrUsername", { defaultValue: "Email or username" })}</Label>
-                <Input type="text" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder={t("auth.emailOrUsernamePlaceholder", { defaultValue: "you@example.com" })} onKeyDown={e => e.key === "Enter" && handleLogin()} />
-              </div>
-              <div>
-                <Label>{t("common.password")}</Label>
-                <PasswordInput value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} onKeyDown={e => e.key === "Enter" && handleLogin()} />
-              </div>
-              <Button variant="coral" className="w-full" onClick={handleLogin} disabled={loading}>
-                {loading ? t("auth.signingIn") : t("common.signIn")}
-              </Button>
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleLogin();
+                }}
+              >
+                <div>
+                  <Label htmlFor="login-identifier">{t("auth.emailOrUsername", { defaultValue: "Email or username" })}</Label>
+                  <Input id="login-identifier" name="username" type="text" autoComplete="username" inputMode="email" autoCapitalize="none" spellCheck={false} value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder={t("auth.emailOrUsernamePlaceholder", { defaultValue: "you@example.com" })} />
+                </div>
+                <div>
+                  <Label htmlFor="login-password">{t("common.password")}</Label>
+                  <PasswordInput id="login-password" name="password" autoComplete="current-password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} placeholder={t("auth.passwordPlaceholder")} />
+                </div>
+                <Button type="submit" variant="coral" className="w-full" disabled={loading}>
+                  {loading ? t("auth.signingIn") : t("common.signIn")}
+                </Button>
+              </form>
               <div className="text-center">
                 <button type="button" className="text-sm text-primary hover:underline" onClick={() => setForgotOpen(true)}>{t("auth.forgotPassword")}</button>
               </div>
               {forgotOpen && (
                 <div className="border rounded-lg p-4 mt-2 space-y-3 bg-muted/30">
                   <p className="text-sm text-foreground font-medium">{t("auth.resetPassword")}</p>
-                  <Input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder={t("auth.enterEmail")} />
-                  <Button variant="outline" className="w-full" disabled={forgotLoading} onClick={async () => {
+                  <Label htmlFor="forgot-email">{t("auth.enterEmail")}</Label>
+                  <Input id="forgot-email" name="email" autoComplete="email" type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder={t("auth.enterEmail")} />
+                  <Button type="button" variant="outline" className="w-full" disabled={forgotLoading} onClick={async () => {
                     if (!forgotEmail) { toast({ title: t("auth.enterEmail"), variant: "destructive" }); return; }
                     setForgotLoading(true);
                     try {
@@ -167,54 +176,64 @@ export default function Auth() {
               )}
             </TabsContent>
             <TabsContent value="signup" className="space-y-4 mt-4">
-              <div>
-                <Label>{t("common.fullName")}</Label>
-                <Input value={signupName} onChange={e => setSignupName(e.target.value)} placeholder={t("auth.namePlaceholder")} />
-              </div>
-              <div>
-                <Label>{t("common.email")}</Label>
-                <Input type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder={t("auth.emailPlaceholder")} />
-              </div>
-              <div>
-                <Label>{t("common.password")}</Label>
-                <PasswordInput value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder={t("auth.passwordHint")} />
-                {signupPassword && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= pwStrength.score ? pwStrength.color : "bg-muted"}`} />
-                      ))}
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleSignup();
+                }}
+              >
+                <div>
+                  <Label htmlFor="signup-name">{t("common.fullName")}</Label>
+                  <Input id="signup-name" name="name" autoComplete="name" value={signupName} onChange={e => setSignupName(e.target.value)} placeholder={t("auth.namePlaceholder")} />
+                </div>
+                <div>
+                  <Label htmlFor="signup-email">{t("common.email")}</Label>
+                  <Input id="signup-email" name="email" autoComplete="email" type="email" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} placeholder={t("auth.emailPlaceholder")} />
+                </div>
+                <div>
+                  <Label htmlFor="signup-password">{t("common.password")}</Label>
+                  <PasswordInput id="signup-password" name="new-password" autoComplete="new-password" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} placeholder={t("auth.passwordHint")} />
+                  {signupPassword && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= pwStrength.score ? pwStrength.color : "bg-muted"}`} />
+                        ))}
+                      </div>
+                      <p className={`text-xs ${pwStrength.score <= 1 ? "text-destructive" : pwStrength.score <= 2 ? "text-warning" : "text-success"}`}>{pwStrength.label}</p>
                     </div>
-                    <p className={`text-xs ${pwStrength.score <= 1 ? "text-destructive" : pwStrength.score <= 2 ? "text-warning" : "text-success"}`}>{pwStrength.label}</p>
-                  </div>
-                )}
-              </div>
-              <div>
-                <Label>{t("auth.confirmPassword", { defaultValue: "Confirm password" })}</Label>
-                <PasswordInput
-                  value={signupPassword2}
-                  onChange={e => setSignupPassword2(e.target.value)}
-                  placeholder={t("auth.confirmPasswordPlaceholder", { defaultValue: "Type your password again" })}
-                  onKeyDown={e => e.key === "Enter" && handleSignup()}
-                />
-                {signupPassword2 && signupPassword2 !== signupPassword && (
-                  <p className="text-xs text-destructive mt-1">
-                    {t("auth.passwordsDoNotMatch", { defaultValue: "Passwords do not match" })}
-                  </p>
-                )}
-              </div>
-              <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
-                <Checkbox
-                  checked={termsAccepted}
-                  onCheckedChange={v => setTermsAccepted(v === true)}
-                  className="mt-0.5"
-                  aria-label={t("auth.acceptTerms", { defaultValue: "I accept the terms and the privacy notice" })}
-                />
-                <span>{t("auth.acceptTerms", { defaultValue: "I accept the terms and the privacy notice, including the storage of health and location information I choose to add." })}</span>
-              </label>
-              <Button variant="coral" className="w-full" onClick={handleSignup} disabled={loading}>
-                {loading ? t("auth.creatingAccount") : t("common.signUp")}
-              </Button>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="signup-password-confirm">{t("auth.confirmPassword", { defaultValue: "Confirm password" })}</Label>
+                  <PasswordInput
+                    id="signup-password-confirm"
+                    name="confirm-password"
+                    autoComplete="new-password"
+                    value={signupPassword2}
+                    onChange={e => setSignupPassword2(e.target.value)}
+                    placeholder={t("auth.confirmPasswordPlaceholder", { defaultValue: "Type your password again" })}
+                  />
+                  {signupPassword2 && signupPassword2 !== signupPassword && (
+                    <p className="text-xs text-destructive mt-1">
+                      {t("auth.passwordsDoNotMatch", { defaultValue: "Passwords do not match" })}
+                    </p>
+                  )}
+                </div>
+                <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={termsAccepted}
+                    onCheckedChange={v => setTermsAccepted(v === true)}
+                    className="mt-0.5"
+                    aria-label={t("auth.acceptTerms", { defaultValue: "I accept the terms and the privacy notice" })}
+                  />
+                  <span>{t("auth.acceptTerms", { defaultValue: "I accept the terms and the privacy notice, including the storage of health and location information I choose to add." })}</span>
+                </label>
+                <Button type="submit" variant="coral" className="w-full" disabled={loading}>
+                  {loading ? t("auth.creatingAccount") : t("common.signUp")}
+                </Button>
+              </form>
             </TabsContent>
           </Tabs>
         </CardContent>

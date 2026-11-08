@@ -37,11 +37,6 @@ export function AppHeader() {
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
   const paidCare = site.features.paidCaregivers;
-  const logoWordmarkText = site.family === "notchsafety"
-    ? (isChinese ? "诺驰安全" : "Notch Safety")
-    : isCareCNC ? (isChinese ? "护畅" : "CareCNC")
-    : (isChinese ? "忆畅" : "ChallengeD");
-
   const publicNav = buildPublicNav({ site, t, isChinese });
 
 
@@ -126,7 +121,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="mx-auto flex h-[72px] w-full max-w-6xl items-center gap-2 px-4 sm:gap-3">
         {/* Logo — always the first element on the left (standard convention) */}
-        <Link to="/" className="flex shrink-0 items-center" aria-label={logoWordmarkText}>
+        <Link to="/" className="flex shrink-0 items-center">
           <BrandMark size={42} showWordmark className="[&>span:last-child]:text-xl" />
           {site.showBetaLabel && (
             <span className="px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-coral bg-coral/10 border border-coral/30 rounded-full leading-tight">
@@ -213,7 +208,7 @@ export function AppHeader() {
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                    <div aria-hidden="true" className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <span className="text-primary-foreground text-sm font-medium">{initials}</span>
                     </div>
                   )}

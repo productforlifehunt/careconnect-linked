@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { useSite } from "@/contexts/SiteContext";
+import { currentAppId } from "@/features/shared/app-profile";
 
 const SHARE_EVERY_MS = 3 * 60 * 1000;
 const POLL_EVERY_MS = 30 * 1000;
@@ -37,16 +38,24 @@ export function LocationSharingAgent() {
       try {
         const { fetchLocationSharingFlags } =
           await import("@/features/location/sharing-flags");
-        const flags = await fetchLocationSharingFlags(me);
+        const flags = await qc.fetchQuery({
+          queryKey: ["locationSharingFlags", Number(me)],
+          queryFn: () => fetchLocationSharingFlags(me),
+          staleTime: 60_000,
+        });
 
         if (flags.emergencyAllowed) {
           const { runNotificationSkill } =
             await import("@/lib/ai-dynamic-knowledge");
-          const unread = await runNotificationSkill("list-notifications", {
-            unreadOnly: true,
+          const notificationKey = ["notifications", me, currentAppId()];
+          const notifications = await qc.fetchQuery({
+            queryKey: notificationKey,
+            queryFn: () => runNotificationSkill("list-notifications"),
+            staleTime: 30_000,
           }).catch(() => []);
-          const emergencies = unread.filter(
+          const emergencies = notifications.filter(
             (n) =>
+              !n.is_read &&
               typeof n.action_url === "string" &&
               n.action_url.includes("emergency=1") &&
               n.action_url.includes("request_from="),
@@ -73,6 +82,7 @@ export function LocationSharingAgent() {
                   id: n.id,
                 }).catch(() => {});
               }
+              await qc.invalidateQueries({ queryKey: notificationKey });
               lastShare.current = Date.now();
               qc.invalidateQueries({ queryKey: ["caredOneLocation"] });
             }

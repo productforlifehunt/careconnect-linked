@@ -30,7 +30,7 @@ export default function TasksNeedingHelp() {
   const zh = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (zh ? cn : en);
   const startConversation = useStartConversation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [payFilter, setPayFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,11 +38,15 @@ export default function TasksNeedingHelp() {
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  const { data: tasks, isLoading } = useHelpTasks(
-    payFilter === "all" ? undefined : { paid: payFilter === "paid" },
+  const { data: tasks, isLoading } = useHelpTasks();
+  const { data: myApps, isLoading: myAppsLoading } = useMyTaskApplications();
+  const { data: myShared, isLoading: mySharedLoading } = useMyHelpTasks(
+    activeTab === "my-shared",
   );
-  const { data: myApps } = useMyTaskApplications();
-  const { data: myShared, isLoading: mySharedLoading } = useMyHelpTasks();
+  const userId = Number(String(user?.user_id ?? "").replace(/^wp-/, "")) || 0;
+  const mySharedInBrowse = (tasks || []).filter(
+    (task: any) => Number(String(task.posted_by ?? "").replace(/^wp-/, "")) === userId,
+  );
   const applyToTask = useApplyToSharedTask();
 
   const handleApply = (taskId: string) => {
@@ -62,12 +66,17 @@ export default function TasksNeedingHelp() {
   };
 
   const appliedIds = new Set((myApps || []).map((a: any) => String(a.task_id)));
-  const mineIds = new Set((myShared || []).map((t: any) => String(t.id)));
+  const mineIds = new Set(mySharedInBrowse.map((task: any) => String(task.id)));
 
-  const filtered = (tasks || []).filter((t: any) =>
-    !searchQuery
-    || t.title?.toLowerCase().includes(searchQuery.toLowerCase())
-    || t.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filtered = (tasks || [])
+    .filter((task: any) =>
+      payFilter === "all" || task.needs_payment === (payFilter === "paid"),
+    )
+    .filter((task: any) =>
+      !searchQuery
+      || task.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      || task.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
   const priceLabel = (t: any) => (t.needs_payment
     ? (t.price ? `${Z("报酬", "Pays")} ${t.price}` : Z("有报酬", "Paid"))
@@ -87,6 +96,9 @@ export default function TasksNeedingHelp() {
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            id="shared-task-search"
+            name="q"
+            aria-label={Z("搜索任务", "Search tasks")}
             placeholder={Z("搜索任务……", "Search tasks...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -106,10 +118,10 @@ export default function TasksNeedingHelp() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto -mx-4 px-4 scrollbar-none">
           <TabsList className="w-max">
-            <TabsTrigger value="browse">{Z("浏览", "Browse")} ({filtered.length})</TabsTrigger>
-            <TabsTrigger value="my-offers">{Z("我要帮的", "My Offers")} ({(myApps || []).length})</TabsTrigger>
+            <TabsTrigger value="browse">{Z("浏览", "Browse")} ({isLoading ? "…" : filtered.length})</TabsTrigger>
+            <TabsTrigger value="my-offers">{Z("我要帮的", "My Offers")} ({myAppsLoading ? "…" : (myApps || []).length})</TabsTrigger>
             {isAuthenticated && (
-              <TabsTrigger value="my-shared">{Z("我分享的", "Shared by Me")} ({(myShared || []).length})</TabsTrigger>
+              <TabsTrigger value="my-shared">{Z("我分享的", "Shared by Me")} ({mySharedLoading || (!myShared && activeTab !== "my-shared") ? "…" : (myShared || []).length})</TabsTrigger>
             )}
           </TabsList>
         </div>
@@ -193,8 +205,10 @@ export default function TasksNeedingHelp() {
                             <DialogHeader><DialogTitle>{Z("帮忙：", "Help with: ")}{task.title}</DialogTitle></DialogHeader>
                             <div className="space-y-4 mt-2">
                               <div>
-                                <Label>{Z("留个话 *", "Your message *")}</Label>
+                                <Label htmlFor="task-offer-message">{Z("留个话 *", "Your message *")}</Label>
                                 <Textarea
+                                  id="task-offer-message"
+                                  name="message"
                                   value={message}
                                   onChange={(e) => setMessage(e.target.value)}
                                   placeholder={Z("说说你能怎么帮、什么时间方便。", "Say how you can help and when you're free.")}
@@ -229,7 +243,9 @@ export default function TasksNeedingHelp() {
 
         {/* ═══ MY OFFERS ═══ */}
         <TabsContent value="my-offers" className="mt-4 space-y-4">
-          {(myApps || []).length > 0 ? (myApps || []).map((app: any) => (
+          {myAppsLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+          ) : (myApps || []).length > 0 ? (myApps || []).map((app: any) => (
             <Card key={app.id} className="border-transparent card-elevated">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-2 gap-3">

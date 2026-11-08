@@ -44,10 +44,12 @@ export async function fetchPostsWordPress(
   postType: string,
   area?: string | undefined,
   _childPostType?: string | null | undefined,
+  limit = 50,
 ): Promise<any[]> {
   return fetchCommunityPostsWordPress({
     area: areaCode(area),
     category: postCategoryCode(postType),
+    limit,
   });
 }
 

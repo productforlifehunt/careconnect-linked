@@ -13,11 +13,20 @@ const F = T.afreshCommunityPost.f;
 const REL_POST_COMMENT = R.communityPostComments; // 1:M community post → comment
 const REL_COMMENT_REPLY = R.commentReplies;       // M:M comment → comment
 
-export async function fetchCommunityPostsWordPress(locale?: { area?: string | undefined; language?: string | undefined; category?: string | undefined }): Promise<any[]> {
+export async function fetchCommunityPostsWordPress(locale?: {
+  area?: string | undefined;
+  language?: string | undefined;
+  category?: string | undefined;
+  limit?: number | undefined;
+}): Promise<any[]> {
   try {
     // Only scalar radio fields are filtered server-side. "App area" is a
     // checkbox (stored serialized), so it is matched leniently in JS instead.
-    const params: Record<string, string | number> = { _limit: 50 };
+    const requestedLimit = locale?.limit;
+    const limit = typeof requestedLimit === "number" && Number.isFinite(requestedLimit)
+      ? Math.min(50, Math.max(1, Math.floor(requestedLimit)))
+      : 50;
+    const params: Record<string, string | number> = { _limit: limit };
     params[F.COMMUNITY_TYPE] = communityTypeCode();
     if (locale?.category) params[F.COMMUNITY_POST_CATEGORY] = locale.category;
     const posts = await wordpressCCTFetch<any[]>(SLUG, { params });

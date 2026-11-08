@@ -1518,10 +1518,11 @@ export function useHelpTasks(filters?: { paid?: boolean | undefined; status?: "o
   });
 }
 
-export function useMyHelpTasks() {
+export function useMyHelpTasks(enabled = true) {
   return useQuery({
     queryKey: ["myHelpTasks"],
     queryFn: () => fetchMyHelpTasksWordPress(),
+    enabled,
   });
 }
 
@@ -1677,7 +1678,10 @@ export function useCancelLocationRequest() {
 
 export function useLocationSharingFlags(userId: string | null) {
   return useQuery({
-    queryKey: ["locationSharingFlags", userId],
+    queryKey: [
+      "locationSharingFlags",
+      Number(String(userId || "").replace(/^wp-/, "")) || null,
+    ],
     queryFn: async () => (await import("@/features/location/sharing-flags")).fetchLocationSharingFlags(userId!),
     enabled: !!userId,
     refetchInterval: 60_000,

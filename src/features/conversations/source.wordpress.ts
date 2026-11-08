@@ -293,6 +293,86 @@ async function fetchMyConversationScope(myId: number) {
   return { convos, memberMap: { loaded: true, get: (id: string) => members.get(id) || [] }, lastMessages };
 }
 
+/**
+ * Dashboard badges only need the number of unread threads. Keep this read
+ * inside the current user's relation scope, while skipping member directories,
+ * profile lookups and message bodies used by the full Inbox list.
+ */
+export async function fetchConversationCountsWordPress(
+  currentUserId?: string,
+): Promise<{ total: number; unread: number }> {
+  const myId = numId(currentUserId || getStoredWPUser()?.user_id);
+  if (!myId) return { total: 0, unread: 0 };
+
+  const parents = await wordpressFetch<
+    Array<{
+      parent_object_id?: string | number | null;
+    }>
+  >(`jet-rel/${REL_CONV_MEMBER}/parents/${myId}`);
+  const ids = [
+    ...new Set(
+      (Array.isArray(parents) ? parents : [])
+        .map((relation) => String(relation.parent_object_id ?? ""))
+        .filter((id) => /^\d+$/.test(id)),
+    ),
+  ];
+  const linkedConversations = await readLinkedCCTRows(CONV, ids);
+  const conversations = (
+    filterAppScope("chatConversation", linkedConversations) as Array<{
+      id?: string | number;
+      _ID?: string | number;
+      [key: string]: unknown;
+    }>
+  ).filter((conversation) => conversation[CF.CHAT_TYPE] !== CT.AI);
+
+  const latestIds = new Map<string, string>();
+  await Promise.all(
+    conversations.map(async (conversation) => {
+      const id = String(conversation.id ?? conversation._ID);
+      const relations = await wordpressFetch<
+        Array<{
+          child_object_id?: string | number | null;
+        }>
+      >(`jet-rel/${REL_CONV_MESSAGE}/children/${id}`).catch(() => []);
+      const latest = relations
+        .map((relation) => Number(relation.child_object_id))
+        .filter(Boolean)
+        .sort((a, b) => b - a)[0];
+      if (latest) latestIds.set(id, String(latest));
+    }),
+  );
+
+  const messages = await readLinkedCCTRows(MSG, [...latestIds.values()]);
+  const byId = new Map<
+    string,
+    {
+      id?: string | number;
+      _ID?: string | number;
+      created_at?: string | null;
+      cct_created?: string | null;
+      author_id?: string | number | null;
+      cct_author_id?: string | number | null;
+    }
+  >();
+  for (const message of messages) {
+    byId.set(String(message.id ?? message._ID), message);
+  }
+  let unread = 0;
+  for (const [conversationId, messageId] of latestIds) {
+    const message = byId.get(messageId);
+    if (!message) continue;
+    unread += unreadFlag(
+      conversationId,
+      {
+        sender_id: authorOf(message) ? `wp-${authorOf(message)}` : null,
+        created_at: message.created_at ?? message.cct_created ?? null,
+      },
+      `wp-${myId}`,
+    );
+  }
+  return { total: conversations.length, unread };
+}
+
 export async function fetchConversationsWordPress(currentUserId?: string | undefined): Promise<any[]> {
   try {
     const mine = numId(currentUserId);

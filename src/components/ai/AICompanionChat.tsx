@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { loadSavedFamilyVoices, savedVoiceAudio, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
 import { FAMILY_VOICE_STATE } from "@/features/family-voices/schema";
-import { appendAiMessage, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
+import { appendAiMessage, createAiThread, loadAiThreadMessages, touchAiThread } from "@/lib/ai-threads";
 import { Check, SkipForward, Volume2, Square, ChevronDown, Mic, Loader2, MessageSquare, Radio, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -208,6 +208,12 @@ export function AICompanionChat({
   request = {},
   className,
   threadId,
+  initialDraft,
+  initialPrompt,
+  onInitialPromptConsumed,
+  onChatEngaged,
+  onDraftChange,
+  onThreadCreated,
   onThreadUpdated,
 }: {
   active: boolean;
@@ -215,16 +221,40 @@ export function AICompanionChat({
   className?: string | undefined;
   /** Saved assistant thread (CCT121). Omit for one-off, unsaved chats. */
   threadId?: string | undefined;
+  initialDraft?: string | undefined;
+  initialPrompt?: string | null | undefined;
+  onInitialPromptConsumed?: (() => void) | undefined;
+  onChatEngaged?: (() => void) | undefined;
+  onDraftChange?: ((value: string) => void) | undefined;
+  onThreadCreated?: ((threadId: string) => void) | undefined;
   onThreadUpdated?: (() => void) | undefined;
 }) {
   const { i18n } = useTranslation();
   const site = useSite();
   const isZh = i18n.language?.startsWith("zh");
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Msg[]>(() =>
+    !threadId && !request.starterPrompt && !request.appGuide
+      ? [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]
+      : [],
+  );
+  const [input, setInput] = useState(initialDraft || "");
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<{ abort: () => void } | null>(null);
   const activeRequestId = useRef<string | undefined>(undefined);
+  const threadIdRef = useRef(threadId);
+  const threadCreationRef = useRef<Promise<string | null> | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const handledInitialPromptRef = useRef<string | null>(null);
+  const persistentConversation = !request.onComplete && !request.starterPrompt && !request.appGuide;
+
+  useEffect(() => {
+    threadIdRef.current = threadId;
+    threadCreationRef.current = threadId ? Promise.resolve(threadId) : null;
+  }, [threadId]);
+
+  useEffect(() => {
+    if (initialDraft !== undefined && initialDraft !== input) setInput(initialDraft);
+  }, [initialDraft, input]);
 
   // ─── App guide (fixed answers, no AI call) ───
   const guide = guideEntries(site.family);
@@ -285,12 +315,15 @@ export function AICompanionChat({
   };
   const [familyVoices, setFamilyVoices] = useState<FamilyVoice[]>([]);
   useEffect(() => {
-    if (!active) return;
+    // Family voice records are only needed by the optional simulated family
+    // call mode. Keep text chat startup independent of voice storage and its
+    // credentials, which may not be configured for this app.
+    if (!active || mode !== "call") return;
     let alive = true;
     setFamilyVoices([]);
     const load = () => { void loadSavedFamilyVoices(request.contextScope?.caredOneId?.replace(/^wp-/, "")).then((rows) => { if (alive) setFamilyVoices(rows.filter((v) => v.state === FAMILY_VOICE_STATE.ready)); }).catch(() => { if (alive) setFamilyVoices([]); }); };
     load(); const off = onFamilyVoicesChanged(load); return () => { alive = false; off(); };
-  }, [active, request.contextScope?.caredOneId]);
+  }, [active, mode, request.contextScope?.caredOneId]);
   const clonedAudioRef = useRef<HTMLAudioElement | null>(null);
   /** Speaks a call reply in the chosen cloned family voice. */
   const speakCloned = async (text: string, index: number, voiceId: string) => {
@@ -430,6 +463,10 @@ export function AICompanionChat({
     const live = voiceStyle();
     return [request.contextPrompt, resolved, live].filter(Boolean).join("\n\n") || undefined;
   };
+  const buildContextRef = useRef(buildContext);
+  buildContextRef.current = buildContext;
+  const speakRef = useRef(speak);
+  speakRef.current = speak;
 
   // Saved thread: restore its messages once.
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -448,20 +485,34 @@ export function AICompanionChat({
       })
       .catch(() => { if (alive) setSaveError(isZh ? "无法读取这段对话。" : "Couldn't load this conversation."); });
     return () => { alive = false; };
-  }, [threadId]);
+  }, [threadId, isZh, site.id]);
 
-  const persistTurn = async (userText: string, reply: string, firstTurn: boolean) => {
-    if (!threadId || !reply.trim()) return;
-    try {
-      await appendAiMessage(threadId, "user", userText);
-      await appendAiMessage(threadId, "assistant", reply);
-      await touchAiThread(threadId, firstTurn ? userText.slice(0, 40) : undefined);
+  const persistTurn = (userText: string, reply: string, firstTurn: boolean) => {
+    const saving = saveQueueRef.current.then(async () => {
+      if (!reply.trim()) return;
+      let currentThreadId = threadIdRef.current;
+      if (!currentThreadId && persistentConversation) {
+        const pendingCreation = threadCreationRef.current ?? createAiThread().catch(() => null);
+        threadCreationRef.current = pendingCreation;
+        const createdThreadId = await pendingCreation;
+        if (!createdThreadId) throw new Error("Could not create the saved conversation.");
+        currentThreadId = createdThreadId;
+        threadIdRef.current = currentThreadId;
+        onThreadCreated?.(currentThreadId);
+      }
+      if (!currentThreadId) return;
+      await appendAiMessage(currentThreadId, "user", userText);
+      await appendAiMessage(currentThreadId, "assistant", reply);
+      await touchAiThread(currentThreadId, firstTurn ? userText.slice(0, 40) : undefined);
+    });
+    saveQueueRef.current = saving.catch(() => undefined);
+    void saving.then(() => {
       setSaveError(null);
       onThreadUpdated?.();
-    } catch (e) {
-      console.error("Saving AI thread failed:", e);
+    }).catch((error: unknown) => {
+      console.error("Saving AI thread failed:", error);
       setSaveError(isZh ? "这条对话没能保存。" : "This message couldn't be saved.");
-    }
+    });
   };
 
   useEffect(() => {
@@ -479,12 +530,14 @@ export function AICompanionChat({
       return;
     }
     if (!starter) {
-      setMessages([{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]);
+      setMessages((previous) => previous.length
+        ? previous
+        : [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]);
       return;
     }
     setMessages([{ role: "assistant", content: "" }]);
     setLoading(true);
-    void buildContext(starter).then((contextPrompt) => {
+    void buildContextRef.current(starter).then((contextPrompt) => {
     const { abort, result } = streamChatTextOnly([{ role: "user", content: starter }], {
       language: isZh ? "zh" : "en",
       contextPrompt,
@@ -493,11 +546,11 @@ export function AICompanionChat({
     });
     abortRef.current = { abort };
     void result
-      .then((full) => { if (readAloudRef.current && full.trim()) speak(full, 0); })
+      .then((full) => { if (readAloudRef.current && full.trim()) speakRef.current(full, 0); })
       .catch(() => undefined)
       .finally(() => { setLoading(false); abortRef.current = null; });
     });
-  }, [active, request, isZh]);
+  }, [active, request, isZh, site.id, threadId]);
 
   useEffect(() => {
     if (!active && abortRef.current) {
@@ -510,7 +563,9 @@ export function AICompanionChat({
   const send = async (submittedText?: string | undefined) => {
     const text = (submittedText ?? input).trim();
     if (!text || loading) return;
+    onChatEngaged?.();
     setInput("");
+    onDraftChange?.("");
     const next: Msg[] = [...messages, { role: "user", content: text }, { role: "assistant", content: "" }];
     setMessages(next);
     setLoading(true);
@@ -567,7 +622,7 @@ export function AICompanionChat({
         reply = await result;
         if (readAloudRef.current && reply.trim()) speak(reply, next.length - 1);
       }
-      await persistTurn(text, reply, !messages.some((m) => m.role === "user"));
+      persistTurn(text, reply, !messages.some((m) => m.role === "user"));
       const parsed = parseAIJson<{ done?: boolean | undefined; summary?: string | undefined; status?: string | undefined }>(reply);
       if (parsed?.done && parsed.summary && request.onComplete) {
         const allowed = request.completionStatuses || [];
@@ -587,6 +642,18 @@ export function AICompanionChat({
       abortRef.current = null;
     }
   };
+  const sendRef = useRef(send);
+  sendRef.current = send;
+
+  useEffect(() => {
+    const prompt = initialPrompt?.trim();
+    const promptKey = prompt ? `${request.id || "assistant"}:${prompt}` : null;
+    if (!active || !prompt || loading || handledInitialPromptRef.current === promptKey) return;
+    handledInitialPromptRef.current = promptKey;
+    onInitialPromptConsumed?.();
+    onChatEngaged?.();
+    void sendRef.current(prompt);
+  }, [active, initialPrompt, loading, request.id, onInitialPromptConsumed, onChatEngaged]);
 
   return (
     <div className={className ?? "flex min-h-0 flex-1 flex-col"}>
@@ -762,7 +829,17 @@ export function AICompanionChat({
         )}
         <PromptInput onSubmit={({ text }) => send(text)}>
           <PromptInputBody>
-            <PromptInputTextarea value={input} onChange={(e) => setInput(e.target.value)} placeholder={isZh ? "说点什么…" : "Type a message…"} />
+            <PromptInputTextarea
+              autoFocus={active}
+              aria-label={isZh ? "输入消息" : "Type a message"}
+              value={input}
+              onChange={(event) => {
+                setInput(event.target.value);
+                onDraftChange?.(event.target.value);
+                if (event.target.value) onChatEngaged?.();
+              }}
+              placeholder={isZh ? "说点什么…" : "Type a message…"}
+            />
           </PromptInputBody>
           <PromptInputFooter className="justify-between">
             <Button

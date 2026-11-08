@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, Link } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,14 +27,36 @@ const Index = () => {
   const isSafety = site.family === "notchsafety";
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
+  const [featuredVisible, setFeaturedVisible] = useState(false);
+  const featuredProvidersRef = useRef<HTMLElement>(null);
 
   // Release builds hide the paid caregiver marketplace entirely.
   const paidCare = site.features.paidCaregivers;
   const { data: topProviders, isLoading } = useProviders(
     { sortBy: "rating" },
-    { enabled: paidCare },
+    { enabled: paidCare && featuredVisible },
   );
+  const providersLoading = paidCare && (!featuredVisible || isLoading);
   const featuredProviders = (topProviders || []).slice(0, 3);
+
+  useEffect(() => {
+    if (!paidCare) return;
+    const node = featuredProvidersRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setFeaturedVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setFeaturedVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: "240px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [paidCare]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -94,7 +116,10 @@ const Index = () => {
                 <div className="relative min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="home-care-search"
+                    name="careSearch"
                     placeholder={t(`site.${site.id}.searchPlaceholder`)}
+                    aria-label={t(`site.${site.id}.searchPlaceholder`)}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9 border-0 bg-muted/50 h-12"
@@ -104,7 +129,10 @@ const Index = () => {
                 <div className="relative min-w-0">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                   <Input
+                    id="home-city-search"
+                    name="cityOrZip"
                     placeholder={t("home.cityOrZip")}
+                    aria-label={t("home.cityOrZip")}
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                     className="pl-9 border-0 bg-muted/50 h-12"
@@ -145,7 +173,7 @@ const Index = () => {
 
       {/* Featured Caregivers */}
       {paidCare && (
-      <section className="bg-muted/50 py-10 sm:py-16">
+      <section ref={featuredProvidersRef} className="bg-muted/50 py-10 sm:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between mb-6 sm:mb-8 gap-3">
             <div className="min-w-0">
@@ -157,7 +185,7 @@ const Index = () => {
             </Button>
           </div>
 
-          {isLoading ? (
+          {providersLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -304,7 +332,7 @@ const Index = () => {
               ] },
             ]).map((col) => (
               <div key={col.title}>
-                <h4 className="font-semibold text-foreground mb-3 text-sm">{col.title}</h4>
+                <h3 className="font-semibold text-foreground mb-3 text-sm">{col.title}</h3>
                 <ul className="space-y-2">
                   {col.links.map((link) => (
                     <li key={link.label}>

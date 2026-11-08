@@ -5,6 +5,7 @@
  * One-off AI uses (info cards, check-in, briefings) never come through here.
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { T, R } from "@/integrations/wp-schema";
 import { appScopeBody, isInAppScope } from "@/features/shared/app-scope";
 import { getStoredWPUser } from "@/services/wp-auth";
@@ -34,7 +35,7 @@ export async function listAiThreads(): Promise<AiThread[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_MEMBER}/parents/${me()}`);
   if (!Array.isArray(rels)) throw new Error("Could not load conversations");
   const ids = [...new Set(rels.map((r) => String(r.parent_object_id)).filter(Boolean))];
-  const rows = await Promise.all(ids.map((id) => wordpressCCTFetch<any>(CONV, { id }).catch(() => null)));
+  const rows = await readLinkedCCTRows(CONV, ids).catch(() => []);
   return rows
     .filter((c) => c && c[CF.CHAT_TYPE] === CT.AI && isInAppScope("chatConversation", c))
     .map((c) => ({ id: rowId(c), title: c[CF.CHAT_NAME] || "", updatedAt: c[CF.LAST_MESSAGE_AT] || c.cct_modified || "" }))
@@ -65,9 +66,8 @@ export async function ownsAiThread(id: string): Promise<boolean> {
 export async function loadAiThreadMessages(id: string): Promise<AiThreadMessage[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_MESSAGE}/children/${Number(id)}`);
   if (!Array.isArray(rels) || rels.length === 0) return [];
-  const msgs = await Promise.all(
-    rels.map((r) => wordpressCCTFetch<any>(MSG, { id: String(r.child_object_id) }).catch(() => null)),
-  );
+  const ids = [...new Set(rels.map((r) => String(r.child_object_id)).filter((value) => /^\d+$/.test(value)))];
+  const msgs = await readLinkedCCTRows(MSG, ids);
   return msgs
     .filter(Boolean)
     .sort((a, b) => Number(rowId(a)) - Number(rowId(b)))

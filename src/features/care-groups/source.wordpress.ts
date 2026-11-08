@@ -25,23 +25,7 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
  * relation from the user's side and then load each group record.
  */
 export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
-  const stored = getStoredWPUser();
-  const userId = stored?.user_id ? Number(stored.user_id) : null;
-  if (!userId) return [];
-
-  const rels = await dedupeRead(
-    `rel-parents:${REL_GROUP_MEMBER}:${userId}`,
-    () => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`),
-  );
-  if (!Array.isArray(rels) || rels.length === 0) return [];
-
-  const myGroupIds = Array.from(new Set(
-    rels
-      // Only accepted rows are memberships; a pending row is an invitation.
-      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "accepted")
-      .map((r: any) => String(r.parent_object_id || ""))
-      .filter(Boolean)
-  ));
+  const myGroupIds = await fetchMyCareGroupIdsWordPress();
   if (myGroupIds.length === 0) return [];
 
   const groups = await readLinkedCCTRows(T.careGroup.slug, myGroupIds);
@@ -59,6 +43,48 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
     created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
     created_at: g.created_at,
   })) as unknown as CareGroup[];
+}
+
+/** Accepted group memberships without loading the group records themselves. */
+export async function fetchMyCareGroupIdsWordPress(): Promise<string[]> {
+  const stored = getStoredWPUser();
+  const userId = stored?.user_id ? Number(stored.user_id) : null;
+  if (!userId) return [];
+
+  const rels = await dedupeRead(
+    `rel-parents:${REL_GROUP_MEMBER}:${userId}`,
+    () => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/parents/${userId}`),
+  );
+  if (!Array.isArray(rels) || rels.length === 0) return [];
+
+  return Array.from(new Set(
+    rels
+      // Only accepted rows are memberships; a pending row is an invitation.
+      .filter((r: any) => decodeRel72Meta(r?.meta).invitationStatus === "accepted")
+      .map((r: any) => String(r.parent_object_id || ""))
+      .filter(Boolean)
+  ));
+}
+
+/** Cared-one accounts named in a group the current viewer already belongs to. */
+export async function fetchGroupCaredOneIdsWordPress(groupId: string): Promise<string[]> {
+  const id = normalizeWpObjectId(groupId);
+  if (!id) return [];
+  const rels = await dedupeRead(
+    `rel-children:${REL_GROUP_MEMBER}:${id}`,
+    () => wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${id}`),
+  );
+  if (!Array.isArray(rels)) return [];
+  return [...new Set(
+    rels
+      .filter((row: any) => {
+        const meta = decodeRel72Meta(row?.meta);
+        return meta.invitationStatus === "accepted" && meta.memberRoles.includes("cared one");
+      })
+      .map((row: any) => normalizeWpObjectId(row?.child_object_id))
+      .filter((memberId: number) => memberId > 0)
+      .map(String),
+  )];
 }
 
 

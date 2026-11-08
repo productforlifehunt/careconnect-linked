@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,9 +10,13 @@ import i18n from "@/i18n/config";
 import { formatDate } from "@/lib/locale";
 
 type Briefing = {
-  alerts?: Array<{ level?: string | undefined; text?: string | undefined }> | undefined;
+  alerts?:
+    | Array<{ level?: string | undefined; text?: string | undefined }>
+    | undefined;
   summary?: string | undefined;
-  suggestions?: Array<{ title?: string | undefined; detail?: string | undefined }> | undefined;
+  suggestions?:
+    | Array<{ title?: string | undefined; detail?: string | undefined }>
+    | undefined;
 };
 
 export function AISmartBriefing() {
@@ -27,7 +31,9 @@ export function AISmartBriefing() {
     setFailed(false);
     try {
       const facts = await resolveBriefingFacts({ isChinese: isCN });
-      const reply = await invokeAI(buildBriefingRequest(facts, isCN), { language: isCN ? "zh" : "en" });
+      const reply = await invokeAI(buildBriefingRequest(facts, isCN), {
+        language: isCN ? "zh" : "en",
+      });
       const parsed = parseAIJson<Briefing>(reply);
       if (parsed) setData(parsed);
       else setData({ summary: reply });
@@ -38,7 +44,11 @@ export function AISmartBriefing() {
     }
   }, [isCN]);
 
-  useEffect(() => { void run(); }, [run]);
+  const buttonLabel = data
+    ? Z("重新生成简报", "Regenerate briefing")
+    : failed
+      ? Z("重试生成简报", "Retry briefing")
+      : Z("生成今日简报", "Generate today's briefing");
 
   return (
     <section>
@@ -47,13 +57,24 @@ export function AISmartBriefing() {
           <Sparkles className="h-4 w-4 text-primary" />
           {Z("今日智能简报", "Today's Smart Briefing")}
         </h2>
-        <Button variant="ghost" size="sm" onClick={() => void run()} disabled={loading}>
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void run()}
+          disabled={loading}
+          aria-label={buttonLabel}
+          title={buttonLabel}
+        >
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+          />
         </Button>
       </div>
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-4 space-y-3">
-          <p className="text-xs text-muted-foreground">{formatDate(new Date())}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatDate(new Date())}
+          </p>
           {loading && !data ? (
             <div className="space-y-2">
               <Skeleton className="h-4 w-4/5" />
@@ -61,25 +82,52 @@ export function AISmartBriefing() {
             </div>
           ) : failed ? (
             <p className="text-sm text-muted-foreground">
-              {Z("暂时无法生成简报，请稍后再试。", "The briefing is unavailable right now. Please try again shortly.")}
+              {Z(
+                "暂时无法生成简报，请稍后再试。",
+                "The briefing is unavailable right now. Please try again shortly.",
+              )}
+            </p>
+          ) : !data ? (
+            <p className="text-sm text-muted-foreground">
+              {Z(
+                "点右上角按钮，按需生成今日照护简报。",
+                "Generate today's care briefing when you need it.",
+              )}
             </p>
           ) : (
             <>
-              {(data?.alerts || []).filter((a) => a?.text).map((a, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm text-foreground">
-                  <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${a.level === "high" ? "text-destructive" : "text-warning"}`} />
-                  <span>{a.text}</span>
-                </div>
-              ))}
+              {(data?.alerts || [])
+                .filter((a) => a?.text)
+                .map((a, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 text-sm text-foreground"
+                  >
+                    <AlertTriangle
+                      className={`h-4 w-4 shrink-0 mt-0.5 ${a.level === "high" ? "text-destructive" : "text-warning"}`}
+                    />
+                    <span>{a.text}</span>
+                  </div>
+                ))}
               {data?.summary ? (
-                <p className="text-sm text-foreground leading-relaxed">{data.summary}</p>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {data.summary}
+                </p>
               ) : null}
-              {(data?.suggestions || []).filter((s) => s?.title).map((s, i) => (
-                <div key={i} className="rounded-lg bg-card p-2.5 border">
-                  <p className="text-sm font-medium text-foreground">{s.title}</p>
-                  {s.detail ? <p className="text-xs text-muted-foreground mt-0.5">{s.detail}</p> : null}
-                </div>
-              ))}
+              {(data?.suggestions || [])
+                .filter((s) => s?.title)
+                .map((s, i) => (
+                  <div key={i} className="rounded-lg bg-card p-2.5 border">
+                    <p className="text-sm font-medium text-foreground">
+                      {s.title}
+                    </p>
+                    {s.detail ? (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {s.detail}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
             </>
           )}
         </CardContent>

@@ -6,11 +6,12 @@ import {
   wpValidateToken,
   wpLogout as wpAuthLogout,
   getStoredWPUser,
+  getWPToken,
   type WPUser,
   type WPAuthResult,
 } from "@/services/wp-auth";
 import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
-import { ensureAppProfile } from "@/features/shared/app-profile";
+import { APP_PROFILE_F, ensureAppProfile } from "@/features/shared/app-profile";
 import { useQueryClient } from "@tanstack/react-query";
 
 export type AuthSource = "wordpress" | null;
@@ -138,6 +139,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => { cancelled = true; };
   }, []);
 
+  const finishLogin = useCallback((wpUser: WPUser, token: string) => {
+    // Credentials and the current WP user are verified by wpLogin. Let the
+    // caller enter the app now; app-specific profile repair/name hydration can
+    // finish in the background without delaying navigation.
+    setUser(wpUserToProfile(wpUser));
+    setAuthSource("wordpress");
+    setIsLoading(false);
+
+    void ensureAppProfile()
+      .then((profile) => {
+        if (!profile || getWPToken() !== token) return;
+        const storedName = profile.row?.[APP_PROFILE_F.NAME];
+        const appName = typeof storedName === "string" ? storedName.trim() : "";
+        setUser(wpUserToProfile(wpUser, appName));
+      })
+      .catch(async () => {
+        if (getWPToken() !== token) return;
+        const appName = await fetchMyAppUserName().catch(() => "");
+        if (getWPToken() === token) setUser(wpUserToProfile(wpUser, appName));
+      });
+  }, []);
+
   const login = useCallback(async (email: string, password: string) => {
     const result: WPAuthResult = await wpAuthLogin(email, password);
     clearAccountReads();
@@ -147,12 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
-    // One CCT 151 row per user per app: created here when it is missing.
-    await ensureAppProfile().catch(() => null);
-    setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
-    setAuthSource("wordpress");
-    setIsLoading(false);
-  }, [clearAccountReads]);
+    finishLogin(wpUser, result.token);
+  }, [clearAccountReads, finishLogin]);
 
   const loginWithWP = useCallback(async (username: string, password: string) => {
     const result: WPAuthResult = await wpAuthLogin(username, password);
@@ -163,12 +182,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user_login: result.user_login,
       user_display_name: result.user_display_name,
     };
-    // One CCT 151 row per user per app: created here when it is missing.
-    await ensureAppProfile().catch(() => null);
-    setUser(wpUserToProfile(wpUser, await fetchMyAppUserName().catch(() => "")));
-    setAuthSource("wordpress");
-    setIsLoading(false);
-  }, [clearAccountReads]);
+    finishLogin(wpUser, result.token);
+  }, [clearAccountReads, finishLogin]);
 
   const signup = useCallback(async (name: string, email: string, password: string, _role: string) => {
     const result: WPAuthResult = await wpAuthRegister(email, password, name);

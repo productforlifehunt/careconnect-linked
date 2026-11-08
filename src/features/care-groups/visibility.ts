@@ -112,7 +112,57 @@ export async function filterVisiblePosts<T extends { id: string | number }>(post
 
 /** Filter a list of tasks to those visible to the current user. */
 export async function filterVisibleTasks<T extends { id: string | number }>(tasks: T[]): Promise<T[]> {
-  return filterVisibleEntities(tasks, REL_TASK_SUBGROUPS, REL_TASK_USERS);
+  if (tasks.length === 0) return tasks;
+  return prepareTaskVisibilityFilter()(tasks);
+}
+
+async function relChildren(rel: number, parentId: number): Promise<number[]> {
+  try {
+    const rows = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${parentId}`);
+    return (Array.isArray(rows) ? rows : [])
+      .map((row: any) => Number(row?.child_object_id))
+      .filter(Boolean);
+  } catch {
+    // Keep the same failure behavior as relMap: a failed optional read does not
+    // turn a previously visible task into a hard error.
+    return [];
+  }
+}
+
+/** Start the task visibility reads early so they can overlap task relation reads. */
+export function prepareTaskVisibilityFilter(taskIds?: Array<string | number> | undefined) {
+  const uid = getCurrentUserIdNumber();
+  const singleTaskId = taskIds?.length === 1
+    ? Number(String(taskIds[0]).replace(/^wp-/, ""))
+    : 0;
+  const visibilityPromise = uid
+    ? singleTaskId > 0
+      ? Promise.all([
+          fetchMySubgroupIds(),
+          relChildren(REL_TASK_SUBGROUPS, singleTaskId).then((ids) => new Map([[singleTaskId, ids]])),
+          relChildren(REL_TASK_USERS, singleTaskId).then((ids) => new Map([[singleTaskId, ids]])),
+        ])
+      : Promise.all([
+          fetchMySubgroupIds(),
+          relMap(REL_TASK_SUBGROUPS),
+          relMap(REL_TASK_USERS),
+        ])
+    : null;
+
+  return async <T extends { id: string | number }>(tasks: T[]): Promise<T[]> => {
+    if (tasks.length === 0) return tasks;
+    if (!uid || !visibilityPromise) return [];
+    const [mySubgroups, subMap, userMap] = await visibilityPromise;
+    return tasks.filter((task) => {
+      const id = Number(String(task.id).replace(/^wp-/, ""));
+      if (!id) return true;
+      const allowedSubgroups = subMap.get(id) || [];
+      const allowedUsers = userMap.get(id) || [];
+      if (allowedSubgroups.length === 0 && allowedUsers.length === 0) return true;
+      if (allowedUsers.includes(uid)) return true;
+      return allowedSubgroups.some((groupId) => mySubgroups.has(groupId));
+    });
+  };
 }
 
 /** Replace the visibility links of one entity (adds new, removes dropped ones). */

@@ -12,6 +12,7 @@
  *   253 care_task → care_task  sub-tasks bundled into a shared task
  */
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { fetchWPUserPublicProfile } from "@/features/shared/wp-users";
 import { R, T, WP } from "@/integrations/wp-schema";
@@ -161,13 +162,14 @@ export async function fetchMyTaskApplicationsWordPress(): Promise<any[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_TASK_ASSIGNEE}/parents/${me}`);
   if (!Array.isArray(rels)) throw new Error(`Relation ${REL_TASK_ASSIGNEE} returned an invalid response`);
   const taskIds = [...new Set(rels.map((r: any) => numId(r.parent_object_id)).filter(Boolean))];
-  const tasks = await Promise.all(taskIds.map(async (id) => {
-    try { return mapShared(await wordpressCCTFetch<any>(SLUG, { id: String(id) })); } catch { return null; }
-  }));
+  const taskRows = await readLinkedCCTRows(SLUG, taskIds.map(String));
+  const tasksById = new Map(
+    taskRows.map((row) => [numId(row.id ?? row._ID), mapShared(row)]),
+  );
   return rels
     .map((r: any) => {
       const tid = numId(r.parent_object_id);
-      const task = tasks.find((t: any) => t && Number(t.id) === tid) || null;
+      const task = tasksById.get(tid) || null;
       const meta = r.meta || r.meta_fields || null;
       return {
         id: `${tid}:${me}`,
