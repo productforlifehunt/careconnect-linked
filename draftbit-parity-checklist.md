@@ -89,3 +89,14 @@
 准备状态：AI_MESSAGES=[]、AI_BUSY=false已通过GUI保存为App变量；尚未接线，不是多轮实现。试验用消息追加动作已删除，未保留错误或未配置动作。没有修改原App、WordPress笔记正文、a59绑定或REL325。
 
 2026-11-08：GUI新建 AIChatBody；Assistant 与 AssistantFabs 改用此同一Block，悬浮窗保留独立X关闭键。AI_INPUT/AI_REPLY共享空字符串变量已保存。刷新后4项具体配置断言通过：请求AI_INPUT、条件Trim、回复response.reply→AI_REPLY、输入/回复展示绑定。共用主体已在Web出现，但实际发送仍停在Updating、输入未清空，随后运行iframe卸载；不能沿用旧版发送通过结论。多轮追加试验已删除，无实际多轮/语音/任务/持久化新增完成项。
+2026-11-08（用户允许 Draftbit 自定义代码与语音插件）：新建 Draftbit 自定义文件 AIChatKit.js（组件 AIChat），共用 Block AIChatBody 只保留这一个组件，悬浮窗与 Assistant 页同用。Web 预览 test1 实测通过：
+- [x] 多轮上下文：先说“My name is Bob”，再问名字，回答 Bob。
+- [x] 会话保存 CCT121+REL137、消息 CCT126+REL138；列表“All chats”出现新对话，标题取首句。
+- [x] 切换旧对话读回消息；New chat 新建（WordPress 约 7–15 秒）；改名保存后列表回读一致。
+- [x] 帮助问答：初始 4 题、Show more 展开全部、点题即时回答、0 次 AI 请求。
+- [x] 文字/朗读/即时对话/来电四模式切换；来电设置框；朗读按钮发出 chat-voice 请求无报错（无头浏览器听不到声音，未确认真实播放）。
+- [ ] 麦克风录音转文字：代码已接 expo-av + voice-chat，未用真实麦克风实测；iOS/Android 真机未测。
+- [ ] 中文界面：v1 没有语言变量，弹窗暂时只能英文。
+- [ ] 当前被护理者/群组上下文、亲友声音选择、任务写入确认、首页简报等其他独立 AI 流程未做。
+- 旧 AI_INPUT/AI_REPLY/AI_MESSAGES/AI_BUSY 变量已不再使用，未删除。
+- 测试在 test1 账号留下：Bob 对话 1 个、空白新对话 2 个（其中 1 个改名为 Renamed by test）。
