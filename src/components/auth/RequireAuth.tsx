@@ -9,6 +9,7 @@ import {
   getCachedOnboardingDone,
 } from "@/features/shared/app-profile";
 import { withNext } from "@/lib/return-path";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,12 +25,12 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     void import("@/features/cared-ones/source.wordpress")
       .then(({ fetchUserCaredOnesWordPress }) =>
         queryClient.prefetchQuery({
-          queryKey: ["userCaredOnes"],
+          queryKey: ["userCaredOnes", app, getStoredWPUser()?.user_id],
           queryFn: fetchUserCaredOnesWordPress,
         }),
       )
       .catch(() => {});
-  }, [isAuthenticated, location.pathname, queryClient]);
+  }, [app, isAuthenticated, location.pathname, queryClient]);
 
   // Onboarding is per sub-app: finished or skipped once, then never again.
   const { data: onboarded, isLoading: checkingOnboarding } = useQuery({

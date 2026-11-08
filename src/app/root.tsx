@@ -21,13 +21,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { useApplyDisplaySettings } from "@/features/settings/display";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary as AppErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/NotFound";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import { lazyRetry } from "@/lib/lazy-retry";
+import { isResearcherAccount } from "@/features/inspector/recorder";
 
 const LocationSharingAgent = lazyRetry(
   () =>
@@ -149,18 +150,60 @@ function BootScreen() {
 
 function SiteRouter() {
   const site = useSite();
+  const { isAuthenticated } = useAuth();
   useApplyDisplaySettings();
-  if (site.id === "notchsafety") return <SafetyApp />;
-  if (site.id === "researcher") return <ResearcherApp />;
-  if (site.id === "esm_survey") return <EsmApp />;
+  const locationSharingEnabled =
+    isAuthenticated &&
+    !["researcher", "esm_survey", "consent", "sick"].includes(site.id);
+  const inspectorEnabled =
+    isResearcherAccount() && !["consent", "sick"].includes(site.id);
+  const sharedAgents = (
+    <>
+      {locationSharingEnabled && (
+        <Suspense fallback={null}>
+          <LocationSharingAgent />
+        </Suspense>
+      )}
+      {inspectorEnabled && (
+        <Suspense fallback={null}>
+          <InspectorGate />
+        </Suspense>
+      )}
+    </>
+  );
+
+  if (site.id === "notchsafety")
+    return (
+      <>
+        {sharedAgents}
+        <SafetyApp />
+      </>
+    );
+  if (site.id === "researcher")
+    return (
+      <>
+        {sharedAgents}
+        <ResearcherApp />
+      </>
+    );
+  if (site.id === "esm_survey")
+    return (
+      <>
+        {sharedAgents}
+        <EsmApp />
+      </>
+    );
   if (site.id === "consent") return <ConsentApp />;
   if (site.id === "sick") return <SickApp />;
   return (
-    <AppLayout>
-      <AppErrorBoundary>
-        <Outlet />
-      </AppErrorBoundary>
-    </AppLayout>
+    <>
+      {sharedAgents}
+      <AppLayout>
+        <AppErrorBoundary>
+          <Outlet />
+        </AppErrorBoundary>
+      </AppLayout>
+    </>
   );
 }
 
@@ -198,12 +241,6 @@ export default function Root() {
                   <AuthProvider>
                     <SiteProvider>
                       <Sonner />
-                      <Suspense fallback={null}>
-                        <LocationSharingAgent />
-                      </Suspense>
-                      <Suspense fallback={null}>
-                        <InspectorGate />
-                      </Suspense>
                       <AIAssistantProvider>
                         <SiteRouter />
                       </AIAssistantProvider>

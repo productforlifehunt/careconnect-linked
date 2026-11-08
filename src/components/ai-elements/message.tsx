@@ -12,15 +12,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import type { DiagramPlugin, MermaidConfig } from "@streamdown/mermaid";
 import type { UIMessage } from "ai";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import {
   createContext,
+  Suspense,
   memo,
   useCallback,
   useContext,
@@ -28,7 +25,8 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Streamdown } from "streamdown";
+import type { StreamdownProps } from "streamdown";
+import { lazyRetry } from "@/lib/lazy-retry";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
@@ -319,44 +317,30 @@ export const MessageBranchPage = ({
   );
 };
 
-export type MessageResponseProps = ComponentProps<typeof Streamdown>;
+export type MessageResponseProps = StreamdownProps;
 
-// Diagram dependencies must not execute while the shared app shell starts.
-// Keep the synchronous plugin contract, but import the engine only on render.
-const mermaid: DiagramPlugin = {
-  name: "mermaid",
-  type: "diagram",
-  language: "mermaid",
-  getMermaid(initialConfig) {
-    let config: MermaidConfig | undefined = initialConfig;
-    return {
-      initialize(nextConfig) {
-        config = nextConfig;
-      },
-      async render(id, source) {
-        const { createMermaidPlugin } = await import("@streamdown/mermaid");
-        return createMermaidPlugin().getMermaid(config).render(id, source);
-      },
-    };
-  },
-};
-
-const streamdownPlugins = { cjk, code, math, mermaid };
+const LazyMessageResponse = lazyRetry(
+  () => import("./message-response").then((module) => ({ default: module.MessageResponse })),
+  "MessageResponse",
+);
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
-    <Streamdown
-      className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        className
-      )}
-      plugins={streamdownPlugins}
-      {...props}
-    />
-  ),
+  ({ className, ...props }: MessageResponseProps) => {
+    const responseClassName = cn(
+      "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+      className,
+    );
+    return (
+      <Suspense
+        fallback={<div className={responseClassName}>{props.children}</div>}
+      >
+        <LazyMessageResponse className={responseClassName} {...props} />
+      </Suspense>
+    );
+  },
   (prevProps, nextProps) =>
     prevProps.children === nextProps.children &&
-    nextProps.isAnimating === prevProps.isAnimating
+    nextProps.isAnimating === prevProps.isAnimating,
 );
 
 MessageResponse.displayName = "MessageResponse";

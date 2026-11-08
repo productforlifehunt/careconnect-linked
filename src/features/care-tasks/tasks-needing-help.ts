@@ -24,6 +24,12 @@ const REL232 = WP.rel["232"];
 const ASSIGNEE_FIELD = REL232.f.ASSIGNED_CAREGIVER_STATUS;
 const REL_TASK_ASSIGNEE = R.careTaskAssignees;
 
+type HelpTaskPosterProfile = {
+  full_name: string;
+  avatar_url: string | null;
+  location?: string | null | undefined;
+};
+
 const stripWp = (v: any) => (v == null ? "" : String(v).replace(/^wp-/, ""));
 const numId = (v: any) => Number(stripWp(v));
 
@@ -58,8 +64,8 @@ function mapShared(t: any) {
   };
 }
 
-/** Every task its owner shared out for help (a65 = b56 or b57). */
-export async function fetchHelpTasksWordPress(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined; author?: number | undefined }): Promise<any[]> {
+/** Core task rows. This read can render the task list before profile enrichment. */
+export async function fetchHelpTaskRowsWordPress(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined; author?: number | undefined }): Promise<any[]> {
   // WordPress returns only shared-out tasks (a65 IN needs-help/has-help), and only mine when asked.
   const rows = await wordpressCCTFetch<any[]>(SLUG, { params: {
     _limit: 100,
@@ -76,13 +82,27 @@ export async function fetchHelpTasksWordPress(filters?: { paid?: boolean | undef
     .filter((t) => (filters?.paid === undefined ? true : t.needs_payment === filters.paid))
     .filter((t) => (filters?.status ? t.status === filters.status : true));
 
-  const posterIds = [...new Set(shared.map((t) => numId(t.posted_by)).filter(Boolean))];
-  const profiles = new Map<number, any>();
-  await Promise.all(posterIds.map(async (id) => {
-    try { profiles.set(id, await fetchWPUserPublicProfile(id)); } catch { /* poster may be hidden */ }
+  return shared;
+}
+
+/** Poster identity is fetched separately so task cards need not wait for it. */
+export async function fetchHelpTaskPostersWordPress(
+  ids: Array<number | string>,
+): Promise<Record<string, HelpTaskPosterProfile | null>> {
+  const posterIds = [...new Set(ids.map(numId).filter(Boolean))];
+  const profiles = await Promise.all(posterIds.map(async (id) => {
+    try { return [String(id), await fetchWPUserPublicProfile(id)] as const; }
+    catch { return [String(id), null] as const; }
   }));
+  return Object.fromEntries(profiles);
+}
+
+/** Every task its owner shared out for help, including poster details. */
+export async function fetchHelpTasksWordPress(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined; author?: number | undefined }): Promise<any[]> {
+  const shared = await fetchHelpTaskRowsWordPress(filters);
+  const profiles = await fetchHelpTaskPostersWordPress(shared.map((task) => task.posted_by));
   return shared.map((t) => {
-    const p = profiles.get(numId(t.posted_by));
+    const p = profiles[String(numId(t.posted_by))];
     return {
       ...t,
       poster: p ? { id: `wp-${numId(t.posted_by)}`, full_name: p.full_name, avatar_url: p.avatar_url, location: p.location } : null,
@@ -95,7 +115,7 @@ export async function fetchMyHelpTasksWordPress(): Promise<any[]> {
   const stored = getStoredWPUser();
   if (!stored?.user_id) throw new Error("Not authenticated");
   const me = Number(stored.user_id);
-  const all = await fetchHelpTasksWordPress({ author: me });
+  const all = await fetchHelpTaskRowsWordPress({ author: me });
   return all.filter((t: any) => numId(t.posted_by) === me);
 }
 

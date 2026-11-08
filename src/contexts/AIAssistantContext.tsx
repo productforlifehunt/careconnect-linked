@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 import { lazyRetry } from "@/lib/lazy-retry";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSite } from "@/contexts/SiteContext";
 import { aiBrand } from "../../supabase/functions/_shared/ai-prompts";
 import { AIChatWarmup } from "@/components/ai/AIChatWarmup";
@@ -157,19 +158,34 @@ const ctxStore = globalThis as typeof globalThis & { __aiAssistantContext?: Reac
 const AIAssistantContext = (ctxStore.__aiAssistantContext ??= createContext<AIAssistantValue>(null));
 
 export function AIAssistantProvider({ children }: { children: ReactNode }) {
+  const site = useSite();
+  const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [assistantActivated, setAssistantActivated] = useState(false);
   const [request, setRequest] = useState<AssistantRequest>({});
   const [draft, setDraft] = useState("");
   const [queuedPrompt, setQueuedPrompt] = useState<string | null>(null);
 
-  // Warm just the small dialog shell during idle time. The full chat stays
-  // split out and is fetched only after the user opens the assistant.
+  // Warm the dialog and chat controls after idle. Heavy Markdown plugins load
+  // only when a saved or new assistant response actually needs rendering.
   useEffect(() => {
+    // Standalone researcher/legal/sick pages do not expose the app chatbot.
+    // Keep its sizeable code off those pages; ESM still uses the assistant.
+    const siteSupportsAssistant = !["researcher", "consent", "sick"].includes(
+      site.id,
+    );
+    if (
+      !siteSupportsAssistant ||
+      (site.id !== "esm_survey" && !isAuthenticated)
+    )
+      return;
     let timeoutId: number | undefined;
     let idleId: number | undefined;
     const browser = window as Window & {
-      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      requestIdleCallback?: (
+        callback: () => void,
+        options?: { timeout: number },
+      ) => number;
       cancelIdleCallback?: (id: number) => void;
     };
     if (browser.requestIdleCallback) {
@@ -181,7 +197,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
       if (idleId !== undefined) browser.cancelIdleCallback?.(idleId);
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     };
-  }, []);
+  }, [site.id, isAuthenticated]);
 
   const openAssistant = useCallback((next: AssistantRequest = {}) => {
     setRequest({ ...next, id: next.id || `general-${Date.now()}` });

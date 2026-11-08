@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import {
   Check, X, Clock, Tag, Coins,
 } from "lucide-react";
 import {
-  useHelpTasks, useMyHelpTasks, useMyTaskApplications, useTaskApplicants,
+  useHelpTasks, useHelpTaskPosters, useMyHelpTasks, useMyTaskApplications, useTaskApplicants,
   useApplyToSharedTask, useDecideTaskApplicant, useUnshareTask, useStartConversation,
 } from "@/hooks/use-care-data";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,7 +38,31 @@ export default function TasksNeedingHelp() {
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  const { data: tasks, isLoading } = useHelpTasks();
+  const {
+    data: taskRows,
+    isLoading,
+    isError: taskLoadFailed,
+    refetch: refetchTasks,
+  } = useHelpTasks();
+  const { data: taskPosters, isLoading: postersLoading } = useHelpTaskPosters(taskRows || []);
+  const tasks = useMemo(
+    () => (taskRows || []).map((task) => {
+      const posterId = Number(String(task.posted_by ?? "").replace(/^wp-/, "")) || 0;
+      const profile = posterId ? taskPosters?.[String(posterId)] : null;
+      return {
+        ...task,
+        poster: profile
+          ? {
+              id: `wp-${posterId}`,
+              full_name: profile.full_name,
+              avatar_url: profile.avatar_url,
+              location: profile.location,
+            }
+          : null,
+      };
+    }),
+    [taskRows, taskPosters],
+  );
   const { data: myApps, isLoading: myAppsLoading } = useMyTaskApplications();
   const { data: myShared, isLoading: mySharedLoading } = useMyHelpTasks(
     activeTab === "my-shared",
@@ -128,9 +152,39 @@ export default function TasksNeedingHelp() {
 
         {/* ═══ BROWSE ═══ */}
         <TabsContent value="browse" className="mt-4 space-y-4">
+          {taskLoadFailed && !!taskRows?.length && (
+            <p
+              role="status"
+              className="text-center text-sm text-muted-foreground"
+            >
+              {Z(
+                "暂时无法刷新，正在显示上次成功加载的任务。",
+                "Refresh failed; showing the last tasks that loaded successfully.",
+              )}
+            </p>
+          )}
           {isLoading ? (
-            <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-          ) : filtered.length > 0 ? filtered.map((task: any) => (
+            <div className="flex justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : taskLoadFailed && !taskRows?.length ? (
+            <div
+              role="alert"
+              className="flex flex-col items-center gap-3 py-16 text-center"
+            >
+              <p className="text-muted-foreground">
+                {Z("暂时无法加载任务。", "Couldn't load tasks right now.")}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void refetchTasks()}
+              >
+                {Z("重试", "Try again")}
+              </Button>
+            </div>
+          ) : filtered.length > 0 ? (
+            filtered.map((task: any) => (
             <Card key={task.id} className="border-transparent card-elevated">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3 gap-3">
@@ -173,7 +227,7 @@ export default function TasksNeedingHelp() {
                       </>
                     ) : task.status === "open" ? (
                       <>
-                        {task.poster?.id && (
+                        {task.poster?.id ? (
                           <Button
                             size="sm"
                             variant="outline"
@@ -193,7 +247,12 @@ export default function TasksNeedingHelp() {
                           >
                             <Tag className="h-3 w-3 mr-1" /> {task.needs_payment ? Z("联系与报价", "Contact & Quote") : Z("联系", "Contact")}
                           </Button>
-                        )}
+                        ) : task.posted_by && postersLoading ? (
+                          <Button size="sm" variant="outline" disabled>
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            {Z("载入联系人…", "Loading contact…")}
+                          </Button>
+                        ) : null}
                         <Dialog
                           open={applyOpen === task.id}
                           onOpenChange={(open) => { setApplyOpen(open ? task.id : null); if (!open) setMessage(""); }}
@@ -233,7 +292,8 @@ export default function TasksNeedingHelp() {
                 </div>
               </CardContent>
             </Card>
-          )) : (
+            ))
+          ) : (
             <div className="text-center py-16">
               <HeartHandshake className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground">{Z("暂时没有需要帮手的任务", "No tasks need help right now")}</p>

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
 import { readLastGood, withLastGood } from "@/lib/last-good";
+import { currentAppId } from "@/features/shared/app-profile";
 
 // ─── Feature source modules (backend-specific) ─────────────
 import { fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
@@ -47,7 +48,8 @@ import {
   fetchCaredOneLocationSettingsWordPress,
 } from "@/features/location/source.wordpress-extended";
 import {
-  fetchHelpTasksWordPress, fetchMyHelpTasksWordPress, fetchTaskApplicantsWordPress,
+  fetchHelpTaskPostersWordPress, fetchHelpTaskRowsWordPress,
+  fetchMyHelpTasksWordPress, fetchTaskApplicantsWordPress,
   applyToSharedTaskWordPress, fetchMyTaskApplicationsWordPress, decideTaskApplicantWordPress,
   shareTaskWordPress, unshareTaskWordPress,
 } from "@/features/care-tasks/tasks-needing-help";
@@ -1511,31 +1513,64 @@ export function useUpsertProviderAvailability() {
 
 
 // ─── Shared care tasks (the task IS the job) ─────────────────
-export function useHelpTasks(filters?: { paid?: boolean | undefined; status?: "open" | "filled" | undefined }) {
+type SharedHelpTaskRows = Awaited<
+  ReturnType<typeof fetchHelpTaskRowsWordPress>
+>;
+
+export function useHelpTasks(filters?: {
+  paid?: boolean | undefined;
+  status?: "open" | "filled" | undefined;
+}) {
+  const appId = currentAppId();
+  const cacheKey = `tasksNeedingHelp:${appId}:${filters?.paid ?? "all"}:${filters?.status ?? "all"}`;
   return useQuery({
-    queryKey: ["tasksNeedingHelp", filters],
-    queryFn: () => fetchHelpTasksWordPress(filters),
+    queryKey: ["tasksNeedingHelp", appId, filters],
+    queryFn: withLastGood(cacheKey, () => fetchHelpTaskRowsWordPress(filters)),
+    initialData: () => readLastGood<SharedHelpTaskRows>(cacheKey),
+    initialDataUpdatedAt: 0,
+    refetchOnMount: "always",
+  });
+}
+
+export function useHelpTaskPosters(tasks: Array<{ posted_by?: unknown }> = []) {
+  const appId = currentAppId();
+  const ids = Array.from(
+    new Set(
+      tasks
+        .map((task) => Number(String(task.posted_by ?? "").replace(/^wp-/, "")))
+        .filter((id) => Number.isFinite(id) && id > 0),
+    ),
+  ).sort((a, b) => a - b);
+  return useQuery({
+    queryKey: ["helpTaskPosters", appId, ids],
+    queryFn: () => fetchHelpTaskPostersWordPress(ids),
+    enabled: ids.length > 0,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
 export function useMyHelpTasks(enabled = true) {
+  const userId = getStoredWPUser()?.user_id ?? null;
   return useQuery({
-    queryKey: ["myHelpTasks"],
+    queryKey: ["myHelpTasks", currentAppId(), userId],
     queryFn: () => fetchMyHelpTasksWordPress(),
-    enabled,
+    enabled: enabled && !!userId,
   });
 }
 
 export function useMyTaskApplications() {
+  const userId = getStoredWPUser()?.user_id ?? null;
   return useQuery({
-    queryKey: ["myTaskApplications"],
+    queryKey: ["myTaskApplications", currentAppId(), userId],
     queryFn: () => fetchMyTaskApplicationsWordPress(),
+    enabled: !!userId,
   });
 }
 
 export function useTaskApplicants(taskId: string | null) {
+  const appId = currentAppId();
   return useQuery({
-    queryKey: ["taskApplicants", taskId],
+    queryKey: ["taskApplicants", appId, taskId],
     queryFn: () => fetchTaskApplicantsWordPress(taskId!),
     enabled: !!taskId,
   });

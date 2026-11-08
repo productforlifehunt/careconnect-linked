@@ -62,15 +62,23 @@ export function useCareTasks(
   groupId?: string | null | undefined,
   enabled = true,
   includeAssignees = true,
-  options: { caredOneOnly?: boolean | undefined; includeAssignmentStatus?: boolean | undefined } = {},
+  options: {
+    caredOneOnly?: boolean | undefined;
+    includeAssignmentStatus?: boolean | undefined;
+  } = {},
 ) {
+  const userId = getStoredWPUser()?.user_id;
   return useQuery({
     queryKey: [
       "careTasks",
       groupId,
       includeAssignees ? "with-assignees" : "summary",
       options.caredOneOnly ? "cared-one-scope" : "all-scope",
-      options.includeAssignmentStatus === false ? "without-assignment-status" : "with-assignment-status",
+      options.includeAssignmentStatus === false
+        ? "without-assignment-status"
+        : "with-assignment-status",
+      currentAppId(),
+      userId,
     ],
     queryFn: async () => {
       return fetchCareTasksWordPress(groupId, {
@@ -130,7 +138,8 @@ export function useInboxCounts(
   const unreadNotifications = (notifications.data || []).filter(
     (notification) => !notification.is_read,
   ).length;
-  const unreadMessages = suppliedCounts?.unreadMessages ?? conversationCounts.data?.unread ?? 0;
+  const unreadMessages =
+    suppliedCounts?.unreadMessages ?? conversationCounts.data?.unread ?? 0;
   const total =
     (notifications.data || []).length +
     (suppliedCounts?.total ?? conversationCounts.data?.total ?? 0);
@@ -167,8 +176,9 @@ export function usePosts(
 }
 
 export function useUserCaredOnes(enabled = true) {
+  const userId = getStoredWPUser()?.user_id;
   return useQuery({
-    queryKey: ["userCaredOnes"],
+    queryKey: ["userCaredOnes", currentAppId(), userId],
     queryFn: () => fetchUserCaredOnesWordPress(),
     enabled,
   });
