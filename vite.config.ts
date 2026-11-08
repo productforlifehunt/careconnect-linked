@@ -50,6 +50,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@draftbit/iframe-element-picker", "@draftbit/babel-plugin-inject-jsx-source"],
   },
-  ssr: { noExternal: ["rrule"] },
+  // Worker hosts cannot resolve modules at runtime, so production SSR bundles every dependency.
+  ssr: { noExternal: process.env["NODE_ENV"] === "production" || process.argv.includes("build") ? true : ["rrule"] },
   build: { rolldownOptions: { output: { keepNames: true } } },
 });
