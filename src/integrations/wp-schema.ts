@@ -17,7 +17,18 @@ export interface WPCCTDef {
 export const WP = {
   cct: {
     /** GUI-verified CCT324: user-created inspector manual notes. */
-    "324": { id: 324, slug: "manual_notes", name: "Manual Notes", f: { "名字": "a55", "内容": "a56" }, opt: {} },
+    "324": {
+      id: 324,
+      slug: "manual_notes",
+      name: "Manual Notes",
+      f: {
+        "名字": "a55",
+        "内容": "a56",
+        "已手动核对笔记关联": "a60",
+        "已手动核对笔记关联详情": "a61",
+      },
+      opt: { "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" } },
+    },
     /** 140. Product */
     "140": {
       id: 140,

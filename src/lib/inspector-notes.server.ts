@@ -10,6 +10,7 @@ import {
   samePosition,
   updatePositionBindings,
 } from "@/features/inspector/position-bindings";
+import { WP } from "@/integrations/wp-schema";
 
 /** Legacy Cloud archives are inactive backups; active position bindings live only in CCT324 a59. */
 const BUCKET = "inspector-notes";
@@ -24,6 +25,8 @@ export interface InspectorNote {
   title?: string | undefined;
   locked?: boolean | undefined;
   verified?: boolean | undefined;
+  relationVerified?: boolean | undefined;
+  relationDetails?: string | undefined;
   source?:
     | {
         file: string;
@@ -112,8 +115,12 @@ type CCTRow = {
   a56: string;
   a58?: string;
   a59?: string;
+  a60?: string;
+  a61?: string;
   cct_modified?: string;
 };
+const NOTE_FIELDS = WP.cct["324"].f;
+const NOTE_RELATION_VERIFIED = WP.cct["324"].opt["NOTE_RELATION_VERIFIED"];
 const CCT_BASE =
   "https://app.challenged-dementia.com/afresh/wp-json/jet-cct/manual_notes";
 async function wp(
@@ -146,6 +153,10 @@ function mapRow(row: CCTRow): CCTNote {
     title: row.a55,
     text: row.a56,
     verified: row.a58 === "b55",
+    relationVerified:
+      row[NOTE_FIELDS["已手动核对笔记关联"]] ===
+      NOTE_RELATION_VERIFIED["YES"],
+    relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
     updatedAt: row.cct_modified
       ? row.cct_modified.replace(" ", "T") + "+08:00"
       : "",
@@ -437,6 +448,10 @@ export async function writeNote(
       a55: note.title || note.label,
       a56: note.text,
       a58: note.verified ? "b55" : "b56",
+      [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"],
+      [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails || "",
       cct_status: "publish",
     }, token)) as number | string | { item_id?: number; _ID?: number };
     id = String(
@@ -451,13 +466,23 @@ export async function writeNote(
       a55: note.title || note.label,
       a56: note.text,
       a58: note.verified ? "b55" : "b56",
+      [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"],
+      [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails || "",
     }, token);
   }
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (
     row.a56 !== note.text ||
     row.a55 !== (note.title || note.label) ||
-    (row.a58 === "b55") !== !!note.verified
+    (row.a58 === "b55") !== !!note.verified ||
+    row[NOTE_FIELDS["已手动核对笔记关联"]] !==
+      (note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"]) ||
+    (row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") !==
+      (note.relationDetails || "")
   )
     throw new Error("保存后的内容核对不一致。");
   const binding: NoteBinding = {
@@ -480,6 +505,8 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   title: string;
   text: string;
   verified: boolean;
+  relationVerified: boolean;
+  relationDetails: string;
 } | null> {
   const binding = await storedBinding(key, token);
   if (!binding?.id) return null;
@@ -490,6 +517,10 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
     title: row.a55 || "",
     text: row.a56 || "",
     verified: row.a58 === "b55",
+    relationVerified:
+      row[NOTE_FIELDS["已手动核对笔记关联"]] ===
+      NOTE_RELATION_VERIFIED["YES"],
+    relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
   };
 }
 
@@ -528,6 +559,8 @@ export interface RelatedNote {
   text: string;
   side: "parent" | "child";
   verified: boolean;
+  relationVerified: boolean;
+  relationDetails: string;
 }
 async function relIds(
   side: "parents" | "children",
@@ -564,6 +597,10 @@ export async function readRelatedNotes(
         text: row.a56 || "",
         side,
         verified: row.a58 === "b55",
+        relationVerified:
+          row[NOTE_FIELDS["已手动核对笔记关联"]] ===
+          NOTE_RELATION_VERIFIED["YES"],
+        relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
       };
     }),
   );
@@ -571,23 +608,41 @@ export async function readRelatedNotes(
 /** Edit a related CCT324 note's a55/a56/a58 in place; never touches element/page bindings. */
 export async function updatePlainNote(
   id: string,
-  title: string,
-  text: string,
-  verified: boolean,
+  note: {
+    title: string;
+    text: string;
+    verified: boolean;
+    relationVerified: boolean;
+    relationDetails: string;
+  },
   token?: string,
 ): Promise<void> {
   await wp(
     `/${id}`,
     "POST",
-    { a55: title, a56: text, a58: verified ? "b55" : "b56" },
+    {
+      a55: note.title,
+      a56: note.text,
+      a58: note.verified ? "b55" : "b56",
+      [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"],
+      [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails,
+    },
     token,
   );
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (
     String(row._ID) !== id ||
-    row.a55 !== title ||
-    row.a56 !== text ||
-    (row.a58 === "b55") !== verified
+    row.a55 !== note.title ||
+    row.a56 !== note.text ||
+    (row.a58 === "b55") !== note.verified ||
+    row[NOTE_FIELDS["已手动核对笔记关联"]] !==
+      (note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"]) ||
+    (row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") !==
+      note.relationDetails
   )
     throw new Error("保存后的内容核对不一致。");
 }
@@ -654,7 +709,14 @@ export function relationDirection(
 export async function readNoteById(
   id: string,
   token?: string,
-): Promise<{ id: string; title: string; text: string; verified: boolean }> {
+): Promise<{
+  id: string;
+  title: string;
+  text: string;
+  verified: boolean;
+  relationVerified: boolean;
+  relationDetails: string;
+}> {
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== id) throw new Error("所选注释不存在。");
   return {
@@ -662,20 +724,31 @@ export async function readNoteById(
     title: row.a55 || "",
     text: row.a56 || "",
     verified: row.a58 === "b55",
+    relationVerified:
+      row[NOTE_FIELDS["已手动核对笔记关联"]] ===
+      NOTE_RELATION_VERIFIED["YES"],
+    relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
   };
 }
 export async function noteTitle(id: string, token?: string): Promise<string> {
   return (await readNoteById(id, token)).title;
 }
 export async function createPlainNote(
-  title: string,
-  text: string,
+  note: { title: string; text: string; relationVerified: boolean; relationDetails: string },
   token?: string,
 ): Promise<string> {
   const result = (await wp(
     "",
     "POST",
-    { a55: title, a56: text, cct_status: "publish" },
+    {
+      a55: note.title,
+      a56: note.text,
+      [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"],
+      [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails,
+      cct_status: "publish",
+    },
     token,
   )) as number | string | { item_id?: number; _ID?: number };
   const id = String(
@@ -686,7 +759,16 @@ export async function createPlainNote(
   if (!/^\d+$/.test(id))
     throw new Error("没有返回新注释编号，请重新读取列表，勿重复新建。");
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
-  if (row.a55 !== title || row.a56 !== text)
+  if (
+    row.a55 !== note.title ||
+    row.a56 !== note.text ||
+    row[NOTE_FIELDS["已手动核对笔记关联"]] !==
+      (note.relationVerified
+        ? NOTE_RELATION_VERIFIED["YES"]
+        : NOTE_RELATION_VERIFIED["NO"]) ||
+    (row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") !==
+      note.relationDetails
+  )
     throw new Error("保存后的内容核对不一致。");
   return id;
 }

@@ -38,7 +38,16 @@ export function createNotesCache() {
       if (session !== owner) return;
       if (!values) values = new Map();
       if (note.id) values.forEach((existing, key) => {
-        if (existing.id === note.id) values?.set(key, { ...existing, text: note.text, title: note.title, updatedAt: note.updatedAt });
+        if (existing.id === note.id)
+          values?.set(key, {
+            ...existing,
+            text: note.text,
+            title: note.title,
+            updatedAt: note.updatedAt,
+            verified: note.verified,
+            relationVerified: note.relationVerified,
+            relationDetails: note.relationDetails,
+          });
       });
       values.set(note.key, note);
       if (note.id) values.set(`cct|${note.id}`, { ...note, key: `cct|${note.id}`, source: undefined, locked: undefined });

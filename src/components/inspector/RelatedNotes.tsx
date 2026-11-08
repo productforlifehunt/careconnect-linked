@@ -12,8 +12,8 @@ import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import type { ConflictReport } from '@/features/inspector/conflict-report';
 import { ConflictReportView } from './ConflictReportView';
 
-type Related = { id: string; title: string; text: string; side: "parent" | "child"; verified: boolean };
-type Edit = { title: string; text: string; verified: boolean };
+type Related = { id: string; title: string; text: string; side: "parent" | "child"; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Edit = { title: string; text: string; verified: boolean; relationVerified: boolean; relationDetails: string };
 
 export function RelatedNotes({ noteId }: { noteId: string }) {
   const list = listRelatedNotes; const link = linkRelatedNote;
@@ -23,7 +23,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [state, setState] = useState<{ loading?: boolean; busy?: boolean; error?: string | undefined }>({ loading: true });
   const [pick, setPick] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; text: string } | null>(null);
+  const [draft, setDraft] = useState<{ title: string; text: string; relationVerified: boolean; relationDetails: string } | null>(null);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const active = useRef(noteId); active.current = noteId;
   const [correctionRevision, setCorrectionRevision] = useState(0);
@@ -58,18 +58,20 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
         <div key={`${n.side}-${n.id}`} className="rounded border">
           <Button type="button" variant="ghost" aria-expanded={!!open[n.id]} className="h-auto w-full justify-start whitespace-normal rounded-none p-2 text-left" onClick={() => setOpen((o) => ({ ...o, [n.id]: !o[n.id] }))}>
             {open[n.id] ? <ChevronDown className="mt-0.5 h-3 w-3 shrink-0" /> : <ChevronRight className="mt-0.5 h-3 w-3 shrink-0" />}
-            <span><span className="text-muted-foreground">#{n.id} · </span>{n.title}<span className="text-muted-foreground"> · {n.verified ? "已手动核对" : "未手动核对"}</span></span>
+            <span><span className="text-muted-foreground">#{n.id} · </span>{n.title}<span className="text-muted-foreground"> · {n.verified ? "已手动核对" : "未手动核对"} · 关联{n.relationVerified ? "已核对" : "未核对"}</span></span>
           </Button>
           {open[n.id] && (
             <div className="space-y-2 border-t p-2">
-              {(() => { const e = edits[n.id] || { title: n.title, text: n.text, verified: n.verified }; const set = (v: Partial<Edit>) => setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } }));
-                const dirty = e.title !== n.title || e.text !== n.text || e.verified !== n.verified;
+              {(() => { const e = edits[n.id] || { title: n.title, text: n.text, verified: n.verified, relationVerified: n.relationVerified, relationDetails: n.relationDetails }; const set = (v: Partial<Edit>) => setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } }));
+                const dirty = e.title !== n.title || e.text !== n.text || e.verified !== n.verified || e.relationVerified !== n.relationVerified || e.relationDetails !== n.relationDetails;
                 return (<>
                   <Input aria-label="关联注释名字" value={e.title} maxLength={240} disabled={busy} onChange={(ev) => set({ title: ev.target.value })} />
                   <Textarea aria-label="关联注释内容" rows={8} value={e.text} disabled={busy} onChange={(ev) => set({ text: ev.target.value })} />
                   <label className="flex items-center gap-2"><Switch checked={e.verified} disabled={busy} onCheckedChange={(v) => set({ verified: v })} aria-label="关联注释已手动核对" /><span>{e.verified ? "已手动核对" : "未手动核对"}</span></label>
+                  <label className="flex items-center gap-2"><Switch checked={e.relationVerified} disabled={busy} onCheckedChange={(v) => set({ relationVerified: v })} aria-label="关联注释已手动核对笔记关联" /><span>{e.relationVerified ? "已手动核对笔记关联" : "未手动核对笔记关联"}</span></label>
+                  <Textarea aria-label="关联注释已手动核对笔记关联详情" rows={4} maxLength={100_000} value={e.relationDetails} disabled={busy} onChange={(ev) => set({ relationDetails: ev.target.value })} placeholder="记录关联关系的核对依据…" />
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" disabled={busy || !dirty || !e.title.trim()} onClick={async () => { if (await run(() => update({ data: { id: noteId, otherId: n.id, title: e.title.trim(), text: e.text, verified: e.verified } }))) setEdits((m) => { const c = { ...m }; delete c[n.id]; return c; }); }}>保存</Button>
+                    <Button size="sm" disabled={busy || !dirty || !e.title.trim()} onClick={async () => { if (await run(() => update({ data: { id: noteId, otherId: n.id, title: e.title.trim(), text: e.text, verified: e.verified, relationVerified: e.relationVerified, relationDetails: e.relationDetails } }))) setEdits((m) => { const c = { ...m }; delete c[n.id]; return c; }); }}>保存</Button>
                     {dirty && <span className="text-muted-foreground">有未保存的修改</span>}
                   </div>
                 </>); })()}
@@ -85,7 +87,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
             <NoteSearchList onClose={() => setPick(false)} exclude={new Set([...linked, noteId])} onPick={(c) => { setPick(false); void run(() => link({ data: { id: noteId, otherId: c.id } })); }} />
           </PopoverContent>
         </Popover>
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => setDraft({ title: "", text: "" })}><Plus className="mr-1 h-3 w-3" />新建关联注释</Button>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => setDraft({ title: "", text: "", relationVerified: false, relationDetails: "" })}><Plus className="mr-1 h-3 w-3" />新建关联注释</Button>
         <Button size="sm" variant="outline" disabled={busy || !notes.length || ai.loading} onClick={async () => {
           const id = noteId; setAi({ loading: true });
           try { const r = await compare({ data: { noteId: id, context: JSON.stringify({ page: window.location.pathname + window.location.search }) } }); if (active.current === id) setAi(r.report ? { report: r.report } : { error: r.error || "失败" }); }
@@ -96,8 +98,10 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
         <div className="space-y-2 rounded border p-2">
           <Input aria-label="关联注释名字" placeholder="名字" value={draft.title} maxLength={240} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           <Textarea rows={6} placeholder="内容" value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+          <label className="flex items-center gap-2"><Switch checked={draft.relationVerified} onCheckedChange={(relationVerified) => setDraft({ ...draft, relationVerified })} aria-label="新关联注释已手动核对笔记关联" /><span>{draft.relationVerified ? "已手动核对笔记关联" : "未手动核对笔记关联"}</span></label>
+          <Textarea aria-label="新关联注释已手动核对笔记关联详情" rows={4} maxLength={100_000} placeholder="记录关联关系的核对依据…" value={draft.relationDetails} onChange={(e) => setDraft({ ...draft, relationDetails: e.target.value })} />
           <div className="flex gap-2">
-            <Button size="sm" disabled={busy || !draft.title.trim()} onClick={async () => { const d = draft; if (await run(() => link({ data: { id: noteId, create: { title: d.title.trim(), text: d.text } } }))) setDraft(null); }}>保存并关联</Button>
+            <Button size="sm" disabled={busy || !draft.title.trim()} onClick={async () => { const d = draft; if (await run(() => link({ data: { id: noteId, create: { title: d.title.trim(), text: d.text, relationVerified: d.relationVerified, relationDetails: d.relationDetails } } }))) setDraft(null); }}>保存并关联</Button>
             <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>取消</Button>
           </div>
         </div>

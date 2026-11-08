@@ -19,7 +19,7 @@ it('compares the current unsaved draft with code and does not save or change ver
   await waitFor(() => expect(screen.getByRole('alert')).toBeDefined());
   expect(mocks.analyze).toHaveBeenCalledWith({ data: { context:'{"codeRefs":[{"snippet":"read CCT202"}]}',scope:'page',noteId:'1',draft:{title:'群组逻辑',text:'我正在编辑的说明'} } });
   expect(mocks.save).not.toHaveBeenCalled();
-  expect(screen.getByRole('switch').getAttribute('aria-checked')).toBe('true');
+  expect(screen.getByRole('switch', { name:'已手动核对' }).getAttribute('aria-checked')).toBe('true');
   fireEvent.change(screen.getByDisplayValue('我正在编辑的说明'), { target:{value:'再次修改'} });
   expect(screen.queryByRole('alert')).toBeNull();
 });

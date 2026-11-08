@@ -7,6 +7,8 @@ export interface SourceAnnotation {
   title?: string | undefined;
   locked?: boolean | undefined;
   verified?: boolean | undefined;
+  relationVerified?: boolean | undefined;
+  relationDetails?: string | undefined;
   source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined;
   alias?: string | undefined;
 }

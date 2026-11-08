@@ -17,6 +17,9 @@ export interface CCTNote extends SourceAnnotation {
   locked?: boolean | undefined;
   /** CCT324 已手动核对 (a58): b55 是 / b56 否。 */
   verified?: boolean | undefined;
+  /** CCT324 a60/a61: whether the note's REL325 connections were reviewed and the review details. */
+  relationVerified?: boolean | undefined;
+  relationDetails?: string | undefined;
 }
 export function bindCCTNotes(rows: CCTNote[], bindings: NoteBinding[]): CCTNote[] {
   const byId = new Map(rows.map(row => [row.id, row]));
@@ -34,7 +37,18 @@ export function noteCatalogue(notes: Map<string, SourceAnnotation>): CCTNote[] {
 }
 export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CCTNote) {
   const next = new Map(notes);
-  next.forEach((note, key) => { if (note.id === updated.id) next.set(key, { ...note, text: updated.text, title: updated.title, updatedAt: updated.updatedAt, verified: updated.verified }); });
+  next.forEach((note, key) => {
+    if (note.id === updated.id)
+      next.set(key, {
+        ...note,
+        text: updated.text,
+        title: updated.title,
+        updatedAt: updated.updatedAt,
+        verified: updated.verified,
+        relationVerified: updated.relationVerified,
+        relationDetails: updated.relationDetails,
+      });
+  });
   next.set(updated.key, updated);
   return next;
 }

@@ -22,7 +22,11 @@ vi.mock("./inspector-notes.server", () => ({
   updatePlainNote: mocks.updatePlainNote,
 }));
 
-import { linkRelatedNote, listRelatedNotes } from "./inspector-notes.functions.server";
+import {
+  linkRelatedNote,
+  listRelatedNotes,
+  updateRelatedNote,
+} from "./inspector-notes.functions.server";
 
 const request = new Request("http://localhost/api/server-actions", {
   headers: { "X-WP-Token": "test-session" },
@@ -33,18 +37,25 @@ beforeEach(() => {
   mocks.verify.mockResolvedValue(undefined);
   mocks.readRelatedNotes.mockResolvedValue([]);
   mocks.noteTitle.mockImplementation(async (id: string) => `Note ${id}`);
-  mocks.relationDirection.mockImplementation((current: { id: string }, other: { id: string }) => ({
-    parent: current.id,
-    child: other.id,
-  }));
+  mocks.relationDirection.mockImplementation(
+    (current: { id: string }, other: { id: string }) => ({
+      parent: current.id,
+      child: other.id,
+    }),
+  );
   mocks.linkNotes.mockResolvedValue(undefined);
+  mocks.createPlainNote.mockResolvedValue("303");
+  mocks.updatePlainNote.mockResolvedValue(undefined);
 });
 
 it("uses the verified researcher token to read REL325", async () => {
   const result = await listRelatedNotes({ id: "101" }, request);
 
   expect(mocks.verify).toHaveBeenCalledExactlyOnceWith("test-session");
-  expect(mocks.readRelatedNotes).toHaveBeenCalledExactlyOnceWith("101", "test-session");
+  expect(mocks.readRelatedNotes).toHaveBeenCalledExactlyOnceWith(
+    "101",
+    "test-session",
+  );
   expect(result).toEqual({ notes: [] });
 });
 
@@ -56,7 +67,77 @@ it("uses the verified researcher token for CCT324 and REL325 manual linking", as
     ["101", "test-session"],
     ["202", "test-session"],
   ]);
-  expect(mocks.linkNotes).toHaveBeenCalledExactlyOnceWith("101", "202", "test-session");
-  expect(mocks.readRelatedNotes).toHaveBeenCalledExactlyOnceWith("101", "test-session");
+  expect(mocks.linkNotes).toHaveBeenCalledExactlyOnceWith(
+    "101",
+    "202",
+    "test-session",
+  );
+  expect(mocks.readRelatedNotes).toHaveBeenCalledExactlyOnceWith(
+    "101",
+    "test-session",
+  );
+  expect(result).toEqual({ notes: [] });
+});
+
+it("creates a related CCT324 note with the relation review fields before linking it", async () => {
+  const result = await linkRelatedNote(
+    {
+      id: "101",
+      create: {
+        title: "同一处理流程",
+        text: "内容",
+        relationVerified: true,
+        relationDetails: "两条注释描述同一处理流程。",
+      },
+    },
+    request,
+  );
+
+  expect(mocks.createPlainNote).toHaveBeenCalledExactlyOnceWith(
+    {
+      title: "同一处理流程",
+      text: "内容",
+      relationVerified: true,
+      relationDetails: "两条注释描述同一处理流程。",
+    },
+    "test-session",
+  );
+  expect(mocks.linkNotes).toHaveBeenCalledExactlyOnceWith(
+    "101",
+    "303",
+    "test-session",
+  );
+  expect(result).toEqual({ notes: [] });
+});
+
+it("saves relation review edits to the selected related CCT324 note", async () => {
+  const result = await updateRelatedNote(
+    {
+      id: "101",
+      otherId: "202",
+      title: "更新后的标题",
+      text: "更新后的内容",
+      verified: false,
+      relationVerified: true,
+      relationDetails: "重新核对过这条关联。",
+    },
+    request,
+  );
+
+  expect(mocks.updatePlainNote).toHaveBeenCalledExactlyOnceWith(
+    "202",
+    {
+      title: "更新后的标题",
+      text: "更新后的内容",
+      verified: false,
+      relationVerified: true,
+      relationDetails: "重新核对过这条关联。",
+    },
+    "test-session",
+  );
+  expect(mocks.readRelatedNotes).toHaveBeenCalledExactlyOnceWith(
+    "101",
+    "test-session",
+  );
   expect(result).toEqual({ notes: [] });
 });

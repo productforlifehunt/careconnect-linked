@@ -113,17 +113,27 @@ export function ManualNotes({
   const [retry, setRetry] = useState(0);
   const [verified, setVerified] = useState(false);
   const [savedVerified, setSavedVerified] = useState(false);
+  const [relationVerified, setRelationVerified] = useState(false);
+  const [savedRelationVerified, setSavedRelationVerified] = useState(false);
+  const [relationDetails, setRelationDetails] = useState("");
+  const [savedRelationDetails, setSavedRelationDetails] = useState("");
   const [stale, setStale] = useState(false);
   // The element whose saved note is currently shown; save/lock are refused for any other element.
   const [loadedFor, setLoadedFor] = useState<string>();
   const ready = loadedFor === noteKey;
   const activeKey = useRef(noteKey);
   activeKey.current = noteKey;
-  const revision = `${noteKey}|${selected}|${title}|${text}`;
+  const revision = `${noteKey}|${selected}|${title}|${text}|${verified}|${relationVerified}|${relationDetails}`;
   const activeRevision = useRef(revision);
   activeRevision.current = revision;
-  const correctionState = useRef({ selected, title, text, savedTitle, saved });
-  correctionState.current = { selected, title, text, savedTitle, saved };
+  const correctionState = useRef({ selected, title, text, savedTitle, saved, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
+  correctionState.current = { selected, title, text, savedTitle, saved, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
+  const hasUnsavedChanges =
+    text !== saved ||
+    title !== savedTitle ||
+    verified !== savedVerified ||
+    relationVerified !== savedRelationVerified ||
+    relationDetails !== savedRelationDetails;
   const legacyKeysKey = legacyKeys?.join("\u0000") || "";
   useEffect(() => {
     const updated = (event: Event) => {
@@ -133,13 +143,18 @@ export function ManualNotes({
           title: string;
           text: string;
           verified: boolean;
+          relationVerified?: boolean | undefined;
+          relationDetails?: string | undefined;
         }>
       ).detail;
       const current = correctionState.current;
       if (note.id !== current.selected) return;
       if (
         current.text !== current.saved ||
-        current.title !== current.savedTitle
+        current.title !== current.savedTitle ||
+        current.verified !== current.savedVerified ||
+        current.relationVerified !== current.savedRelationVerified ||
+        current.relationDetails !== current.savedRelationDetails
       ) {
         setStale(true);
         setState({
@@ -154,6 +169,10 @@ export function ManualNotes({
       setSavedTitle(note.title);
       setVerified(note.verified);
       setSavedVerified(note.verified);
+      setRelationVerified(!!note.relationVerified);
+      setSavedRelationVerified(!!note.relationVerified);
+      setRelationDetails(note.relationDetails || "");
+      setSavedRelationDetails(note.relationDetails || "");
       onChange?.(note.text);
     };
     window.addEventListener("inspector-note-corrected", updated);
@@ -196,6 +215,10 @@ export function ManualNotes({
     setSavedTitle("");
     setVerified(false);
     setSavedVerified(false);
+    setRelationVerified(false);
+    setSavedRelationVerified(false);
+    setRelationDetails("");
+    setSavedRelationDetails("");
     setState({ loading: true });
     const uniqueLegacyKeys = [
       ...(legacyKeysKey ? legacyKeysKey.split("\u0000") : []),
@@ -239,6 +262,10 @@ export function ManualNotes({
       setSavedTitle(n?.title || label.slice(0, 240));
       setVerified(!!(n as CCTNote | undefined)?.verified);
       setSavedVerified(!!(n as CCTNote | undefined)?.verified);
+      setRelationVerified(!!(n as CCTNote | undefined)?.relationVerified);
+      setSavedRelationVerified(!!(n as CCTNote | undefined)?.relationVerified);
+      setRelationDetails((n as CCTNote | undefined)?.relationDetails || "");
+      setSavedRelationDetails((n as CCTNote | undefined)?.relationDetails || "");
       setCreating(false);
       setStale(false);
       setLoadedFor(noteKey);
@@ -324,6 +351,8 @@ export function ManualNotes({
         id: selected,
         create: creating,
         verified,
+        relationVerified,
+        relationDetails,
         text,
         ...(alias ? { alias } : {}),
         ...anchor,
@@ -345,6 +374,10 @@ export function ManualNotes({
       setSavedTitle(r.note.title || title);
       setVerified(!!r.note.verified);
       setSavedVerified(!!r.note.verified);
+      setRelationVerified(!!r.note.relationVerified);
+      setSavedRelationVerified(!!r.note.relationVerified);
+      setRelationDetails(r.note.relationDetails || "");
+      setSavedRelationDetails(r.note.relationDetails || "");
       setCreating(false);
     } else if (activeKey.current === key)
       setState({ error: r.error || "保存失败" });
@@ -377,6 +410,10 @@ export function ManualNotes({
       setSavedTitle(result.note.title || "");
       setVerified(!!result.note.verified);
       setSavedVerified(!!result.note.verified);
+      setRelationVerified(!!result.note.relationVerified);
+      setSavedRelationVerified(!!result.note.relationVerified);
+      setRelationDetails(result.note.relationDetails || "");
+      setSavedRelationDetails(result.note.relationDetails || "");
       onChange?.(result.note.text);
       setState({ at: result.note.updatedAt });
     } catch (e) {
@@ -454,6 +491,10 @@ export function ManualNotes({
             setSavedTitle("");
             setVerified(false);
             setSavedVerified(false);
+            setRelationVerified(false);
+            setSavedRelationVerified(false);
+            setRelationDetails("");
+            setSavedRelationDetails("");
             setText("");
             setSaved("");
             onChange?.("");
@@ -500,6 +541,34 @@ export function ManualNotes({
           <span className="text-muted-foreground">（未保存）</span>
         )}
       </label>
+      <label className="flex items-center gap-2">
+        <Switch
+          checked={relationVerified}
+          onCheckedChange={setRelationVerified}
+          disabled={state.loading || state.saving}
+          aria-label="已手动核对笔记关联"
+        />
+        <span>
+          {relationVerified
+            ? "已手动核对笔记关联"
+            : "未手动核对笔记关联"}
+        </span>
+        {relationVerified !== savedRelationVerified && (
+          <span className="text-muted-foreground">（未保存）</span>
+        )}
+      </label>
+      <Textarea
+        aria-label="已手动核对笔记关联详情"
+        value={relationDetails}
+        onChange={(event) => setRelationDetails(event.target.value)}
+        rows={4}
+        maxLength={100_000}
+        disabled={state.loading || state.saving}
+        placeholder="记录为什么这些注释相关，以及核对依据…"
+      />
+      {relationDetails !== savedRelationDetails && (
+        <p className="text-muted-foreground">关联核对详情有未保存的修改</p>
+      )}
       <div className="flex items-center gap-2">
         <Button
           size="sm"
@@ -510,18 +579,15 @@ export function ManualNotes({
             state.loading ||
             state.saving ||
             !title.trim() ||
-            (selected !== undefined &&
-              text === saved &&
-              title === savedTitle &&
-              verified === savedVerified)
+            (selected !== undefined && !hasUnsavedChanges)
           }
         >
           {state.saving ? "保存中…" : "保存注释"}
         </Button>
-        {text !== saved && (
+        {selected !== undefined && hasUnsavedChanges && (
           <span className="text-muted-foreground">有未保存的修改</span>
         )}
-        {text === saved && state.at && (
+        {selected !== undefined && !hasUnsavedChanges && state.at && (
           <span className="text-muted-foreground">
             已保存 {new Date(state.at).toLocaleString()}
           </span>
