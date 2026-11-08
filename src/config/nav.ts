@@ -45,6 +45,45 @@ export type NavItem = {
   badge?: string | undefined;
 };
 
+const WORKSPACE_PATH_PREFIXES = [
+  "/dashboard",
+  "/cared-ones",
+  "/care-circle",
+  "/group",
+  "/join",
+  "/inbox",
+  "/messages",
+  "/chat",
+  "/calendar",
+  "/appointments",
+  "/bookings",
+  "/tasks",
+  "/check-ins",
+  "/checkin",
+  "/medicine",
+  "/notifications",
+  "/profile",
+  "/settings",
+  "/documents",
+  "/places",
+  "/ai",
+  "/assistant",
+  "/companion",
+  "/ai-companion",
+  "/onboarding",
+  "/caregiver-setting",
+  "/cart",
+  "/order-confirmation",
+  "/favorite-caregiver",
+  "/find",
+] as const;
+
+export function isWorkspacePath(pathname: string) {
+  return WORKSPACE_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 type SiteLike = {
   id: string;
   family?: string | undefined;

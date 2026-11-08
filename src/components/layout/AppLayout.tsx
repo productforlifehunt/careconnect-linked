@@ -4,6 +4,7 @@ import { PageBackButton } from "./PageBackButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "@/lib/router-compat";
 import { lazyRetry } from "@/lib/lazy-retry";
+import { isWorkspacePath } from "@/config/nav";
 
 const MobileBottomBar = lazyRetry(
   () =>
@@ -34,12 +35,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { pathname } = useLocation();
   const pagePath = pathname.replace(/\/+$/, "") || "/";
   const showBackButton = pagePath !== "/" && pagePath !== "/dashboard";
+  const hasBottomNav = isWorkspacePath(pathname);
 
   return (
     <div className="min-h-dvh flex flex-col w-full overflow-x-hidden">
       <AppHeader />
       {/* The page scrolls with the window, so the header stays pinned at the top. */}
-      <main className="flex-1 overflow-x-hidden pb-16 lg:pb-0">
+      <main
+        className={`flex-1 overflow-x-hidden ${hasBottomNav ? "pb-16 lg:pb-24" : ""}`}
+      >
         {showBackButton && (
           <div className="mx-auto w-full max-w-6xl px-4 pt-2">
             <PageBackButton />

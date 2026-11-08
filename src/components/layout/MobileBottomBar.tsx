@@ -38,7 +38,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Switch } from "@/components/ui/switch";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
-import { buildBottomTabs } from "@/config/nav";
+import { buildBottomTabs, isWorkspacePath } from "@/config/nav";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import {
   appSettingsQueryKey,
@@ -459,16 +459,15 @@ export function MobileBottomBar() {
     });
   };
 
-  // Hide on marketing surfaces for unauthenticated visitors; once signed in,
-  // always show the bottom bar on mobile (browser or installed PWA).
-  // The homepage never shows the bottom bar.
-  if (!isAuthenticated || location.pathname === "/") return null;
+  // The bottom bar belongs to the signed-in care workspace. Keep public
+  // content and marketing pages uncluttered, even when a user is signed in.
+  if (!isAuthenticated || !isWorkspacePath(location.pathname)) return null;
 
   return (
     <>
       <nav
         data-bottom-nav
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t bg-card h-14 px-1 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-center justify-around border-t bg-card px-1 shadow-[0_-4px_18px_rgba(15,23,42,0.04)] lg:inset-x-auto lg:bottom-5 lg:left-1/2 lg:right-auto lg:h-[68px] lg:w-[min(700px,calc(100vw-2rem))] lg:-translate-x-1/2 lg:justify-center lg:gap-1 lg:rounded-2xl lg:border lg:px-3 lg:shadow-[0_12px_32px_rgba(15,23,42,0.14)] lg:bg-card/95 lg:backdrop-blur"
       >
         {items.map((item) => {
           return (
@@ -476,13 +475,13 @@ export function MobileBottomBar() {
               key={item.url}
               to={item.url}
               end={item.url === "/dashboard"}
-              className="relative flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground transition-colors min-w-0"
+              className="relative flex min-w-0 flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground transition-colors lg:min-w-[112px] lg:gap-1 lg:rounded-xl lg:px-4 lg:py-2 lg:hover:bg-accent/60"
               activeClassName="text-primary"
             >
               <div className="relative">
                 <item.icon className="h-5 w-5" />
               </div>
-              <span className="text-[11px] leading-tight truncate">
+              <span className="truncate text-[11px] leading-tight lg:text-xs lg:font-medium">
                 {item.title}
               </span>
             </NavLink>
@@ -493,13 +492,13 @@ export function MobileBottomBar() {
           <DialogPrimitive.Trigger asChild>
             <button
               type="button"
-              className={`relative flex flex-col items-center gap-0.5 px-2 py-1 transition-colors min-w-0 ${
+              className={`relative flex min-w-0 flex-col items-center gap-0.5 px-2 py-1 transition-colors lg:min-w-[112px] lg:gap-1 lg:rounded-xl lg:px-4 lg:py-2 lg:hover:bg-accent/60 ${
                 moreActive ? "text-primary" : "text-muted-foreground"
               }`}
               aria-label={moreLabel}
             >
               <LayoutGrid className="h-5 w-5" />
-              <span className="text-[10px] leading-tight truncate">
+              <span className="truncate text-[10px] leading-tight lg:text-xs lg:font-medium">
                 {moreLabel}
               </span>
             </button>
@@ -510,7 +509,7 @@ export function MobileBottomBar() {
                 const target = e.target as HTMLElement;
                 if (target.closest("[data-bottom-nav]")) e.preventDefault();
               }}
-              className="fixed inset-x-0 bottom-14 z-50 rounded-t-2xl bg-background shadow-lg border-t max-h-[75vh] overflow-y-auto p-0"
+              className="fixed inset-x-0 bottom-14 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t bg-background p-0 shadow-lg lg:bottom-24 lg:left-1/2 lg:right-auto lg:w-[min(560px,calc(100vw-2rem))] lg:-translate-x-1/2 lg:rounded-2xl lg:border"
             >
               <div className="flex items-center justify-between p-4 pb-2">
                 <DialogPrimitive.Title className="text-base font-semibold">
@@ -702,7 +701,7 @@ export function MobileBottomBar() {
             type="button"
             onClick={() => openAssistant()}
             aria-label={isChinese ? "AI 助手" : "AI Assistant"}
-              className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
+            className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
           >
             <Bot className="h-5 w-5" />
           </button>
