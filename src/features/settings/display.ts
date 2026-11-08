@@ -10,7 +10,10 @@ import {
   applyDisplaySettings,
   DEFAULT_DISPLAY_SETTINGS,
 } from "@/features/settings/display-preferences";
-import { fetchAppSettings } from "@/features/settings/app-settings";
+import {
+  appSettingsQueryKey,
+  fetchAppSettings,
+} from "@/features/settings/app-settings";
 
 export { applyDisplaySettings };
 
@@ -18,7 +21,7 @@ export { applyDisplaySettings };
 export function useApplyDisplaySettings() {
   const { isAuthenticated } = useAuth();
   const { data } = useQuery({
-    queryKey: ["appSettings"],
+    queryKey: appSettingsQueryKey(),
     queryFn: fetchAppSettings,
     enabled: isAuthenticated,
     staleTime: 60_000,

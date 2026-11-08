@@ -40,7 +40,10 @@ import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
 import { buildBottomTabs } from "@/config/nav";
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
-import { fetchAppSettings } from "@/features/settings/app-settings";
+import {
+  appSettingsQueryKey,
+  fetchAppSettings,
+} from "@/features/settings/app-settings";
 
 type ToolItem = {
   id: string;
@@ -91,7 +94,7 @@ export function MobileBottomBar() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: appSettings } = useQuery({
-    queryKey: ["appSettings"],
+    queryKey: appSettingsQueryKey(),
     queryFn: fetchAppSettings,
     enabled: isAuthenticated,
   });
@@ -119,7 +122,7 @@ export function MobileBottomBar() {
       const next = await runSettingSkill("set-help-bubble", false, {
         settings: appSettings,
       });
-      qc.setQueryData(["appSettings"], next);
+      qc.setQueryData(appSettingsQueryKey(), next);
       toast({
         title: isChinese ? "已藏起来" : "Hidden",
         description: isChinese

@@ -328,10 +328,13 @@ export function useCreateReview() {
 // ─── Bookings ───────────────────────────────────────────────
 // Bookings where current user is the provider (incoming requests)
 export function useProviderBookings() {
+  const appId = currentAppId();
+  const userId = getStoredWPUser()?.user_id;
+  const cacheKey = `providerBookings:${appId}:${userId ?? "anonymous"}`;
   return useQuery({
-    queryKey: ["providerBookings"],
-    queryFn: withLastGood("providerBookings", fetchProviderBookingsWordPress),
-    initialData: () => readLastGood<any[]>("providerBookings"),
+    queryKey: ["providerBookings", appId, userId],
+    queryFn: withLastGood(cacheKey, fetchProviderBookingsWordPress),
+    initialData: () => readLastGood<Booking[]>(cacheKey),
     initialDataUpdatedAt: 0,
   });
 }
@@ -540,7 +543,7 @@ export function useCreateTask() {
           }).catch(() => null);
           if (newId && ev?.id) await linkTaskToCalendarEventWordPress(newId, ev.id).catch(() => null);
         }));
-        if (groupId) qc.invalidateQueries({ queryKey: ["calendarEvents"] });
+        if (groupId) qc.invalidateQueries({ queryKey: ["calendar-events"] });
       } catch { /* non-fatal */ }
       return newId;
     },

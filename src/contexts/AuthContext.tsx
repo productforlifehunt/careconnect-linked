@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import type { Profile } from "@/types/care-connector";
 import {
   wpLogin as wpAuthLogin,
@@ -10,7 +16,10 @@ import {
   type WPUser,
   type WPAuthResult,
 } from "@/services/wp-auth";
-import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
+import {
+  fetchMyAppUserName,
+  saveMyAppUserName,
+} from "@/features/profile/app-user-name";
 import { APP_PROFILE_F, ensureAppProfile } from "@/features/shared/app-profile";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -24,7 +33,12 @@ interface AuthContextType {
   authSource: AuthSource;
   login: (email: string, password: string) => Promise<void>;
   loginWithWP: (username: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string, role: string) => Promise<void>;
+  signup: (
+    name: string,
+    email: string,
+    password: string,
+    role: string,
+  ) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -66,61 +80,100 @@ function wpUserToProfile(wp: WPUser, appName = ""): Profile {
   };
 }
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+function readInitialAuthState(): {
+  user: Profile | null;
+  authSource: AuthSource;
+  wpUser: WPUser | null;
+} {
+  if (typeof window === "undefined")
+    return { user: null, authSource: null, wpUser: null };
+
+  try {
+    // Reject locally known stale tokens before cached identity reaches protected routes.
+    const token = localStorage.getItem("cc_wp_token");
+    if (token) {
+      const parts = token.split(".");
+      if (parts.length === 3 && parts[1]) {
+        const payload = JSON.parse(
+          atob(
+            parts[1]
+              .replace(/-/g, "+")
+              .replace(/_/g, "/")
+              .padEnd(Math.ceil(parts[1].length / 4) * 4, "="),
+          ),
+        );
+        const iss: string = payload?.iss || "";
+        const site: string = payload?.site || "";
+        const hasHostClaim = !!(iss || site);
+        const hostOk =
+          !hasHostClaim ||
+          /challenged-dementia\.com/i.test(iss) ||
+          /challenged-dementia\.com/i.test(site) ||
+          /170\.106\.171\.59/.test(iss);
+        const expired =
+          typeof payload?.exp === "number" && payload.exp * 1000 <= Date.now();
+        if (!hostOk || expired) {
+          localStorage.removeItem("cc_wp_token");
+          localStorage.removeItem("cc_wp_user");
+        }
+      }
+    }
+
+    const storedWP = getStoredWPUser();
+    return storedWP
+      ? {
+          user: wpUserToProfile(storedWP),
+          authSource: "wordpress",
+          wpUser: storedWP,
+        }
+      : { user: null, authSource: null, wpUser: null };
+  } catch {
+    // Preserve the previous offline restore behavior if only token decoding failed.
+    try {
+      const storedWP = getStoredWPUser();
+      return storedWP
+        ? {
+            user: wpUserToProfile(storedWP),
+            authSource: "wordpress",
+            wpUser: storedWP,
+          }
+        : { user: null, authSource: null, wpUser: null };
+    } catch {
+      return { user: null, authSource: null, wpUser: null };
+    }
+  }
+}
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const queryClient = useQueryClient();
   const clearAccountReads = useCallback(() => {
     queryClient.clear();
     window.dispatchEvent(new CustomEvent("wp-write"));
   }, [queryClient]);
-  const [user, setUser] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [authSource, setAuthSource] = useState<AuthSource>(null);
+  const [initialAuth] = useState(readInitialAuthState);
+  const [user, setUser] = useState<Profile | null>(initialAuth.user);
+  const [isLoading, setIsLoading] = useState(false);
+  const [authSource, setAuthSource] = useState<AuthSource>(
+    initialAuth.authSource,
+  );
 
   useEffect(() => {
     let cancelled = false;
 
-    // Proactively purge stale tokens issued by old hostnames (pre domain migration).
-    // NOTE: simple-jwt-login on this install issues tokens WITHOUT `iss`/`site`
-    // claims, so absence of those claims must never invalidate a token — only a
-    // claim that explicitly points at a foreign host, or an expired token, does.
-    try {
-      const token = localStorage.getItem("cc_wp_token");
-      if (token) {
-        const parts = token.split(".");
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]!.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1]!.length / 4) * 4, "=")));
-          const iss: string = payload?.iss || "";
-          const site: string = payload?.site || "";
-          const hasHostClaim = !!(iss || site);
-          const hostOk =
-            !hasHostClaim ||
-            /challenged-dementia\.com/i.test(iss) ||
-            /challenged-dementia\.com/i.test(site) ||
-            /170\.106\.171\.59/.test(iss);
-          // Also drop if expired
-          const expired = typeof payload?.exp === "number" && payload.exp * 1000 <= Date.now();
-          if (!hostOk || expired) {
-            localStorage.removeItem("cc_wp_token");
-            localStorage.removeItem("cc_wp_user");
-          }
-        }
-      }
-    } catch {
-      // If we can't parse, leave it — the API call will trigger auto-recovery
-    }
-
-
-    // Restore WP session from localStorage (fast, no network)
-    const storedWP = getStoredWPUser();
+    // The cached session is already available to the first render. Refresh the
+    // app-specific display name and validate its token in the background.
+    const storedWP = initialAuth.wpUser;
     if (storedWP) {
-      setUser(wpUserToProfile(storedWP));
-      setAuthSource("wordpress");
-      setIsLoading(false);
-
       // Hydrate the display name from CCT 151 (this app's own column).
       fetchMyAppUserName()
-        .then((appName) => { if (!cancelled) setUser(wpUserToProfile(storedWP, appName)); })
-        .catch(() => { /* name stays empty until the profile row exists */ });
+        .then((appName) => {
+          if (!cancelled) setUser(wpUserToProfile(storedWP, appName));
+        })
+        .catch(() => {
+          /* name stays empty until the profile row exists */
+        });
 
       wpValidateToken().then((validated) => {
         if (cancelled) return;
@@ -132,12 +185,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       });
-    } else {
-      setIsLoading(false);
     }
 
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialAuth.wpUser]);
 
   const finishLogin = useCallback((wpUser: WPUser, token: string) => {
     // Credentials and the current WP user are verified by wpLogin. Let the
@@ -161,46 +214,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result: WPAuthResult = await wpAuthLogin(email, password);
-    clearAccountReads();
-    const wpUser: WPUser = {
-      user_id: result.user_id,
-      user_email: result.user_email,
-      user_login: result.user_login,
-      user_display_name: result.user_display_name,
-    };
-    finishLogin(wpUser, result.token);
-  }, [clearAccountReads, finishLogin]);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const result: WPAuthResult = await wpAuthLogin(email, password);
+      clearAccountReads();
+      const wpUser: WPUser = {
+        user_id: result.user_id,
+        user_email: result.user_email,
+        user_login: result.user_login,
+        user_display_name: result.user_display_name,
+      };
+      finishLogin(wpUser, result.token);
+    },
+    [clearAccountReads, finishLogin],
+  );
 
-  const loginWithWP = useCallback(async (username: string, password: string) => {
-    const result: WPAuthResult = await wpAuthLogin(username, password);
-    clearAccountReads();
-    const wpUser: WPUser = {
-      user_id: result.user_id,
-      user_email: result.user_email,
-      user_login: result.user_login,
-      user_display_name: result.user_display_name,
-    };
-    finishLogin(wpUser, result.token);
-  }, [clearAccountReads, finishLogin]);
+  const loginWithWP = useCallback(
+    async (username: string, password: string) => {
+      const result: WPAuthResult = await wpAuthLogin(username, password);
+      clearAccountReads();
+      const wpUser: WPUser = {
+        user_id: result.user_id,
+        user_email: result.user_email,
+        user_login: result.user_login,
+        user_display_name: result.user_display_name,
+      };
+      finishLogin(wpUser, result.token);
+    },
+    [clearAccountReads, finishLogin],
+  );
 
-  const signup = useCallback(async (name: string, email: string, password: string, _role: string) => {
-    const result: WPAuthResult = await wpAuthRegister(email, password, name);
-    clearAccountReads();
-    const wpUser: WPUser = {
-      user_id: result.user_id,
-      user_email: result.user_email,
-      user_login: result.user_login,
-      user_display_name: result.user_display_name,
-    };
-    // The name the user typed at signup belongs to this app's own row (a55).
-    await ensureAppProfile().catch(() => null);
-    await saveMyAppUserName(name);
-    setUser(wpUserToProfile(wpUser, name));
-    setAuthSource("wordpress");
-    setIsLoading(false);
-  }, [clearAccountReads]);
+  const signup = useCallback(
+    async (name: string, email: string, password: string, _role: string) => {
+      const result: WPAuthResult = await wpAuthRegister(email, password, name);
+      clearAccountReads();
+      const wpUser: WPUser = {
+        user_id: result.user_id,
+        user_email: result.user_email,
+        user_login: result.user_login,
+        user_display_name: result.user_display_name,
+      };
+      // The name the user typed at signup belongs to this app's own row (a55).
+      await ensureAppProfile().catch(() => null);
+      await saveMyAppUserName(name);
+      setUser(wpUserToProfile(wpUser, name));
+      setAuthSource("wordpress");
+      setIsLoading(false);
+    },
+    [clearAccountReads],
+  );
 
   const logout = useCallback(async () => {
     wpAuthLogout();
@@ -210,17 +272,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [clearAccountReads]);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session: null,
-      isAuthenticated: !!user,
-      isLoading,
-      authSource,
-      login,
-      loginWithWP,
-      signup,
-      logout,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session: null,
+        isAuthenticated: !!user,
+        isLoading,
+        authSource,
+        login,
+        loginWithWP,
+        signup,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -246,9 +310,10 @@ const SIGNED_OUT: AuthContextType = {
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    console.error("useAuth used outside AuthProvider — falling back to signed-out state");
+    console.error(
+      "useAuth used outside AuthProvider — falling back to signed-out state",
+    );
     return SIGNED_OUT;
   }
   return ctx;
 };
-

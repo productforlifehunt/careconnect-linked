@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { Bell, MapPin, CalendarDays, Loader2, Settings2, ExternalLink } from "lucide-react";
+import { appSettingsQueryKey } from "@/features/settings/app-settings";
 import {
   SETTING_GROUPS,
   settingSkillsInGroup,
@@ -61,7 +62,7 @@ export function AppSettingsPanel({
   const qc = useQueryClient();
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ["appSettings"],
+    queryKey: appSettingsQueryKey(),
     queryFn: () => fetchAppSettings(),
   });
   const local: AppSettings = settings ?? DEFAULT_APP_SETTINGS;
@@ -69,7 +70,7 @@ export function AppSettingsPanel({
   const save = useMutation({
     mutationFn: ({ name, value }: { name: string; value: any }) => runSettingSkill(name, value, { settings: local }),
     onSuccess: (next) => {
-      qc.setQueryData(["appSettings"], next);
+      qc.setQueryData(appSettingsQueryKey(), next);
       toast({ title: Z("已保存", "Saved") });
     },
     onError: () =>
@@ -89,7 +90,7 @@ export function AppSettingsPanel({
     try {
       const { state, settings: next } = await askPermissionSkill(spec.name, local);
       setPerm((p) => ({ ...p, [spec.name]: state }));
-      qc.setQueryData(["appSettings"], next);
+      qc.setQueryData(appSettingsQueryKey(), next);
       if (spec.permission === "push" && state === "granted") {
         await subscribeWebPushAndRegister(import.meta.env["VITE_VAPID_PUBLIC_KEY"]);
         set("set-alerts-on-phone", true);

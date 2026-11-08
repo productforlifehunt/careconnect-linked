@@ -1,25 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchBookingsWordPress } from "@/features/bookings/source.wordpress";
-import { fetchCareGroupsWordPress } from "@/features/care-groups/source.wordpress";
-import {
-  fetchCareTasksWordPress,
-  fetchUserAssignedCareTaskIdsWordPress,
-} from "@/features/care-tasks/source.wordpress";
-import { fetchCaredOneLocationWordPress } from "@/features/location/source.wordpress-extended";
-import { fetchUserCaredOnesWordPress } from "@/features/cared-ones/source.wordpress";
-import {
-  fetchCheckinsWordPress,
-  fetchMedicinesWordPress,
-  fetchTodayCheckinLogsWordPress,
-  fetchTodayMedicineLogsWordPress,
-} from "@/features/cared-ones/source.wordpress-extended";
-import {
-  fetchConversationCountsWordPress,
-  fetchConversationsWordPress,
-} from "@/features/conversations/source.wordpress";
 import { inboxCounts } from "@/features/inbox/counts";
 import { currentAppId } from "@/features/shared/app-profile";
-import { fetchPostsWordPress } from "@/features/posts/source.wordpress";
 import { readLastGood, withLastGood } from "@/lib/last-good";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
 import type { Booking } from "@/types/care-connector";
@@ -29,12 +10,19 @@ function hasWPSession(): boolean {
 }
 
 export function useBookings(enabled = true) {
+  const appId = currentAppId();
+  const userId = getStoredWPUser()?.user_id;
+  const cacheKey = `bookings:${appId}:${userId ?? "anonymous"}`;
   return useQuery({
-    queryKey: ["bookings"],
-    queryFn: withLastGood("bookings", fetchBookingsWordPress),
+    queryKey: ["bookings", appId, userId],
+    queryFn: withLastGood(cacheKey, async () =>
+      (
+        await import("@/features/bookings/source.wordpress")
+      ).fetchBookingsWordPress(),
+    ),
     enabled,
     // Show the last known list instantly, refresh it in the background.
-    initialData: () => readLastGood<Booking[]>("bookings"),
+    initialData: () => readLastGood<Booking[]>(cacheKey),
     initialDataUpdatedAt: 0,
   });
 }
@@ -43,17 +31,24 @@ export function useConversations(enabled = true) {
   const me = getStoredWPUser();
   const myId = me ? `wp-${me.user_id}` : "";
   return useQuery({
-    queryKey: ["conversations", myId],
-    queryFn: () => fetchConversationsWordPress(myId),
+    queryKey: ["conversations", myId, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/conversations/source.wordpress")
+      ).fetchConversationsWordPress(myId),
     enabled: enabled && !!myId,
     refetchInterval: 30000,
   });
 }
 
 export function useCareGroups(enabled = true) {
+  const userId = getStoredWPUser()?.user_id;
   return useQuery({
-    queryKey: ["careGroups"],
-    queryFn: () => fetchCareGroupsWordPress(),
+    queryKey: ["careGroups", currentAppId(), userId],
+    queryFn: async () =>
+      (
+        await import("@/features/care-groups/source.wordpress")
+      ).fetchCareGroupsWordPress(),
     enabled,
   });
 }
@@ -81,6 +76,8 @@ export function useCareTasks(
       userId,
     ],
     queryFn: async () => {
+      const { fetchCareTasksWordPress } =
+        await import("@/features/care-tasks/source.wordpress");
       return fetchCareTasksWordPress(groupId, {
         includeAssignees,
         visibleToCurrentUser: true,
@@ -95,8 +92,11 @@ export function useCareTasks(
 export function useAssignedCareTaskIds(enabled = true) {
   const userId = getStoredWPUser()?.user_id;
   return useQuery({
-    queryKey: ["assignedCareTaskIds", userId],
-    queryFn: fetchUserAssignedCareTaskIdsWordPress,
+    queryKey: ["assignedCareTaskIds", userId, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/care-tasks/source.wordpress")
+      ).fetchUserAssignedCareTaskIdsWordPress(),
     enabled: enabled && !!userId,
   });
 }
@@ -127,7 +127,10 @@ export function useInboxCounts(
   const myId = me?.user_id ? `wp-${me.user_id}` : "";
   const conversationCounts = useQuery({
     queryKey: ["conversationCounts", myId, currentAppId()],
-    queryFn: () => fetchConversationCountsWordPress(myId),
+    queryFn: async () =>
+      (
+        await import("@/features/conversations/source.wordpress")
+      ).fetchConversationCountsWordPress(myId),
     enabled: enabled && !!myId && !conversationSource,
     staleTime: 30_000,
     refetchInterval: conversationSource ? false : 30_000,
@@ -169,8 +172,14 @@ export function usePosts(
   enabled = true,
 ) {
   return useQuery({
-    queryKey: ["posts", postType, area, childPostType, limit],
-    queryFn: () => fetchPostsWordPress(postType, area, childPostType, limit),
+    queryKey: ["posts", postType, area, childPostType, limit, currentAppId()],
+    queryFn: async () =>
+      (await import("@/features/posts/source.wordpress")).fetchPostsWordPress(
+        postType,
+        area,
+        childPostType,
+        limit,
+      ),
     enabled,
   });
 }
@@ -179,15 +188,21 @@ export function useUserCaredOnes(enabled = true) {
   const userId = getStoredWPUser()?.user_id;
   return useQuery({
     queryKey: ["userCaredOnes", currentAppId(), userId],
-    queryFn: () => fetchUserCaredOnesWordPress(),
+    queryFn: async () =>
+      (
+        await import("@/features/cared-ones/source.wordpress")
+      ).fetchUserCaredOnesWordPress(),
     enabled,
   });
 }
 
 export function useCheckins(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["checkins", caredOneId],
-    queryFn: () => fetchCheckinsWordPress(caredOneId!),
+    queryKey: ["checkins", caredOneId, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/cared-ones/source.wordpress-extended")
+      ).fetchCheckinsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -195,16 +210,22 @@ export function useCheckins(caredOneId: string | null) {
 export function useTodayCheckinLogs(caredOneId: string | null) {
   const today = new Date().toISOString().split("T")[0];
   return useQuery({
-    queryKey: ["todayCheckinLogs", caredOneId, today],
-    queryFn: () => fetchTodayCheckinLogsWordPress(caredOneId!),
+    queryKey: ["todayCheckinLogs", caredOneId, today, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/cared-ones/source.wordpress-extended")
+      ).fetchTodayCheckinLogsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
 
 export function useMedicines(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["medicines", caredOneId],
-    queryFn: () => fetchMedicinesWordPress(caredOneId!),
+    queryKey: ["medicines", caredOneId, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/cared-ones/source.wordpress-extended")
+      ).fetchMedicinesWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
@@ -212,16 +233,22 @@ export function useMedicines(caredOneId: string | null) {
 export function useTodayMedicineLogs(caredOneId: string | null) {
   const today = new Date().toISOString().split("T")[0];
   return useQuery({
-    queryKey: ["todayMedicineLogs", caredOneId, today],
-    queryFn: () => fetchTodayMedicineLogsWordPress(caredOneId!),
+    queryKey: ["todayMedicineLogs", caredOneId, today, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/cared-ones/source.wordpress-extended")
+      ).fetchTodayMedicineLogsWordPress(caredOneId!),
     enabled: !!caredOneId,
   });
 }
 
 export function useCaredOneLocation(caredOneId: string | null) {
   return useQuery({
-    queryKey: ["caredOneLocation", caredOneId],
-    queryFn: () => fetchCaredOneLocationWordPress(caredOneId!),
+    queryKey: ["caredOneLocation", caredOneId, currentAppId()],
+    queryFn: async () =>
+      (
+        await import("@/features/location/source.wordpress-extended")
+      ).fetchCaredOneLocationWordPress(caredOneId!),
     enabled: !!caredOneId,
     // A requested location arrives whenever the cared one answers — keep looking.
     refetchInterval: 30_000,

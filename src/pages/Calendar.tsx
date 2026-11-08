@@ -23,6 +23,8 @@ import EventFormDialog from "@/features/calendar/EventFormDialog";
 import { Calendar as CalendarIcon, MapPin, Users, Clock, Repeat, Plus, Pencil, Trash2 } from "lucide-react";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { toast } from "sonner";
+import { currentAppId } from "@/features/shared/app-profile";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 const ALL_TYPES: CalendarEventType[] = [
   "personal", "family", "medicine", "task", "appointment",
@@ -48,7 +50,7 @@ export default function CalendarPage() {
   const calendarRootRef = useRef<HTMLDivElement>(null);
 
   const { data: allEvents = [], isLoading } = useQuery({
-    queryKey: ["calendar-events"],
+    queryKey: ["calendar-events", currentAppId(), getStoredWPUser()?.user_id],
     queryFn: fetchCalendarEventsWordPress,
     staleTime: 60_000,
   });

@@ -1,8 +1,14 @@
 import {
+  currentAppId,
   fetchAppSettingsJson,
   fetchHelpBubbleVisible,
 } from "@/features/shared/app-profile";
 import { DEFAULT_DISPLAY_SETTINGS } from "@/features/settings/display-preferences";
+import { getStoredWPUser } from "@/services/wp-auth";
+
+export function appSettingsQueryKey() {
+  return ["appSettings", currentAppId(), getStoredWPUser()?.user_id] as const;
+}
 
 export interface AppSettings {
   notifications: {
