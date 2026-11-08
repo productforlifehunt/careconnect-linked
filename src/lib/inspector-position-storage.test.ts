@@ -2,8 +2,22 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   readNoteForKey,
   readNoteForFingerprint,
+  readNotesForPosition,
   selectNote,
 } from "./inspector-notes.server";
+import { WP } from "@/integrations/wp-schema";
+
+const noteFields = WP.cct["324"].f;
+
+type TestRow = {
+  _ID: string | number;
+  a55: string;
+  a56: string;
+  a57?: string;
+  a58?: string | null;
+  a59?: string;
+  [field: string]: unknown;
+};
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => {
@@ -25,12 +39,19 @@ const original = {
   inspectorBindings: [binding],
 };
 function fixture(normalizeEmpty = false) {
-  let row = {
+  let row: TestRow = {
     _ID: "10567",
     a55: "个人设置表单",
     a56: "不可改变的原正文",
+    a57: "ChallengeD",
     a58: normalizeEmpty ? null : "b55",
     a59: JSON.stringify(original),
+    [noteFields["已手动核对笔记关联"]!]:
+      WP.cct["324"].opt["NOTE_RELATION_VERIFIED"]!["YES"],
+    [noteFields["已手动核对笔记关联详情"]!]: "现有 REL325 关系已核对",
+    [noteFields["版本"]!]: "1.0",
+    [noteFields["笔记类型"]!]: "b55",
+    [noteFields["笔记标签顺序"]!]: "1",
   };
   const writes: { url: string; body: Record<string, unknown> }[] = [];
   vi.stubEnv("WP_ADMIN_USER", "test");
@@ -41,11 +62,8 @@ function fixture(normalizeEmpty = false) {
       if (init?.method === "POST") {
         const body = JSON.parse(String(init.body)) as Record<string, unknown>;
         writes.push({ url, body });
-        row = {
-          ...row,
-          a59: String(body["a59"]),
-          a58: normalizeEmpty ? "" : row.a58,
-        };
+        row = { ...row, ...body } as TestRow;
+        if (normalizeEmpty && "a58" in body) row["a58"] = "";
         return Response.json(true);
       }
       return Response.json(url.includes("?") ? [row] : row);
@@ -78,8 +96,79 @@ it("explicit binding save writes only CCT324 a59 and leaves body, verified state
     a56: "不可改变的原正文",
     a58: "b55",
   });
-  expect(JSON.parse(f.getRow().a59)).toEqual(original);
+  expect(JSON.parse(String(f.getRow().a59))).toEqual(original);
 });
+
+it.each(["b55", "b56"] as const)(
+  "selects a %s note and stores only its page binding in a59",
+  async (noteType) => {
+    const f = fixture();
+    const selected = await selectNote({
+      key: "page|/care-circle/46/tasks",
+      id: "10567",
+      scope: "page",
+      page: "/care-circle/46/tasks",
+      label: "Care Tasks",
+      noteType,
+      tabOrder: 2,
+    });
+
+    expect(selected).toMatchObject({
+      id: "10567",
+      key: "page|/care-circle/46/tasks",
+      noteType,
+      tabOrder: 2,
+      locked: true,
+    });
+    expect(f.writes).toHaveLength(2);
+    expect(f.writes[0]?.body).not.toHaveProperty("a59");
+    expect(f.writes[0]?.body[noteFields["笔记类型"]!]).toBe(noteType);
+    expect(f.writes[0]?.body[noteFields["笔记标签顺序"]!]).toBe("2");
+    expect(Object.keys(f.writes[1]?.body ?? {})).toEqual(["a59"]);
+
+    const saved = f.getRow();
+    expect(saved[noteFields["笔记类型"]!]).toBe(noteType);
+    expect(String(saved[noteFields["笔记标签顺序"]!])).toBe("2");
+    expect(saved).toMatchObject({
+      a55: "个人设置表单",
+      a56: "不可改变的原正文",
+      a57: "ChallengeD",
+      a58: "b55",
+      [noteFields["已手动核对笔记关联详情"]!]: "现有 REL325 关系已核对",
+      [noteFields["版本"]!]: "1.0",
+    });
+
+    const stored = JSON.parse(String(saved.a59)) as typeof original;
+    expect(stored.version).toBe(original.version);
+    expect(stored.relatedNoteIds).toEqual(original.relatedNoteIds);
+    expect(stored.frontendTargets).toEqual(original.frontendTargets);
+    expect(stored.inspectorBindings).toEqual([
+      binding,
+      {
+        key: "page|/care-circle/46/tasks",
+        id: "10567",
+        scope: "page",
+        page: "/care-circle/46/tasks",
+        label: "Care Tasks",
+        locked: true,
+      },
+    ]);
+    const positionNotes = await readNotesForPosition(
+      "page|/care-circle/46/tasks",
+    );
+    expect(positionNotes).toHaveLength(1);
+    expect(positionNotes[0]).toMatchObject({
+      id: "10567",
+      key: "page|/care-circle/46/tasks",
+      noteType,
+      tabOrder: 2,
+      scope: "page",
+      page: "/care-circle/46/tasks",
+      label: "Care Tasks",
+      locked: true,
+    });
+  },
+);
 it("plugin normalization of an empty verification field does not report a false binding-save failure", async () => {
   fixture(true);
   expect(await selectNote(binding)).toMatchObject({

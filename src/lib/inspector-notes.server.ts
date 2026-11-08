@@ -516,8 +516,15 @@ export async function selectNote(
     }, token);
     row = (await wp(`/${binding.id}`, "GET", undefined, token)) as CCTRow;
   }
-  await storeBinding({ ...binding, locked: true }, token);
-  return { ...mapRow(row), ...binding, locked: true };
+  const { noteType, tabOrder, ...positionBinding } = binding;
+  await storeBinding({ ...positionBinding, locked: true }, token);
+  return {
+    ...mapRow(row),
+    ...positionBinding,
+    ...(noteType === undefined ? {} : { noteType }),
+    ...(tabOrder === undefined ? {} : { tabOrder }),
+    locked: true,
+  };
 }
 export async function writeNote(
   note: Omit<InspectorNote, "updatedAt"> & { create?: boolean | undefined },
