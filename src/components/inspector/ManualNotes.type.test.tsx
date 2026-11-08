@@ -98,6 +98,7 @@ it("saves a selected note under the chosen type and moves it to that type's tabs
 
   await screen.findByDisplayValue("已有内容");
   fireEvent.click(screen.getByRole("combobox", { name: "注释分类" }));
+  expect(await screen.findByRole("listbox")).toHaveClass("z-[10001]");
   fireEvent.click(
     await screen.findByRole("option", { name: "页面关联注释（B56）" }),
   );
@@ -108,6 +109,9 @@ it("saves a selected note under the chosen type and moves it to that type's tabs
     data: expect.objectContaining({ id: "101", noteType: "b56", tabOrder: 1 }),
   });
   expect(await screen.findByText("页面关联注释 · 1 条")).toBeDefined();
+  expect(screen.getByRole("combobox", { name: "注释分类" })).toHaveTextContent(
+    "页面关联注释（B56）",
+  );
 });
 
 it("keeps category selection inside the inspector in select mode", async () => {

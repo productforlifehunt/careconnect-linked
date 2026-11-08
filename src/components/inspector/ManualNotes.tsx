@@ -916,7 +916,7 @@ export function ManualNotes({
           <SelectTrigger aria-label="注释分类">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent data-rw-inspector>
+          <SelectContent data-rw-inspector className="z-[10001]">
             <SelectItem value="b55">{noteScopeLabel}说明注释（B55）</SelectItem>
             <SelectItem value="b56">{noteScopeLabel}关联注释（B56）</SelectItem>
           </SelectContent>
