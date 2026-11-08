@@ -97,6 +97,8 @@ export function HomeTab({
       <Card className="border-transparent card-elevated mb-6">
         <CardContent className="p-4">
           <Textarea
+            id="care-circle-post-content"
+            name="content"
             aria-label={isCN ? "与团队分享一条更新" : "Share an update with your care team"}
             value={content}
             onChange={e => setContent(e.target.value)}

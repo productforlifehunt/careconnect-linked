@@ -3,7 +3,7 @@ import { inboxCounts } from "@/features/inbox/counts";
 import { currentAppId } from "@/features/shared/app-profile";
 import { readLastGood, withLastGood } from "@/lib/last-good";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
-import type { Booking } from "@/types/care-connector";
+import type { Booking, CareGroup } from "@/types/care-connector";
 
 function hasWPSession(): boolean {
   return Boolean(getWPToken());
@@ -42,14 +42,20 @@ export function useConversations(enabled = true) {
 }
 
 export function useCareGroups(enabled = true) {
+  const appId = currentAppId();
   const userId = getStoredWPUser()?.user_id;
+  const cacheKey = `careGroups:${appId}:${userId ?? "anonymous"}`;
   return useQuery({
-    queryKey: ["careGroups", currentAppId(), userId],
-    queryFn: async () =>
+    queryKey: ["careGroups", appId, userId],
+    queryFn: withLastGood(cacheKey, async () =>
       (
         await import("@/features/care-groups/source.wordpress")
       ).fetchCareGroupsWordPress(),
+    ),
     enabled,
+    refetchOnMount: true,
+    initialData: () => readLastGood<CareGroup[]>(cacheKey),
+    initialDataUpdatedAt: 0,
   });
 }
 
@@ -63,19 +69,24 @@ export function useCareTasks(
   } = {},
 ) {
   const userId = getStoredWPUser()?.user_id;
+  const appId = currentAppId();
+  const queryKey = [
+    "careTasks",
+    groupId,
+    includeAssignees ? "with-assignees" : "summary",
+    options.caredOneOnly ? "cared-one-scope" : "all-scope",
+    options.includeAssignmentStatus === false
+      ? "without-assignment-status"
+      : "with-assignment-status",
+    appId,
+    userId,
+  ];
+  // Scope the browser snapshot by every input that changes the visible task
+  // set, including both the current brand and account.
+  const cacheKey = `careTasks:${JSON.stringify(queryKey.slice(1))}`;
   return useQuery({
-    queryKey: [
-      "careTasks",
-      groupId,
-      includeAssignees ? "with-assignees" : "summary",
-      options.caredOneOnly ? "cared-one-scope" : "all-scope",
-      options.includeAssignmentStatus === false
-        ? "without-assignment-status"
-        : "with-assignment-status",
-      currentAppId(),
-      userId,
-    ],
-    queryFn: async () => {
+    queryKey,
+    queryFn: withLastGood(cacheKey, async () => {
       const { fetchCareTasksWordPress } =
         await import("@/features/care-tasks/source.wordpress");
       return fetchCareTasksWordPress(groupId, {
@@ -84,8 +95,18 @@ export function useCareTasks(
         caredOneOnly: options.caredOneOnly,
         includeAssignmentStatus: options.includeAssignmentStatus,
       });
-    },
+    }),
     enabled,
+    refetchOnMount: true,
+    initialData: () =>
+      readLastGood<
+        Awaited<
+          ReturnType<
+            typeof import("@/features/care-tasks/source.wordpress").fetchCareTasksWordPress
+          >
+        >
+      >(cacheKey),
+    initialDataUpdatedAt: 0,
   });
 }
 
@@ -185,14 +206,27 @@ export function usePosts(
 }
 
 export function useUserCaredOnes(enabled = true) {
+  const appId = currentAppId();
   const userId = getStoredWPUser()?.user_id;
+  const cacheKey = `userCaredOnes:${appId}:${userId ?? "anonymous"}`;
   return useQuery({
-    queryKey: ["userCaredOnes", currentAppId(), userId],
-    queryFn: async () =>
+    queryKey: ["userCaredOnes", appId, userId],
+    queryFn: withLastGood(cacheKey, async () =>
       (
         await import("@/features/cared-ones/source.wordpress")
       ).fetchUserCaredOnesWordPress(),
+    ),
     enabled,
+    refetchOnMount: true,
+    initialData: () =>
+      readLastGood<
+        Awaited<
+          ReturnType<
+            typeof import("@/features/cared-ones/source.wordpress").fetchUserCaredOnesWordPress
+          >
+        >
+      >(cacheKey),
+    initialDataUpdatedAt: 0,
   });
 }
 

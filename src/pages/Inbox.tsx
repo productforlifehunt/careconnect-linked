@@ -47,20 +47,24 @@ export default function Inbox() {
   // All / Unread / Read segmented control right, same row).
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
 
-  const { data: notifications, isLoading: notifsLoading } = useNotifications();
+  const shouldLoadNotifications = tab !== "messages";
+  const shouldLoadConversations = tab !== "notifications";
+  const { data: notifications, isLoading: notifsLoading } = useNotifications(
+    shouldLoadNotifications,
+  );
   const {
     data: conversations,
     isLoading: convosLoading,
     error: convosError,
-  } = useConversations();
+  } = useConversations(shouldLoadConversations);
   const myUserId = getStoredWPUser()?.user_id;
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const markMessagesRead = useMarkMessagesRead();
-  const counts = useInboxCounts(true, {
+  const counts = useInboxCounts(shouldLoadNotifications, {
     data: conversations,
-    isLoading: convosLoading,
-    error: convosError,
+    isLoading: shouldLoadConversations && convosLoading,
+    error: shouldLoadConversations ? convosError : undefined,
   });
   const selectedTotal = tab === "notifications" ? (notifications || []).length : tab === "messages" ? (conversations || []).length : counts.total;
   const selectedUnread = tab === "notifications" ? counts.unreadNotifications : tab === "messages" ? counts.unreadMessages : counts.unread;
