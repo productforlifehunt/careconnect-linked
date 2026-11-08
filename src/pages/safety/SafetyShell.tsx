@@ -91,7 +91,7 @@ export function SafetyShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className={`w-full flex-1 ${bare ? "" : "px-0 pb-20 md:px-4"}`}>
-        <div className="px-4 pt-2">
+        <div className="px-4 pt-2 empty:hidden">
           <PageBackButton />
         </div>
         {children}
