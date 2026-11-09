@@ -2,7 +2,7 @@ import { useNavigate } from "@/lib/router-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Trash2, Loader2, ArrowLeft, Minus, Plus, X, Tag } from "lucide-react";
+import { ShoppingCart, Trash2, Loader2, Minus, Plus, X, Tag } from "lucide-react";
 import { useCart, useRemoveCartItem, useClearCart, useCheckout, useUpdateCartQuantity, useApplyCoupon, useRemoveCoupon } from "@/hooks/use-cart";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
@@ -81,7 +81,6 @@ export default function Cart() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-5">
-      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /> {cn ? "返回" : "Back"}</Button>
       <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-5 flex items-center gap-2"><ShoppingCart className="h-5 w-5" /> {cn ? "我的购物车" : "Your Cart"}</h1>
 
       {items.length === 0 ? (

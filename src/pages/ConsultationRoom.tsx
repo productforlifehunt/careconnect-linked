@@ -103,10 +103,6 @@ export default function ConsultationRoom() {
   return (
     <div className="container mx-auto max-w-4xl space-y-4 p-4">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {zh ? '返回' : 'Back'}
-        </Button>
         <Badge variant={statusVariant[delivery.delivery_status] || 'outline'}>
           {delivery.delivery_status}
         </Badge>

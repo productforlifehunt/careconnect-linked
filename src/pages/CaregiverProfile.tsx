@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, ArrowLeft, Phone, Loader2 } from "lucide-react";
+import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, Phone, Loader2 } from "lucide-react";
 import { CommentsSection } from "@/components/comments/CommentsSection";
 import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
 import { useAddToCart } from "@/hooks/use-cart";
@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const TIME_STEP_MINUTES = 30;
 
@@ -362,7 +363,10 @@ export default function CaregiverProfile() {
 
   const handleToggleFavorite = () => {
     if (!isAuthenticated) { navigate("/auth"); return; }
-    toggleSaved.mutate(caregiver.id);
+    toggleSaved.mutate(caregiver.id, {
+      onSuccess: () => toast({ title: isZh ? (isFavorited ? "你已取消收藏该护理者" : "你已收藏该护理者") : (isFavorited ? "Caregiver removed from favorites" : "Caregiver added to favorites") }),
+      onError: () => toast({ title: isZh ? "收藏操作失败，请重试" : "Could not update favorites. Please try again.", variant: "destructive" }),
+    });
   };
 
   const durationHrs = getDurationHours(bookingTime, bookingEndTime);
@@ -371,10 +375,6 @@ export default function CaregiverProfile() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-5">
-      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-4 w-4" /> {isZh ? "返回" : "Back"}
-      </Button>
-
       <div className="grid lg:grid-cols-3 lg:grid-rows-[auto_auto] items-start gap-5">
         <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated">
@@ -396,17 +396,27 @@ export default function CaregiverProfile() {
                         
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                       className="min-h-11 min-w-11 shrink-0"
-                      onClick={handleToggleFavorite}
-                      title={isZh ? "收藏" : "Save"}
-                      aria-label={isZh ? "收藏" : "Save"}
-                      aria-pressed={isFavorited}
-                    >
-                      <Heart className={`h-5 w-5 ${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}`} />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="min-h-11 min-w-11 shrink-0"
+                          onClick={handleToggleFavorite}
+                          disabled={toggleSaved.isPending}
+                          title={isZh ? (isFavorited ? "取消收藏" : "收藏") : (isFavorited ? "Remove from favorites" : "Save")}
+                          aria-label={isZh ? (isFavorited ? "取消收藏" : "收藏") : (isFavorited ? "Remove from favorites" : "Save")}
+                          aria-pressed={isFavorited}
+                        >
+                          <Heart className={`h-5 w-5 ${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isZh
+                          ? (isFavorited ? "点击取消收藏该护理者" : "点击收藏该护理者")
+                          : (isFavorited ? "Click to remove this caregiver from favorites" : "Click to save this caregiver to your favorites")}
+                      </TooltipContent>
+                    </Tooltip>
 
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">

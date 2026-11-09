@@ -73,9 +73,11 @@ export default function BecomeCaregiver() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <Button variant="ghost" size="sm" className="mb-4 gap-1.5 -ml-2" onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)}>
-        <ArrowLeft className="h-4 w-4" /> {step > 1 ? t("becomeCaregiver.previousStep") : t("common.back")}
-      </Button>
+      {step > 1 && (
+        <Button variant="ghost" size="sm" className="mb-4 gap-1.5 -ml-2" onClick={() => setStep(step - 1)}>
+          <ArrowLeft className="h-4 w-4" /> {t("becomeCaregiver.previousStep")}
+        </Button>
+      )}
 
       <div className="text-center mb-6">
         <div className="mx-auto w-12 h-12 rounded-2xl hero-gradient flex items-center justify-center mb-3"><Heart className="h-6 w-6 text-primary-foreground" /></div>

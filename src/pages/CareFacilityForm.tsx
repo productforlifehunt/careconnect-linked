@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, Loader2, Save } from "lucide-react";
+import { Building2, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -170,10 +170,6 @@ export default function CareFacilityForm() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-5 space-y-5">
-      <Button variant="ghost" size="sm" className="gap-1.5 -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-4 w-4" /> {isZh ? "返回" : "Back"}
-      </Button>
-
       <Card className="border-transparent card-elevated">
         <CardHeader>
           <h1 className="flex items-center gap-2 text-2xl font-semibold leading-none tracking-tight">

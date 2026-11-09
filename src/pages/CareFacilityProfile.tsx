@@ -2,7 +2,7 @@ import { R } from "@/integrations/wp-schema";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Building2, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
+import { Building2, Loader2, Mail, MapPin, Phone, Star, Layers3, MessageSquareText, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -141,10 +141,6 @@ export default function CareFacilityProfile() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
-      <Button variant="ghost" size="sm" className="mb-3 gap-1.5 -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-4 w-4" /> {t("common.back")}
-      </Button>
-
       <div className="grid lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
           <Card className="border-transparent card-elevated overflow-hidden">
