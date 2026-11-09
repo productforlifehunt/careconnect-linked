@@ -467,7 +467,7 @@ export function MobileBottomBar() {
     <>
       <nav
         data-bottom-nav
-        className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-center justify-around border-t bg-card px-1 shadow-[0_-4px_18px_rgba(15,23,42,0.04)] lg:inset-x-auto lg:bottom-5 lg:left-1/2 lg:right-auto lg:h-[68px] lg:w-[min(700px,calc(100vw-2rem))] lg:-translate-x-1/2 lg:justify-center lg:gap-1 lg:rounded-2xl lg:border lg:px-3 lg:shadow-[0_12px_32px_rgba(15,23,42,0.14)] lg:bg-card/95 lg:backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-center justify-around border-t bg-card px-1 shadow-[0_-4px_18px_rgba(15,23,42,0.04)]"
       >
         {items.map((item) => {
           return (
@@ -475,13 +475,13 @@ export function MobileBottomBar() {
               key={item.url}
               to={item.url}
               end={item.url === "/dashboard"}
-              className="relative flex min-w-0 flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground transition-colors lg:min-w-[112px] lg:gap-1 lg:rounded-xl lg:px-4 lg:py-2 lg:hover:bg-accent/60"
+              className="relative flex min-w-0 flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground transition-colors"
               activeClassName="text-primary"
             >
               <div className="relative">
                 <item.icon className="h-5 w-5" />
               </div>
-              <span className="truncate text-[11px] leading-tight lg:text-xs lg:font-medium">
+              <span className="truncate text-[11px] leading-tight">
                 {item.title}
               </span>
             </NavLink>
@@ -492,13 +492,13 @@ export function MobileBottomBar() {
           <DialogPrimitive.Trigger asChild>
             <button
               type="button"
-              className={`relative flex min-w-0 flex-col items-center gap-0.5 px-2 py-1 transition-colors lg:min-w-[112px] lg:gap-1 lg:rounded-xl lg:px-4 lg:py-2 lg:hover:bg-accent/60 ${
+              className={`relative flex min-w-0 flex-col items-center gap-0.5 px-2 py-1 transition-colors ${
                 moreActive ? "text-primary" : "text-muted-foreground"
               }`}
               aria-label={moreLabel}
             >
               <LayoutGrid className="h-5 w-5" />
-              <span className="truncate text-[10px] leading-tight lg:text-xs lg:font-medium">
+              <span className="truncate text-[10px] leading-tight">
                 {moreLabel}
               </span>
             </button>
@@ -509,7 +509,7 @@ export function MobileBottomBar() {
                 const target = e.target as HTMLElement;
                 if (target.closest("[data-bottom-nav]")) e.preventDefault();
               }}
-              className="fixed inset-x-0 bottom-14 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t bg-background p-0 shadow-lg lg:bottom-24 lg:left-1/2 lg:right-auto lg:w-[min(560px,calc(100vw-2rem))] lg:-translate-x-1/2 lg:rounded-2xl lg:border"
+              className="fixed inset-x-0 bottom-14 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t bg-background p-0 shadow-lg"
             >
               <div className="flex items-center justify-between p-4 pb-2">
                 <DialogPrimitive.Title className="text-base font-semibold">
@@ -701,7 +701,7 @@ export function MobileBottomBar() {
             type="button"
             onClick={() => openAssistant()}
             aria-label={isChinese ? "AI 助手" : "AI Assistant"}
-            className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
+            className="fixed right-4 bottom-[8rem] z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
           >
             <Bot className="h-5 w-5" />
           </button>
@@ -710,7 +710,7 @@ export function MobileBottomBar() {
               type="button"
               onClick={openHelp}
               aria-label={isChinese ? "使用帮助" : "App guide"}
-              className="fixed right-4 bottom-[4.75rem] z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center lg:hidden"
+              className="fixed right-4 bottom-[4.75rem] z-40 h-12 w-12 rounded-full bg-card border text-foreground shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
             >
               <HelpCircle className="h-5 w-5" />
             </button>

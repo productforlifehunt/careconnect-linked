@@ -42,7 +42,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <AppHeader />
       {/* The page scrolls with the window, so the header stays pinned at the top. */}
       <main
-        className={`flex-1 overflow-x-hidden ${hasBottomNav ? "pb-16 lg:pb-24" : ""}`}
+        className={`flex-1 overflow-x-hidden ${hasBottomNav ? "pb-16" : ""}`}
       >
         {showBackButton && (
           <div className="mx-auto w-full max-w-6xl px-4 pt-2">
