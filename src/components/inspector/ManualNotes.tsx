@@ -911,7 +911,7 @@ export function ManualNotes({
             setDraftNoteType(value as InspectorNoteType);
             clearSaveNotice();
           }}
-          disabled={state.loading || state.saving}
+          disabled={!!(state.loading || state.saving)}
         >
           <SelectTrigger aria-label="注释分类">
             <SelectValue />
