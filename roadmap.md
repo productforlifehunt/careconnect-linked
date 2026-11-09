@@ -1,4 +1,5 @@
 ## Current request: Frontend audit of every note and page/element binding (2026-11-09 15:43 UTC)
+- [ ] 17:57 continuation: audit both explanation (b55) and associated (b56) tabs per actual page/element; finish settings dialog readbacks and inspect the uploaded AwareD article. Previous scripts inspected only the active note type, so absent b56 notes cannot be inferred from b55 lists.
 - [ ] 16:57 correction: remove all prior settings wrong bindings via actual frontend controls, independently reload every repaired element, fix reproduced role-anchor collision, and inspect loaded privacy controls/dialogs; full-site audit remains open.
 - [ ] 16:39 continuation: individually click and repair settings personal/display/notifications/privacy elements with shared published-build anchors; reuse existing notes, reopen after saving, and do not count signed-out or incomplete loading as coverage.
 - [ ] 16:05 continuation: user explicitly requests individual browser clicks for all page/element notes, corrections, additions and full-content audit; continue from real Members button missing binding, not the invalid concurrent signed-out scans.
