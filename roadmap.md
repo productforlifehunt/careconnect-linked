@@ -1,3 +1,9 @@
+## Current request: Complete all frontend page and element note associations (2026-11-09)
+- [x] Restored researcher through UI login; keyboard activation opens inspector despite launcher pointer capture. Reused #10412 for community popup/title/body and #10478 for article popup/title/body; six element associations saved and bodies read back, no content publication.
+- [x] Checked 26 core pages: initial 10/26 passed with 48 note bodies matching; reused existing records through frontend controls to add 55 missing functional-note/page associations on remaining 16 pages, all read back. Preserved old note bodies and REL325.
+- [ ] Fresh-session repeat of all 26 pages, every remaining page, tab/form child coverage and standalone sites still incomplete. Older saved session expired and restored sign-in instead of inspector, so previous timeout runs are not proof of missing bindings. Existing account/token-rotation loading defects identified but not changed in frontend-only association task.
+- [x] Corrected Select disabled boolean type error and genuine host-required dist output path; regression/build verification recorded in current turn results, not assumed.
+
 ## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
 - [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
 - [x] Draftbit GUI: both Assistant and shared AssistantFabs API condition now uses real Trim. Runtime three-space submission sends zero AI requests in both paths; ordinary request still produces an AI response.
