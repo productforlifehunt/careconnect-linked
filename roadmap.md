@@ -1,4 +1,6 @@
 ## Current request: Latest medicine/check-in note specification (2026-11-09 14:30 UTC)
+- [ ] 15:27 continuation: audit and supplement other App notes; finish mixed AI/notification/calendar/home/info-card sections, fill source-proven empty bodies, preserve App and note relations. Current live catalogue 10,553 unique notes; 11 bound empty bodies remain.
+- [x] Prior turn: 440 dedicated bodies saved through JetEngine GUI and refreshed. Mixed-scope notes require additional audit; not full-site completeness.
 - [ ] Update all related note descriptions to the user's latest specification, not current App implementation. Plans CCT187/REL190; logs CCT161/REL191/REL173; check-in assignees REL262 and recipients REL260. Ignore unspecified fields for now.
 - [ ] Preserve unrelated note text, titles, a59 bindings, REL325 and business data; save and read back every changed body. Do not modify App, schema, plugins or credentials.
 
