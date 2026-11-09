@@ -1,7 +1,9 @@
 ## Current request: Frontend-only tab, element and form notes (2026-11-09)
 - [ ] Through frontend controls, reuse existing functional/tab/form notes and bind every multi-tab page to its individual tab notes; bind corresponding visible elements and popup forms. New notes only for genuinely missing reusable logic, with exact displayed/written CCT columns, REL and separate push section.
 - [ ] Verify saved associations through fresh frontend readback; preserve existing bodies, verified notes and REL325. Track concrete page/tab/form counts; full app completion requires every actual page and element checked.
-- [x] AI dialog: frontend reused #10565 and bound outer dialog to association category; 26,350-character body displayed. Fresh-browser persistence attempt not yet passed.
+- [x] AI dialog: frontend reused #10565 and bound outer dialog to association category; fresh browser readback matches all 26,350 characters.
+- [x] Care group: frontend bound 17 existing reusable form notes to whole page; created 14 distinct reusable tab narratives #10595–10608 with source-checked CCT/Column/REL and separate push paragraphs, preserving inaccurate old narratives rather than overwriting them. Bound each tab narrative to whole page, tab button and selected tab content element (42 bindings). All 14 tab button/content operations passed; fresh whole-page readback passed 14/14 narratives and 17/17 unchanged original form bodies.
+- [ ] Care-group popup-form roots and individual displayed/written child elements still require frontend bindings and fresh cross-group readback; selected content clicks in some cards identify their header rather than the entire tab. Other multi-tab pages and all remaining page/element/form coverage not completed. Existing forms reused but not all field prose re-audited. No REL325 mutation or direct API write this continuation.
 
 ## Current request: All-page reusable functional notes (2026-11-09)
 - [x] Snapshot all 10,491 existing notes; audit all 74 main route modules and standalone route lists from actual source.
