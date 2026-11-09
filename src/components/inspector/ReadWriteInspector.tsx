@@ -566,11 +566,14 @@ export default function ReadWriteInspector() {
       "keydown",
     ] as const;
     evs.forEach((ev) => document.addEventListener(ev, stop, true));
-    document.addEventListener("click", click, true);
+    // Disabled controls do not dispatch click; pointerdown still identifies their exact host.
+    document.addEventListener("pointerdown", click, true);
+    document.addEventListener("click", stop, true);
     document.addEventListener("mousemove", move, true);
     return () => {
       evs.forEach((ev) => document.removeEventListener(ev, stop, true));
-      document.removeEventListener("click", click, true);
+      document.removeEventListener("pointerdown", click, true);
+      document.removeEventListener("click", stop, true);
       document.removeEventListener("mousemove", move, true);
       setHoverBox(null);
     };
@@ -1131,6 +1134,9 @@ export default function ReadWriteInspector() {
 
   return (
     <div data-rw-inspector style={{ pointerEvents: "auto" }}>
+      {on && !interact && (
+        <style>{`button:disabled:not([data-rw-inspector] button), input:disabled:not([data-rw-inspector] input), textarea:disabled:not([data-rw-inspector] textarea), select:disabled:not([data-rw-inspector] select) { pointer-events: auto !important; }`}</style>
+      )}
       {!on && (
         <button
           type="button"
