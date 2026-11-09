@@ -1,3 +1,10 @@
+## Current request: Frontend audit of every note and page/element binding (2026-11-09 15:43 UTC)
+- [x] Logged in through the actual frontend as the supplied researcher; frontend catalogue returned 10,553 unique notes and 331 inventory scopes, with zero empty full bodies. Inventory scopes include shared portals and historical/sub-app paths; they are not 331 verified current pages.
+- [ ] Resolve current reachable routes and record exact visible DOM keys, selected note IDs and full-body readback; record missing, ambiguous and wrong-position bindings rather than guessing migrations.
+- [ ] Audit all note paragraphs against source and latest user specifications; medicine/check-in specifications remain authoritative and business code must not be rewritten to fit old notes.
+- [ ] Repair proven note/body/binding defects through frontend only, preserve unrelated metadata and REL325, and verify every changed item after reopening.
+- [ ] Frontend classification/cache and binding-merge issues identified by read-only code review remain hypotheses until reproduced with relevant checks; do not equate structural catalogue checks with full-site completion.
+
 ## Current request: Latest medicine/check-in note specification (2026-11-09 14:30 UTC)
 - [x] 15:27 continuation: 54 notes saved through JetEngine GUI and refreshed; exact full-body catalogue readback 54/54. Includes 5 AI/calendar/notification totals, 16 mixed page sections, 11 bound empty bodies, 17 form/account/commerce notes and 5 restored summary/timeline descriptions. Current 10,553 notes have zero empty bodies; this does not establish complete or correct text throughout.
 - [ ] Remaining: exhaustive paragraph/source and element audit; binding 10551 has only an empty group container and cannot be confirmed as member count. Comparison with the prior-turn snapshot shows a59 changes across unrelated notes; this turn did not write these bindings, and timing/cause is not established. Do not overwrite or restore them blindly. Each GUI edit preserved its immediate pre-save other fields; no REL325 operations were executed.
