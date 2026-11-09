@@ -3,6 +3,9 @@
 - [ ] Complete category totals with all source-backed operations and separate push descriptions; distinguish unresolved old dictionary conflicts.
 - [ ] Bind page/tab/display/card/form/popup notes to their page overview and reuse the same note across matching functions; do not remove old bindings or change REL325.
 - [ ] Reopen each changed page in a new frontend session and verify saved title/body/associations; enumerate unverified pages and elements honestly.
+- [x] This turn: frontend renamed/reused 22 existing category totals (no new records); task/medicine/check-in totals include all existing operation text, and unverified calendar total rebuilt from current mapping. Other original bodies and verification switches preserved; medicine/check-in old REL240 conflict explicitly recorded, not concealed.
+- [x] This turn: 31 total-note page associations across 10 pages reopened in fresh browser contexts with exact body readback. Care-group page reverified all 14 tab notes and 17 reused form notes. No direct API writes, REL325 edits, business code, plugin, account or database configuration changes.
+- [ ] Remaining: aggregate full operation details for every other category, commerce/Dokan and research/ESM totals, all page/element/form coverage, and explicitly resolve researcher-verified old dictionary conflicts only with authority. Current 22 totals and 10 pages are not a full-site completion claim; Draftbit remote preview not verified.
 
 ## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
 - [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
