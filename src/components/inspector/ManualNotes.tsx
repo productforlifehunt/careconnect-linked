@@ -819,7 +819,7 @@ export function ManualNotes({
               disabled={state.loading || state.saving}
             >
               <ChevronsUpDown className="mr-1 h-3 w-3" />
-              选择其他注释
+              新增关联已有注释
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -843,7 +843,7 @@ export function ManualNotes({
           onClick={() => void createLinkedNote()}
         >
           <Plus className="mr-1 h-3 w-3" />
-          新建关联手动注释
+          新建新关联注释
         </Button>
       </div>
       <div className="space-y-1" data-rw-inspector>

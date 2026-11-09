@@ -92,7 +92,7 @@ it.each([
     await screen.findByText("当前没有已保存的注释");
     if (noteType === "b56")
       fireEvent.click(screen.getByRole("tab", { name: "页面关联注释" }));
-    fireEvent.click(screen.getByRole("button", { name: "选择其他注释" }));
+    fireEvent.click(screen.getByRole("button", { name: "新增关联已有注释" }));
     fireEvent.click(await screen.findByRole("button", { name: /Picked note.*#10567/ }));
     expect(await screen.findByText("正在关联「Picked note」…")).toBeDefined();
     finishSelection({ note: savedNote });
@@ -129,7 +129,7 @@ it.each([
   render(<ManualNotes noteKey={noteKey} scope="site" page="/" label="ChallengeD 全站" />);
   await screen.findByText("当前没有已保存的注释");
   if (noteType === "b56") fireEvent.click(screen.getByRole("tab", { name: "全站关联注释" }));
-  fireEvent.click(screen.getByRole("button", { name: "选择其他注释" }));
+  fireEvent.click(screen.getByRole("button", { name: "新增关联已有注释" }));
   fireEvent.click(await screen.findByRole("button", { name: /Picked note.*#10567/ }));
 
   await waitFor(() => expect(mocks.select).toHaveBeenCalledOnce());
@@ -137,4 +137,53 @@ it.each([
   expect(await screen.findByText(`${typeLabel} · 1 条`)).toBeDefined();
   expect(await screen.findByText(/已关联「Picked note」.*CCT324 #10567/)).toBeDefined();
   expect(screen.queryByRole("button", { name: "锁定选择" })).toBeNull();
+});
+
+it("adds an existing note without replacing the notes already linked to this position", async () => {
+  const noteKey = "page|/care-circle/46/tasks|append-existing";
+  const existing = {
+    key: noteKey,
+    id: "10566",
+    title: "Existing note",
+    version: "1.0",
+    text: "Existing note body",
+    noteType: "b55" as const,
+    tabOrder: 1,
+    verified: false,
+    relationVerified: false,
+    relationDetails: "",
+    locked: true,
+    updatedAt: "2026-11-08T00:00:00Z",
+  };
+  const added = {
+    ...existing,
+    id: "10567",
+    title: "Picked note",
+    text: "Picked note body",
+    tabOrder: 2,
+  };
+  mocks.load.mockResolvedValue({ notes: [existing], positionNotes: [existing] });
+  mocks.search.mockResolvedValue({
+    notes: [{ id: added.id, title: added.title, version: added.version, verified: added.verified }],
+  });
+  mocks.select.mockResolvedValue({ note: added });
+
+  render(
+    <ManualNotes
+      noteKey={noteKey}
+      scope="page"
+      page="/care-circle/46/tasks"
+      label="Care Tasks"
+    />,
+  );
+
+  expect(await screen.findByText("页面说明注释 · 1 条")).toBeDefined();
+  expect(screen.getByRole("button", { name: "新建新关联注释" })).toBeDefined();
+  fireEvent.click(screen.getByRole("button", { name: "新增关联已有注释" }));
+  fireEvent.click(await screen.findByRole("button", { name: /Picked note.*#10567/ }));
+
+  expect(await screen.findByText("页面说明注释 · 2 条")).toBeDefined();
+  expect(screen.getByRole("tab", { name: "1. Existing note" })).toBeDefined();
+  expect(screen.getByRole("tab", { name: "2. Picked note" })).toBeDefined();
+  expect(await screen.findByText(/已关联「Picked note」.*CCT324 #10567/)).toBeDefined();
 });
