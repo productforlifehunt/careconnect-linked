@@ -59,6 +59,7 @@ export function InspectorGate() {
     const active = drag.current;
     if (!active || active.pointerId !== e.pointerId) return;
     suppressClick.current = active.moved;
+    if (active.moved) window.setTimeout(() => { suppressClick.current = false; }, 0);
     drag.current = null;
   };
   useEffect(() => {

@@ -344,8 +344,8 @@ export default function Community() {
                     <ThumbsDown className="h-4 w-4 mr-1.5" />
                     {voteSummary[post.id]?.downvotes || 0}
                   </Button>
-                  <CommentsSection relationId={R.communityPostComments} parentId={post.id} compact openPostHref={`/community/${post.id}`} />
                 </div>
+                <CommentsSection relationId={R.communityPostComments} parentId={post.id} compact openPostHref={`/community/${post.id}`} />
               </CardContent>
             </Card>
           ))}

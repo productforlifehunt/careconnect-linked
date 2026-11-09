@@ -21,9 +21,9 @@ export function PageBackButton() {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="icon"
-      className="min-h-11 min-w-11 shrink-0"
+      className="flex h-12 w-12 min-h-12 min-w-12 shrink-0 flex-col gap-0 rounded-full p-1 text-[9px] leading-none"
       aria-label={label}
       title={label}
       data-page-back
@@ -36,7 +36,8 @@ export function PageBackButton() {
         }
       }}
     >
-      <ArrowLeft className="h-5 w-5" />
+      <ArrowLeft className="h-4 w-4" />
+      <span>{label}</span>
     </Button>
   );
 }

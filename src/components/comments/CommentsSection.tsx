@@ -301,7 +301,7 @@ export function CommentsSection({ relationId, parentId, compact, hideComposer, o
 
   if (compact && !expanded && commentCount === 0) {
     return (
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
+      <div className="flex w-full min-w-0 items-center gap-2 mt-2 flex-wrap">
         {openPostHref ? (
           <Link to={openPostHref} className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors">
             <MessageSquare className="h-3.5 w-3.5" />
@@ -320,7 +320,7 @@ export function CommentsSection({ relationId, parentId, compact, hideComposer, o
   }
 
   return (
-    <div className={compact ? "mt-2" : "mt-3"}>
+    <div className={`w-full min-w-0 ${compact ? "mt-2" : "mt-3"}`}>
       {/* Toggle header */}
       {compact && commentCount > 0 && !expanded && (
         <div className="flex items-center gap-2 flex-wrap">
