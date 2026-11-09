@@ -190,7 +190,7 @@ async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
   const parts = key.split("|");
   const pageRoute = pagePattern(key);
   const needle = key.startsWith("page|") && pageRoute.includes("/:id")
-    ? "page|" + (parts[1]?.split("/:id")[0] || "/")
+    ? pageRoute.split("/:id")[0] || "page|/"
     : pattern || key.includes("/:id") ? parts.slice(2).join("|") : key;
   const encoded = JSON.stringify(needle).slice(1, -1);
   const rows: CCTRow[] = [];
