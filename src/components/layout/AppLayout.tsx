@@ -38,7 +38,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const hasBottomNav = isWorkspacePath(pathname);
 
   return (
-    <div className="min-h-dvh flex flex-col w-full overflow-x-hidden">
+    <div className="min-h-dvh flex flex-col w-full overflow-x-clip">
       <AppHeader />
       {/* The page scrolls with the window, so the header stays pinned at the top. */}
       <main

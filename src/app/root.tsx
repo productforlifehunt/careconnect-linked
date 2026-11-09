@@ -96,7 +96,6 @@ const FAVICON_BOOTSTRAP = `(function () {
 export function meta() {
   return [
     { charSet: "utf-8" },
-    { name: "viewport", content: "width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" },
     { title: "Family Care & Safety" },
     { name: "description", content: "Family care, coordination, knowledge and location safety." },
     { name: "author", content: "Family Care & Safety" },
@@ -227,6 +226,7 @@ export default function Root() {
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
         <Meta />
         <Links />
         <script dangerouslySetInnerHTML={{ __html: FAVICON_BOOTSTRAP }} />
