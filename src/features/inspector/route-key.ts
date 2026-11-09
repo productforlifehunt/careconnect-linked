@@ -1,3 +1,14 @@
+/** Preserve sub-app identity while excluding transient tab/search state. */
+export function pagePosition(path: string, siteId?: string): string {
+  const [pathname = "/", search = ""] = path.split("?");
+  const site = new URLSearchParams(search).get("__site") || siteId;
+  return pathname + (site && !["challenged", "carecnc"].includes(site) ? `?__site=${encodeURIComponent(site)}` : "");
+}
+export function pagePattern(key: string): string {
+  if (!key.startsWith("page|")) return key;
+  const [pathname = "", search] = key.slice(5).split("?");
+  return "page|" + pathname.replace(/\/\d+(?=\/|$)/g, "/:id") + (search ? `?${search}` : "");
+}
 /** One element on /care-circle/28 and /care-circle/31 is the same element: match its note across record ids in the page path. */
 export function routePattern(key: string): string | undefined {
   const parts = key.split("|");

@@ -1,3 +1,8 @@
+## Current request: All-page reusable functional notes (2026-11-09)
+- [x] Snapshot all 10,491 existing notes; audit all 74 main route modules and standalone route lists from actual source.
+- [ ] Append only missing a59 page bindings to reusable notes and create genuinely absent functional notes; preserve original content/classifications and REL325.
+- [ ] Verify every saved change through API readback, relevant tests and actual page-note rendering; report static versus runtime scope separately.
+
 ## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
 - [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
 - [x] Draftbit GUI: both Assistant and shared AssistantFabs API condition now uses real Trim. Runtime three-space submission sends zero AI requests in both paths; ordinary request still produces an AI response.

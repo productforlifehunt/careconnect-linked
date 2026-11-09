@@ -38,7 +38,7 @@ import {
 } from "@/features/inspector/decode";
 import { ReadWriteNarrative } from "./ReadWriteNarrative";
 import { ManualNotes } from "./ManualNotes";
-import { elementAlias } from "@/features/inspector/route-key";
+import { elementAlias, pagePosition } from "@/features/inspector/route-key";
 import {
   inspectElement,
   inspectorTarget,
@@ -812,7 +812,8 @@ export default function ReadWriteInspector() {
   const summaryRef = useRef<HTMLElement | null>(null);
   const narrRef = useRef<HTMLDivElement | null>(null);
   const pageNarrRef = useRef<HTMLDivElement | null>(null);
-  const pathname = path.split("?")[0]!;
+  const pathname = path.split("?")[0] || "/";
+  const pagePath = pagePosition(path, site.id);
   // Fixed list slots (stat cards drawn by one JSX line) get their own note; data rows of one list share theirs.
   // One identity in the editor preview and the published site: component names + markup position, never source lines.
   const elementKey = info ? stableElementKey(pathname, info.anchor) : "";
@@ -1383,7 +1384,7 @@ export default function ReadWriteInspector() {
                     mode="origin"
                     ready={!!info}
                     label="生成 AI 分析 / Generate AI analysis"
-                    noteKeys={[elementKey, legacyKey, `page|${pathname}`]}
+                    noteKeys={[elementKey, legacyKey, `page|${pagePath}`]}
                   />
                 </div>
                 <div
@@ -1571,11 +1572,11 @@ export default function ReadWriteInspector() {
                 </div>
                 <div className={sub === "ai" ? "" : "hidden"}>
                   <AiExplain
-                    key={`p-${pathname}`}
+                    key={`p-${pagePath}`}
                     build={pageContext}
                     ready={pageRefsDone}
                     label="生成整页 AI 分析 / Generate page AI analysis"
-                    noteKeys={[`page|${pathname}`]}
+                    noteKeys={[`page|${pagePath}`]}
                   />
                 </div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
@@ -1615,10 +1616,10 @@ export default function ReadWriteInspector() {
                 className={tab === "page" && sub === "notes" ? "" : "hidden"}
               >
                 <ManualNotes
-                  key={`page|${pathname}`}
-                  noteKey={`page|${pathname}`}
+                  key={`page|${pagePath}`}
+                  noteKey={`page|${pagePath}`}
                   scope="page"
-                  page={pathname}
+                  page={pagePath}
                   label={pathname}
                   buildEvidence={pageContext}
                   evidenceReady={pageRefsDone}

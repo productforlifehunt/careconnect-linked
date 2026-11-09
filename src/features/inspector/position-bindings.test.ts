@@ -66,3 +66,9 @@ it("returns every note linked to the same position across record routes", () => 
     otherNote,
   ]);
 });
+it("reuses page functionality across numeric records without crossing tools or apps", () => {
+  const page = { ...binding, key: "page|/cared-ones/46/notes", scope: "page" as const };
+  expect(findPositionBindings([page], "page|/cared-ones/54/notes")).toEqual([page]);
+  expect(findPositionBindings([page], "page|/cared-ones/54/tips")).toEqual([]);
+  expect(findPositionBindings([{ ...page, key: "page|/me?__site=notchsafety" }], "page|/me?__site=esm_survey")).toEqual([]);
+});

@@ -1,5 +1,5 @@
 import type { NoteBinding } from "./cct-notes";
-import { routePattern } from "./route-key";
+import { routePattern, pagePattern } from "./route-key";
 
 /** a59 can contain pre-existing metadata; only inspectorBindings belongs to this feature. */
 export function bindingDocument(raw: unknown): Record<string, unknown> {
@@ -33,7 +33,7 @@ export function positionBindings(raw: unknown, id: string): NoteBinding[] {
 }
 
 export function samePosition(a: string, b: string): boolean {
-  return a === b || (routePattern(a) ?? a) === (routePattern(b) ?? b);
+  return a === b || (routePattern(a) ?? pagePattern(a)) === (routePattern(b) ?? pagePattern(b));
 }
 
 export function updatePositionBindings(
