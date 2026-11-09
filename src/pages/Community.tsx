@@ -88,7 +88,7 @@ export default function Community() {
   const [editContent, setEditContent] = useState("");
   const [pendingDeletePost, setPendingDeletePost] = useState<any | null>(null);
 
-  const { data: posts, isLoading } = usePosts(communityPostType, area);
+  const { data: posts, isLoading } = usePosts(communityPostType, area, undefined, 50, true, i18n.language);
   const createPost = useCreatePost();
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
@@ -100,7 +100,7 @@ export default function Community() {
       return;
     }
     createPost.mutate(
-      { title: newTitle.trim(), content: newContent.trim(), postType: communityPostType, area },
+      { title: newTitle.trim(), content: newContent.trim(), postType: communityPostType, area, language: i18n.language },
       {
         onSuccess: () => {
           setDialogOpen(false);

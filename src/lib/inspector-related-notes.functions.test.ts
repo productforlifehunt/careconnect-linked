@@ -89,6 +89,7 @@ it("creates a related CCT324 note with the relation review fields before linking
       create: {
         title: "同一处理流程",
         text: "内容",
+        todo: true,
         relationVerified: true,
         relationDetails: "两条注释描述同一处理流程。",
       },
@@ -100,6 +101,7 @@ it("creates a related CCT324 note with the relation review fields before linking
     {
       title: "同一处理流程",
       text: "内容",
+      todo: true,
       relationVerified: true,
       relationDetails: "两条注释描述同一处理流程。",
     },
@@ -121,6 +123,7 @@ it("saves relation review edits to the selected related CCT324 note", async () =
       title: "更新后的标题",
       text: "更新后的内容",
       verified: false,
+      todo: true,
       relationVerified: true,
       relationDetails: "重新核对过这条关联。",
     },
@@ -133,6 +136,7 @@ it("saves relation review edits to the selected related CCT324 note", async () =
       title: "更新后的标题",
       text: "更新后的内容",
       verified: false,
+      todo: true,
       relationVerified: true,
       relationDetails: "重新核对过这条关联。",
     },

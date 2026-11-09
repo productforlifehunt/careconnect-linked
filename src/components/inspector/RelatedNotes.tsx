@@ -13,8 +13,8 @@ import type { ConflictReport } from '@/features/inspector/conflict-report';
 import type { CCTNote } from '@/features/inspector/cct-notes';
 import { ConflictReportView } from './ConflictReportView';
 
-type Related = { id: string; title: string; version: string; text: string; side: "parent" | "child"; verified: boolean; relationVerified: boolean; relationDetails: string };
-type Edit = { title: string; version: string; text: string; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Related = { id: string; title: string; version: string; text: string; side: "parent" | "child"; todo: boolean; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Edit = { title: string; version: string; text: string; todo: boolean; verified: boolean; relationVerified: boolean; relationDetails: string };
 
 export function RelatedNotes({ noteId }: { noteId: string }) {
   const list = listRelatedNotes; const link = linkRelatedNote;
@@ -25,7 +25,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [state, setState] = useState<{ loading?: boolean; busy?: boolean; activity?: string | undefined; error?: string | undefined; success?: string | undefined }>({ loading: true });
   const [pick, setPick] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; version: string; text: string; relationVerified: boolean; relationDetails: string } | null>(null);
+  const [draft, setDraft] = useState<{ title: string; version: string; text: string; todo: boolean; relationVerified: boolean; relationDetails: string } | null>(null);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const [copyVersion, setCopyVersion] = useState<Record<string, string>>({});
   const [copyState, setCopyState] = useState<{ sourceId: string; version: string; note?: CCTNote; error?: string; saving?: boolean } | null>(null);
@@ -103,6 +103,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                 <span className="text-muted-foreground">#{n.id} · </span>
                 {n.title}
                 <span className="font-medium text-primary"> · {n.version ? `v${n.version}` : "未设置版本"}</span>
+                {n.todo && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">待完成</span>}
                 <span className="text-muted-foreground">
                   {" "}
                   · {n.verified ? "已手动核对" : "未手动核对"} · 关联
@@ -143,6 +144,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                   title: n.title,
                   version: n.version || "",
                   text: n.text,
+                  todo: n.todo,
                   verified: n.verified,
                   relationVerified: n.relationVerified,
                   relationDetails: n.relationDetails,
@@ -153,6 +155,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                   e.title !== n.title ||
                   e.version !== (n.version || "") ||
                   e.text !== n.text ||
+                  e.todo !== n.todo ||
                   e.verified !== n.verified ||
                   e.relationVerified !== n.relationVerified ||
                   e.relationDetails !== n.relationDetails;
@@ -173,6 +176,15 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                       disabled={busy}
                       onChange={(ev) => set({ text: ev.target.value })}
                     />
+                    <label className="flex items-center gap-2">
+                      <Switch
+                        checked={e.todo}
+                        disabled={busy}
+                        onCheckedChange={(todo) => set({ todo })}
+                        aria-label={`关联注释 ${n.id} 待完成`}
+                      />
+                      <span>待完成</span>
+                    </label>
                     <label className="flex items-center gap-2">
                       <Switch
                         checked={e.verified}
@@ -228,6 +240,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                                   title: e.title.trim(),
                                   version: e.version,
                                   text: e.text,
+                                  todo: e.todo,
                                   verified: e.verified,
                                   relationVerified: e.relationVerified,
                                   relationDetails: e.relationDetails,
@@ -311,6 +324,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
               title: "",
               version: "",
               text: "",
+              todo: false,
               relationVerified: false,
               relationDetails: "",
             })
@@ -370,6 +384,15 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
             value={draft.text}
             onChange={(e) => setDraft({ ...draft, text: e.target.value })}
           />
+          <label className="flex items-center gap-2">
+            <Switch
+              checked={draft.todo}
+              disabled={busy}
+              onCheckedChange={(todo) => setDraft({ ...draft, todo })}
+              aria-label="新关联注释待完成"
+            />
+            <span>待完成</span>
+          </label>
           <fieldset className="space-y-2 rounded-md border bg-muted/20 p-3">
             <legend className="px-1 text-sm font-medium">笔记关联核对</legend>
             <label className="flex items-center gap-2">
@@ -415,6 +438,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                           title: d.title.trim(),
                           version: d.version,
                           text: d.text,
+                          todo: d.todo,
                           relationVerified: d.relationVerified,
                           relationDetails: d.relationDetails,
                         },

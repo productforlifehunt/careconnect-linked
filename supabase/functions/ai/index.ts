@@ -4,8 +4,8 @@
 // Routing is by TASK ONLY: POST /ai?task=<modality-in>-<modality-out>
 //   chat-chat    text in  → text out (SSE stream; body.stream=false for one-shot)
 //   chat-voice   text in  → audio out (text-to-speech)
-//   chat-vision  text in  → image out            (not implemented yet → 501)
-//   vision-chat  image in → text out             (not implemented yet → 501)
+//   chat-vision  text in  → image out            (image generation)
+//   vision-chat  image in → text out             (image understanding)
 //   vision-vision / vision-voice / voice-chat / voice-vision  (→ 501)
 // Several tasks at once: ?task=chat-chat,chat-vision (also + or | as separator).
 //
@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
+  aiBrand,
   buildFallbackReply,
   buildSystemPrompt,
   stripFillerOpening,
@@ -165,7 +166,7 @@ async function handleChat(req: Request): Promise<Response> {
       );
     }
 
-    const systemPrompt = [buildSystemPrompt(payload?.language, false, payload?.site), contextPrompt].filter(Boolean).join("\n\n");
+    const systemPrompt = [buildSystemPrompt(payload?.language, payload?.site), contextPrompt].filter(Boolean).join("\n\n");
 
     const aiMessages = [
       { role: "system", content: systemPrompt },
@@ -195,14 +196,14 @@ async function handleChat(req: Request): Promise<Response> {
 
 
 
-async function handleStream(req: Request): Promise<Response> {
+async function handleStream(req: Request, allowVision = false): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { messages, language, site, contextPrompt: rawContextPrompt } = await req.json() as {
-      messages: Array<{ role: string; content: string }>;
+      messages: Array<{ role: string; content: unknown }>;
       language?: string;
       site?: string;
       contextPrompt?: string;
@@ -223,12 +224,52 @@ async function handleStream(req: Request): Promise<Response> {
       );
     }
 
-    const cleaned = messages
-      .filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
-      .filter((m) => m.role !== "system");
+    const cleaned: Array<{ role: "user" | "assistant"; content: string | Array<Record<string, unknown>> }> = [];
+    let hasImage = false;
+    for (const message of messages) {
+      if (!message || (message.role !== "user" && message.role !== "assistant")) continue;
+      if (typeof message.content === "string") {
+        cleaned.push({ role: message.role, content: message.content });
+        continue;
+      }
+      if (!allowVision || message.role !== "user" || !Array.isArray(message.content)) {
+        return new Response(
+          JSON.stringify({ error: "Image content is only accepted for vision-chat user messages." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const parts: Array<Record<string, unknown>> = [];
+      for (const part of message.content) {
+        if (part?.type === "text" && typeof part.text === "string") {
+          parts.push({ type: "text", text: part.text });
+          continue;
+        }
+        const imageUrl = part?.type === "image_url" ? part.image_url?.url : undefined;
+        if (
+          part?.type !== "image_url" ||
+          typeof imageUrl !== "string" ||
+          imageUrl.length > 3_400_000 ||
+          !/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(imageUrl)
+        ) {
+          return new Response(
+            JSON.stringify({ error: "This image could not be read. Choose a JPG, PNG, or WebP image and try again." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        parts.push({ type: "image_url", image_url: { url: imageUrl, detail: "auto" } });
+        hasImage = true;
+      }
+      cleaned.push({ role: "user", content: parts });
+    }
+    if (cleaned.length === 0 || (allowVision && !hasImage)) {
+      return new Response(
+        JSON.stringify({ error: allowVision ? "Choose an image to ask about." : "messages must be a non-empty array" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const contextPrompt = typeof rawContextPrompt === "string" ? rawContextPrompt.slice(0, 8000).trim() : "";
-    const systemPrompt = [buildSystemPrompt(language, true, site), contextPrompt].filter(Boolean).join("\n\n");
+    const systemPrompt = [buildSystemPrompt(language, site), contextPrompt].filter(Boolean).join("\n\n");
 
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -759,9 +800,7 @@ async function handleVoice(req: Request): Promise<Response> {
         ? "openai/gpt-audio"
         : "openai/gpt-audio-mini";
       providerLabel = `openrouter-${modelSlug.split("/")[1]}`;
-      const providerTitle = site === "carecnc"
-        ? "CareCNC AI Assistant"
-        : site === "notchsafety" ? "Notch Safety AI Assistant" : "ChallengeD AI Assistant";
+      const providerTitle = aiBrand("en", site);
 
       // Audio output via streaming SSE. Use MP3 to avoid PCM concat artifacts
       // (sample-rate guesswork, click/echo at chunk boundaries).
@@ -1252,6 +1291,8 @@ serve(async (req) => {
   if (tasks.includes("voice-chat")) return handleTranscribe(req);
 
   if (tasks.includes("chat-translate")) return handleTranslate(req);
+
+  if (tasks.includes("vision-chat")) return handleStream(req, true);
 
   if (tasks.includes("chat-chat")) {
     // Streaming is the default; body.stream === false gives a single JSON reply.

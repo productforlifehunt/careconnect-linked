@@ -2,10 +2,9 @@
  * Posts data source.
  *
  * There is no WordPress CPT behind community content — everything lives in the
- * shared "Afresh community post" CCT (149). The row's Community-type radio
- * scopes it to ChallengeD / Care-CNC, and the Community-post-category radio
- * separates discussions from articles. Codes are opaque and come from the
- * dictionary via `T`, never inferred.
+ * shared Community post CCT (149). Field a01 stores the canonical lowercase
+ * app name, and Community-post-category separates discussions from articles.
+ * Category and locale options continue to use dictionary values from `T`.
  */
 import {
   fetchCommunityPostsWordPress,
@@ -45,9 +44,11 @@ export async function fetchPostsWordPress(
   area?: string | undefined,
   _childPostType?: string | null | undefined,
   limit = 50,
+  language?: string | undefined,
 ): Promise<any[]> {
   return fetchCommunityPostsWordPress({
     area: areaCode(area),
+    language: languageCode(language),
     category: postCategoryCode(postType),
     limit,
   });

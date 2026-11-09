@@ -30,7 +30,7 @@ export function EsmShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex min-h-dvh w-full flex-col overflow-x-hidden bg-background">
+    <div className="flex min-h-dvh w-full min-w-0 max-w-full flex-col overflow-x-hidden bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-3 px-4">
           <Link to="/" className="truncate text-sm font-semibold text-foreground">
@@ -54,7 +54,9 @@ export function EsmShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 pb-20">{children}</main>
+      <main className="w-full min-w-0 max-w-full flex-1 overflow-x-hidden pb-20">
+        {children}
+      </main>
 
       <nav className="fixed bottom-0 z-40 w-full border-t border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-2xl">

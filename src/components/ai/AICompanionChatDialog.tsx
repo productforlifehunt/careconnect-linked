@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import { aiBrand } from "../../../supabase/functions/_shared/ai-prompts";
 import { useSite } from "@/contexts/SiteContext";
 import type { AssistantRequest } from "@/contexts/AIAssistantContext";
+import { ASSISTANT_CONVERSATION_SKILL, runAssistantConversationSkill, type AiThread } from "@/lib/ai-dynamic-knowledge";
 import { lazyRetry } from "@/lib/lazy-retry";
 import { AIChatWarmup } from "@/components/ai/AIChatWarmup";
-import { createAiThread, listAiThreads, touchAiThread, type AiThread } from "@/lib/ai-threads";
 
 const ACTIVE_THREAD_KEY = "ai-active-thread";
 const AICompanionChat = lazyRetry(
@@ -62,7 +62,7 @@ export function AICompanionChatDialog({
 
   const refresh = useCallback(async () => {
     try {
-      const list = await listAiThreads();
+      const list = await runAssistantConversationSkill(ASSISTANT_CONVERSATION_SKILL, "list");
       setThreads(list);
       return list;
     } catch {
@@ -90,7 +90,7 @@ export function AICompanionChatDialog({
     if (busy) return;
     setBusy(true);
     try {
-      const id = await createAiThread();
+      const id = await runAssistantConversationSkill(ASSISTANT_CONVERSATION_SKILL, "create");
       await refresh();
       pick(id);
     } catch { /* stay on the current chat */ }
@@ -134,7 +134,10 @@ export function AICompanionChatDialog({
     setEditing(null);
     if (!name) return;
     setThreads((list) => list.map((t) => (t.id === id ? { ...t, title: name } : t)));
-    try { await touchAiThread(id, name); await refresh(); } catch { /* keep local name */ }
+    try {
+      await runAssistantConversationSkill(ASSISTANT_CONVERSATION_SKILL, "touch", { id, title: name });
+      await refresh();
+    } catch { /* keep local name */ }
   };
 
   return (

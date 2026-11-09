@@ -187,6 +187,12 @@
     border-color: hsl(var(--border));
   }
 
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));

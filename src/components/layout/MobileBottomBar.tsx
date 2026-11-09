@@ -110,10 +110,7 @@ export function MobileBottomBar() {
       title: isChinese ? "使用帮助" : "App guide",
       appGuide: true,
       onHideGuide: hideHelpBubble,
-      contextScope: { topics: ["app-basics"] },
-      contextPrompt: isChinese
-        ? "用户正在问“怎么使用这个应用”的问题。只用应用功能本身回答，一步一步说，句子短，不用专业词。不知道就说不知道，并建议用户问 AI 助手或联系家人。不要给医疗或财务建议。"
-        : "The user is asking how to use this app. Answer only with the app's own features, step by step, in short plain sentences, no jargon. If you don't know, say so and suggest asking the AI assistant or a family member. No medical or financial advice.",
+      contextScope: { topics: ["app-basics", "care-group", "care-tips"], writeSkills: ["save-care-tip"] },
     });
 
   const hideHelpBubble = async () => {

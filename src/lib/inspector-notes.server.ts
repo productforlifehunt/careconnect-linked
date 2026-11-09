@@ -124,10 +124,17 @@ type CCTRow = {
   a62?: string;
   a63?: string;
   a64?: string | number | null;
+  a65?: string | boolean | number | null;
   cct_modified?: string;
 };
 const NOTE_FIELDS = WP.cct["324"].f;
 const NOTE_RELATION_VERIFIED = WP.cct["324"].opt["NOTE_RELATION_VERIFIED"];
+function noteTodo(value: unknown): boolean {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+function storedNoteTodo(value: boolean): string {
+  return value ? "true" : "false";
+}
 const CCT_BASE =
   "https://app.challenged-dementia.com/afresh/wp-json/jet-cct/manual_notes";
 async function wp(
@@ -171,6 +178,7 @@ function mapRow(row: CCTRow): CCTNote {
         ? "b55"
         : undefined,
     tabOrder: tabOrder !== undefined && Number.isFinite(tabOrder) ? tabOrder : undefined,
+    todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
     verified: row.a58 === "b55",
     relationVerified:
       row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -730,6 +738,7 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   id: string;
   title: string;
   text: string;
+  todo: boolean;
   verified: boolean;
   relationVerified: boolean;
   relationDetails: string;
@@ -743,6 +752,7 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
     id: binding.id,
     title: row.a55 || "",
     text: row.a56 || "",
+    todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
     verified: row.a58 === "b55",
     relationVerified:
       row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -787,6 +797,7 @@ export interface RelatedNote {
   version: string;
   text: string;
   side: "parent" | "child";
+  todo: boolean;
   verified: boolean;
   relationVerified: boolean;
   relationDetails: string;
@@ -865,6 +876,7 @@ export async function readRelatedNotes(
       title: row.a55 || "",
       text: row.a56 || "",
       side,
+      todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
       verified: row.a58 === "b55",
       relationVerified:
         row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -886,6 +898,7 @@ export async function updatePlainNote(
     version?: string | undefined;
     noteType?: "b55" | "b56" | undefined;
     tabOrder?: number | undefined;
+    todo?: boolean | undefined;
   },
   token?: string,
 ): Promise<void> {
@@ -903,6 +916,7 @@ export async function updatePlainNote(
       ...(note.version === undefined ? {} : { [NOTE_FIELDS["版本"]]: note.version }),
       ...(note.noteType === undefined ? {} : { [NOTE_FIELDS["笔记类型"]]: note.noteType }),
       ...(note.tabOrder === undefined ? {} : { [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder) }),
+      ...(note.todo === undefined ? {} : { [NOTE_FIELDS["待完成"]]: storedNoteTodo(note.todo) }),
     },
     token,
   );
@@ -920,7 +934,8 @@ export async function updatePlainNote(
       note.relationDetails ||
     (note.version !== undefined && (row[NOTE_FIELDS["版本"]] || "") !== note.version) ||
     (note.noteType !== undefined && row[NOTE_FIELDS["笔记类型"]] !== note.noteType) ||
-    (note.tabOrder !== undefined && String(row[NOTE_FIELDS["笔记标签顺序"]] || "") !== String(note.tabOrder))
+    (note.tabOrder !== undefined && String(row[NOTE_FIELDS["笔记标签顺序"]] || "") !== String(note.tabOrder)) ||
+    (note.todo !== undefined && noteTodo(row[NOTE_FIELDS["待完成"]]) !== note.todo)
   )
     throw new Error("保存后的内容核对不一致。");
 }
@@ -1071,7 +1086,7 @@ export async function noteTitle(id: string, token?: string): Promise<string> {
   return (await readNoteById(id, token)).title;
 }
 export async function createPlainNote(
-  note: { title: string; text: string; relationVerified: boolean; relationDetails: string; version?: string | undefined },
+  note: { title: string; text: string; relationVerified: boolean; relationDetails: string; version?: string | undefined; todo?: boolean | undefined },
   token?: string,
 ): Promise<string> {
   const result = (await wp(
@@ -1085,6 +1100,7 @@ export async function createPlainNote(
         ? NOTE_RELATION_VERIFIED["YES"]
         : NOTE_RELATION_VERIFIED["NO"],
       [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails,
+      [NOTE_FIELDS["待完成"]]: storedNoteTodo(note.todo ?? false),
       cct_status: "publish",
     },
     token,
@@ -1106,7 +1122,8 @@ export async function createPlainNote(
         ? NOTE_RELATION_VERIFIED["YES"]
         : NOTE_RELATION_VERIFIED["NO"]) ||
     (row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") !==
-      note.relationDetails
+      note.relationDetails ||
+    noteTodo(row[NOTE_FIELDS["待完成"]]) !== (note.todo ?? false)
   )
     throw new Error("保存后的内容核对不一致。");
   return id;
@@ -1141,6 +1158,7 @@ export async function duplicateNoteVersion(
         source[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
       [NOTE_FIELDS["笔记类型"]]: source[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
       [NOTE_FIELDS["笔记标签顺序"]]: source[NOTE_FIELDS["笔记标签顺序"]] || "1",
+      [NOTE_FIELDS["待完成"]]: storedNoteTodo(noteTodo(source[NOTE_FIELDS["待完成"]])),
       cct_status: "publish",
     },
     token,
@@ -1167,7 +1185,8 @@ export async function duplicateNoteVersion(
       (source[NOTE_FIELDS["已手动核对笔记关联详情"]] || "") ||
     (fresh[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) !==
       (source[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) ||
-    (fresh[NOTE_FIELDS["笔记标签顺序"]] || "1") !== (source[NOTE_FIELDS["笔记标签顺序"]] || "1")
+    (fresh[NOTE_FIELDS["笔记标签顺序"]] || "1") !== (source[NOTE_FIELDS["笔记标签顺序"]] || "1") ||
+    noteTodo(fresh[NOTE_FIELDS["待完成"]]) !== noteTodo(source[NOTE_FIELDS["待完成"]])
   )
     throw new Error(`新版本 #${newId} 的内容回读不一致，关联尚未复制。`);
 

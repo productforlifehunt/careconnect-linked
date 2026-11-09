@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote, Search } from "lucide-react";
-import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs, useAllMedicineLogs } from "@/hooks/use-care-data";
+import { Pill, Plus, Loader2, Trash2, Check, X, Clock, SkipForward, Edit2, History, TrendingUp, AlertCircle, ChevronDown, ChevronUp, StickyNote, Search, Bot } from "lucide-react";
+import { useMedicines, useCreateMedicine, useDeleteMedicine, useLogMedicine, useUpdateMedicine, useTodayMedicineLogs, useMedicineLogs, useAllMedicineLogs, useCheckinCaregivers, useScheduleNotificationReceivers, useSetScheduleNotificationSubscription } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import i18n from "@/i18n/config";
 const isCN = () => (i18n.language || "").startsWith("zh");
@@ -20,7 +21,10 @@ import { formatDate, formatTime as formatLocaleTime, formatDateTime } from "@/li
 import { useAIAssistant } from "@/contexts/AIAssistantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { findDoseLog, todayAtSlot } from "@/features/medicine/dose-slot";
-import { slotsNeeded, frequencyForSlots, type FrequencyCode } from "@/features/schedules/recurrence";
+import { slotsNeeded, frequencyForSlots, localDay, type FrequencyCode } from "@/features/schedules/recurrence";
+import { ScheduleRecurrenceFields } from "./ScheduleRecurrenceFields";
+import { requestCareScheduleNotificationPermission } from "@/features/schedules/device-reminders";
+import { fetchMedicineAssigneeIdsWordPress } from "@/features/medicine/source.medicine";
 
 const TIMELINE_HOURS = [
   "06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00",
@@ -53,8 +57,49 @@ const FREQUENCIES = [
   { value: "once_daily", label: Z("每日一次","Once daily") },{ value: "twice_daily", label: Z("每日两次","Twice daily") },
   { value: "three_daily", label: Z("每日三次","Three times daily") },{ value: "four_daily", label: Z("每日四次","Four times daily") },
   { value: "every_other_day", label: Z("隔日一次","Every other day") },{ value: "weekly", label: Z("每周一次","Weekly") },
+  { value: "monthly", label: Z("每月", "Monthly") },{ value: "yearly", label: Z("每年", "Yearly") },{ value: "daily", label: Z("每隔几天", "Every N days") },
   { value: "as_needed", label: Z("按需服用","As needed") },
 ];
+
+function CheckinModeField({ value, onChange }: { value: string[]; onChange: (value: string[]) => void }) {
+  return (
+    <div>
+      <Label>{Z("签到方式", "Check-in method")}</Label>
+      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-2">
+        {(["human", "ai"] as const).map((mode) => (
+          <label key={mode} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={value.includes(mode)}
+              onChange={(event) => onChange(event.target.checked
+                ? [...value, mode]
+                : value.filter((item) => item !== mode))}
+            />
+            {mode === "ai" ? Z("AI 核对", "AI check-in") : Z("人工核对", "Manual check-in")}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScheduleCaregiverField({ caregivers, value, onChange, label, loading = false, error = false, disabled = false }: { caregivers: Array<{ id: string; name: string }>; value: string[]; onChange: (value: string[]) => void; label: string; loading?: boolean; error?: boolean; disabled?: boolean }) {
+  return (
+    <div>
+      <Label>{label}</Label>
+      {loading ? <p className="mt-1 text-xs text-muted-foreground">{Z("正在读取已指派人员…", "Loading assigned people…")}</p> : error ? <p className="mt-1 text-xs text-destructive">{Z("无法读取已指派人员；保存其他内容不会更改此设置。", "Could not load assigned people. Saving other changes will leave this setting unchanged.")}</p> : caregivers.length ? (
+        <div className="mt-1 grid gap-2 sm:grid-cols-2">
+          {caregivers.map((person) => (
+            <label key={person.id} className={`flex items-center gap-2 text-sm ${disabled ? "opacity-60" : ""}`}>
+              <input type="checkbox" checked={value.includes(person.id)} disabled={disabled} onChange={(event) => onChange(event.target.checked ? [...value, person.id] : value.filter((id) => id !== person.id))} />
+              <span className="truncate">{person.name}</span>
+            </label>
+          ))}
+        </div>
+      ) : <p className="mt-1 text-xs text-muted-foreground">{Z("该被照护者暂无已关联的护理者。", "No caregivers are linked to this cared one yet.")}</p>}
+    </div>
+  );
+}
 
 /** Daily frequencies need exactly that many distinct times (a66 BYHOUR/BYMINUTE). */
 function resizeSlots(freq: string, slots: string[]): string[] {
@@ -82,6 +127,16 @@ function doseSlotsToday(med: any): string[] {
 /** Localized frequency label from the stored code (CCT 187 a66 RRULE + a95). */
 function freqLabel(med: any): string {
   const code = med?.frequency_code || med?.frequency;
+  const interval = Math.max(1, Number(med?.repeat_interval) || 1);
+  if (code === "daily") return Z(`每 ${interval} 天`, `Every ${interval} days`);
+  if (code === "weekly") {
+    const intervalLabel = interval > 1 ? Z(`每 ${interval} 周`, `Every ${interval} weeks`) : Z("每周", "Weekly");
+    const weekdayNames: Record<string, string> = { MO: Z("周一", "Mon"), TU: Z("周二", "Tue"), WE: Z("周三", "Wed"), TH: Z("周四", "Thu"), FR: Z("周五", "Fri"), SA: Z("周六", "Sat"), SU: Z("周日", "Sun") };
+    const days = (med?.repeat_weekdays || []).map((day: string) => weekdayNames[day]).filter(Boolean);
+    return days.length ? `${intervalLabel} · ${days.join(", ")}` : intervalLabel;
+  }
+  if (code === "monthly" && interval > 1) return Z(`每 ${interval} 个月`, `Every ${interval} months`);
+  if (code === "yearly" && interval > 1) return Z(`每 ${interval} 年`, `Every ${interval} years`);
   return FREQUENCIES.find(f => f.value === code)?.label || med?.frequency || "";
 }
 
@@ -142,9 +197,10 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
     if (!logs || logs.length === 0) return null;
     const taken = logs.filter((l: any) => l.status === "taken").length;
     const skipped = logs.filter((l: any) => l.status === "skipped").length;
-    const total = taken + skipped;
+    const missed = logs.filter((l: any) => l.status === "missed").length;
+    const total = taken + skipped + missed;
     const adherence = total > 0 ? Math.round((taken / total) * 100) : 0;
-    return { taken, skipped, total, adherence };
+    return { taken, skipped, missed, total, adherence };
   }, [logs]);
 
   return (
@@ -160,7 +216,7 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
 
         {/* Adherence Stats */}
         {stats && (
-          <div className="grid grid-cols-3 gap-3 py-2">
+          <div className="grid grid-cols-4 gap-2 py-2">
             <div className="text-center p-3 rounded-xl bg-success/10 border border-success/20">
               <div className="text-2xl font-bold text-success">{stats.adherence}%</div>
               <div className="text-xs text-muted-foreground">{Z("依从率","Adherence")}</div>
@@ -172,6 +228,10 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
             <div className="text-center p-3 rounded-xl bg-warning/10 border border-warning/20">
               <div className="text-2xl font-bold text-warning">{stats.skipped}</div>
               <div className="text-xs text-muted-foreground">{Z("已跳过","Skipped")}</div>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+              <div className="text-2xl font-bold text-destructive">{stats.missed}</div>
+              <div className="text-xs text-muted-foreground">{Z("漏服","Missed")}</div>
             </div>
           </div>
         )}
@@ -185,12 +245,13 @@ function MedHistoryDialog({ open, onClose, med }: { open: boolean; onClose: () =
           ) : (
             (logs || []).map((log: any) => (
               <div key={log.id} className="flex items-start gap-3 py-2.5 border-b border-border/50 last:border-0">
-                <div className={`mt-0.5 shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${log.status === "taken" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
-                  {log.status === "taken" ? <Check className="h-3.5 w-3.5" /> : <SkipForward className="h-3.5 w-3.5" />}
+                <div className={`mt-0.5 shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${log.status === "taken" ? "bg-success/15 text-success" : log.status === "missed" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"}`}>
+                  {log.status === "taken" ? <Check className="h-3.5 w-3.5" /> : log.status === "missed" ? <AlertCircle className="h-3.5 w-3.5" /> : <SkipForward className="h-3.5 w-3.5" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium capitalize">{log.status}</span>
+                    <span className="text-sm font-medium">{log.status === "taken" ? Z("已服用", "Taken") : log.status === "skipped" ? Z("已跳过", "Skipped") : Z("漏服", "Missed")}</span>
+                    {log.logged_by_ai && <Badge variant="outline" className="h-5 border-primary/40 px-1.5 text-[10px] text-primary"><Bot className="mr-1 h-3 w-3" />AI</Badge>}
                     <span className="text-xs text-muted-foreground">{formatDate(log.created_at)} · {formatTime(log.created_at)}</span>
                   </div>
                   {log.note && (
@@ -213,26 +274,11 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
   const updateMed = useUpdateMedicine();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number });
-
-  // Populate form on open
-  useState(() => {
-    if (med && open) {
-      const freqEntry = FREQUENCIES.find(f => f.value === (med.frequency_code || med.frequency)) || FREQUENCIES.find(f => f.label === med.frequency);
-      setForm({
-        name: med.name || "",
-        dosage: med.dosage || "",
-        rxcui: med.medication_concept_identifier || "",
-        frequency: freqEntry?.value || "once_daily",
-        time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
-        note: med.note || "",
-        stock_count: med.stock_count ?? "",
-        refill_threshold: med.refill_threshold ?? "",
-        reminder_time_before: med.reminder_time_before ?? "0",
-        time_to_send_to_caregiver: med.time_to_send_to_caregiver ?? "",
-      });
-    }
-  });
+  const { data: caregivers = [] } = useCheckinCaregivers(med?.user_id || null);
+  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", repeat_interval: 1, repeat_weekdays: [] as string[], time_slots: ["08:00"] as string[], note: "", check_in_type: ["human"] as string[], start_date: "", end_date: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, assignee_ids: [] as string[] });
+  const [peopleLoad, setPeopleLoad] = useState<{ medicineId: string; assignees: "loading" | "ready" | "error" } | null>(null);
+  const [peopleDirty, setPeopleDirty] = useState({ assignees: false });
+  const editMedicineIdRef = useRef<string | null>(null);
 
   // Re-populate when med/open changes
   const populateForm = useCallback(() => {
@@ -243,38 +289,62 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
         dosage: med.dosage || "",
         rxcui: med.medication_concept_identifier || "",
         frequency: freqEntry?.value || "once_daily",
+        repeat_interval: med.repeat_interval || 1,
+        repeat_weekdays: med.repeat_weekdays || [],
         time_slots: med.time_slot?.length > 0 ? [...med.time_slot] : ["08:00"],
         note: med.note || "",
+        check_in_type: med.check_in_type?.length ? [...med.check_in_type] : ["human"],
+        start_date: med.start_date || "",
+        end_date: med.end_date || "",
         stock_count: med.stock_count ?? "",
         refill_threshold: med.refill_threshold ?? "",
         reminder_time_before: med.reminder_time_before ?? "0",
-        time_to_send_to_caregiver: med.time_to_send_to_caregiver ?? "",
+        assignee_ids: [],
       });
+      const medicineId = String(med.id);
+      editMedicineIdRef.current = medicineId;
+      setPeopleDirty({ assignees: false });
+      setPeopleLoad({ medicineId, assignees: "loading" });
+      fetchMedicineAssigneeIdsWordPress(medicineId).then((ids) => {
+        if (editMedicineIdRef.current === medicineId) setForm((current) => ({ ...current, assignee_ids: ids }));
+        setPeopleLoad((current) => current?.medicineId === medicineId ? { ...current, assignees: "ready" } : current);
+      }).catch(() => setPeopleLoad((current) => current?.medicineId === medicineId ? { ...current, assignees: "error" } : current));
     }
   }, [med]);
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (open) populateForm();
+  }, [open, populateForm]);
+
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    updateMed.mutate({
+    const alertsAllowed = await requestCareScheduleNotificationPermission();
+    const updates: Record<string, any> & { id: string } = {
       id: med.id,
       name: form.name.trim(),
       dosage: form.dosage || undefined,
       medication_concept_identifier: form.rxcui || undefined,
       frequency: form.frequency,
+      repeat_interval: Number(form.repeat_interval) || 1,
+      repeat_weekdays: form.repeat_weekdays,
       time_slot: form.time_slots,
+      check_in_type: form.check_in_type,
+      start_date: form.start_date,
+      end_date: form.end_date,
       note: form.note || undefined,
       stock_count: form.stock_count === "" ? "" : Number(form.stock_count),
       refill_threshold: form.refill_threshold === "" ? "" : Number(form.refill_threshold),
       reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
-      time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? null : Number(form.time_to_send_to_caregiver),
-    }, {
-      onSuccess: () => { toast({ title: Z("药品已更新","Medicine updated") }); onClose(); },
+    };
+    if (peopleDirty.assignees) updates["assignee_ids"] = form.assignee_ids;
+    updateMed.mutate(updates, {
+      onSuccess: () => { toast({ title: Z("药品已更新","Medicine updated"), description: alertsAllowed ? undefined : Z("计划已保存；请在被照护者手机打开应用并开启通知，才能收到定时提醒。", "Schedule saved. Open the app on the cared one's phone and enable notifications to receive timed reminders.") }); onClose(); },
       onError: (err) => toast({ title: Z("操作失败","Failed"), description: String(err.message), variant: "destructive" }),
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); else populateForm(); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { editMedicineIdRef.current = null; onClose(); } else populateForm(); }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{Z("编辑药品","Edit Medicine")}</DialogTitle>
@@ -291,6 +361,14 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
               </Select>
             </div>
           </div>
+          <ScheduleRecurrenceFields
+            frequency={form.frequency}
+            interval={form.repeat_interval}
+            weekdays={form.repeat_weekdays}
+            onIntervalChange={(value) => setForm((p) => ({ ...p, repeat_interval: value === "" ? 1 : Number(value) }))}
+            onWeekdaysChange={(repeat_weekdays) => setForm((p) => ({ ...p, repeat_weekdays }))}
+            Z={Z}
+          />
           <div>
             <div className="flex items-center justify-between">
               <Label>{Z("服药时间","Scheduled Times")}</Label>
@@ -308,18 +386,21 @@ function EditMedDialog({ open, onClose, med, onDelete }: { open: boolean; onClos
               ))}
             </div>
           </div>
+          <CheckinModeField value={form.check_in_type} onChange={(check_in_type) => setForm((p) => ({ ...p, check_in_type }))} />
+          <ScheduleCaregiverField caregivers={caregivers} value={form.assignee_ids} onChange={(assignee_ids) => { setForm((p) => ({ ...p, assignee_ids })); setPeopleDirty((p) => ({ ...p, assignees: true })); }} label={Z("负责用药核对的人", "People assigned to check doses")} loading={peopleLoad?.medicineId === String(med?.id) && peopleLoad.assignees === "loading"} error={peopleLoad?.medicineId === String(med?.id) && peopleLoad.assignees === "error"} disabled={peopleLoad?.medicineId !== String(med?.id) || peopleLoad.assignees !== "ready"} />
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>{Z("开始日期", "Start date")}</Label><Input type="date" value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} className="mt-1" /></div>
+            <div><Label>{Z("结束日期", "End date")}</Label><Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} className="mt-1" /></div>
+          </div>
           <div><Label>{Z("备注","Notes")}</Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder={Z("用药说明、副作用…","Instructions, side effects…")} className="mt-1 min-h-[60px]" /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(剩余药片)","(pills left)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
             <div><Label>{Z("补药提醒","Refill alert")} <span className="text-muted-foreground text-xs">{Z("(阈值)","(threshold)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
-              <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
-            </div>
+            <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
 
           <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
-            <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim()}>
+            <Button className="flex-1" onClick={handleSave} disabled={updateMed.isPending || !form.name.trim() || form.check_in_type.length === 0}>
               {updateMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null} {Z("保存更改","Save Changes")}
             </Button>
             <Button variant="outline" onClick={onClose}>{Z("取消","Cancel")}</Button>
@@ -352,15 +433,16 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
   const isSkipped = logForThisDose?.status === "skipped";
   const isMissedLogged = logForThisDose?.status === "missed";
   const isDone = isTaken || isSkipped || isMissedLogged;
+  const humanCheckInEnabled = med.check_in_type?.length ? med.check_in_type.includes("human") : true;
 
-  // Auto-detect missed: scheduled slot >60min in the past, no log
+  // A manual missed-dose action becomes available after the scheduled time.
   const isMissedAuto = useMemo(() => {
     if (isDone || isPRN || !slot) return false;
     const [h = "0", m = "0"] = slot.split(":");
     const slotMins = Number(h) * 60 + Number(m);
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
-    return nowMins > slotMins + 60;
+    return nowMins > slotMins;
   }, [slot, isDone, isPRN]);
 
   const lowStock = typeof med.stock_count === "number" && typeof med.refill_threshold === "number" && med.stock_count <= med.refill_threshold;
@@ -432,10 +514,10 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
             {isTaken ? Z("✓ 已服用","✓ Taken") : isSkipped ? Z("⏭ 已跳过","⏭ Skipped") : Z("⚠ 漏服","⚠ Missed")}
             {logForThisDose?.created_at && <span className="ml-1 opacity-70">{formatTime(logForThisDose.created_at)}</span>}
           </Badge>
-        ) : isPRN ? (
+        ) : isPRN && humanCheckInEnabled ? (
           <Button size="sm" className="h-8 text-xs bg-primary/15 text-primary hover:bg-primary/25 border-0" variant="outline"
             onClick={() => onLog(med, "taken", slot)}><Plus className="h-3 w-3 mr-1" /> {Z("立即记录","Log dose now")}</Button>
-        ) : (
+        ) : !isPRN && humanCheckInEnabled ? (
           <>
             <Button size="sm" className="h-8 text-xs bg-success/15 text-success hover:bg-success/25 border-0" variant="outline"
               onClick={() => onLog(med, "taken", slot)}><Check className="h-3 w-3 mr-1" /> {Z("已服用","Taken")}</Button>
@@ -446,7 +528,7 @@ function MedDoseCard({ med, todayLogs, onLog, onEdit, onDelete, onHistory, compa
                 onClick={() => onLog(med, "missed", slot)}><AlertCircle className="h-3 w-3 mr-1" /> {Z("漏服","Missed")}</Button>
             )}
           </>
-        )}
+        ) : null}
       </div>
     </motion.div>
   );
@@ -533,6 +615,7 @@ function RxNormNameInput({ value, onChange, onPick }: {
 export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const { toast } = useToast();
   const { data: meds, isLoading } = useMedicines(caredOneId);
+  const { data: caregivers = [] } = useCheckinCaregivers(caredOneId);
   const { data: todayLogs } = useTodayMedicineLogs(caredOneId);
   const { data: allLogs, isLoading: allLogsLoading } = useAllMedicineLogs(caredOneId);
   const createMed = useCreateMedicine();
@@ -540,11 +623,20 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const logMed = useLogMedicine();
   const { openWriteAssistant } = useAIAssistant();
   const { user } = useAuth();
-  const autoOpenedDoseRef = useRef<string | null>(null);
+  const scheduleIds = useMemo(() => (meds || []).map((med: any) => String(med.id)), [meds]);
+  const receiverId = String(user?.user_id ?? "").replace(/^wp-/, "");
+  const { data: scheduleReceivers, isLoading: scheduleReceiversLoading } = useScheduleNotificationReceivers(scheduleIds);
+  const setScheduleSubscription = useSetScheduleNotificationSubscription();
+  const receivesMedicationReminders = Boolean(
+    receiverId && scheduleIds.length && scheduleReceivers &&
+    scheduleIds.every((id) => (scheduleReceivers.get(id) || []).includes(receiverId)),
+  );
+  const autoOpenedDoseRef = useRef<Set<string>>(new Set());
+  const [clock, setClock] = useState(() => new Date());
 
   const [addOpen, setAddOpen] = useState(false);
   const [view, setView] = useState<"timeline" | "records" | "manage">("timeline");
-  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"] as string[], note: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, time_to_send_to_caregiver: "" as string | number });
+  const [form, setForm] = useState({ name: "", dosage: "", rxcui: "", frequency: "once_daily", repeat_interval: 1, repeat_weekdays: [] as string[], time_slots: ["08:00"] as string[], note: "", check_in_type: ["human"] as string[], start_date: "", end_date: "", stock_count: "" as string | number, refill_threshold: "" as string | number, reminder_time_before: "0" as string | number, assignee_ids: [] as string[] });
   const updateMed = useUpdateMedicine();
 
   // Dialogs
@@ -552,8 +644,23 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
   const [historyMed, setHistoryMed] = useState<any>(null);
   const [editMed, setEditMed] = useState<any>(null);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const handleLog = (med: any, status: "taken" | "skipped" | "missed", slot?: string | undefined) => {
     setLogDialog({ open: true, med, action: status, slot });
+  };
+
+  const handleMedicationReminderSubscription = (receives: boolean) => {
+    setScheduleSubscription.mutate(
+      { scheduleIds, receiverId, receives },
+      {
+        onSuccess: () => toast({ title: receives ? Z("已开启用药提醒推送", "Medication reminders on") : Z("已关闭用药提醒推送", "Medication reminders off") }),
+        onError: (error) => toast({ title: Z("保存失败", "Save failed"), description: error instanceof Error ? error.message : String(error), variant: "destructive" }),
+      },
+    );
   };
 
   const confirmLog = (note: string) => {
@@ -563,6 +670,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         medicine_id: med.id,
         status: action,
         note: note || undefined,
+        medication_note: med.note || "",
         user_id: caredOneId,
         // Apple HKMedicationDoseEvent context, copied from the schedule row
         dose_quantity: med.dose_quantity ?? null,
@@ -593,8 +701,9 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     );
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name.trim()) return;
+    const alertsAllowed = await requestCareScheduleNotificationPermission();
     createMed.mutate(
       {
         user_id: caredOneId,
@@ -602,14 +711,19 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         dosage: form.dosage || undefined,
         medication_concept_identifier: form.rxcui || undefined,
         frequency: form.frequency,
+        repeat_interval: Number(form.repeat_interval) || 1,
+        repeat_weekdays: form.repeat_weekdays,
         time_slot: form.time_slots.length > 0 ? form.time_slots : ["08:00"],
+        check_in_type: form.check_in_type,
+        start_date: form.start_date || undefined,
+        end_date: form.end_date || undefined,
         note: form.note || undefined,
         stock_count: form.stock_count === "" ? undefined : Number(form.stock_count),
         refill_threshold: form.refill_threshold === "" ? undefined : Number(form.refill_threshold),
         reminder_time_before: form.reminder_time_before === "" ? 0 : Number(form.reminder_time_before),
-        time_to_send_to_caregiver: form.time_to_send_to_caregiver === "" ? undefined : Number(form.time_to_send_to_caregiver),
+        assignee_ids: form.assignee_ids,
       },
-      { onSuccess: () => { setForm({ name: "", dosage: "", rxcui: "", frequency: "once_daily", time_slots: ["08:00"], note: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", time_to_send_to_caregiver: "" }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added") }); },
+      { onSuccess: () => { setForm({ name: "", dosage: "", rxcui: "", frequency: "once_daily", repeat_interval: 1, repeat_weekdays: [], time_slots: ["08:00"], note: "", check_in_type: ["human"], start_date: "", end_date: "", stock_count: "", refill_threshold: "", reminder_time_before: "0", assignee_ids: [] }); setAddOpen(false); toast({ title: Z("药品已添加","Medicine added"), description: alertsAllowed ? undefined : Z("计划已保存；请在被照护者手机打开应用并开启通知，才能收到定时提醒。", "Schedule saved. Open the app on the cared one's phone and enable notifications to receive timed reminders.") }); },
         onError: (err) => toast({ title: Z("添加失败","Failed to add"), description: String(err.message), variant: "destructive" }) }
     );
   };
@@ -643,20 +757,20 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
 
   useEffect(() => {
     if (!user?.general_user_role?.includes("cared one") || !meds || !todayLogs) return;
-    const now = new Date();
+    const now = clock;
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const due = (meds as any[]).flatMap((med) => {
       if (med.frequency_code === "as_needed") return [];
       return doseSlotsToday(med).map((slot) => ({ med, slot }));
     }).find(({ med, slot }) => {
-      if (findDoseLog(todayLogs as any[], med.id, slot) || med.is_active === false) return false;
+      const key = `${localDay()}-${med.id}-${slot}`;
+      if (autoOpenedDoseRef.current.has(key) || findDoseLog(todayLogs as any[], med.id, slot) || med.is_active === false || !med.check_in_type?.includes("ai")) return false;
       const [hour = "0", minute = "0"] = String(slot).split(":");
       return nowMinutes >= Number(hour) * 60 + Number(minute);
     });
     if (!due) return;
-    const key = `${now.toISOString().slice(0, 10)}-${due.med.id}-${due.slot}`;
-    if (autoOpenedDoseRef.current === key) return;
-    autoOpenedDoseRef.current = key;
+    const key = `${localDay()}-${due.med.id}-${due.slot}`;
+    autoOpenedDoseRef.current.add(key);
     const dose = [due.med.name, due.med.dosage, due.slot].filter(Boolean).join(" · ");
     // One call: the registry decides wording, outcomes, the write and the refresh.
     openWriteAssistant({
@@ -668,9 +782,14 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
         label: due.med.name,
         detail: dose,
         slot: due.slot,
+        medicationNote: due.med.note || "",
+        doseQuantity: due.med.dose_quantity ?? null,
+        doseUnit: due.med.dose_unit || "",
+        scheduleType: due.med.schedule_type || "",
+        conceptIdentifier: due.med.medication_concept_identifier || "",
       },
     });
-  }, [meds, todayLogs, caredOneId, user?.general_user_role]);
+  }, [meds, todayLogs, caredOneId, user?.general_user_role, clock]);
 
   const hasScheduledMeds = Object.keys(timelineMeds).length > 0;
   const currentHour = new Date().getHours();
@@ -679,11 +798,20 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <h2 className="min-w-0 text-lg font-bold text-foreground">{Z("用药追踪","Medicine Tracker")}</h2>
-        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto" aria-label={Z("用药视图与添加","Medicine views and add")}>
-          <div className="grid h-9 min-w-0 flex-1 grid-cols-[1fr_0.85fr_1.2fr] overflow-hidden rounded-lg border sm:w-[228px] sm:flex-none" role="tablist" aria-label={Z("用药视图","Medicine views")}>
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:w-auto" aria-label={Z("用药视图与添加","Medicine views and add")}>
+          <div className="grid h-9 min-w-0 basis-full flex-1 grid-cols-[1fr_0.85fr_1.2fr] overflow-hidden rounded-lg border sm:w-[228px] sm:basis-auto sm:flex-none" role="tablist" aria-label={Z("用药视图","Medicine views")}>
             <Button role="tab" aria-selected={view === "timeline"} variant="ghost" onClick={() => setView("timeline")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "timeline" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("时间线","Timeline")}</Button>
             <Button role="tab" aria-selected={view === "records"} variant="ghost" onClick={() => setView("records")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "records" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("记录","Records")}</Button>
             <Button role="tab" aria-selected={view === "manage"} variant="ghost" onClick={() => setView("manage")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "manage" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("用药管理","Manage")}</Button>
+          </div>
+          <div className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-2.5" data-inspector-id="medicine-notification-receiver-toggle" data-testid="medicine-notification-receiver-toggle">
+            <span className="whitespace-nowrap text-xs">{Z("接收用药提醒", "Medication reminders")}</span>
+            <Switch
+              aria-label={Z("接收用药提醒推送", "Receive medication reminder notifications")}
+              checked={receivesMedicationReminders}
+              onCheckedChange={handleMedicationReminderSubscription}
+              disabled={!receiverId || scheduleIds.length === 0 || scheduleReceiversLoading || setScheduleSubscription.isPending}
+            />
           </div>
           <Button size="sm" className="h-9 w-20 shrink-0" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" /> {Z("添加","Add")}</Button>
         </div>
@@ -725,7 +853,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                 value={form.name}
                 onChange={(v) => setForm(p => ({ ...p, name: v }))}
                 onPick={({ name, strength, rxcui }) => {
-                  // RxNorm lookup only prefills name/strength — CCT 205 has no concept column.
+                  // RxNorm identifiers are stored numerically in CCT 187 a92.
                   setForm(p => ({ ...p, name, dosage: p.dosage || strength || "", rxcui: rxcui || "" }));
                 }}
               />
@@ -740,6 +868,14 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                 </Select>
               </div>
             </div>
+            <ScheduleRecurrenceFields
+              frequency={form.frequency}
+              interval={form.repeat_interval}
+              weekdays={form.repeat_weekdays}
+              onIntervalChange={(value) => setForm((p) => ({ ...p, repeat_interval: value === "" ? 1 : Number(value) }))}
+              onWeekdaysChange={(repeat_weekdays) => setForm((p) => ({ ...p, repeat_weekdays }))}
+              Z={Z}
+            />
             <div>
               <div className="flex items-center justify-between"><Label>{Z("服药时间","Scheduled Times")}</Label><Button type="button" variant="ghost" size="sm" onClick={() => setForm(p => withSlots(p, [...p.time_slots, nextFreeTime(p.time_slots)]))} className="text-xs h-7"><Plus className="h-3 w-3 mr-1" /> {Z("添加时间","Add Time")}</Button></div>
               <div className="space-y-2 mt-1">
@@ -754,18 +890,21 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                 ))}
               </div>
             </div>
+            <CheckinModeField value={form.check_in_type} onChange={(check_in_type) => setForm((p) => ({ ...p, check_in_type }))} />
+            <ScheduleCaregiverField caregivers={caregivers} value={form.assignee_ids} onChange={(assignee_ids) => setForm((p) => ({ ...p, assignee_ids }))} label={Z("负责用药核对的人", "People assigned to check doses")} />
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{Z("开始日期", "Start date")}</Label><Input type="date" value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} className="mt-1" /></div>
+              <div><Label>{Z("结束日期", "End date")}</Label><Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} className="mt-1" /></div>
+            </div>
             <div><Label>{Z("备注","Notes")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder={Z("随餐服用、避免乳制品…","Take with food, avoid dairy…")} className="mt-1 min-h-[60px]" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{Z("库存数量","Stock count")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.stock_count} onChange={e => setForm(p => ({ ...p, stock_count: e.target.value }))} placeholder="e.g. 30" className="mt-1" /></div>
               <div><Label>{Z("补药提醒阈值","Refill alert at")} <span className="text-muted-foreground text-xs">{Z("(可选)","(optional)")}</span></Label><Input type="number" min="0" value={form.refill_threshold} onChange={e => setForm(p => ({ ...p, refill_threshold: e.target.value }))} placeholder="e.g. 7" className="mt-1" /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
-              <div><Label>{Z("多久通知护理者(分钟)","Notify caregiver after (min)")}</Label><Input type="number" min="0" value={form.time_to_send_to_caregiver} onChange={e => setForm(p => ({ ...p, time_to_send_to_caregiver: e.target.value }))} className="mt-1" /></div>
-            </div>
+            <div><Label>{Z("提前提醒(分钟)","Remind before (min)")}</Label><Input type="number" min="0" value={form.reminder_time_before} onChange={e => setForm(p => ({ ...p, reminder_time_before: e.target.value }))} className="mt-1" /></div>
             <div className="sticky bottom-0 -mx-6 flex gap-2 border-t bg-background px-6 py-3">
               <Button variant="outline" onClick={() => setAddOpen(false)}>{Z("取消","Cancel")}</Button>
-              <Button className="flex-1" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim()}>
+              <Button className="flex-1" variant="coral" onClick={handleAdd} disabled={createMed.isPending || !form.name.trim() || form.check_in_type.length === 0}>
                 {createMed.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {Z("添加药品","Add Medicine")}
               </Button>
             </div>
@@ -864,6 +1003,7 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
                     <Badge variant="outline" className={`text-xs ${log.status === "taken" ? "border-success/40 text-success" : log.status === "skipped" ? "border-warning/40 text-warning" : "border-destructive/40 text-destructive"}`}>
                       {log.status === "taken" ? Z("已服用","Taken") : log.status === "skipped" ? Z("已跳过","Skipped") : Z("漏服","Missed")}
                     </Badge>
+                    {log.logged_by_ai && <Badge variant="outline" className="text-xs border-primary/40 text-primary"><Bot className="mr-1 h-3 w-3" />AI</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {log.scheduled_date ? `${Z("计划","Scheduled")} ${formatDateTime(log.scheduled_date, i18n.language)} · ` : ""}{formatDate(log.created_at)} · {formatTime(log.created_at)}

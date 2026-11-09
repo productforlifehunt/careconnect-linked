@@ -6,7 +6,6 @@ import { BrandMark } from "@/components/BrandMark";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { PageBackButton } from "@/components/layout/PageBackButton";
 
 /**
  * NotchSafety app shell — one persistent header on every screen and one
@@ -34,13 +33,11 @@ export function SafetyShell({ children }: { children: ReactNode }) {
 
   const isActive = (url: string) => location.pathname === url || location.pathname.startsWith(url + "/");
   const bare = location.pathname === "/" || location.pathname.startsWith("/auth") || location.pathname.startsWith("/join");
-  const pagePath = location.pathname.replace(/\/+$/, "") || "/";
-  const showBackButton = pagePath !== "/" && pagePath !== "/dashboard" && !(isAuthenticated && pagePath === "/map");
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh w-full min-w-0 max-w-full flex-col overflow-x-clip bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16">
+        <div className="flex h-14 w-full min-w-0 max-w-full items-center gap-3 px-4 md:h-16">
           <button
             type="button"
             onClick={() => navigate(isAuthenticated ? "/map" : "/")}
@@ -57,7 +54,10 @@ export function SafetyShell({ children }: { children: ReactNode }) {
 
 
           {isAuthenticated && !bare && (
-            <nav className="mx-2 hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex" aria-label={L("主导航", "Main navigation")}>
+            <nav
+              className="mx-2 hidden min-w-0 flex-1 items-center justify-start gap-1 md:flex"
+              aria-label={L("主导航", "Main navigation")}
+            >
               {tabs.map((tab) => {
                 const active = isActive(tab.url);
                 return (
@@ -113,12 +113,11 @@ export function SafetyShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className={`w-full flex-1 ${bare ? "" : "px-0 pb-20 md:px-4 md:pb-0"}`}>
-        {showBackButton && (
-          <div className="px-4 pt-2">
-            <PageBackButton />
-          </div>
-        )}
+      <main
+        className={`w-full min-w-0 max-w-full flex-1 overflow-x-clip ${
+          bare ? "" : "px-0 pb-20 md:px-4 md:pb-0"
+        }`}
+      >
         {children}
       </main>
 

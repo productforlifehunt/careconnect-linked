@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 it("links a picked note immediately, shows progress, and updates the list after success", async () => {
-  const linked = { id: "202", title: "已有关联说明", version: "1.0", text: "正文", side: "child" as const, verified: false, relationVerified: true, relationDetails: "" };
+  const linked = { id: "202", title: "已有关联说明", version: "1.0", text: "正文", side: "child" as const, todo: false, verified: false, relationVerified: true, relationDetails: "" };
   mocks.list.mockResolvedValue({ notes: [] });
   mocks.search.mockResolvedValue({ notes: [{ id: "202", title: "已有关联说明", version: "1.0", verified: false }] });
   let finishLink!: (result: { notes: typeof linked[] }) => void;
@@ -76,6 +76,7 @@ it("creates a linked note with relation review fields", async () => {
   fireEvent.change(screen.getByPlaceholderText("内容"), {
     target: { value: "新内容" },
   });
+  fireEvent.click(screen.getByRole("switch", { name: "新关联注释待完成" }));
   fireEvent.click(
     screen.getByRole("switch", { name: "新关联注释已手动核对笔记关联" }),
   );
@@ -102,6 +103,7 @@ it("creates a linked note with relation review fields", async () => {
         title: "并列说明",
         version: "",
         text: "新内容",
+        todo: true,
         relationVerified: true,
         relationDetails: "共同指向同一来源。",
       },
@@ -119,6 +121,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
         version: "",
         text: "旧内容",
         side: "child",
+        todo: false,
         verified: false,
         relationVerified: true,
         relationDetails: "旧依据",
@@ -133,6 +136,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
         version: "",
         text: "旧内容",
         side: "child",
+        todo: false,
         verified: false,
         relationVerified: false,
         relationDetails: "新依据",
@@ -165,6 +169,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
       title: "关联说明",
       version: "",
       text: "旧内容",
+      todo: false,
       verified: false,
       relationVerified: false,
       relationDetails: "新依据",
@@ -174,9 +179,36 @@ it("loads and edits relation review fields on an existing linked note", async ()
   expect(await screen.findByText("修改成功")).toBeDefined();
 });
 
+it("shows and saves a related note's to-do status", async () => {
+  const note = { id: "202", title: "进行中的说明", version: "", text: "草稿内容", side: "child" as const, todo: false, verified: false, relationVerified: false, relationDetails: "" };
+  mocks.list.mockResolvedValue({ notes: [note] });
+  mocks.update.mockResolvedValue({ notes: [{ ...note, todo: true }] });
+
+  render(<RelatedNotes noteId="101" />);
+  fireEvent.click(await screen.findByRole("button", { name: /#202 · 进行中的说明/ }));
+  fireEvent.click(await screen.findByRole("switch", { name: "关联注释 202 待完成" }));
+  fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+  expect(mocks.update).toHaveBeenCalledWith({
+    data: {
+      id: "101",
+      otherId: "202",
+      title: "进行中的说明",
+      version: "",
+      text: "草稿内容",
+      todo: true,
+      verified: false,
+      relationVerified: false,
+      relationDetails: "",
+    },
+  });
+  expect(await screen.findByRole("button", { name: /待完成/ })).toBeDefined();
+});
+
 it("copies a related note with its version and opens the copy for editing on Yes", async () => {
-  const original = { id: "202", title: "关联说明", version: "1.0", text: "正文", side: "child" as const, verified: true, relationVerified: true, relationDetails: "依据" };
-  const copied = { id: "303", title: "关联说明", version: "2.0", text: "正文", verified: true, relationVerified: true, relationDetails: "依据", key: "cct|303" };
+  const original = { id: "202", title: "关联说明", version: "1.0", text: "正文", side: "child" as const, todo: false, verified: true, relationVerified: true, relationDetails: "依据" };
+  const copied = { id: "303", title: "关联说明", version: "2.0", text: "正文", todo: false, verified: true, relationVerified: true, relationDetails: "依据", key: "cct|303" };
   mocks.list.mockResolvedValueOnce({ notes: [original] }).mockResolvedValueOnce({ notes: [original, { ...original, id: "303", version: "2.0" }] });
   mocks.duplicate.mockResolvedValue({ note: copied });
   render(<RelatedNotes noteId="101" />);

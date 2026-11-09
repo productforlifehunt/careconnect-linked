@@ -11,7 +11,7 @@
 
 export const FREQUENCY_CODES = [
   "once_daily", "twice_daily", "three_daily", "four_daily",
-  "every_other_day", "weekly", "as_needed",
+  "every_other_day", "weekly", "monthly", "yearly", "daily", "as_needed",
 ] as const;
 export type FrequencyCode = (typeof FREQUENCY_CODES)[number];
 
@@ -40,7 +40,7 @@ export function normalizeSlots(slots: readonly unknown[]): string[] {
 
 /** Daily frequency follows the number of times; other patterns keep their own. */
 export function frequencyForSlots(freq: FrequencyCode, slots: readonly string[]): FrequencyCode {
-  if (freq === "as_needed" || freq === "weekly" || freq === "every_other_day") return freq;
+  if (["as_needed", "weekly", "every_other_day", "monthly", "yearly", "daily"].includes(freq)) return freq;
   return COUNT_DAILY[normalizeSlots(slots).length] || freq;
 }
 
@@ -54,6 +54,8 @@ export function buildRRule(freq: FrequencyCode, slots: readonly string[], untilD
   const times = normalizeSlots(slots);
   const parts: string[] = [];
   if (freq === "weekly") parts.push("FREQ=WEEKLY", "INTERVAL=1");
+  else if (freq === "monthly") parts.push("FREQ=MONTHLY", "INTERVAL=1");
+  else if (freq === "yearly") parts.push("FREQ=YEARLY", "INTERVAL=1");
   else parts.push("FREQ=DAILY", `INTERVAL=${freq === "every_other_day" ? 2 : 1}`);
   if (times.length) {
     const hours = [...new Set(times.map((t) => Number(t.slice(0, 2))))].sort((a, b) => a - b);
@@ -69,8 +71,56 @@ export function buildRRule(freq: FrequencyCode, slots: readonly string[], untilD
   return parts.join(";");
 }
 
+/** Build common daily, weekly, monthly, and yearly RRULE patterns. */
+export function buildScheduleRRule(
+  freq: FrequencyCode,
+  slots: readonly string[],
+  startDate: string,
+  untilDate?: string | null,
+  interval = 1,
+  weekdays: readonly string[] = [],
+): string {
+  if (freq === "as_needed") return "";
+  const base = buildRRule(freq, slots, untilDate);
+  const parts = base.split(";").filter((part) => !part.startsWith("BYDAY=") && !part.startsWith("BYMONTHDAY=") && !part.startsWith("BYMONTH=") && !part.startsWith("BYSETPOS="));
+  const weekdayOrder = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"];
+  const dayCodes = [...new Set(weekdays.filter((day) => weekdayOrder.includes(day)))].sort((a, b) => weekdayOrder.indexOf(a) - weekdayOrder.indexOf(b));
+  const intervalIndex = parts.findIndex((part) => part.startsWith("INTERVAL="));
+  const intervalPart = `INTERVAL=${freq === "every_other_day" ? 2 : Math.max(1, Math.floor(interval) || 1)}`;
+  if (intervalIndex >= 0) parts[intervalIndex] = intervalPart;
+  else parts.splice(1, 0, intervalPart);
+  const recurrenceStart = parts.findIndex((part) => part.startsWith("BYHOUR=") || part.startsWith("UNTIL="));
+  const byDayPart = `BYDAY=${[...new Set(dayCodes)].join(",")}`;
+  if (freq === "weekly" && dayCodes.length) parts.splice(recurrenceStart >= 0 ? recurrenceStart : parts.length, 0, byDayPart);
+  if (freq === "monthly" || freq === "yearly") {
+    const [, month = "1", day = "1"] = startDate.split("-");
+    let index = parts.findIndex((part) => part.startsWith("BYHOUR=") || part.startsWith("UNTIL="));
+    if (index < 0) index = parts.length;
+    parts.splice(index, 0, `BYMONTHDAY=${Number(day)}`);
+    if (freq === "yearly") parts.splice(index, 0, `BYMONTH=${Number(month)}`);
+  }
+  const times = normalizeSlots(slots);
+  if (times.length) {
+    const hours = [...new Set(times.map((time) => Number(time.slice(0, 2))))].sort((a, b) => a - b);
+    const minutes = [...new Set(times.map((time) => Number(time.slice(3, 5))))].sort((a, b) => a - b);
+    const expanded = hours.flatMap((hour) => minutes.map((minute) => `${pad(hour)}:${pad(minute)}`));
+    if (expanded.length !== times.length) {
+      const datesPerPeriod = freq === "weekly" ? Math.max(1, dayCodes.length) : 1;
+      const positions = Array.from({ length: datesPerPeriod }, (_, dayIndex) =>
+        times.map((time) => dayIndex * expanded.length + expanded.indexOf(time) + 1),
+      ).flat();
+      const bySetPos = `BYSETPOS=${positions.join(",")}`;
+      const untilIndex = parts.findIndex((part) => part.startsWith("UNTIL="));
+      if (untilIndex >= 0) parts.splice(untilIndex, 0, bySetPos);
+      else parts.push(bySetPos);
+    }
+  }
+  return parts.join(";");
+}
+
 export interface ParsedRRule {
-  freq: string; interval: number; byhour: number[]; byminute: number[]; bysetpos: number[]; until: string | null;
+  freq: string; interval: number; byhour: number[]; byminute: number[]; bysetpos: number[];
+  byday: string[]; bymonthday: number[]; bymonth: number[]; until: string | null;
 }
 
 export function parseRRule(raw: unknown): ParsedRRule | null {
@@ -85,6 +135,8 @@ export function parseRRule(raw: unknown): ParsedRRule | null {
     freq: kv["FREQ"].toUpperCase(),
     interval: Math.max(1, Number(kv["INTERVAL"] || 1) || 1),
     byhour: nums(kv["BYHOUR"]), byminute: nums(kv["BYMINUTE"]), bysetpos: nums(kv["BYSETPOS"]),
+    byday: kv["BYDAY"] ? kv["BYDAY"].split(",").map((v) => v.trim().toUpperCase()) : [],
+    bymonthday: nums(kv["BYMONTHDAY"]), bymonth: nums(kv["BYMONTH"]),
     until: u ? `${u[1]}-${u[2]}-${u[3]}` : null,
   };
 }
@@ -108,7 +160,12 @@ export function slotsFromRRule(rrule: unknown, startAt: unknown): string[] {
   const expanded = r.byhour.slice().sort((a, b) => a - b)
     .flatMap((h) => minutes.slice().sort((a, b) => a - b).map((m) => `${pad(h)}:${pad(m)}`));
   if (!r.bysetpos.length) return expanded;
-  return normalizeSlots(r.bysetpos.map((p) => expanded[p > 0 ? p - 1 : expanded.length + p]).filter(Boolean));
+  const positionsPerDay = expanded.length;
+  const periodSize = positionsPerDay * (r.freq === "WEEKLY" ? Math.max(1, r.byday.length) : 1);
+  return normalizeSlots(r.bysetpos.map((p) => {
+    const index = p > 0 ? p - 1 : periodSize + p;
+    return expanded[((index % positionsPerDay) + positionsPerDay) % positionsPerDay];
+  }).filter(Boolean));
 }
 
 /** UI frequency code read from a66 + a95 (as-needed) + the number of times. */
@@ -117,7 +174,10 @@ export function frequencyFromRow(rrule: unknown, asNeeded: boolean, slots: reado
   const r = parseRRule(rrule);
   if (!r) return "as_needed";
   if (r.freq === "WEEKLY") return "weekly";
+  if (r.freq === "MONTHLY") return "monthly";
+  if (r.freq === "YEARLY") return "yearly";
   if (r.freq === "DAILY" && r.interval === 2) return "every_other_day";
+  if (r.freq === "DAILY" && r.interval > 1) return "daily";
   return COUNT_DAILY[slots.length] || "once_daily";
 }
 
@@ -144,8 +204,32 @@ export function occurrencesOn(day: string, row: { startAt: unknown; rrule: unkno
   let slots: string[] = [];
   if (r && startDate && daysBetween(startDate, day) >= 0 && (!r.until || day <= r.until)) {
     const diff = daysBetween(startDate, day);
-    const step = r.freq === "WEEKLY" ? 7 * r.interval : r.freq === "DAILY" ? r.interval : 0;
-    if (step && diff % step === 0) slots = slotsFromRRule(row.rrule, row.startAt);
+    const start = new Date(`${startDate}T00:00:00Z`);
+    const target = new Date(`${day}T00:00:00Z`);
+    const weekStart = (date: Date) => {
+      const mondayOffset = (date.getUTCDay() + 6) % 7;
+      return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - mondayOffset);
+    };
+    let occurs = false;
+    if (r.freq === "DAILY") occurs = diff % r.interval === 0;
+    if (r.freq === "WEEKLY") {
+      const weeks = Math.round((weekStart(target) - weekStart(start)) / (7 * 86400000));
+      const startDay = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"][(start.getUTCDay() + 6) % 7];
+      const targetDay = ["MO", "TU", "WE", "TH", "FR", "SA", "SU"][(target.getUTCDay() + 6) % 7];
+      occurs = weeks >= 0 && weeks % r.interval === 0 && (r.byday.length ? r.byday.includes(targetDay!) : targetDay === startDay);
+    }
+    if (r.freq === "MONTHLY") {
+      const months = (target.getUTCFullYear() - start.getUTCFullYear()) * 12 + target.getUTCMonth() - start.getUTCMonth();
+      const monthDays = r.bymonthday.length ? r.bymonthday : [start.getUTCDate()];
+      occurs = months >= 0 && months % r.interval === 0 && monthDays.includes(target.getUTCDate());
+    }
+    if (r.freq === "YEARLY") {
+      const years = target.getUTCFullYear() - start.getUTCFullYear();
+      const months = r.bymonth.length ? r.bymonth : [start.getUTCMonth() + 1];
+      const monthDays = r.bymonthday.length ? r.bymonthday : [start.getUTCDate()];
+      occurs = years >= 0 && years % r.interval === 0 && months.includes(target.getUTCMonth() + 1) && monthDays.includes(target.getUTCDate());
+    }
+    if (occurs) slots = slotsFromRRule(row.rrule, row.startAt);
   }
   const ex = listDates(row.exdates).filter((d) => d.date === day);
   if (ex.some((d) => !d.time)) slots = [];

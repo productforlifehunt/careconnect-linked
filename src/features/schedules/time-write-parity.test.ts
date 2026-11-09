@@ -33,6 +33,7 @@ describe("medicine and check-in share CCT187 time writes", () => {
     const bodies = writes("POST");
     expect(bodies).toHaveLength(2);
     for (const body of bodies) expect(body).toMatchObject(expected);
+    expect(bodies.map((body) => body["a59"])).toEqual(["b56", "b56"]);
     expect(bodies.map((body) => body["a60"])).toEqual(["b55", "b56"]);
     expect(m.cct.mock.calls.every(([slug]) => slug === T.calendarEvent.slug)).toBe(true);
   });

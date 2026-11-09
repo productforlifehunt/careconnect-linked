@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getStoredWPUser, getWPToken } from "@/services/wp-auth";
 import { readLastGood, withLastGood } from "@/lib/last-good";
 import { currentAppId } from "@/features/shared/app-profile";
+import {
+  fetchScheduleNotificationReceiverMap,
+  setScheduleNotificationReceiverSubscription,
+} from "@/features/schedules/calendar-schedule";
 
 // ─── Feature source modules (backend-specific) ─────────────
 import { fetchProviderByIdWordPress } from "@/features/providers/source.wordpress";
@@ -40,6 +44,8 @@ import {
 import { setPostVisibility, setTaskVisibility, filterVisiblePosts } from "@/features/care-groups/visibility";
 import {
   fetchSafeZonesWordPress, createSafeZoneWordPress, updateSafeZoneWordPress, deleteSafeZoneWordPress,
+  fetchLocationReceiverSubscriptionWordPress,
+  setLocationReceiverSubscriptionWordPress,
   fetchSafeZoneAlertsWordPress, acknowledgeAlertWordPress, acknowledgeAllAlertsWordPress,
   fetchCaredOneLocationHistoryWordPress,
   shareMyLocationWordPress, disableMyLocationSharingWordPress,
@@ -78,7 +84,7 @@ import { fetchLocationSharesWordPress } from "@/features/location/source.wordpre
 
 import {
   createUserCaredOneWordPress, deleteUserCaredOneWordPress, fetchGroupCaredOnesWordPress,
-  createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, logCheckinWordPress,
+  createCheckinWordPress, updateCheckinWordPress, deleteCheckinWordPress, fetchCheckinLogsWordPress, logCheckinWordPress, fetchCaredOneCaregiversWordPress,
   createMedicineWordPress, updateMedicineWordPress, deleteMedicineWordPress,
   fetchMedicineLogsWordPress, fetchAllMedicineLogsWordPress, logMedicineWordPress,
   fetchCareTipsWordPress, createCareTipWordPress, updateCareTipWordPress, deleteCareTipWordPress,
@@ -1089,6 +1095,14 @@ export function useGroupCaredOnes(groupId: string | null) {
 }
 
 // ─── Check-Ins (schedule) ────────────────────────────────────
+export function useCheckinCaregivers(caredOneId: string | null) {
+  return useQuery({
+    queryKey: ["checkinCaregivers", caredOneId],
+    queryFn: () => fetchCaredOneCaregiversWordPress(caredOneId!),
+    enabled: !!caredOneId,
+  });
+}
+
 export function useCheckinLogs(caredOneId: string | null) {
   return useQuery({
     queryKey: ["checkinLogs", caredOneId],
@@ -1325,6 +1339,59 @@ export function useSafeZones(caredOneId: string | null) {
     queryKey: ["safeZones", caredOneId],
     queryFn: () => fetchSafeZonesWordPress(caredOneId!),
     enabled: !!caredOneId,
+  });
+}
+
+export function useLocationReceiverSubscription(caredOneId: string | null) {
+  const receiverId = String(getStoredWPUser()?.user_id ?? "");
+  return useQuery({
+    queryKey: ["locationReceiverSubscription", caredOneId, receiverId],
+    queryFn: () => fetchLocationReceiverSubscriptionWordPress(caredOneId!, receiverId),
+    enabled: !!caredOneId && !!receiverId,
+  });
+}
+
+export function useScheduleNotificationReceivers(scheduleIds: readonly (string | number)[]) {
+  const ids = [...new Set(scheduleIds.map(String))].sort();
+  return useQuery({
+    queryKey: ["scheduleNotificationReceivers", ids],
+    queryFn: () => fetchScheduleNotificationReceiverMap(ids),
+    enabled: ids.length > 0,
+  });
+}
+
+export function useSetScheduleNotificationSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      scheduleIds: readonly (string | number)[];
+      receiverId: string | number;
+      receives: boolean;
+    }) => setScheduleNotificationReceiverSubscription(
+      input.scheduleIds,
+      input.receiverId,
+      input.receives,
+    ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["scheduleNotificationReceivers"] }),
+  });
+}
+
+export function useSetLocationReceiverSubscription(caredOneId: string | null) {
+  const qc = useQueryClient();
+  const receiverId = String(getStoredWPUser()?.user_id ?? "");
+  return useMutation({
+    mutationFn: (receives: boolean) => {
+      if (!caredOneId || !receiverId) throw new Error("Not authenticated");
+      return setLocationReceiverSubscriptionWordPress(caredOneId, receiverId, receives);
+    },
+    onSuccess: (_data, receives) => {
+      if (caredOneId && receiverId) {
+        qc.setQueryData(
+          ["locationReceiverSubscription", caredOneId, receiverId],
+          receives,
+        );
+      }
+    },
   });
 }
 

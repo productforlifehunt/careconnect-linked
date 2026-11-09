@@ -21,6 +21,8 @@ import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
 import {
   useSafeZones, useCreateSafeZone, useUpdateSafeZone, useDeleteSafeZone,
+  useLocationReceiverSubscription,
+  useSetLocationReceiverSubscription,
   useCaredOneLocation, useCaredOneLocationHistory,
   useSafeZoneAlerts, useAcknowledgeAlert, useAcknowledgeAllAlerts,
   useLocationRequests, useSendLocationRequest, useCancelLocationRequest,
@@ -233,6 +235,10 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   // ─── Data
   const { data: currentLocation, refetch: refetchLocation, isLoading: loadingLocation } = useCaredOneLocation(caredOneId);
   const managementSubject = readOnly ? null : caredOneId;
+  const locationAlertSubscription =
+    useLocationReceiverSubscription(managementSubject);
+  const setLocationAlertSubscription =
+    useSetLocationReceiverSubscription(managementSubject);
   const { data: locationHistory, refetch: refetchHistory } = useCaredOneLocationHistory(managementSubject);
   const { data: zones, refetch: refetchZones } = useSafeZones(caredOneId);
   const { data: alerts, refetch: refetchAlerts } = useSafeZoneAlerts(managementSubject);
@@ -252,6 +258,26 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
     } catch (e) {
       toast({ title: isZh ? "保存失败" : "Save failed", description: e instanceof Error ? e.message : String(e), variant: "destructive" });
       throw e;
+    }
+  };
+  const handleLocationAlertSubscriptionChange = async (receives: boolean) => {
+    try {
+      await setLocationAlertSubscription.mutateAsync(receives);
+      toast({
+        title: receives
+          ? isZh
+            ? "已开启安全/危险区域推送"
+            : "Safe/danger zone alerts on"
+          : isZh
+            ? "已关闭安全/危险区域推送"
+            : "Safe/danger zone alerts off",
+      });
+    } catch (error) {
+      toast({
+        title: isZh ? "保存失败" : "Save failed",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
     }
   };
   // Fallback map centre: where the person looking at this page is.
@@ -630,6 +656,33 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   ];
 
   const lastSeen = currentLocation ? formatDateTime(currentLocation.created_at) : null;
+  const renderLocationAlertToggle = (surface: "header" | "safezones") =>
+    !readOnly && (
+      <div
+        className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5"
+        data-inspector-id="location-alert-receiver-toggle"
+        data-testid={
+          surface === "header"
+            ? "location-alert-toggle-header"
+            : "location-alert-toggle-safezones"
+        }
+      >
+        <span className="text-xs text-foreground">
+          {isZh ? "接收安全/危险区域推送" : "Receive safe/danger zone alerts"}
+        </span>
+        <Switch
+          aria-label={
+            isZh ? "接收安全/危险区域推送" : "Receive safe/danger zone alerts"
+          }
+          checked={Boolean(locationAlertSubscription.data)}
+          onCheckedChange={handleLocationAlertSubscriptionChange}
+          disabled={
+            locationAlertSubscription.isLoading ||
+            setLocationAlertSubscription.isPending
+          }
+        />
+      </div>
+    );
 
   return (
     <div className="space-y-4">
@@ -658,6 +711,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           </div>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
+          {renderLocationAlertToggle("header")}
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing} aria-label={isZh ? "刷新位置" : "Refresh location"}>
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
@@ -981,6 +1035,9 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
       {/* SAFE ZONES */}
       {activeTab === "safezones" && (
         <div>
+          <div className="flex justify-end mb-3">
+            {renderLocationAlertToggle("safezones")}
+          </div>
           {showZoneForm && (
             <Card className="border-primary/20 card-elevated mb-4">
               <CardContent className="p-4 space-y-4">

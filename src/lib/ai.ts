@@ -1,15 +1,13 @@
 /**
  * SINGLE FRONTEND AI MODULE — every AI call from the app goes through this file.
- * Part 1: invokeAI / conversation memory (non-streaming; no modes anywhere).
+ * Part 1: invokeAI for one-shot requests; conversation reads and writes live in
+ *         src/lib/ai-dynamic-knowledge.ts.
  * Part 2: streaming voice pipeline (SSE text + sentence-level TTS playback).
  * Backend: the single `ai` edge function, routed by task only:
  *   ?task=chat-chat (text→text, SSE; stream:false for one-shot JSON)
  *   ?task=chat-voice (text→audio)
  * Persona: supabase/functions/_shared/ai-prompts.ts (single registry).
  */
-import { wordpressCCTFetch, wordpressFetch, isNetworkAbort } from "@/features/shared/wordpress-client";
-import { T, R } from "@/integrations/wp-schema";
-import { appScopeBody } from "@/features/shared/app-scope";
 import { supabase } from "@/integrations/supabase/client";
 import { detectSite } from "@/contexts/SiteContext";
 
@@ -20,9 +18,6 @@ export interface AIChatMessage {
 }
 
 export interface InvokeAIOptions {
-  conversationId?: string | undefined;
-  title?: string | undefined;
-  caredOneId?: string | number | null | undefined;
   messages?: AIChatMessage[] | undefined;
   /**
    * Everything this screen needs the AI to know or do, in plain language:
@@ -30,105 +25,12 @@ export interface InvokeAIOptions {
    */
   contextPrompt?: string | undefined;
   language?: string | undefined;
-  /**
-   * Write the exchange into the unified chat CCTs. Default FALSE.
-   * Only opt-in if you explicitly need a persisted transcript.
-   */
-  persist?: boolean | undefined;
-  /** Only used to keep separate persisted transcripts apart. Free-form. */
-  threadKey?: string | undefined;
-}
-
-const CONVERSATION_SLUG = T.chatConversation.slug;
-const CF = T.chatConversation.f;
-const CT = T.chatConversation.opt.CHAT_TYPE;
-const MESSAGE_SLUG = T.chatMessage.slug;
-const MF = T.chatMessage.f;
-const MT = T.chatMessage.opt.CHAT_MESSAGE_TYPE;
-const REL_CONV_MESSAGE = R.conversationMessages; // 1:M chat conversation → chat message
-
-function nowWPDateTime() {
-  return new Date().toISOString().slice(0, 19).replace("T", " ");
-}
-
-function withUserFacingGuidance(contextPrompt?: string | undefined, language?: string | undefined): string {
-  const guidance = language?.toLowerCase().startsWith("zh")
-    ? "用普通用户听得懂的日常语言回答。不要主动解释 AI 模型、提示词、数据库、接口、代码或应用实现；用户直接问技术问题时，再用通俗的话解释。"
-    : "Use everyday language for the person using the app. Don't volunteer explanations of AI models, prompts, databases, APIs, code, or app implementation; if asked directly, explain plainly.";
-  return [contextPrompt?.trim(), guidance].filter(Boolean).join("\n\n");
-}
-
-function conversationStorageKey(threadKey: string, caredOneId?: string | number | null | undefined) {
-  return `ai_conversation:${threadKey || "chat"}:${caredOneId ?? "none"}`;
-}
-
-const stripWp = (id: string | number | null | undefined): string =>
-  id == null ? "" : String(id).replace(/^wp-/, "");
-const numId = (id: string | number | null | undefined): number => Number(stripWp(id));
-
-async function ensureConversation(threadKey: string, options: InvokeAIOptions = {}): Promise<string> {
-  const cachedId = options.conversationId || localStorage.getItem(conversationStorageKey(threadKey, options.caredOneId));
-
-  if (cachedId) {
-    try {
-      const existing = await wordpressCCTFetch<Record<string, any>>(CONVERSATION_SLUG, { id: cachedId });
-      const id = existing?.["id"] || existing?.["_ID"];
-      if (id) {
-        localStorage.setItem(conversationStorageKey(threadKey, options.caredOneId), String(id));
-        return String(id);
-      }
-    } catch { /* fall through */ }
-  }
-
-  const result = await wordpressCCTFetch<any>(CONVERSATION_SLUG, {
-    method: "POST",
-    body: {
-      [CF.CHAT_TYPE]: CT.AI,
-      [CF.CHAT_NAME]: options.title || "",
-      [CF.LAST_MESSAGE_AT]: nowWPDateTime(),
-      ...appScopeBody("chatConversation"),
-    },
-  });
-  const createdId = String(result?.item_id || result?._ID || result?.id);
-  if (createdId) localStorage.setItem(conversationStorageKey(threadKey, options.caredOneId), createdId);
-  return createdId;
-}
-
-async function createMessage(conversationId: string, role: AIChatMessage["role"], content: string) {
-  const result = await wordpressCCTFetch<any>(MESSAGE_SLUG, {
-    method: "POST",
-    body: {
-      [MF.CHAT_MESSAGE_CONTENT]: content,
-      [MF.CHAT_MESSAGE_TYPE]: role === "assistant" ? MT.AI : MT.TEXT,
-    },
-  });
-  const messageId = numId(result?.item_id || result?._ID || result?.id);
-  const convoId = numId(conversationId);
-  if (messageId && convoId) {
-    try {
-      await wordpressFetch(`jet-rel/${REL_CONV_MESSAGE}`, {
-        method: "POST",
-        body: { parent_id: convoId, child_id: messageId, context: "child", store_items_type: "update" },
-      });
-    } catch { /* non-blocking */ }
-  }
-}
-
-async function touchConversation(conversationId: string) {
-  try {
-    await wordpressCCTFetch(CONVERSATION_SLUG, {
-      id: conversationId,
-      method: "PUT",
-      body: { [CF.LAST_MESSAGE_AT]: nowWPDateTime() },
-    });
-  } catch { /* non-blocking */ }
 }
 
 /** Call the single `ai` edge function (Lovable AI Gateway) */
 async function callAI(messages: AIChatMessage[], contextPrompt?: string | undefined, language?: string | undefined): Promise<string> {
-  const requestContext = withUserFacingGuidance(contextPrompt, language);
   const { data, error } = await supabase.functions.invoke("ai?task=chat-chat", {
-    body: { messages, stream: false, site: detectSite(), contextPrompt: requestContext, ...(language ? { language } : {}) },
+    body: { messages, stream: false, site: detectSite(), contextPrompt, ...(language ? { language } : {}) },
   });
   if (error) {
     console.error("AI edge function error:", error);
@@ -138,39 +40,11 @@ async function callAI(messages: AIChatMessage[], contextPrompt?: string | undefi
   return data?.reply || "";
 }
 
-class SkipPersistence extends Error {}
-
 export async function invokeAI(request: string, options: InvokeAIOptions = {}): Promise<string> {
   const userMessages = options.messages && options.messages.length > 0
     ? options.messages.filter((m) => m.role !== "system")
     : [{ role: "user" as const, content: request }];
-
-  const userMessage = userMessages.filter((m) => m.role === "user").at(-1)?.content || request;
-
-  // Persist only when explicitly requested (non-blocking on failure)
-  let conversationId: string | null = null;
-  const shouldPersist = options.persist === true;
-  try {
-    if (!shouldPersist) throw new SkipPersistence();
-    conversationId = await ensureConversation(options.threadKey || "chat", options);
-    await createMessage(conversationId, "user", userMessage);
-  } catch (e) {
-    if (e instanceof SkipPersistence) conversationId = null;
-    else if (isNetworkAbort(e)) console.debug("Chat CCT persistence skipped (request aborted)");
-    else console.warn("Chat CCT persistence unavailable, continuing without:", e);
-  }
-
-  // Critical path
-  const reply = await callAI(userMessages, options.contextPrompt, options.language);
-
-  if (conversationId) {
-    try {
-      await createMessage(conversationId, "assistant", reply);
-      await touchConversation(conversationId);
-    } catch { /* non-blocking */ }
-  }
-
-  return reply;
+  return callAI(userMessages, options.contextPrompt, options.language);
 }
 
 /** Parse JSON from AI reply, stripping markdown fences if present */
@@ -188,7 +62,75 @@ export function parseAIJson<T = any>(reply: string): T | null {
 
 
 // ═════════ STREAMING VOICE PIPELINE ═════════
-const STREAM_URL = `${import.meta.env["VITE_SUPABASE_URL"]}/functions/v1/ai?task=chat-chat`;
+const STREAM_URL = `${import.meta.env["VITE_SUPABASE_URL"]}/functions/v1/ai`;
+
+export interface StreamChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  imageDataUrl?: string | undefined;
+}
+
+function streamRequest(messages: StreamChatMessage[]) {
+  let latestImageIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i]?.imageDataUrl) {
+      latestImageIndex = i;
+      break;
+    }
+  }
+  const hasImage = latestImageIndex >= 0;
+  const cleanMessages = messages.map((message, index) => ({
+    role: message.role,
+    content: index === latestImageIndex && message.imageDataUrl
+      ? [
+          { type: "text", text: message.content },
+          { type: "image_url", image_url: { url: message.imageDataUrl, detail: "auto" } },
+        ]
+      : message.content,
+  }));
+  return {
+    url: `${STREAM_URL}?task=${hasImage ? "vision-chat" : "chat-chat"}`,
+    messages: cleanMessages,
+  };
+}
+
+export async function prepareChatImage(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file.");
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = objectUrl;
+    await image.decode();
+    if (!image.naturalWidth || !image.naturalHeight) throw new Error("This image could not be opened.");
+
+    for (const maxSide of [1600, 1280, 1024]) {
+      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("This image could not be prepared.");
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of [0.82, 0.7, 0.58]) {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+        if (blob && blob.size <= 2_500_000) {
+          return await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("This image could not be prepared."));
+            reader.onerror = () => reject(new Error("This image could not be prepared."));
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    }
+    throw new Error("This image is too large to send.");
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export interface StreamHandlers {
   onTextDelta: (delta: string, fullText: string) => void;
@@ -429,7 +371,7 @@ async function fetchTTSBlobURL(
  *     ends (independent of whether audio finished playing).
  */
 export function streamChatWithVoice(
-  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+  messages: StreamChatMessage[],
   voice: string,
   handlers: StreamHandlers,
 ): { controls: StreamControls; result: Promise<string> } {
@@ -453,13 +395,14 @@ export function streamChatWithVoice(
   };
 
   const result = (async () => {
-    const resp = await fetch(STREAM_URL, {
+    const request = streamRequest(messages);
+    const resp = await fetch(request.url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
       },
-      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: withUserFacingGuidance(handlers.contextPrompt, handlers.language) }),
+      body: JSON.stringify({ messages: request.messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal: handlers.signal ?? null,
     });
 
@@ -644,7 +587,7 @@ export function speakTextStreaming(
  * Returns an AbortController so the caller can cancel mid-stream.
  */
 export function streamChatTextOnly(
-  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+  messages: StreamChatMessage[],
   handlers: TextStreamHandlers,
 ): { abort: () => void; result: Promise<string> } {
   const controller = new AbortController();
@@ -653,13 +596,14 @@ export function streamChatTextOnly(
     : controller.signal;
 
   const result = (async () => {
-    const resp = await fetch(STREAM_URL, {
+    const request = streamRequest(messages);
+    const resp = await fetch(request.url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]}`,
       },
-      body: JSON.stringify({ messages, site: detectSite(), language: handlers.language, contextPrompt: withUserFacingGuidance(handlers.contextPrompt, handlers.language) }),
+      body: JSON.stringify({ messages: request.messages, site: detectSite(), language: handlers.language, contextPrompt: handlers.contextPrompt }),
       signal,
     });
 

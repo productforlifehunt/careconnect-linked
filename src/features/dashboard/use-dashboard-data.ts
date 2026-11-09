@@ -191,15 +191,17 @@ export function usePosts(
   childPostType?: string | null | undefined,
   limit = 50,
   enabled = true,
+  language?: string | undefined,
 ) {
   return useQuery({
-    queryKey: ["posts", postType, area, childPostType, limit, currentAppId()],
+    queryKey: ["posts", postType, area, childPostType, limit, currentAppId(), language],
     queryFn: async () =>
       (await import("@/features/posts/source.wordpress")).fetchPostsWordPress(
         postType,
         area,
         childPostType,
         limit,
+        language,
       ),
     enabled,
   });

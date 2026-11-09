@@ -3,22 +3,18 @@
  *
  * - SheetLocationTag: a tag next to the status. Collapsed by default; click to
  *   reveal the person's last known location (current_location CCT).
- * - SheetAIPanel: collapsed by default. Once opened it greets the reader with
- *   what is needed this time and answers questions about the person, using the
- *   care plan / tips / medicines / notes already stored for them.
+ * - SheetAIPanel: collapsed by default. Once opened it answers from details
+ *   already shown on the card and retrieves other permitted facts only as asked.
  *   Nothing is written to the chat tables — whoever reads a shared card is
  *   usually not an app user.
  */
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, MapPin, Bot } from "lucide-react";
-import { fetchCareTipsWordPress, fetchCarePlansWordPress, fetchCareNotesWordPress } from "@/features/cared-ones/source.wordpress-extended";
-import { fetchMedicinesWordPress } from "@/features/medicine/source.medicine";
-import type { InfoSheetAIContext } from "@/components/cared-ones/InfoSheetAIDialog";
-import { buildInfoSheetContext, buildInfoSheetIntroduction } from "@/lib/ai-dynamic-knowledge";
+import type { InfoSheetPromptContext } from "@/lib/ai-dynamic-knowledge";
+import { buildInfoSheetIntroduction } from "@/lib/ai-dynamic-knowledge";
 import { AICompanionChat } from "@/components/ai/AICompanionChat";
 import LocationCard from "@/components/care/LocationCard";
 
@@ -52,51 +48,17 @@ export function SheetLocationTag({ caredOneId, caredOneName }: { caredOneId?: st
   );
 }
 
-/* ─────────────── Knowledge about the person ─────────────── */
-
-export function useInfoSheetKnowledge(caredOneId?: string | null | undefined, enabled = true) {
-  const { i18n } = useTranslation();
-  const isCN = i18n.language?.startsWith("zh");
-
-  const { data } = useQuery({
-    queryKey: ["infoSheetKnowledge", caredOneId],
-    enabled: enabled && !!caredOneId,
-    staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
-      const id = String(caredOneId);
-      const [tips, plans, notes, medicines] = await Promise.all([
-        fetchCareTipsWordPress(id).catch(() => []),
-        fetchCarePlansWordPress(id).catch(() => []),
-        fetchCareNotesWordPress(id).catch(() => []),
-        fetchMedicinesWordPress(id).catch(() => []),
-      ]);
-      return { tips, plans, notes, medicines };
-    },
-  });
-
-  return useMemo(() => {
-    if (!data) return "";
-    const L = (cn: string, en: string) => (isCN ? cn : en);
-    const list = (rows: any[], keys: string[]) =>
-      (rows || []).slice(0, 12)
-        .map((r: any) => keys.map((k) => r?.[k]).filter(Boolean).join(" — "))
-        .filter(Boolean)
-        .join("\n");
-
-    const blocks = [
-      list(data.plans, ["title", "name", "content", "description"]) && `${L("护理计划", "Care plan")}:\n${list(data.plans, ["title", "name", "content", "description"])}`,
-      list(data.tips, ["title", "name", "content", "description"]) && `${L("照护要点与喜好", "Care tips and preferences")}:\n${list(data.tips, ["title", "name", "content", "description"])}`,
-      list(data.medicines, ["name", "medicine_name", "dosage", "frequency", "note"]) && `${L("用药", "Medicines")}:\n${list(data.medicines, ["name", "medicine_name", "dosage", "frequency", "note"])}`,
-      list(data.notes, ["title", "content"]) && `${L("护理笔记", "Care notes")}:\n${list(data.notes, ["title", "content"])}`,
-    ].filter(Boolean);
-
-    return blocks.join("\n\n");
-  }, [data, isCN]);
-}
-
 /* ─────────────── Inline AI panel ─────────────── */
 
-export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
+export function SheetAIPanel({
+  context,
+  caredOneId,
+  sharedCard = false,
+}: {
+  context: InfoSheetPromptContext;
+  caredOneId?: string | undefined;
+  sharedCard?: boolean | undefined;
+}) {
   const { i18n } = useTranslation();
   const isCN = i18n.language?.startsWith("zh");
   const Z = (cn: string, en: string) => (isCN ? cn : en);
@@ -107,13 +69,18 @@ export function SheetAIPanel({ context }: { context: InfoSheetAIContext }) {
     () => ({
       id: `information-card-${context.caredOneName || "shared"}`,
       title: Z("信息卡助手", "Information card assistant"),
-      contextPrompt: buildInfoSheetContext(context, !!isCN),
+      contextScope: {
+        caredOneId,
+        topics: ["care-tips"],
+        sheetContext: context,
+        sharedCard,
+      },
       starterPrompt: task
         ? buildInfoSheetIntroduction(task, context.caredOneName, !!isCN)
-        : Z("请先简单介绍你能根据这张信息卡回答什么。", "Briefly explain what you can answer from this information card."),
-      starterFallback: Z("我只根据这张信息卡上的内容回答。有什么想问的？", "I answer only from this information card. What would you like to know?"),
+        : Z("你想聊些什么？", "What would you like to talk about?"),
+      starterFallback: Z("有什么想问的，或想聊的话题吗？", "What would you like to ask or talk about?"),
     }),
-    [context, isCN, task],
+    [context, caredOneId, isCN, sharedCard, task],
   );
 
   return (

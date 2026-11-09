@@ -316,7 +316,7 @@ export async function listRelatedNotes(rawData: unknown, request: Request) {
 }
 
 export async function linkRelatedNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId.optional(), create: z.object({ title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), relationVerified: z.boolean().optional(), relationDetails: z.string().max(100_000).optional() }).optional() }).refine(v => !!v.otherId !== !!v.create).parse(input));
+  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId.optional(), create: z.object({ title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), todo: z.boolean().optional(), relationVerified: z.boolean().optional(), relationDetails: z.string().max(100_000).optional() }).optional() }).refine(v => !!v.otherId !== !!v.create).parse(input));
   const data = validate(rawData);
 
     const denied = await researcherOnly(request); if (denied) return { error: denied };
@@ -328,6 +328,7 @@ export async function linkRelatedNote(rawData: unknown, request: Request) {
         data.otherId || s.createPlainNote({
           title: data.create!.title,
           text: data.create!.text,
+          todo: data.create!.todo ?? false,
           ...(data.create!.version === undefined ? {} : { version: data.create!.version }),
           relationVerified: data.create!.relationVerified ?? false,
           relationDetails: data.create!.relationDetails ?? "",
@@ -354,13 +355,13 @@ export async function unlinkRelatedNote(rawData: unknown, request: Request) {
 }
 
 export async function updateRelatedNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId, title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), verified: z.boolean(), relationVerified: z.boolean(), relationDetails: z.string().max(100_000) }).parse(input));
+  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId, title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), todo: z.boolean().optional(), verified: z.boolean(), relationVerified: z.boolean(), relationDetails: z.string().max(100_000) }).parse(input));
   const data = validate(rawData);
 
     const denied = await researcherOnly(request); if (denied) return { error: denied };
     const token = wpToken(request);
     const s = await import('./inspector-notes.server');
-    try { await s.updatePlainNote(data.otherId, { title: data.title, text: data.text, ...(data.version === undefined ? {} : { version: data.version }), verified: data.verified, relationVerified: data.relationVerified, relationDetails: data.relationDetails }, token); return { notes: await s.readRelatedNotes(data.id, token) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
+    try { await s.updatePlainNote(data.otherId, { title: data.title, text: data.text, ...(data.version === undefined ? {} : { version: data.version }), ...(data.todo === undefined ? {} : { todo: data.todo }), verified: data.verified, relationVerified: data.relationVerified, relationDetails: data.relationDetails }, token); return { notes: await s.readRelatedNotes(data.id, token) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
   
 }
 

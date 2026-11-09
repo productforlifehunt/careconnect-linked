@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildRRule, slotsFromRRule, frequencyFromRow, occurrencesOn, frequencyForSlots, normalizeSlots } from "./recurrence";
+import { buildRRule, buildScheduleRRule, slotsFromRRule, frequencyFromRow, occurrencesOn, frequencyForSlots, normalizeSlots } from "./recurrence";
 
 describe("CCT187 recurrence (a57/a66/a68/a69)", () => {
   it("twice daily 08:00 + 12:00 is stored and read back as two times", () => {
@@ -35,5 +35,19 @@ describe("CCT187 recurrence (a57/a66/a68/a69)", () => {
 
   it("daily frequency follows the number of distinct times", () => {
     expect(frequencyForSlots("twice_daily", normalizeSlots(["08:00", "12:00", "18:00"]))).toBe("three_daily");
+  });
+
+  it("weekly interval preserves the selected weekdays and exact time pairs", () => {
+    const rule = buildScheduleRRule("weekly", ["08:00", "12:30"], "2026-10-27", undefined, 2, ["WE", "MO"]);
+    expect(rule).toBe("FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;BYHOUR=8,12;BYMINUTE=0,30;BYSETPOS=1,4,5,8");
+    expect(slotsFromRRule(rule, "2026-10-27 08:00:00")).toEqual(["08:00", "12:30"]);
+    expect(occurrencesOn("2026-10-28", { startAt: "2026-10-27 08:00:00", rrule: rule })).toEqual(["08:00", "12:30"]);
+    expect(occurrencesOn("2026-11-02", { startAt: "2026-10-27 08:00:00", rrule: rule })).toEqual([]);
+    expect(occurrencesOn("2026-11-09", { startAt: "2026-10-27 08:00:00", rrule: rule })).toEqual(["08:00", "12:30"]);
+  });
+
+  it("monthly and yearly patterns follow the start date with a selected interval", () => {
+    expect(buildScheduleRRule("monthly", ["08:00"], "2026-10-27", undefined, 3)).toBe("FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=27;BYHOUR=8;BYMINUTE=0");
+    expect(buildScheduleRRule("yearly", ["08:00"], "2026-10-27", undefined, 2)).toBe("FREQ=YEARLY;INTERVAL=2;BYMONTH=10;BYMONTHDAY=27;BYHOUR=8;BYMINUTE=0");
   });
 });

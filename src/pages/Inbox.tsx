@@ -43,6 +43,7 @@ export default function Inbox() {
     return "all";
   })();
   const [tab, setTab] = useState(initial);
+  const contentWidth = tab === "messages" ? "max-w-7xl" : "max-w-3xl";
   // Read-state filter, shared by all three tabs (macOS Mail style: tabs left,
   // All / Unread / Read segmented control right, same row).
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
@@ -154,8 +155,8 @@ export default function Inbox() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 pt-5 pb-2">
+    <div className="min-h-screen w-full min-w-0 max-w-full bg-background">
+      <div className={`${contentWidth} mx-auto w-full px-4 pt-5 pb-2`}>
         <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
           {Z("收件箱", "Inbox")}
         </h1>
@@ -165,7 +166,7 @@ export default function Inbox() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => switchTab(v)} className="w-full">
-        <div className="max-w-3xl mx-auto px-4 space-y-2">
+        <div className={`${contentWidth} mx-auto w-full px-4 space-y-2`}>
           <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/50 rounded-xl p-1">
             <TabsTrigger
               value="all"
@@ -310,7 +311,7 @@ export default function Inbox() {
           <Suspense
             fallback={
               <div
-                className="max-w-3xl mx-auto space-y-3 px-4 py-5"
+                className={`${contentWidth} mx-auto w-full space-y-3 px-4 py-5`}
                 role="status"
                 aria-label={Z("正在加载通知", "Loading notifications")}
                 aria-busy="true"
@@ -339,7 +340,9 @@ export default function Inbox() {
               </div>
             }
           >
-            <Messages embedded readFilter={readFilter} />
+            <div className={`${contentWidth} mx-auto w-full`}>
+              <Messages embedded readFilter={readFilter} />
+            </div>
           </Suspense>
         </TabsContent>
       </Tabs>

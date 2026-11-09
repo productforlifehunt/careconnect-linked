@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -25,7 +24,7 @@ import {
   deleteSafeZoneWordPress,
 } from "@/features/location/source.wordpress-extended";
 import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
-import { checkBreaches, getDistanceMeters } from "@/lib/locationService";
+import { getDistanceMeters } from "@/lib/locationService";
 import {
   ZONE_TYPE, ZONE_TYPE_CODES, isCustomZone, isDangerZone,
   zoneTypeLabel,
@@ -58,7 +57,6 @@ export default function GPSTracking() {
   const { data: locationShares, isLoading, refetch } = useLocationShares(POLL_INTERVAL, site.family === "notchsafety" || site.id === "notchsafety" ? "group" : "cared-ones");
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
   const [shareMyLocation, setShareMyLocation] = useState(false);
-  const [geofenceAlerts, setGeofenceAlerts] = useState(true);
   const [updatingShare, setUpdatingShare] = useState(false);
   const [sosDialogOpen, setSosDialogOpen] = useState(false);
   const [sosSending, setSosSending] = useState(false);
@@ -95,7 +93,6 @@ export default function GPSTracking() {
     schedule_start_time: "",
     schedule_end_time: "",
     is_active: true,
-    receiver_ids: [] as string[],
   };
 
 
@@ -114,7 +111,6 @@ export default function GPSTracking() {
   const trailLinesRef = useRef<L.Polyline[]>([]);
   const zoneLayers = useRef<L.Layer[]>([]);
   
-  const lastBreach = useRef<Record<string, number>>({});
 
   const { user } = useAuth();
   const userId = user?.user_id ?? null;
@@ -235,22 +231,6 @@ export default function GPSTracking() {
 
 
   const sharingPeople = people.filter(p => p.isSharing && p.coordinates.lat && p.coordinates.lng);
-
-  // Alert receivers are care-team members, not only people who share a
-  // location — anyone in the team can be notified about a breach.
-  const receiverCandidates = (() => {
-    const seen = new Set<string>();
-    const out: { id: string; userId: string; name: string }[] = [];
-    const push = (uid: any, name: string) => {
-      const key = String(uid ?? "").replace(/^wp-/, "");
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      out.push({ id: key, userId: key, name: name || t("common.unknown") });
-    };
-    (groupMembers || []).forEach((m: any) => push(m.user_id ?? m.id, m.display_name || m.profile?.full_name || m.profile?.email));
-    people.forEach((p: any) => push(p.userId, p.name));
-    return out;
-  })();
 
   // ─── Load trail history for each person ─────────────────────
   useEffect(() => {
@@ -400,29 +380,6 @@ export default function GPSTracking() {
     }
   }, [sharingPeople.length, locationShares, trailData, mapNode]);
 
-  // ─── Live breach detection on each poll ─────────────────────
-  useEffect(() => {
-    if (!geofenceAlerts || !zones.length || !sharingPeople.length) return;
-
-    sharingPeople.forEach(person => {
-      const breaches = checkBreaches(person.coordinates.lat, person.coordinates.lng, zones);
-      breaches.forEach(breach => {
-        const dedupKey = `${person.userId}-${breach.zoneId}-${breach.alertType}`;
-        const lastTime = lastBreach.current[dedupKey] || 0;
-        const now = Date.now();
-        // 5 minute dedup window
-        if (now - lastTime < 5 * 60 * 1000) return;
-        lastBreach.current[dedupKey] = now;
-
-        toast({
-          title: breach.alertType === "entered_danger_zone" ? Z("⚠️ 危险区域警报", "⚠️ Danger Zone Alert") : Z("📍 安全区域警报", "📍 Safe Zone Alert"),
-          description: `${person.name} — ${Z(({ entered_danger_zone: "进入危险区域", exited_safe_zone: "离开安全区域", entered_safe_zone: "进入安全区域" } as any)[breach.alertType] || breach.alertType, breach.alertType.replace(/_/g, " "))} (${breach.zoneName})`,
-          variant: breach.alertType.includes("danger") ? "destructive" : "default",
-        });
-      });
-    });
-  }, [locationShares, zones, geofenceAlerts]);
-
   // ─── Auto-share my location (sender polling) ───────────────
   useEffect(() => {
     if (!shareMyLocation || !userId) return;
@@ -549,7 +506,6 @@ export default function GPSTracking() {
       schedule_start_time: zone.schedule_start_time || "",
       schedule_end_time: zone.schedule_end_time || "",
       is_active: !!zone.is_active,
-      receiver_ids: Array.isArray(zone.receiver_ids) ? zone.receiver_ids.map(String) : [],
     });
     setZoneDialogOpen(true);
   };
@@ -612,9 +568,7 @@ export default function GPSTracking() {
         schedule_start_time: zoneForm.schedule_enabled ? zoneForm.schedule_start_time : "",
         schedule_end_time: zoneForm.schedule_enabled ? zoneForm.schedule_end_time : "",
         is_active: zoneForm.is_active,
-        // Receivers live on the cared one (Relation 290), shared by all zones.
         user_id: effectiveSubjectId,
-        receiver_ids: zoneForm.receiver_ids,
       };
       if (zoneForm.id) {
         await updateSafeZoneWordPress(zoneForm.id, payload);
@@ -893,33 +847,6 @@ export default function GPSTracking() {
                 <Switch checked={zoneForm.notify_on_exit}
                   onCheckedChange={(v) => setZoneForm(f => ({ ...f, notify_on_exit: v }))} />
               </div>
-              <div>
-                <Label className="text-sm">{Z("提醒接收人（对该被护理人的所有区域生效）", "Alert receivers (apply to all zones of this person)")}</Label>
-                <div className="mt-2 max-h-32 overflow-auto rounded-md border p-2 space-y-2">
-                  {receiverCandidates.length === 0 && (
-                    <p className="text-xs text-muted-foreground">{Z("暂无可选成员", "No members available")}</p>
-                  )}
-                  {receiverCandidates.map((pp: any) => {
-                    const pid = String(pp.userId ?? "").replace(/^wp-/, "");
-                    const checked = zoneForm.receiver_ids.some((r) => String(r).replace(/^wp-/, "") === pid);
-                    return (
-                      <label key={pp.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => setZoneForm(f => ({
-                            ...f,
-                            receiver_ids: checked
-                              ? f.receiver_ids.filter((r) => String(r).replace(/^wp-/, "") !== pid)
-                              : [...f.receiver_ids, pid],
-                          }))}
-                        />
-                        <span>{pp.name}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
               <ZoneScheduleFields
                 value={zoneForm}
                 onChange={(next) => setZoneForm(f => ({ ...f, ...next }))}
@@ -1256,15 +1183,6 @@ export default function GPSTracking() {
                   </p>
                 </div>
                  <Switch aria-label={t("gps.shareMyLocation")} checked={shareMyLocation} onCheckedChange={handleToggleShare} disabled={updatingShare} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm">{t("gps.geofenceAlerts")}</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {zones.length} {t("gps.zonesConfigured", "zones")} ({dangerZoneCount} {t("gps.danger", "danger")})
-                  </p>
-                </div>
-                 <Switch aria-label={t("gps.geofenceAlerts")} checked={geofenceAlerts} onCheckedChange={setGeofenceAlerts} />
               </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Shield className="h-3 w-3" /> {t("gps.locationEncrypted", { groups: site.navLabels.careGroups.toLowerCase() })}

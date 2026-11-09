@@ -11,7 +11,8 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Bot, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { WriteSkillName, WriteTarget } from "@/lib/ai-dynamic-knowledge";
+import type { InfoSheetPromptContext, WriteSkillName, WriteTarget } from "@/lib/ai-dynamic-knowledge";
+import type { KnowledgeTopic } from "@/lib/ai-static-knowledge";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
@@ -48,7 +49,10 @@ export type AssistantContextScope = {
   caredOneId?: string | undefined;
   groupId?: string | undefined;
   groupName?: string | undefined;
-  topics?: Array<"app-basics" | "care-group" | "care-tips"> | undefined;
+  topics?: KnowledgeTopic[] | undefined;
+  staticSkillNames?: string[] | undefined;
+  sheetContext?: InfoSheetPromptContext | undefined;
+  writeSkills?: WriteSkillName[] | undefined;
   sharedCard?: boolean | undefined;
 };
 export type AssistantRequest = {
@@ -213,22 +217,34 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const openWriteAssistant = useCallback(
     ({ skill, target, id, contextScope, onWritten }: WriteRequest) => {
       void import("@/lib/ai-dynamic-knowledge")
-        .then(({ resolveWriteSkill }) => {
+        .then(({ resolveWriteSkill, runWriteSkill }) => {
           const isChinese = (i18n.language || "").startsWith("zh");
           const spec = resolveWriteSkill(skill, target, { isChinese });
+          const scope = {
+            ...(contextScope || (target.caredOneId ? { caredOneId: target.caredOneId } : {})),
+            writeSkills: contextScope?.writeSkills || [skill],
+          };
           openAssistant({
             id: id || `${skill}-${target.recordId || target.caredOneId || "new"}`,
             title: spec.title,
             contextPrompt: spec.contextPrompt,
-            contextScope: contextScope || (target.caredOneId ? { caredOneId: target.caredOneId } : undefined),
+            contextScope: scope,
             starterPrompt: spec.starterPrompt,
             starterFallback: spec.starterFallback,
             completionStatuses: spec.statuses,
             onComplete: async (result) => {
-              await spec.write(result);
-              spec.invalidateKeys.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
-              toast({ title: spec.toastFor(result.status) });
-              onWritten?.(result);
+              try {
+                const written = await runWriteSkill(skill, target, result, { isChinese });
+                written.invalidateKeys.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
+                toast({ title: written.message });
+                onWritten?.({ status: written.status, summary: written.summary });
+              } catch (error) {
+                toast({
+                  title: isChinese ? "没能保存，请稍后再试。" : "Couldn't save this record. Please try again.",
+                  variant: "destructive",
+                });
+                throw error;
+              }
             },
           });
         })

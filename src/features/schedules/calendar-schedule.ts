@@ -9,9 +9,10 @@
  */
 import { wordpressFetch, wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
-import { dedupeRead } from "@/features/shared/rel-batch";
+import { dedupeRead, fetchRelChildrenMap } from "@/features/shared/rel-batch";
 import { readLinkedCCTRows } from "@/features/shared/cct-rows";
-import { FREQUENCY_CODES, type FrequencyCode, normalizeSlots, frequencyForSlots, buildRRule } from "./recurrence";
+import { appScopeBody, filterAppScope } from "@/features/shared/app-scope";
+import { FREQUENCY_CODES, type FrequencyCode, normalizeSlots, frequencyForSlots, buildScheduleRRule } from "./recurrence";
 
 export const CAL = T.calendarEvent;
 export const FC = CAL.f;
@@ -26,15 +27,16 @@ export const EVENT_TYPE = {
 
 export const STATUS_CONFIRMED = OC["STATUS"]!["CONFIRMED"]!;
 export const STATUS_CANCELLED = OC["STATUS"]!["CANCELLED"]!;
-// a91 "App" is a plain TEXT column in the live CCT 187 (verified 2026-09-18),
-// so it stores the lowercase standard app name, not a bNN option code.
-export const APP_CHALLENGED = "challenged";
-// a96/a97 radios in the live CCT 187 store the literal words "AI"/"Human"
-// (verified 2026-09-18 — the option value/label pair is entered that way).
-export const LOG_TYPE_AI = "AI";
-export const LOG_TYPE_HUMAN = "Human";
+// CCT 187 a91 is the app-scope radio. Writes use its dictionary option code;
+// reads also accept older lowercase app names through filterAppScope().
+export const CALENDAR_APP_SCOPE = () => appScopeBody("calendarEvent");
+// Both schedule types share the CCT 187 a96 multi-select checkbox.
+export const LOG_TYPE_AI = OC["MEDICINE_LOG_TYPE"]!["AI"]!;
+export const LOG_TYPE_HUMAN = OC["MEDICINE_LOG_TYPE"]!["HUMAN"]!;
 
 export const REL_USER_EVENT = R.userCalendarEvents; // 190 Users → 187
+export const REL_SCHEDULE_ASSIGNEES = R.checkinScheduleAssignees; // 262 CCT187 → Users
+export const REL_SCHEDULE_NOTIFICATION_RECEIVERS = R.checkinNotificationReceivers; // 260 CCT187 → Users
 
 export const numId = (v: any): number => Number(String(v ?? "").replace(/^wp-/, ""));
 export const wpStr = (v: any): string => (v === null || v === undefined || v === "" ? "" : String(v));
@@ -46,6 +48,91 @@ export async function linkRel(relId: number, parentId: number, childId: number):
     method: "POST",
     body: { parent_id: parentId, child_id: childId, context: "child", store_items_type: "update" },
   });
+}
+
+export async function fetchSchedulePeople(relationId: number, scheduleId: string): Promise<string[]> {
+  const id = numId(scheduleId);
+  const rows = await wordpressFetch<any[]>(`jet-rel/${relationId}/children/${id}`);
+  return Array.isArray(rows) ? rows.map((row: any) => String(row.child_object_id)).filter(Boolean) : [];
+}
+
+export async function setSchedulePeople(relationId: number, scheduleId: string, userIds: Array<string | number>): Promise<void> {
+  const parentId = numId(scheduleId);
+  if (!parentId) throw new Error("Invalid calendar schedule");
+  const ids = userIds.map((value) => numId(value)).filter(Boolean);
+  const body = { parent_id: parentId, child_id: ids, context: "parent", store_items_type: "replace" };
+  try {
+    await wordpressFetch(`jet-rel/${relationId}`, { method: "POST", body });
+  } catch (error: any) {
+    if (!/40[13]/.test(String(error?.message || error))) throw error;
+    const { wpAdminOps } = await import("@/services/woocommerce-api");
+    const result: any = await wpAdminOps("set_relation", {
+      relation_id: relationId, parent_id: parentId, child_ids: ids, context: "parent", store_items_type: "replace",
+    });
+    if (!result?.ok) throw new Error(result?.error || "Could not save schedule people");
+  }
+}
+
+export async function fetchScheduleNotificationReceiverMap(
+  scheduleIds: readonly (string | number)[],
+): Promise<Map<string, string[]>> {
+  const ids = [...new Set(scheduleIds.map(numId).filter((id) => Number.isInteger(id) && id > 0).map(String))];
+  const result = new Map<string, string[]>();
+  if (!ids.length) return result;
+
+  const relation = await fetchRelChildrenMap(REL_SCHEDULE_NOTIFICATION_RECEIVERS);
+  if (relation.loaded) {
+    ids.forEach((id) => {
+      result.set(
+        id,
+        [...new Set((relation.get(id) || []).map((row) => String(numId(row.childId))).filter(Boolean))],
+      );
+    });
+    return result;
+  }
+
+  const rows = await Promise.all(ids.map(async (id) => {
+    const relationRows = await wordpressFetch<any[]>(`jet-rel/${REL_SCHEDULE_NOTIFICATION_RECEIVERS}/children/${id}`);
+    const receiverIds = Array.isArray(relationRows)
+      ? [...new Set(relationRows.map((row: any) => String(numId(row?.child_object_id))).filter(Boolean))]
+      : [];
+    return [id, receiverIds] as const;
+  }));
+  rows.forEach(([id, receiverIds]) => result.set(id, receiverIds));
+  return result;
+}
+
+export async function fetchCommonScheduleNotificationReceiverIds(
+  scheduleIds: readonly (string | number)[],
+): Promise<string[]> {
+  const ids = [...new Set(scheduleIds.map(numId).filter((id) => Number.isInteger(id) && id > 0).map(String))];
+  if (!ids.length) return [];
+  const receiverMap = await fetchScheduleNotificationReceiverMap(ids);
+  const first = receiverMap.get(ids[0]!) || [];
+  return first.filter((receiverId) =>
+    ids.every((scheduleId) =>
+      (receiverMap.get(scheduleId) || []).some((candidate) => numId(candidate) === numId(receiverId)),
+    ),
+  );
+}
+
+export async function setScheduleNotificationReceiverSubscription(
+  scheduleIds: readonly (string | number)[],
+  receiverId: string | number,
+  receives: boolean,
+): Promise<void> {
+  const userId = numId(receiverId);
+  if (!Number.isInteger(userId) || userId <= 0) throw new Error("Invalid notification receiver");
+  const receiver = String(userId);
+  const receiverMap = await fetchScheduleNotificationReceiverMap(scheduleIds);
+  await Promise.all([...receiverMap.entries()].map(([scheduleId, currentIds]) => {
+    const hasReceiver = currentIds.some((id) => numId(id) === userId);
+    if (receives === hasReceiver) return Promise.resolve();
+    const nextIds = receives
+      ? [...new Set([...currentIds, receiver])]
+      : currentIds.filter((id) => numId(id) !== userId);
+    return setSchedulePeople(REL_SCHEDULE_NOTIFICATION_RECEIVERS, scheduleId, nextIds);
+  }));
 }
 
 // ─── Frequency ⇄ RRULE (RFC 5545 columns only, see recurrence.ts) ───
@@ -61,6 +148,9 @@ export const FREQ_EN: Record<FrequencyCode, string> = {
   four_daily: "Four times daily",
   every_other_day: "Every other day",
   weekly: "Weekly",
+  monthly: "Monthly",
+  yearly: "Yearly",
+  daily: "Every few days",
   as_needed: "As needed",
 };
 
@@ -94,14 +184,15 @@ export function startAtFor(startDate: string, slots: readonly string[]): string 
  * Exception dates a68/a69 are untouched by an ordinary time edit; a70 is not
  * an ordinary plan field. Never write a90 or a duplicate recurrence payload.
  */
-export function scheduleTimeColumns(frequency: string | undefined, times: readonly unknown[], startDate: string, endDate?: string | null) {
+export function scheduleTimeColumns(frequency: string | undefined, times: readonly unknown[], startDate: string, endDate?: string | null, interval = 1, weekdays: readonly string[] = []) {
   const slots = normalizeSlots(times);
   const freq = frequencyForSlots(toFrequencyCode(frequency), slots);
   const startAt = startAtFor(startDate, slots);
   return {
     [FC.START_AT]: startAt,
     [FC.END_AT]: startAt,
-    [FC.RRULE]: buildRRule(freq, slots, endDate),
+    [FC.ALL_DAY]: OC["ALL_DAY"]!["NO"]!,
+    [FC.RRULE]: buildScheduleRRule(freq, slots, startDate, endDate, interval, weekdays),
   };
 }
 
@@ -120,18 +211,18 @@ export async function fetchEventsOfType(userId: string | number, eventType: stri
   const rowsById = new Map(
     rows.map((row) => [String(row?.id ?? row?._ID), row]),
   );
-  return ids
+  return filterAppScope("calendarEvent", ids
     .map((id) => rowsById.get(id))
     .filter(
       (row) =>
         row &&
         typeof row === "object" &&
         String(row[FC.CUSTOM_EVENT_TYPE]) === eventType,
-    );
+    ));
 }
 
 export async function createEvent(body: Record<string, any>, ownerId: string | number): Promise<number> {
-  const created = await wordpressCCTFetch<any>(CAL.slug, { method: "POST", body });
+  const created = await wordpressCCTFetch<any>(CAL.slug, { method: "POST", body: { ...body, ...CALENDAR_APP_SCOPE() } });
   const newId = numId(created?.item_id || created?._ID || created?.id);
   if (!newId) throw new Error("Schedule was not saved");
   await linkRel(REL_USER_EVENT, numId(ownerId), newId);

@@ -18,6 +18,8 @@ export interface CCTNote extends SourceAnnotation {
   noteType?: "b55" | "b56" | undefined;
   tabOrder?: number | undefined;
   locked?: boolean | undefined;
+  /** CCT324 a65: note is still being edited. */
+  todo?: boolean | undefined;
   /** CCT324 已手动核对 (a58): b55 是 / b56 否。 */
   verified?: boolean | undefined;
   /** CCT324 a60/a61: whether the note's REL325 connections were reviewed and the review details. */
@@ -48,11 +50,12 @@ export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CC
         version: updated.version,
         noteType: updated.noteType,
         tabOrder: updated.tabOrder,
+        todo: updated.todo,
         updatedAt: updated.updatedAt,
         verified: updated.verified,
         relationVerified: updated.relationVerified,
         relationDetails: updated.relationDetails,
-      });
+      } as CCTNote);
   });
   next.set(updated.key, updated);
   return next;

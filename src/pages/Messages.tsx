@@ -243,14 +243,16 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
 
   return (
     <div
-      className={`flex ${
+      className={`flex w-full min-w-0 max-w-full ${
         embedded
-          ? "h-[calc(100dvh-19rem)] min-h-[24rem] md:h-[calc(100dvh-13rem)]"
+          ? "h-[calc(100dvh-19rem)] min-h-[24rem] md:h-[calc(100dvh-20rem)]"
           : "h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)]"
       }`}
     >
       {/* Conversation List */}
-      <div className={`w-full md:w-80 border-r flex flex-col bg-card ${selectedConvoId ? "hidden md:flex" : "flex"}`}>
+      <div
+        className={`flex w-full min-w-0 shrink-0 flex-col border-r bg-card md:w-80 ${selectedConvoId ? "hidden md:flex" : "flex"}`}
+      >
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
             <Heading className="text-lg font-bold text-foreground">{t("messages.messages")}</Heading>
@@ -266,45 +268,75 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
         <div className="flex-1 overflow-auto">
           {convosLoading ? (
             <ConvoSkeleton />
-          ) : filteredConvos.length > 0 ? filteredConvos.map((c: any) => {
-            const other = getOtherUser(c);
-            const isSelected = selectedConvoId === c.id;
-            return (
-              <div
-                key={c.id}
-                className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
-                onClick={() => { setSelectedConvoId(c.id); setSelectedOtherUser(other); }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0">
-                    {other?.avatar_url ? (
-                      <img src={other.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary text-sm font-medium">{(other?.full_name || "?").charAt(0)}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className={`font-medium text-sm ${c.unread_count > 0 ? "text-foreground font-semibold" : "text-foreground"}`}>{other?.full_name || t("common.unknown")}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {c.last_message_at ? formatDate(c.last_message_at, i18n.language, { month: "short", day: "numeric" }) : ""}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-muted-foreground truncate">
-                        {c.last_message ? (c.last_message.sender_id === profile?.id ? `${t("common.you")}: ` : "") + (c.last_message.message_content || "").substring(0, 50) : t("messages.noMessages")}
-                      </p>
-                      {c.unread_count > 0 && (
-                        <span className="shrink-0 w-5 h-5 rounded-full bg-coral text-coral-foreground text-xs flex items-center justify-center font-semibold">{c.unread_count > 9 ? "9+" : c.unread_count}</span>
+          ) : filteredConvos.length > 0 ? (
+            filteredConvos.map((c) => {
+              const other = getOtherUser(c);
+              const isSelected = selectedConvoId === c.id;
+              return (
+                <div
+                  key={c.id}
+                  className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
+                  onClick={() => {
+                    setSelectedConvoId(c.id);
+                    setSelectedOtherUser(other);
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      {other?.avatar_url ? (
+                        <img
+                          src={other.avatar_url}
+                          alt=""
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary text-sm font-medium">
+                            {(other?.full_name || "?").charAt(0)}
+                          </span>
+                        </div>
                       )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <span
+                          className={`min-w-0 truncate font-medium text-sm ${c.unread_count > 0 ? "text-foreground font-semibold" : "text-foreground"}`}
+                        >
+                          {other?.full_name || t("common.unknown")}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {c.last_message_at
+                            ? formatDate(c.last_message_at, i18n.language, {
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground truncate">
+                          {c.last_message
+                            ? (c.last_message.sender_id === profile?.id
+                                ? `${t("common.you")}: `
+                                : "") +
+                              (c.last_message.message_content || "").substring(
+                                0,
+                                50,
+                              )
+                            : t("messages.noMessages")}
+                        </p>
+                        {c.unread_count > 0 && (
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-coral text-coral-foreground text-xs flex items-center justify-center font-semibold">
+                            {c.unread_count > 9 ? "9+" : c.unread_count}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          }) : (
+              );
+            })
+          ) : (
             <div className="text-center py-8 px-4">
               <p className="text-sm text-muted-foreground mb-3">{t("messages.noConversations")}</p>
               <Button size="sm" variant="coral" onClick={() => setNewConvoOpen(true)}>
@@ -342,8 +374,10 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
                   </div>
                 )}
               </div>
-              <div>
-                <p className="font-medium text-foreground">{selectedOtherUser.full_name}</p>
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">
+                  {selectedOtherUser.full_name}
+                </p>
               </div>
             </div>
             <div className="flex gap-1">
@@ -355,7 +389,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
 
           <div
             ref={messagesBoxRef}
-            className={`flex-1 overflow-auto p-4 space-y-3 bg-muted/20 ${dragOver ? "ring-2 ring-primary/50 ring-inset" : ""}`}
+            className={`min-w-0 flex-1 overflow-auto p-4 space-y-3 bg-muted/20 ${dragOver ? "ring-2 ring-primary/50 ring-inset" : ""}`}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
@@ -418,7 +452,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
                 value={newMessage}
                 onChange={e => setNewMessage(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSend()}
-                className="flex-1"
+                className="min-w-0 flex-1"
               />
               <Button variant="coral" size="icon" className="min-h-11 min-w-11" aria-label={Z("发送消息", "Send message")} onClick={handleSend} disabled={(!newMessage.trim() && !pendingAttachment) || sendMessage.isPending}>
                 <Send className="h-4 w-4" />

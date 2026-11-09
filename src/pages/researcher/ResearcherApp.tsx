@@ -88,7 +88,7 @@ export default function ResearcherApp() {
   }, [signedIn]);
 
   return (
-    <div className="min-h-dvh bg-background">
+    <div className="min-h-dvh w-full min-w-0 max-w-full overflow-x-clip bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <span className="font-semibold text-foreground">{signedIn ? "Researcher dashboard" : "Interview records / 访谈记录"}</span>

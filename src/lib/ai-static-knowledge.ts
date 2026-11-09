@@ -1,17 +1,16 @@
 /**
  * ---
- * name: care-static-knowledge
+ * name: ai-static-knowledge
  * description: >-
- *   Static skill library for ChallengeD / CareCNC / NotchSafety. Use when the
- *   user asks how the app works, how to use a care group, or for general care,
- *   companionship, or dementia know-how that does not depend on their own data.
- *   Retrieval is per entry: only the best-matching snippets are attached.
- * keywords: [app basics, how to, care group, 群组, 使用方法, care tips, 护理常识, dementia, 失智症]
- * entrypoint: retrieveStaticKnowledge()
+ *   Static skill library for app guides, care groups, conversation behavior,
+ *   and general care knowledge. Load small entries by skill name and question;
+ *   assistant.conversation is required on every chat turn.
+ * keywords: [AI assistant, app basics, how to, care group, 群组, 使用方法, care tips, 护理常识, chat, 陪聊]
+ * entrypoints: [retrieveStaticKnowledge(), appGuideEntries()]
  * ---
  *
- * Anthropic Agent Skills layout, expressed as an executable TypeScript module so
- * non-AI code (UI help pages) can import the same entries directly.
+ * Anthropic Agent Skills front matter and progressive-disclosure layout,
+ * expressed as an executable TypeScript module so UI help can reuse the entries.
  *
  * Every entry is a small, self-contained snippet with keywords. At request time
  * we score the user's question against the keywords and attach ONLY the few
@@ -20,11 +19,11 @@
  *
  * Rules:
  *  - No live care data here (that belongs in ai-dynamic-knowledge.ts).
- *  - No persona or tone rules here (those live in _shared/ai-prompts.ts).
+ *  - No brand names or brand persona here (those live in _shared/ai-prompts.ts).
  *  - Adding knowledge = adding an entry to KNOWLEDGE below. Nothing else changes.
  */
 
-export type KnowledgeTopic = "app-basics" | "care-group" | "care-tips";
+export type KnowledgeTopic = "app-basics" | "care-group" | "care-tips" | "conversation";
 
 export interface KnowledgeEntry {
   id: string;
@@ -35,7 +34,185 @@ export interface KnowledgeEntry {
   body: { zh: string; en: string };
 }
 
+export type AppGuideEntry = { q: { zh: string; en: string }; a: { zh: string; en: string }; inspectorId?: string };
+
+const APP_GUIDE_SHARED: AppGuideEntry[] = [
+  {
+    q: { zh: "怎么给家人或护理者发消息？", en: "How do I message my family or caregiver?" },
+    a: {
+      zh: "1. 点底部的“收件箱”。\n2. 上方选“消息”。\n3. 点开一个人的名字，在下面输入框打字，按发送。\n如果还没有人，先在“圈子/护理群组”里把家人加进来，或在“寻找”里联系一位护理者。",
+      en: "1. Tap Inbox in the bottom bar.\n2. Choose Messages at the top.\n3. Tap a person's name, type in the box at the bottom and send.\nNo one there yet? Add family in your care circle first, or contact a caregiver from Find.",
+    },
+  },
+  {
+    q: { zh: "提醒和通知在哪里看？", en: "Where do I see reminders and alerts?" },
+    a: {
+      zh: "所有提醒、预约变化和安全提醒都在底部的“收件箱”里。上方选“通知”只看提醒；点一条就会跳到相关的页面。红色数字表示还没读的条数。",
+      en: "Every reminder, booking update and safety alert lands in Inbox. Pick Notifications at the top to see only alerts; tap one and it opens the right page. The red number is how many you haven't read.",
+    },
+  },
+  {
+    q: { zh: "怎么切换中文或英文？", en: "How do I change the language?" },
+    a: { zh: "点右上角的头像 → 设置 → 语言，选“中文”或“English”，马上生效。", en: "Tap your avatar at the top right → Settings → Language, then pick English or 中文. It changes right away." },
+  },
+  {
+    q: { zh: "怎么放大字？", en: "How do I make the text bigger?" },
+    a: { zh: "可以在“设置”里调整字的大小，也可以使用手机系统里的“显示与字体大小”设置。", en: "You can adjust text size in Settings or use your phone's display and text-size settings." },
+  },
+  {
+    q: { zh: "我的资料和账号在哪里改？", en: "Where do I edit my profile and account?" },
+    a: { zh: "点右上角头像 → 设置。里面可以改姓名、联系方式、所在城市、通知方式和隐私选项，改完记得点保存。", en: "Tap your avatar → Settings. There you can change your name, contact details, city, notification choices and privacy options. Remember to save." },
+  },
+  {
+    q: { zh: "AI 助手能帮我做什么？", en: "What can the AI assistant do?" },
+    a: { zh: "点右下角的机器人按钮，可以问照护问题、普通聊天、记录用药或签到，也可以请它总结今天的情况。它不能代替医生诊断；遇到紧急情况请拨当地急救电话。", en: "Tap the robot button at the bottom right. You can ask about care, chat about anything, log a medicine dose or check-in, or get a summary of the day. It does not diagnose; call emergency services in an emergency." },
+  },
+  {
+    q: { zh: "回复可以读出来吗？", en: "Can the answers be read aloud?" },
+    a: { zh: "可以。打开下面的“自动朗读回复”开关，之后每条回复都会读出来；也可以点某条回复下面的“朗读”单独听。", en: "Yes. Turn on “Read replies aloud” below and every reply is spoken; or tap Listen under any single reply." },
+  },
+];
+
+const APP_GUIDE_BY_APP: Record<"challenged" | "carecnc" | "notchsafety", AppGuideEntry[]> = {
+  challenged: [
+    {
+      q: { zh: "怎么建立护理群组，把家人加进来？", en: "How do I set up a care team and add family?" },
+      a: {
+        zh: "1. 底部点“护理群组”。\n2. 点“新建群组”，写个名字（比如“妈妈的照护”）。\n3. 在成员里点“邀请”，输入对方姓名或邮箱。\n对方在自己的收件箱里点“接受”后就进来了。",
+        en: "1. Tap Care Teams in the bottom bar.\n2. Tap New team and give it a name (e.g. “Mum's care”).\n3. In Members, tap Invite and enter their name or email.\nThey accept from their own Inbox and then they're in.",
+      },
+    },
+    {
+      q: { zh: "怎么添加我照顾的人？", en: "How do I add the person I care for?" },
+      a: { zh: "在“护理群组”里选“我照顾的人”，点“添加”，填姓名、年龄和病情阶段（早期/中期/晚期）。填好后，用药、签到、日常安排和照护须知都会按这个人来记录。", en: "In Care Teams, open the people you care for, tap Add, and fill in their name, age and stage (early / middle / late). After that, medicines, check-ins, routines and the care sheet are all kept under that person." },
+    },
+    {
+      q: { zh: "怎么记录吃药和每天签到？", en: "How do I log medicines and daily check-ins?" },
+      a: { zh: "在被照顾者的页面上有“用药”和“签到”两张卡。点“已服用”就记下这一次；点卡上的助手按钮，也可以用说话的方式让 AI 帮你记。", en: "On the cared-for person's page there are Medicines and Check-in cards. Tap Taken to log a dose; or tap the assistant button on the card and just tell the AI, and it records it for you." },
+    },
+    {
+      q: { zh: "怎么找并预约一位护理者？", en: "How do I find and book a caregiver?" },
+      a: { zh: "1. 底部点“寻找” → 找护理者。\n2. 用城市、服务类型和价格筛选。\n3. 点开一位护理者看评价，点“预约”。\n4. 选日期、时长，提交。对方确认后，你会在收件箱收到通知。", en: "1. Tap Find → Hire Caregivers.\n2. Filter by city, service type and price.\n3. Open a caregiver, read the reviews, tap Book.\n4. Pick a date and length and submit. When they confirm, you get a notice in Inbox." },
+    },
+    {
+      q: { zh: "怎么知道家人走出安全范围？", en: "How do I know if my family member leaves a safe area?" },
+      a: { zh: "底部点“定位”。地图上能看到当前位置；切到“地点”可以画出安全范围（家、小区、医院）。他离开或回到范围时，你会收到提醒。需要对方在自己手机上打开位置共享。", en: "Tap the locator tab. The map shows where they are; switch to Places to draw safe areas (home, the block, the clinic). You get an alert when they leave or come back. They need location sharing switched on their own phone." },
+    },
+    {
+      q: { zh: "任务、日历和预约有什么区别？", en: "What's the difference between tasks, calendar and bookings?" },
+      a: { zh: "“任务”是家里人互相分工的事情（买菜、陪诊）；“日历”是所有安排的总览；“预约”是你花钱请护理者上门的服务记录。", en: "Tasks are jobs your family shares between each other (shopping, hospital trips). Calendar shows everything on one timeline. Bookings are the paid visits you arranged with a caregiver." },
+    },
+    {
+      q: { zh: "照护须知是什么，怎么用？", en: "What is the care sheet for?" },
+      a: { zh: "照护须知是一页写清楚这个人怎么照顾的说明：习惯、忌口、常用药、紧急联系人。临时请人帮忙时，把这一页给他看就够了；页面上还能直接问 AI 上面的内容。", en: "The care sheet is one page that says how this person should be looked after: habits, foods to avoid, medicines, emergency contacts. Hand it to anyone standing in for you — and you can ask the AI questions about what's on it right there." },
+    },
+    {
+      q: { zh: "在哪里看照护知识文章？", en: "Where can I read care articles?" },
+      a: { zh: "底部“工具”里有“资源与帮助”，按主题分成护理篇、安全篇、应对篇、认知篇和陪伴篇；“社区”里可以看别人的经验和提问。", en: "Open More → Resources & Help; articles are grouped by topic (care, safety, coping, understanding, companionship). Community is where other families share and ask." },
+    },
+  ],
+  carecnc: [
+    {
+      q: { zh: "怎么找到合适的护理者？", en: "How do I find the right caregiver?" },
+      a: { zh: "1. 底部点“寻找”。\n2. 输入城市，选服务类型和时间。\n3. 按评分和价格看，点开看资历和评价。\n觉得合适可以先发消息问清楚再预约。", en: "1. Tap Find.\n2. Enter your city and choose service type and timing.\n3. Compare by rating and price, open a profile for experience and reviews.\nYou can message them first, then book." },
+    },
+    {
+      q: { zh: "怎么下单预约上门服务？", en: "How do I book a visit?" },
+      a: { zh: "在护理者页面点“预约”，选日期、开始时间和时长，写清楚要做什么，提交。对方确认后你会收到通知，完成后可以给评价。", en: "On a caregiver's page tap Book, pick the date, start time and length, say what's needed and submit. You'll be notified when they confirm, and you can review them once it's done." },
+    },
+    {
+      q: { zh: "可以取消或退款吗？", en: "Can I cancel or get a refund?" },
+      a: { zh: "打开“预约”，找到那一条，点“取消”或“申请退款”，写一句原因。护理者和平台处理后，结果会发到你的收件箱。", en: "Open Bookings, find the visit, tap Cancel or Request refund and add a short reason. The outcome arrives in your Inbox once it's handled." },
+    },
+    {
+      q: { zh: "怎么收藏我喜欢的护理者？", en: "How do I save a caregiver I like?" },
+      a: { zh: "在护理者卡片或页面上点心形图标，之后从头像菜单里的“收藏的护理者”就能直接找到他。", en: "Tap the heart on a caregiver's card or page. Find them again any time under Saved caregivers in your account menu." },
+    },
+    {
+      q: { zh: "我自己想接单，怎么成为护理者？", en: "How do I sign up as a caregiver?" },
+      a: { zh: "底部“工具” → 成为护理者，填服务项目、服务区域、价格和可预约时间，提交等审核。通过后用“护理者设置”管理请求、排班和收入。", en: "More → Become Caregiver: list your services, area, rates and availability, then submit for review. Once approved, use Caregiver Settings to handle requests, your schedule and earnings." },
+    },
+    {
+      q: { zh: "怎么找需要帮手的活？", en: "Where do I find work?" },
+      a: { zh: "底部“工具” → “需要帮手的任务”，可以看家庭发布的需求并报名；被选中后会在收件箱通知你。", en: "More → Tasks Needing Help shows what families have posted; apply there and you'll hear back in your Inbox." },
+    },
+    {
+      q: { zh: "怎么提交一家养老机构？", en: "How do I submit a care facility?" },
+      a: { zh: "在“寻找”里切到“养老机构”，点“提交机构”，填名称、地址、联系方式和服务。提交后需要我们审核，通过后才会出现在搜索里。", en: "In Find, switch to Facilities and tap Submit a facility. Fill in the name, address, contact and services. We review it first — it appears in search once approved." },
+    },
+  ],
+  notchsafety: [
+    {
+      q: { zh: "怎么看到家人现在在哪里？", en: "How do I see where my family is right now?" },
+      a: { zh: "打开“地图”，头像就是每个人的位置，下面的名单里写着地址和更新时间。看不到某个人，说明他还没在自己手机上打开位置共享。", en: "Open Map — each avatar is a person, and the list below shows their address and when it updated. If someone is missing, they haven't turned on location sharing on their own phone yet." },
+    },
+    {
+      q: { zh: "怎么把家人加进圈子？", en: "How do I add someone to my circle?" },
+      a: { zh: "点底部“圈子”，点“邀请”，输入对方姓名或邮箱。对方在自己的收件箱里接受后，就会出现在地图上。", en: "Tap Circle, then Invite, and enter their name or email. Once they accept from their Inbox, they show up on the map." },
+    },
+    {
+      q: { zh: "怎么设置一个地点提醒（到家/离开）？", en: "How do I get alerts when someone arrives or leaves?" },
+      a: { zh: "点“地点” → 添加地点，在地图上选位置、拉大小、起个名字（家、学校、公司），打开到达和离开提醒。之后有人进出，你会在收件箱收到提醒。", en: "Tap Places → Add place, drop it on the map, size the circle and name it (Home, School, Work), then switch on arrive and leave alerts. You'll be notified in Inbox each time." },
+    },
+    {
+      q: { zh: "SOS 按钮是做什么的？", en: "What does the SOS button do?" },
+      a: { zh: "地图上的红色 SOS 按钮一按，就把你现在的位置和求助信息发给圈子里的所有人。误按了可以马上取消。它不会自动打给警察或救护车，紧急情况请另外打电话。", en: "One press on the red SOS button on the map sends your current location and a help message to everyone in your circle. Pressed by mistake? Cancel right away. It does not call the police or an ambulance — do that separately in a real emergency." },
+    },
+    {
+      q: { zh: "能看到走过的路线和手机电量吗？", en: "Can I see their route and phone battery?" },
+      a: { zh: "可以。在“地图”下面点开一个人，就能看到最近的位置记录、电量、是否在充电和移动方式（走路/开车）。这些要他手机允许后台定位才会持续更新。", en: "Yes. Open a person from the list under Map to see recent location points, battery, whether it's charging, and how they're moving (walking/driving). It keeps updating only if their phone allows background location." },
+    },
+    {
+      q: { zh: "为什么某个人的位置一直是旧的？", en: "Why is someone's location out of date?" },
+      a: { zh: "常见原因：他关了位置共享、手机没电、没网络，或系统限制了后台定位。请他打开应用、允许“始终”定位，并关掉省电模式。", en: "Usual reasons: they turned sharing off, the phone is dead or offline, or the system blocked background location. Ask them to open the app, allow location “always”, and switch off battery saver." },
+    },
+    {
+      q: { zh: "我不想被看到位置怎么办？", en: "How do I stop sharing my own location?" },
+      a: { zh: "去“我的”里关掉位置共享，圈子里的人就看不到你的实时位置了；随时可以再打开。", en: "Open your own tab and switch location sharing off — your circle stops seeing your live position. Turn it back on whenever you like." },
+    },
+  ],
+};
+
+export function appGuideEntries(family: string | undefined): AppGuideEntry[] {
+  const key = family === "challenged" || family === "carecnc" || family === "notchsafety"
+    ? family
+    : undefined;
+  return [
+    ...(key ? APP_GUIDE_BY_APP[key].map((entry, index) => ({
+      ...entry,
+      inspectorId: `components/ai/AICompanionChat/guide-${key}-${index}`,
+    })) : []),
+    ...APP_GUIDE_SHARED.map((entry, index) => ({
+      ...entry,
+      inspectorId: `components/ai/AICompanionChat/guide-shared-${index}`,
+    })),
+  ];
+}
+
+
 export const KNOWLEDGE: KnowledgeEntry[] = [
+  // ── Conversation skill (explicitly loaded on each AI chat turn) ───────────
+  {
+    id: "assistant.conversation",
+    topic: "conversation",
+    keywords: [],
+    title: { zh: "自然对话与说话对象识别", en: "Natural conversation and speaker awareness" },
+    body: {
+      zh: "每一轮都根据最新消息，默默判断现在说话的是被护理者、照护者还是其他人；账号身份只作起始线索。照护者说“你跟她说”“你去陪陪他”或把手机交给被护理者时，立即改为直接对被护理者说话；之后仍按新消息切换，不确定时自然询问。不要说出身份判断、角色标签或劝导目的。99%的时候，用户只是想找普通 AI 聊天、陪伴或开玩笑，不是来问护理问题。任何话题都自然回答，不拒绝；用户只是聊天时不要把话题引回护理、安全或定位。对方请你陪聊、讲故事或帮忙劝说时，自然地直接回应，不说明任务目的；不要测试记忆、强行引导回忆，也不要每句都反问。把已提供的信息自然当作自己知道的情况，不提小贴士、卡片或资料来源；不编造，缺少可能影响安全的关键信息时请对话者联系家属。用户直接问技术问题时正常回答，不主动解释应用内部实现。",
+      en: "At every turn, silently use the latest message to judge whether the speaker is the person receiving care, a caregiver, or someone else; the signed-in role is only an initial clue. If a caregiver says “talk to her,” “keep him company,” or hands the phone over, speak directly to the person receiving care and keep reassessing each new message; ask naturally only when the speaker is unclear. Never narrate the role, label the speaker, or announce a persuasion task. 99% of the time, the user simply wants ordinary general-purpose conversation, companionship, or playful chat, not care guidance. Answer any topic naturally without refusing; when the user is just chatting, do not steer back to care, safety, or location. If asked to keep someone company, tell a story, or gently persuade someone, respond naturally without announcing the task. Do not quiz memory, force reminiscence, or end every turn with a question. Use supplied details naturally without mentioning tips, cards, or data sources. Never invent facts; when a missing detail could affect safety, suggest contacting the family. Answer direct technology questions normally, without volunteering internal app details.",
+    },
+  },
+  {
+    id: "assistant.live-voice",
+    topic: "conversation",
+    keywords: [],
+    title: { zh: "即时语音对话", en: "Live voice conversation" },
+    body: {
+      zh: "语音回复简短自然，每次一两句，不列清单。跟随对方正在聊的话题；普通闲聊时不要转回护理或安全话题。",
+      en: "Keep spoken replies short and natural, one or two sentences at a time, without lists. Follow the topic the person chose; do not steer ordinary chat back to care or safety.",
+    },
+  },
+
   // ── App basics ────────────────────────────────────────────────────────────
   {
     id: "app.dashboard",
@@ -50,7 +227,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "app.assistant",
     topic: "app-basics",
-    keywords: ["assistant", "ai", "chat", "助手", "对话", "悬浮球", "聊天"],
+    keywords: ["open the assistant", "floating assistant button", "where is the ai assistant", "怎么打开助手", "助手按钮在哪", "悬浮球"],
     title: { zh: "AI 助手", en: "AI assistant" },
     body: {
       zh: "右下角的悬浮球随时可以打开 AI 助手，可以闲聊，也可以询问你有权限查看的护理、用药、签到和位置信息。",
@@ -205,7 +382,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.refuse-food",
     topic: "care-tips",
-    keywords: ["refuse", "eat", "food", "appetite", "不吃", "拒食", "吃饭", "食欲"],
+    keywords: ["refuses to eat", "won't eat", "refusal to eat", "loss of appetite", "拒绝进食", "不肯吃饭", "拒食", "食欲下降"],
     title: { zh: "不肯吃饭", en: "Refusing food" },
     body: {
       zh: "先排除疼痛、假牙不适或便秘等身体原因；把餐食分成小份、少量多次；固定用餐时间和位置，减少环境干扰；可以用手拿的食物往往更容易接受。持续拒食或体重下降要联系医生。",
@@ -215,7 +392,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.agitation",
     topic: "care-tips",
-    keywords: ["agitation", "angry", "aggressive", "sundown", "激动", "生气", "攻击", "黄昏"],
+    keywords: ["agitation", "aggressive behavior", "sundowning", "躁动", "情绪激动", "黄昏躁动", "攻击行为"],
     title: { zh: "情绪激动或黄昏躁动", en: "Agitation and sundowning" },
     body: {
       zh: "不要争辩或纠正事实，先安抚情绪；降低光线和噪音；转移到熟悉、安静的环境；用简短句子和缓慢语速说话；找出触发因素（饥饿、口渴、如厕、疲劳、疼痛）。有伤人风险时先保证安全并求助。",
@@ -225,7 +402,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.communication",
     topic: "care-tips",
-    keywords: ["talk", "communicate", "说话", "沟通", "怎么说"],
+    keywords: ["how should I talk to her", "how should I talk to him", "communication difficulties", "how to communicate with someone with dementia", "怎么和她说", "怎么和他沟通", "与失智症患者沟通", "沟通技巧"],
     title: { zh: "怎样说话更顺畅", en: "Communicating well" },
     body: {
       zh: "一次说一件事，用短句和是/否问题；先叫名字并保持眼神接触；给出充足反应时间；用手势和示范代替解释；避免测试记忆（不要问「你还记得我是谁吗」）。",
@@ -235,7 +412,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.wandering",
     topic: "care-tips",
-    keywords: ["wander", "lost", "走失", "走丢", "乱走", "外出"],
+    keywords: ["wandering off", "went missing", "got lost", "person is missing", "走失", "走丢", "离家走失", "反复走出家门"],
     title: { zh: "走失风险", en: "Wandering" },
     body: {
       zh: "在门口贴提示、加装门铃或传感器；随身放写有联系人的卡片；白天安排规律的散步和活动以减少徘徊；设置安全区提醒。走失时立即联系当地警方并提供近照。",
@@ -245,7 +422,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.night",
     topic: "care-tips",
-    keywords: ["sleep", "night", "insomnia", "睡眠", "夜间", "失眠", "起夜"],
+    keywords: ["nighttime wandering", "night agitation", "can't sleep at night", "insomnia", "夜里睡不着", "夜间躁动", "夜间反复起床", "失眠"],
     title: { zh: "夜间睡不好", en: "Poor sleep at night" },
     body: {
       zh: "白天多接触自然光并适度活动；限制午睡时长；傍晚后避免咖啡、浓茶和大量液体；睡前流程固定；夜灯照亮到卫生间的路线。突然明显变差要排查疼痛、感染或用药影响。",
@@ -255,17 +432,17 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.theft-belief",
     topic: "care-tips",
-    keywords: ["steal", "stolen", "theft", "accuse", "missing money", "偷", "被偷", "拿走", "怀疑", "丢了", "钱不见"],
+    keywords: ["believes someone stole their things", "accuses someone of stealing", "false theft accusation", "被护理者认为有人偷", "总说东西被偷", "怀疑家人偷东西", "钱不见了并认为被偷"],
     title: { zh: "怀疑东西被偷", en: "Believing something was stolen" },
     body: {
-      zh: "不要否认或讲道理，先认同感受：“找不到确实很着急，我陪你一起找。”常见的是自己收起来忘了，先看熟悉的藏东西的位置；找到后不要强调是他记错了；可以准备备用的钱包、钥匙。若要转移话题，接着聊他喜欢的事或一起做点小事。反复而强烈时告诉家属，必要时看医生。",
-      en: "Do not deny or argue — validate the feeling first (\"that's upsetting, let's look together\"). Items are usually put away and forgotten, so check their usual hiding places, and don't point out that they misremembered. Keep spare wallets or keys. To move on, shift to a topic or small activity they enjoy. Tell the family if it is frequent or intense.",
+      zh: "不要否认或讲道理，先接住感受：“找不到确实很着急，我陪你一起找。”陪对方一起查看平时会放东西的地方，不要断定物品一定是被收起或忘记了；找到后也不必强调是谁记错了。若对方愿意，可以一起做件熟悉的小事。情况反复且令对方困扰时告诉家属。",
+      en: "Do not deny or argue — acknowledge the feeling first (\"that's upsetting; let's look together\"). Help check familiar places without assuming the item was put away or forgotten, and avoid arguing about who remembers correctly. If the person is willing, move naturally to a familiar activity. Tell the family if this keeps happening and causes distress.",
     },
   },
   {
     id: "tips.wants-to-go-home",
     topic: "care-tips",
-    keywords: ["go home", "want to leave", "won't go home", "回家", "想出门", "不肯回家", "要走", "出去"],
+    keywords: ["person keeps saying they want to go home", "cared one wants to leave", "won't go home", "repeatedly asks to go home", "被护理者想回家", "反复说要回家", "不肯回家", "被护理者想出门"],
     title: { zh: "想出门或不肯回家", en: "Wanting to leave, or refusing to go home" },
     body: {
       zh: "“想回家”往往表达的是不安或想找熟悉的人，不是地址。先接住情绪：“想家了是吧，跟我说说家里什么样。”再给一件当下的事做过渡（喝水、吃点东西、一起走一段、看老照片）；不要说“这里就是你家”或直接拦住。天黑前后更常见，提前安排活动会减少。反复要出门有走失风险时告知家属并开启安全区提醒。",
@@ -275,17 +452,17 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.companionship",
     topic: "care-tips",
-    keywords: ["chat", "story", "lonely", "reminisce", "accompany", "陪", "聊天", "讲故事", "孤单", "回忆", "无聊"],
+    keywords: ["tell them a story", "tell me a story", "keep her company", "keep him company", "help me keep someone company", "lonely person receiving care", "陪她聊天", "陪他聊天", "陪被护理者聊天", "给她讲个故事", "给他讲个故事", "让你陪陪她", "让你陪陪他"],
     title: { zh: "陪聊、讲故事与回忆往事", en: "Chatting, stories, and reminiscing" },
     body: {
-      zh: "从久远、愉快的记忆入手（老家、年轻时的工作、孩子小时候、爱吃的菜、老歌）；用开放但简单的问题，允许长时间停顿，不纠正细节、不测试记忆。可以讲短小、温和、结局明确的故事，一次两三分钟；配合老照片、老歌效果更好。对方情绪低落时先陪着，不急于转移。",
-      en: "Start from old, happy memories — hometown, early work, the children as babies, favourite food, old songs. Ask simple open questions, allow long pauses, never correct details or test memory. Short, gentle stories with a clear ending work well, two or three minutes at a time, and old photos or music help. If they are low, stay with the feeling before changing the subject.",
+      zh: "对方想聊天时像普通朋友一样自然聊当下的话题；对方请讲故事时直接讲一个短小、温和、完整的故事。不要把谈话变成记忆测验，不强迫回忆往事，也不用每句话都提问。",
+      en: "When someone wants to chat, talk naturally like a friend about the topic they chose. If asked for a story, tell a short, gentle story with a clear ending. Do not turn the conversation into a memory test, force reminiscence, or ask a question after every sentence.",
     },
   },
   {
     id: "tips.restlessness",
     topic: "care-tips",
-    keywords: ["restless", "won't sit", "pacing", "keeps getting up", "坐不住", "走动", "来回", "起来", "不听劝"],
+    keywords: ["pacing", "repeatedly gets up", "can't stay seated", "repeatedly walks around", "反复起身走动", "来回踱步", "总是坐不住", "劝不住她走动", "劝不住他走动"],
     title: { zh: "坐不住、反复起身走动", en: "Restlessness and pacing" },
     body: {
       zh: "先排除需要：如厕、口渴、饿、疼、太热或太吵。不要反复命令“坐下”，改成邀请：“陪我一起叠这些毛巾好吗”“我们走到窗边看看”。给手上有事做（折毛巾、择菜、摸熟悉的物件），并把走动路线上的障碍和地毯清掉，防止跌倒。突然明显加重要考虑疼痛、感染或用药影响。",
@@ -295,7 +472,7 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: "tips.caregiver-burnout",
     topic: "care-tips",
-    keywords: ["burnout", "stress", "tired", "累", "压力", "崩溃", "喘息"],
+    keywords: ["caregiver burnout", "caregiver stress", "caregiver feels overwhelmed", "照护者压力", "照护者快撑不住", "照顾者身心疲惫", "照护喘息服务"],
     title: { zh: "照护者自身的压力", en: "Caregiver strain" },
     body: {
       zh: "把任务分给群组成员，安排固定的休息时段；使用喘息服务或日间照护；记录自己的睡眠和情绪变化；持续低落、失眠或易怒时寻求专业支持。",
@@ -321,6 +498,10 @@ function scoreEntry(entry: KnowledgeEntry, q: string): number {
 
 export interface RetrieveOptions {
   topics?: KnowledgeTopic[] | undefined;
+  /** Exact skill names to load even when their question keywords do not match. */
+  skillNames?: string[] | undefined;
+  /** Current UI app family for app-specific help answers. */
+  appFamily?: string | undefined;
   isChinese?: boolean | undefined;
   /** How many snippets to attach. */
   limit?: number | undefined;
@@ -335,27 +516,39 @@ export interface RetrieveOptions {
  * match the question. Empty string when nothing is relevant.
  */
 export function retrieveStaticKnowledge(question: string, options: RetrieveOptions = {}): string {
-  const { topics, isChinese = false, limit = 4, maxChars = 1800, fallbackToIndex = true } = options;
+  const { topics, skillNames = [], appFamily, isChinese = false, limit = 4, maxChars = 1800, fallbackToIndex = true } = options;
   const pool = topics?.length ? KNOWLEDGE.filter((k) => topics.includes(k.topic)) : KNOWLEDGE;
+  const appGuide = topics?.includes("app-basics")
+    ? appGuideEntries(appFamily).map((entry, index): KnowledgeEntry => ({
+        id: `app.faq.${index}`,
+        topic: "app-basics",
+        keywords: [entry.q.zh, entry.q.en],
+        title: entry.q,
+        body: entry.a,
+      }))
+    : [];
+  const required = KNOWLEDGE.filter((entry) => skillNames.includes(entry.id));
+  const searchable = [...pool, ...appGuide].filter((entry) => !skillNames.includes(entry.id));
 
-  const ranked = pool
+  const ranked = searchable
     .map((e) => ({ e, score: scoreEntry(e, question) }))
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
+  const selected = [...required, ...ranked.map(({ e }) => e)];
 
   const header = isChinese
-    ? "以下是本应用的参考资料。回答操作类问题时优先使用这些内容；资料里没有的就直接说明，不要编造功能。这些是一般性护理经验，不是医疗诊断。"
-    : "The reference material below comes from this app's own knowledge base. Prefer it for how-to questions, say plainly when something is not covered, and never invent features. These are general care practices, not medical diagnosis.";
+    ? "以下是按当前问题选取的少量参考内容；只在相关时使用，不要把它当成个人记录，也不要编造应用功能。"
+    : "These are a few references selected for this question. Use them only when relevant; they are not personal records, and do not invent app features.";
 
-  if (ranked.length === 0) {
+  if (selected.length === 0) {
     if (!fallbackToIndex) return "";
-    const titles = pool.map((e) => (isChinese ? e.title.zh : e.title.en)).join("、");
+    const titles = [...pool, ...appGuide].map((e) => (isChinese ? e.title.zh : e.title.en)).join("、");
     return `${header}\n\n${isChinese ? "可查询的主题" : "Topics available"}: ${titles}`;
   }
 
   let body = "";
-  for (const { e } of ranked) {
+  for (const e of selected) {
     const chunk = `## ${isChinese ? e.title.zh : e.title.en}\n${isChinese ? e.body.zh : e.body.en}\n`;
     if (body.length + chunk.length > maxChars) break;
     body += chunk;

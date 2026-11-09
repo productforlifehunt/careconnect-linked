@@ -34,9 +34,52 @@ export const APP_FIELD = {
   calendarEvent: T.calendarEvent.f.APP,
 } as const;
 
-/** Community post (149) uses "Community type" rather than an App radio. */
+/** Community post (149) stores the standard lowercase app name in a01. */
 export const COMMUNITY_TYPE_FIELD = T.afreshCommunityPost.f.COMMUNITY_TYPE;
-export const COMMUNITY_TYPE_CODE = T.afreshCommunityPost.opt.COMMUNITY_TYPE;
+
+const COMMUNITY_APP_NAME: Record<string, AppScope> = {
+  afresh: "afresh",
+  adry: "adry",
+  ablocked: "ablocked",
+  benotch: "benotch",
+  challenged: "challenged",
+  carecnc: "carecnc",
+  careconnected: "carecnc",
+  safety: "benotch",
+  notchsafety: "benotch",
+};
+
+function appNameFromSite(value: string | null | undefined): AppScope | undefined {
+  const slug = value?.trim().toLowerCase();
+  if (!slug) return undefined;
+  const app = Object.keys(COMMUNITY_APP_NAME).find((name) => slug === name || slug.startsWith(`${name}-`));
+  return app ? COMMUNITY_APP_NAME[app] : undefined;
+}
+
+/** Resolve the app name stored on CCT 149, including preview site overrides. */
+export function communityAppName(): AppScope {
+  if (typeof window === "undefined") return currentAppScope();
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const queryApp = appNameFromSite(params.get("__site"));
+    if (queryApp) return queryApp;
+
+    const storedApp = appNameFromSite(sessionStorage.getItem(`__site_id:${window.location.host}`));
+    if (storedApp) return storedApp;
+
+    const hostname = window.location.hostname.toLowerCase();
+    const hostApp = hostname
+      .split(".")
+      .map((label) => appNameFromSite(label))
+      .find((app): app is AppScope => Boolean(app));
+    if (hostApp) return hostApp;
+    if (hostname === "challenged.com" || hostname === "www.challenged.com") return "challenged";
+    if (hostname === "carecnc.com" || hostname === "www.carecnc.com") return "carecnc";
+  } catch {
+    /* ignore */
+  }
+  return currentAppScope();
+}
 
 type ScopedCct = keyof typeof APP_CODE;
 
@@ -93,10 +136,9 @@ export function appScopeParams(cct: ScopedCct, scope: AppScope = currentAppScope
  * are treated as in-scope (legacy rows written before scoping existed), rows
  * stamped for another app are always rejected.
  *
- * CCT 187's "App" column is a plain TEXT column on the live backend (verified
- * 2026-09-18), so rows exist with BOTH the opaque radio code (b59) and the
- * standard lowercase app name ("challenged"). Both mean the same app, so both
- * are accepted; any other app's code or name is still rejected.
+ * CCT 187's "App" field is a dictionary radio. Older rows were written as the
+ * lowercase app name, so both representations are accepted while every new
+ * write uses the current app's option code.
  */
 export function isInAppScope(cct: ScopedCct, raw: Record<string, any>, scope: AppScope = currentAppScope()): boolean {
   const value = raw?.[APP_FIELD[cct]];
@@ -113,14 +155,6 @@ export function filterAppScope<TRow extends Record<string, any>>(
 ): TRow[] {
   if (!Array.isArray(rows)) return [];
   return rows.filter((r) => isInAppScope(cct, r, scope));
-}
-
-/** Community-post scope code ("ChallengeD" / "Care-CNC" community type). */
-export function communityTypeCode(scope: AppScope = currentAppScope()): string {
-  const map = COMMUNITY_TYPE_CODE as Readonly<Record<string, string>>;
-  if (scope === "carecnc") return map["CARE_CNC"]!;
-  if (scope === "challenged") return map["CHALLENGED"]!;
-  return map["AFRESH"]!;
 }
 
 /**

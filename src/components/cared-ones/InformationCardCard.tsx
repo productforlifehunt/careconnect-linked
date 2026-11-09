@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSite } from "@/contexts/SiteContext";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
-import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
+import { SheetAIPanel, SheetLocationTag } from "@/components/cared-ones/info-sheet-parts";
 
 type Status = "Draft" | "Active" | "Paused";
 type DisplaysLocation = "Yes" | "No";
@@ -64,9 +64,6 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const del = useDeleteInformationCard();
   const setCardContacts = useSetInformationCardContacts();
   const { data: emergencyContacts } = useEmergencyContacts(caredOneId);
-  const knowledge = useInfoSheetKnowledge(caredOneId);
-
-
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -83,6 +80,10 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
   const [shareCard, setShareCard] = useState<any | null>(null);
   const [viewCard, setViewCard] = useState<any | null>(null);
   const [deleteCard, setDeleteCard] = useState<any | null>(null);
+  const { data: viewContactIds } = useInformationCardContactIds(viewCard?.id ? String(viewCard.id) : null);
+  const viewContacts = viewContactIds
+    ? (emergencyContacts || []).filter((contact) => viewContactIds.map(String).includes(String(contact.id)))
+    : undefined;
 
   // When editing, pre-tick the contacts already linked to this sheet (REL 221).
   useEffect(() => {
@@ -468,13 +469,13 @@ export function InformationCardCard({ caredOneId, caredOneName }: { caredOneId: 
               )}
 
               <SheetAIPanel
+                caredOneId={caredOneId}
                 context={{
                   sheetName: viewCard.cared_ones_information_card_name,
                   caredOneName: viewCard.cared_ones_name || caredOneName,
                   description: viewCard.cared_ones_description,
                   situationDetails: viewCard.cared_ones_information_card_description,
-                  contacts: emergencyContacts || [],
-                  knowledge,
+                  contacts: viewContacts,
                 }}
               />
             </div>

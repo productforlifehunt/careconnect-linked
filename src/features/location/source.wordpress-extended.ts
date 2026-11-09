@@ -100,6 +100,68 @@ export async function setLocationReceivers(userId: string, receiverIds: Array<st
   }
 }
 
+/** Whether one signed-in user receives this cared one's location alerts through Relation 290. */
+export async function fetchLocationReceiverSubscriptionWordPress(
+  caredOneId: string,
+  receiverId: string,
+): Promise<boolean> {
+  const parentId = normalizeWpUserId(caredOneId);
+  const childId = normalizeWpUserId(receiverId);
+  if (!Number.isInteger(parentId) || parentId <= 0 || !Number.isInteger(childId) || childId <= 0) {
+    throw new Error("Invalid user for location alert receivers");
+  }
+  const receiverIds = await fetchLocationReceiverIds(String(parentId));
+  return receiverIds.some((id) => normalizeWpUserId(id) === childId);
+}
+
+/** Connect or disconnect only this receiver in Relation 290. */
+export async function setLocationReceiverSubscriptionWordPress(
+  caredOneId: string,
+  receiverId: string,
+  receives: boolean,
+): Promise<void> {
+  const parentId = normalizeWpUserId(caredOneId);
+  const childId = normalizeWpUserId(receiverId);
+  if (
+    !Number.isInteger(parentId) ||
+    parentId <= 0 ||
+    !Number.isInteger(childId) ||
+    childId <= 0
+  ) {
+    throw new Error("Invalid user for location alert receivers");
+  }
+
+  try {
+    if (receives) {
+      await attachChildToUserRelation(
+        REL_LOCATION_RECEIVER,
+        parentId,
+        String(childId),
+      );
+    } else {
+      await wordpressFetch("jet-rel/" + REL_LOCATION_RECEIVER, {
+        method: "POST",
+        body: {
+          parent_id: parentId,
+          child_id: childId,
+          context: "child",
+          store_items_type: "disconnect",
+        },
+      });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/40[13]/.test(message)) throw error;
+    const currentIds = (await fetchLocationReceiverIds(String(parentId)))
+      .map((id) => normalizeWpUserId(id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    const nextIds = receives
+      ? [...new Set([...currentIds, childId])]
+      : currentIds.filter((id) => id !== childId);
+    await setLocationReceivers(String(parentId), nextIds);
+  }
+}
+
 
 function parseBoolean(value: any, fallback = false): boolean {
   if (value === undefined || value === null || value === "") return fallback;
@@ -239,10 +301,10 @@ function evaluateZoneAlert(zone: any, lat: number, lng: number): { distance: num
 // ─── Safe Zones CRUD ────────────────────────────────────────
 
 export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
-  const [zoneIds, receiverIds] = await Promise.all([
-    fetchRelationChildIds(REL_USER_SAFE_ZONE, normalizeWpUserId(userId)),
-    fetchLocationReceiverIds(userId),
-  ]);
+  const zoneIds = await fetchRelationChildIds(
+    REL_USER_SAFE_ZONE,
+    normalizeWpUserId(userId),
+  );
   const zoneRows = await readLinkedCCTRows(T.safeZone.slug, zoneIds.map(String));
   const zoneRowsById = new Map(zoneRows.map((row) => [String(row.id ?? row._ID), row]));
   const zones = await Promise.all(
@@ -253,8 +315,7 @@ export async function fetchSafeZonesWordPress(userId: string): Promise<any[]> {
       if (!zone || typeof zone !== "object" || Array.isArray(zone)) return null;
       const mapped = mapSafeZone(zone, userId);
       if (!mapped.id || mapped.id === "undefined" || mapped.id === "null") return null;
-      // Receivers live on the cared one (Relation 290), shared by all zones.
-      return { ...mapped, receiver_ids: receiverIds };
+      return mapped;
     }),
   );
 
@@ -297,9 +358,6 @@ export async function createSafeZoneWordPress(zone: { user_id: string; latitude:
   });
   const zoneId = String(created._ID || created.id);
   await attachChildToUserRelation(REL_USER_SAFE_ZONE, userId, zoneId);
-  if (Array.isArray(zone["receiver_ids"])) {
-    await setLocationReceivers(zone.user_id, zone["receiver_ids"]);
-  }
 }
 
 export async function updateSafeZoneWordPress(id: string, updates: Record<string, any>): Promise<void> {
@@ -331,10 +389,6 @@ export async function updateSafeZoneWordPress(id: string, updates: Record<string
   if (updates["schedule_end_time"] !== undefined) body["a68"] = updates["schedule_end_time"];
   if (updates["is_active"] !== undefined) body["a69"] = updates["is_active"] ? T.safeZone.opt.IS_ACTIVE.YES : T.safeZone.opt.IS_ACTIVE.NO;
   await wordpressCCTFetch(T.safeZone.slug, { id, method: "PUT", body });
-  if (updates["receiver_ids"] !== undefined) {
-    if (!updates["user_id"]) throw new Error("Cannot save location alert receivers without the cared one's user id");
-    await setLocationReceivers(String(updates["user_id"]), updates["receiver_ids"] || []);
-  }
 }
 
 
@@ -420,6 +474,14 @@ export async function fetchCaredOneLocationHistoryWordPress(caredOneId: string):
 export async function createSafeZoneAlertsForLocation(userId: string, lat: number, lng: number): Promise<void> {
   const zones = await fetchSafeZonesWordPress(userId);
   if (!zones.length) return;
+  const receiverIds = [
+    ...new Set(
+      (await fetchLocationReceiverIds(userId))
+      .map((id) => normalizeWpUserId(id))
+      .filter((id) => Number.isInteger(id) && id > 0),
+    ),
+  ].map(String);
+  if (!receiverIds.length) return;
   {
     const now = Date.now();
     for (const zone of zones) {
@@ -438,35 +500,22 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
         result.alertType === "exited_safe_zone"   ? `Left zone: ${zone.zone_type_label}` :
                                                     `Entered zone: ${zone.zone_type_label}`;
 
-      {
-        await (await import("@/lib/ai-dynamic-knowledge")).runNotificationSkill("send-notification", {
-          userIds: [userId],
-          includeSelf: true,
-          type: "safe_zone_breach",
-          title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
-          message: msg,
-          actionUrl: `/find?zone=${zone.id}`,
-        });
-        // Fan out to the cared one's configured receivers (Relation 290).
-        const receivers: string[] = Array.isArray(zone.receiver_ids)
-          ? zone.receiver_ids
-          : await fetchLocationReceiverIds(userId);
-        await Promise.all(
-          receivers
-            .filter((rid) => normalizeWpUserId(rid) !== normalizeWpUserId(userId))
-            .map((rid) =>
-              import("@/lib/ai-dynamic-knowledge").then(({ runNotificationSkill }) =>
-                runNotificationSkill("send-notification", {
-                  userIds: [rid],
-                  type: "safe_zone_breach",
-                  title: result.alertType === "entered_danger_zone" ? "⚠️ Danger Zone Alert" : "📍 Safe Zone Alert",
-                  message: msg,
-                  actionUrl: `/find?zone=${zone.id}`,
-                }),
-              ),
-            ),
-        );
-      }
+      await Promise.all(
+        receiverIds.map((receiverId) =>
+          import("@/lib/ai-dynamic-knowledge").then(({ runNotificationSkill }) =>
+            runNotificationSkill("send-notification", {
+              userIds: [receiverId],
+              type: "safe_zone_breach",
+              title:
+                result.alertType === "entered_danger_zone"
+                  ? "⚠️ Danger Zone Alert"
+                  : "📍 Safe Zone Alert",
+              message: msg,
+              actionUrl: `/find?zone=${zone.id}`,
+            }),
+          ),
+        ),
+      );
     }
   }
 }

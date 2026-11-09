@@ -1,15 +1,17 @@
 /**
  * ---
- * name: care-dynamic-knowledge
+ * name: ai-dynamic-knowledge
  * description: >-
  *   Dynamic skill for ChallengeD / CareCNC / NotchSafety. Use whenever a request
  *   needs this user's own data or changes it: cared ones, medicines, check-ins,
  *   care groups, tasks, bookings, locations and safe zones, notifications, and
- *   every app setting. Owns the data model (CCT + column codes), the per-sub-app
- *   write differences, view permissions, and the actual reads and writes.
+ *   every app setting and AI conversation. Owns data models, sub-app differences,
+ *   view permissions, and the actual reads and writes.
  * keywords: [cared one, medicine, 用药, check-in, 签到, care group, 群组, task, 任务,
- *   booking, 预约, location, 定位, safe zone, 安全区, notification, 推送, setting, 设置]
+ *   booking, 预约, location, 定位, safe zone, 安全区, notification, 推送, setting, 设置,
+ *   AI conversation, 对话记录, write care tip, 保存小贴士]
  * entrypoints: [resolveAssistantContext(), resolveBriefingFacts(), resolveWriteSkill(),
+ *   runWriteSkill(), runAssistantWriteSkill(), runAssistantConversationSkill(),
  *   readSettingSkill(), runSettingSkill(), runNotificationSkill()]
  * ---
  *
@@ -34,10 +36,165 @@
 import { retrieveStaticKnowledge, type KnowledgeTopic } from "@/lib/ai-static-knowledge";
 import { DEFAULT_DISPLAY_SETTINGS, applyDisplaySettings } from "@/features/settings/display-preferences";
 import { LANGUAGES } from "@/config/languages";
+import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
+import { readLinkedCCTRows } from "@/features/shared/cct-rows";
+import { T, R } from "@/integrations/wp-schema";
+import { appScopeBody, currentAppScope, isInAppScope, type AppScope } from "@/features/shared/app-scope";
+import { getStoredWPUser } from "@/services/wp-auth";
 
 export { applyDisplaySettings } from "@/features/settings/display-preferences";
 export { LANGUAGES } from "@/config/languages";
 type Lang = { isChinese: boolean };
+
+// ─────────────────────── Assistant-conversations skill ─────────────────────
+// CCT 121 conversations, REL 137 ownership, CCT 126 messages and REL 138 links.
+// The model receives the finished transcript; all thread reads and writes use
+// this same app-scoped skill and verify current-user ownership before access.
+export const ASSISTANT_CONVERSATION_SKILL = "assistant-conversations" as const;
+export interface AiThread { id: string; title: string; updatedAt: string }
+export interface AiThreadMessage { role: "user" | "assistant"; content: string }
+type AssistantConversationOperation = "list" | "create" | "load" | "append" | "touch";
+
+const AI_CONV = T.chatConversation.slug;
+const AI_CONV_FIELDS = T.chatConversation.f;
+const AI_CONV_TYPE = T.chatConversation.opt.CHAT_TYPE.AI;
+const AI_MESSAGE = T.chatMessage.slug;
+const AI_MESSAGE_FIELDS = T.chatMessage.f;
+const AI_MESSAGE_TYPE = T.chatMessage.opt.CHAT_MESSAGE_TYPE;
+const AI_REL_MEMBER = R.conversationMembers;
+const AI_REL_MESSAGE = R.conversationMessages;
+const AI_MEMBER_JOINED = "a55";
+
+const nowWPDateTime = () => new Date().toISOString().slice(0, 19).replace("T", " ");
+const wpRowId = (row: any) => String(row?.item_id ?? row?._ID ?? row?.id ?? "");
+
+function currentWPUserId(): number {
+  const id = Number(getStoredWPUser()?.user_id);
+  if (!id) throw new Error("Not signed in");
+  return id;
+}
+
+async function ownsAssistantConversation(id: string): Promise<boolean> {
+  if (!/^\d+$/.test(id)) return false;
+  const [relations, conversation] = await Promise.all([
+    wordpressFetch<any[]>(`jet-rel/${AI_REL_MEMBER}/children/${Number(id)}`),
+    wordpressCCTFetch<any>(AI_CONV, { id }).catch(() => null),
+  ]);
+  return Boolean(conversation && isInAppScope("chatConversation", conversation)) &&
+    Array.isArray(relations) && relations.some((relation) => Number(relation.child_object_id) === currentWPUserId());
+}
+
+export function runAssistantConversationSkill(
+  skill: typeof ASSISTANT_CONVERSATION_SKILL,
+  operation: "list",
+): Promise<AiThread[]>;
+export function runAssistantConversationSkill(
+  skill: typeof ASSISTANT_CONVERSATION_SKILL,
+  operation: "create",
+  input?: { title?: string | undefined },
+): Promise<string>;
+export function runAssistantConversationSkill(
+  skill: typeof ASSISTANT_CONVERSATION_SKILL,
+  operation: "load",
+  input: { id: string },
+): Promise<AiThreadMessage[]>;
+export function runAssistantConversationSkill(
+  skill: typeof ASSISTANT_CONVERSATION_SKILL,
+  operation: "append",
+  input: { id: string; role: AiThreadMessage["role"]; content: string },
+): Promise<void>;
+export function runAssistantConversationSkill(
+  skill: typeof ASSISTANT_CONVERSATION_SKILL,
+  operation: "touch",
+  input: { id: string; title?: string | undefined },
+): Promise<void>;
+export async function runAssistantConversationSkill(
+  skill: typeof ASSISTANT_CONVERSATION_SKILL,
+  operation: AssistantConversationOperation,
+  input: { id?: string; title?: string; role?: AiThreadMessage["role"]; content?: string } = {},
+): Promise<AiThread[] | AiThreadMessage[] | string | void> {
+  if (skill !== ASSISTANT_CONVERSATION_SKILL) throw new Error(`Unknown AI skill: ${skill}`);
+
+  if (operation === "list") {
+    const relations = await wordpressFetch<any[]>(`jet-rel/${AI_REL_MEMBER}/parents/${currentWPUserId()}`);
+    if (!Array.isArray(relations)) throw new Error("Could not load conversations");
+    const ids = [...new Set(relations.map((relation) => String(relation.parent_object_id)).filter(Boolean))];
+    const rows = await readLinkedCCTRows(AI_CONV, ids).catch(() => []);
+    return rows
+      .filter((conversation) => conversation && conversation[AI_CONV_FIELDS.CHAT_TYPE] === AI_CONV_TYPE && isInAppScope("chatConversation", conversation))
+      .map((conversation) => ({
+        id: wpRowId(conversation),
+        title: conversation[AI_CONV_FIELDS.CHAT_NAME] || "",
+        updatedAt: conversation[AI_CONV_FIELDS.LAST_MESSAGE_AT] || conversation.cct_modified || "",
+      }))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+
+  if (operation === "create") {
+    const created = await wordpressCCTFetch<any>(AI_CONV, {
+      method: "POST",
+      body: {
+        [AI_CONV_FIELDS.CHAT_TYPE]: AI_CONV_TYPE,
+        [AI_CONV_FIELDS.CHAT_NAME]: input.title || "",
+        [AI_CONV_FIELDS.LAST_MESSAGE_AT]: nowWPDateTime(),
+        ...appScopeBody("chatConversation", currentAppScope()),
+      },
+    });
+    const id = wpRowId(created);
+    if (!id) throw new Error("Could not create conversation");
+    await wordpressFetch(`jet-rel/${AI_REL_MEMBER}`, {
+      method: "POST",
+      body: {
+        parent_id: Number(id), child_id: currentWPUserId(), context: "child", store_items_type: "update",
+        meta: { [AI_MEMBER_JOINED]: nowWPDateTime() },
+      },
+    });
+    return id;
+  }
+
+  const id = input.id || "";
+  if (!id || !(await ownsAssistantConversation(id))) throw new Error("Conversation is unavailable");
+
+  if (operation === "load") {
+    const relations = await wordpressFetch<any[]>(`jet-rel/${AI_REL_MESSAGE}/children/${Number(id)}`);
+    if (!Array.isArray(relations) || relations.length === 0) return [];
+    const ids = [...new Set(relations.map((relation) => String(relation.child_object_id)).filter((value) => /^\d+$/.test(value)))];
+    const messages = await readLinkedCCTRows(AI_MESSAGE, ids);
+    return messages
+      .filter(Boolean)
+      .sort((a, b) => Number(wpRowId(a)) - Number(wpRowId(b)))
+      .map((message) => ({
+        role: message[AI_MESSAGE_FIELDS.CHAT_MESSAGE_TYPE] === AI_MESSAGE_TYPE.AI ? "assistant" as const : "user" as const,
+        content: message[AI_MESSAGE_FIELDS.CHAT_MESSAGE_CONTENT] || "",
+      }));
+  }
+
+  if (operation === "append") {
+    const created = await wordpressCCTFetch<any>(AI_MESSAGE, {
+      method: "POST",
+      body: {
+        [AI_MESSAGE_FIELDS.CHAT_MESSAGE_CONTENT]: input.content || "",
+        [AI_MESSAGE_FIELDS.CHAT_MESSAGE_TYPE]: input.role === "assistant" ? AI_MESSAGE_TYPE.AI : AI_MESSAGE_TYPE.TEXT,
+      },
+    });
+    const messageId = Number(wpRowId(created));
+    if (!messageId) throw new Error("Message not saved");
+    await wordpressFetch(`jet-rel/${AI_REL_MESSAGE}`, {
+      method: "POST",
+      body: { parent_id: Number(id), child_id: messageId, context: "child", store_items_type: "update" },
+    });
+    return;
+  }
+
+  await wordpressCCTFetch(AI_CONV, {
+    id,
+    method: "PUT",
+    body: {
+      [AI_CONV_FIELDS.LAST_MESSAGE_AT]: nowWPDateTime(),
+      ...(input.title ? { [AI_CONV_FIELDS.CHAT_NAME]: input.title } : {}),
+    },
+  });
+}
 
 const Z = (isChinese: boolean, zh: string, en: string) => (isChinese ? zh : en);
 
@@ -61,7 +218,6 @@ export type InfoSheetPromptContext = {
   situationDetails?: string | undefined;
   contacts?: Array<{ name?: string | undefined; phone?: string | undefined; relationship?: string | undefined; note?: string | undefined }> | undefined;
   locationText?: string | null | undefined;
-  knowledge?: string | undefined;
 };
 
 export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: boolean): string {
@@ -72,12 +228,8 @@ export function buildInfoSheetContext(ctx: InfoSheetPromptContext, isChinese: bo
     ctx.situationDetails ? `${isChinese ? "本次护理安排" : "This situation"}: ${ctx.situationDetails}` : "",
     ctx.locationText ? `${isChinese ? "最近位置" : "Last known location"}: ${ctx.locationText}` : "",
     ctx.contacts?.length ? `${isChinese ? "紧急联系人" : "Emergency contacts"}: ${ctx.contacts.map((c) => [c.name, c.relationship, c.phone, c.note].filter(Boolean).join(" / ")).join(" | ")}` : "",
-    ctx.knowledge || "",
   ].filter(Boolean).join("\n");
-  const rule = isChinese
-    ? "以下是你关于这位家人已经知道的情况。像自己熟悉这家人一样自然地说，不要提到“卡片”“须知”这类字眼。对方通常是自愿帮忙的邻居、朋友或亲戚，语气温和、客气、感谢；也可以回答一般照顾常识、陪对方聊天。不知道的不要编，涉及安全或沟通的关键信息请对方联系下面的联系人。"
-    : "Below is what you already know about this family. Speak as someone familiar with them — never mention a \"card\" or \"sheet\". The reader is usually a neighbour, friend, or relative who volunteered, so be warm and appreciative; general care know-how and plain conversation are fine too. Never invent anything, and when a missing detail could affect safety or understanding, ask them to call a contact listed below.";
-  return `${rule}\n\n${isChinese ? "信息卡内容" : "Card facts"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
+  return `${isChinese ? "已知情况" : "Known details"}:\n${facts || (isChinese ? "（暂无更多信息）" : "(no further details provided)")}`;
 }
 
 export function buildInfoSheetIntroduction(task: string, caredOneName: string | undefined, isChinese: boolean): string {
@@ -88,14 +240,14 @@ export function buildInfoSheetIntroduction(task: string, caredOneName: string | 
 
 export function buildCheckInContext(checkinName: string, instructions: string, caredOneName: string, isChinese: boolean): string {
   return isChinese
-    ? `你正在为“${caredOneName}”进行“${checkinName}”每日探望签到。${instructions ? `附加说明：${instructions}。` : ""}\n逐个询问 3–5 个简短友好的问题，涵盖心情、睡眠、食欲、疼痛或不适、今日特别情况。每次不超过两句。信息足够后只返回 JSON：{"done":true,"summary":"用 2–3 句总结今天状态","status":"checked"}。明确跳过则返回：{"done":true,"summary":"用户选择跳过。","status":"skipped"}。`
-    : `Conduct the “${checkinName}” daily check-in for “${caredOneName}”. ${instructions ? `Additional instructions: ${instructions}.` : ""}\nAsk 3–5 short, friendly questions one at a time about mood, sleep, appetite, pain or discomfort, and anything notable today. Keep each turn under two sentences. Once enough is known, return only JSON: {"done":true,"summary":"2–3 sentence summary","status":"checked"}. If they clearly skip, return: {"done":true,"summary":"User chose to skip.","status":"skipped"}.`;
+    ? `你正在为“${caredOneName}”进行“${checkinName}”每日探望签到。${instructions ? `附加说明：${instructions}。` : ""}\n逐个询问 3–5 个简短友好的问题，涵盖心情、睡眠、食欲、疼痛或不适、今日特别情况。每次不超过两句。信息足够后只返回 JSON：{"done":true,"summary":"用 2–3 句总结今天状态","status":"checked"}。对方明确选择跳过时返回 status "skipped"；明确表示没有得到回应时返回 status "no-response"。`
+    : `Conduct the “${checkinName}” daily check-in for “${caredOneName}”. ${instructions ? `Additional instructions: ${instructions}.` : ""}\nAsk 3–5 short, friendly questions one at a time about mood, sleep, appetite, pain or discomfort, and anything notable today. Keep each turn under two sentences. Once enough is known, return only JSON: {"done":true,"summary":"2–3 sentence summary","status":"checked"}. Use status "skipped" when they clearly choose to skip, or "no-response" when they explicitly report receiving no response.`;
 }
 
 export function buildMedicineDoseContext(dose: string, isChinese: boolean): string {
   return isChinese
-    ? `这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用或跳过，不更改剂量。确认后只返回 JSON：{"done":true,"summary":"一句说明","status":"taken"} 或 status 为 "skipped"。`
-    : `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken or skipped; never change dosage. When confirmed, return only JSON: {"done":true,"summary":"one sentence","status":"taken"} or status "skipped".`;
+    ? `这是已从用药日程精确读取的本次提醒：${dose}。只确认本次是否服用、跳过或没有得到回应，不更改剂量。确认后只返回 JSON：{"done":true,"summary":"一句说明","status":"taken|skipped|no-response"}。`
+    : `This reminder was read directly from the medicine schedule: ${dose}. Confirm only whether this dose was taken, skipped, or received no response; never change dosage. When confirmed, return only JSON: {"done":true,"summary":"one sentence","status":"taken|skipped|no-response"}.`;
 }
 
 export function buildMedicineDoseStarter(dose: string, isChinese: boolean): string {
@@ -113,8 +265,8 @@ export function buildSafetyContext(circleFacts: string, isChinese: boolean): str
 
 export function buildCareGroupHelpRequest(question: string, groupName: string | undefined, isChinese: boolean): string {
   return isChinese
-    ? `用户正在使用护理群组${groupName ? `“${groupName}”` : ""}。可以解释群组内的首页、日历、任务、被护理者位置、对话、公告、祝福、相册、群组被护理者、成员、邀请成员、子群组和群组设置怎么用；不确定就直接说明。${question ? `问题：${question}` : ""}`
-    : `The user is using their care group${groupName ? ` “${groupName}”` : ""}. You may explain how its Home, Calendar, Tasks, Cared One's Location, Messages, Announcements, Well Wishes, Gallery, Group Cared Ones, Members, Invite Members, Member Groups, and Group Setting features work, and say plainly when unsure.${question ? ` Question: ${question}` : ""}`;
+    ? `用户正在护理群组${groupName ? `“${groupName}”` : ""}中寻求帮助。按用户当前问题回答。${question ? `问题：${question}` : ""}`
+    : `The user is asking for help in their care group${groupName ? ` “${groupName}”` : ""}. Answer their current question. ${question ? `Question: ${question}` : ""}`;
 }
 
 export function buildBriefingRequest(data: string, isChinese: boolean): string {
@@ -144,7 +296,7 @@ export async function resolveCaredOneAccess(
   try {
     const { wpFetchCaredOnes } = await import("@/services/wp-data");
     const mine = await wpFetchCaredOnes();
-    if (mine.some((c: any) => String(c.user_id) === String(caredOneId))) return "full";
+    if (mine.some((c: any) => c?.invitation_status !== "pending" && String(c?.user_id) === String(caredOneId))) return "full";
   } catch {
     /* fall through */
   }
@@ -180,6 +332,28 @@ export async function resolveGroupAccess(groupId: string | undefined): Promise<A
 // ───────────────────────── Fact resolvers (aggregated) ──────────────────────
 
 /** Who the viewer is, plus the people and groups they are connected to. */
+function viewerRoleText(profile: any, isChinese: boolean): string {
+  const roles = ([] as string[]).concat(profile?.general_user_role || []).map((role) => String(role).toLowerCase());
+  if (roles.some((role) => role.includes("cared"))) {
+    return Z(isChinese, "账号登记为被护理者本人（只是起始假设，可随对话改变）", "account is registered as the person receiving care (starting assumption only; it may change during the conversation)");
+  }
+  if (roles.some((role) => role.includes("care"))) {
+    return Z(isChinese, "账号登记为照护者（只是起始假设，可随对话改变）", "account is registered as a caregiver (starting assumption only; it may change during the conversation)");
+  }
+  return Z(isChinese, "账号登记身份未明确（请根据当前对话判断）", "the account role is not specified; infer the speaker from the current conversation");
+}
+
+/** Small role fact attached to each signed-in chat turn. */
+export async function resolveViewerRoleFacts({ isChinese }: Lang): Promise<string> {
+  try {
+    const { fetchMyProfileWordPress } = await import("@/features/profile/source.wordpress");
+    const profile = await fetchMyProfileWordPress();
+    return line(Z(isChinese, "当前账号身份（仅作起始线索）", "Signed-in role (starting clue only)"), viewerRoleText(profile, isChinese));
+  } catch {
+    return "";
+  }
+}
+
 export async function resolveViewerFacts({ isChinese }: Lang): Promise<string> {
   try {
     const { wpFetchCaredOnes, wpFetchCareGroups } = await import("@/services/wp-data");
@@ -189,20 +363,13 @@ export async function resolveViewerFacts({ isChinese }: Lang): Promise<string> {
       wpFetchCareGroups().catch(() => []),
       fetchMyProfileWordPress().catch(() => null as any),
     ]);
-    // Role is a FACT, not a rule: the stored role is only the starting
-    // assumption; the shared system prompt already allows switching when the
-    // person speaking says otherwise.
-    const roles = ([] as string[]).concat((profile?.general_user_role as any) || []).map((r) => String(r).toLowerCase());
-    const caredOne = roles.some((r) => r.includes("cared"));
-    const role = caredOne
-      ? Z(isChinese, "账号登记为被护理者本人（只是起始假设，可随对话改变）", "account is registered as the person being cared for (starting assumption only; it may change during the conversation)")
-      : Z(isChinese, "账号登记为护理者（只是起始假设，可随对话改变）", "account is registered as a caregiver (starting assumption only; it may change during the conversation)");
+    const acceptedCaredOnes = caredOnes.filter((person: any) => person?.invitation_status !== "pending");
     return join([
       line(Z(isChinese, "今天日期", "Today"), new Date().toISOString().slice(0, 10)),
-      line(Z(isChinese, "当前用户身份", "Who is signed in"), role),
+      line(Z(isChinese, "当前账号身份（仅作起始线索）", "Signed-in role (starting clue only)"), viewerRoleText(profile, isChinese)),
       line(
         Z(isChinese, "我照护的人", "People I care for"),
-        caredOnes.map((c: any) => c.cared_one?.full_name).filter(Boolean).join("、") ||
+        acceptedCaredOnes.map((c: any) => c.cared_one?.full_name).filter(Boolean).join("、") ||
           Z(isChinese, "无", "none")
       ),
       line(
@@ -271,25 +438,91 @@ export async function resolveCheckInFacts(caredOneId: string, { isChinese }: Lan
   }
 }
 
+/** Additional information-card details, read only when the question needs them. */
+export async function resolveInformationFacts(
+  caredOneId: string,
+  { isChinese }: Lang,
+  wanted: { careTips?: boolean; carePlans?: boolean; careNotes?: boolean },
+): Promise<string> {
+  try {
+    const {
+      fetchCareTipsWordPress,
+      fetchCarePlansWordPress,
+      fetchCareNotesWordPress,
+    } = await import("@/features/cared-ones/source.wordpress-extended");
+    const [tips, plans, notes] = await Promise.all([
+      wanted.careTips ? fetchCareTipsWordPress(caredOneId).catch(() => []) : Promise.resolve([]),
+      wanted.carePlans ? fetchCarePlansWordPress(caredOneId).catch(() => []) : Promise.resolve([]),
+      wanted.careNotes ? fetchCareNotesWordPress(caredOneId).catch(() => []) : Promise.resolve([]),
+    ]);
+    const list = (rows: any[], keys: string[]) => rows
+      .slice(0, 12)
+      .map((row) => keys.map((key) => row?.[key]).filter(Boolean).join(" — "))
+      .filter(Boolean)
+      .join("; ");
+    return join([
+      wanted.careTips ? line(Z(isChinese, "照护要点与喜好", "Care preferences and tips"), list(tips, ["title", "content"])) : "",
+      wanted.carePlans ? line(Z(isChinese, "护理安排", "Care plans"), list(plans, ["title", "description", "content"])) : "",
+      wanted.careNotes ? line(Z(isChinese, "护理记录", "Care notes"), list(notes, ["title", "content"])) : "",
+    ]);
+  } catch {
+    return "";
+  }
+}
+
 /**
  * Location: latest position, safe zones, and — for "where is he usually?" —
  * a frequency summary over a wider window instead of hundreds of raw points.
  */
+async function readSharedCurrentLocation(caredOneId: string) {
+  const { fetchLocationSharingFlags } = await import("@/features/location/sharing-flags");
+  const flags = await fetchLocationSharingFlags(caredOneId);
+  if (!flags.shareOn) return { shareOn: false, current: null };
+
+  const { fetchCurrentLocation } = await import("@/features/location/source.wordpress");
+  return { shareOn: true, current: await fetchCurrentLocation(caredOneId) };
+}
+
+function currentLocationSummary(
+  current: { address_text?: string | null | undefined; latitude?: number | null | undefined; longitude?: number | null | undefined; captured_at?: string | null | undefined } | null,
+  isChinese: boolean,
+): string {
+  if (!current) return Z(isChinese, "暂无位置数据", "no location data");
+  const place = current.address_text ||
+    (current.latitude != null && current.longitude != null
+      ? `${current.latitude}, ${current.longitude}`
+      : Z(isChinese, "暂无位置详情", "no position details"));
+  return `${place}${current.captured_at ? ` (${current.captured_at})` : ""}`;
+}
+
+async function resolveBriefingLocationFacts(caredOneId: string, caredOneName: string | undefined, { isChinese }: Lang): Promise<string> {
+  try {
+    const { shareOn, current } = await readSharedCurrentLocation(caredOneId);
+    if (!shareOn) return "";
+    const label = caredOneName
+      ? Z(isChinese, `${caredOneName}的最近位置`, `Latest location for ${caredOneName}`)
+      : Z(isChinese, "最近位置", "Latest location");
+    return line(label, currentLocationSummary(current, isChinese));
+  } catch {
+    return "";
+  }
+}
+
 export async function resolveLocationFacts(
   caredOneId: string,
   { isChinese }: Lang,
   opts: { pattern?: boolean | undefined; sinceDays?: number | undefined } = {}
 ): Promise<string> {
   try {
-    const { fetchCurrentLocation, fetchLocationHistory } = await import("@/features/location/source.wordpress");
+    const { fetchLocationHistory } = await import("@/features/location/source.wordpress");
     const { fetchSafeZonesWordPress } = await import("@/features/location/source.wordpress-extended");
-    const [current, zones] = await Promise.all([
-      fetchCurrentLocation(caredOneId).catch(() => null),
+    const [location, zones] = await Promise.all([
+      readSharedCurrentLocation(caredOneId),
       fetchSafeZonesWordPress(caredOneId).catch(() => []),
     ]);
 
     let pattern = "";
-    if (opts.pattern) {
+    if (opts.pattern && location.shareOn) {
       const sinceDays = opts.sinceDays ?? 30;
       const since = new Date(Date.now() - sinceDays * 86400_000).toISOString();
       const history = await fetchLocationHistory(caredOneId, { limit: 500, since }).catch(() => []);
@@ -297,11 +530,12 @@ export async function resolveLocationFacts(
     }
 
     return join([
+      line(Z(isChinese, "位置分享", "Location sharing"), location.shareOn ? Z(isChinese, "已开启", "on") : Z(isChinese, "未开启", "off")),
       line(
         Z(isChinese, "最新位置", "Latest location"),
-        current
-          ? `${(current as { address?: string }).address || `${current.latitude}, ${current.longitude}`}${current.captured_at ? ` (${current.captured_at})` : ""}`
-          : Z(isChinese, "暂无位置数据", "no location data")
+        location.shareOn
+          ? currentLocationSummary(location.current, isChinese)
+          : Z(isChinese, "当前未分享位置", "not currently shared")
       ),
       line(
         Z(isChinese, "安全区", "Safe zones"),
@@ -359,7 +593,9 @@ export async function resolveTaskFacts({ isChinese }: Lang): Promise<string> {
     ]);
     // Same rule as the dashboard task list: only tasks linked (task → cared-one
     // relation) to someone in this viewer's own cared-one list.
-    const mine = new Set((caredOnes || []).map((c: any) => String(c.user_id).replace(/^wp-/, "")));
+      const mine = new Set((caredOnes || [])
+        .filter((person: any) => person?.invitation_status !== "pending")
+        .map((c: any) => String(c.user_id).replace(/^wp-/, "")));
     const open = tasks.filter((t: any) => {
       const co = String(t.cared_one_id ?? "").replace(/^wp-/, "");
       return !!co && mine.has(co) && t.status !== "completed";
@@ -387,17 +623,20 @@ export async function resolveBriefingFacts({ isChinese }: Lang): Promise<string>
   ]);
   let bookings = "";
   let unread = "";
+  let notifications = "";
   let schedules = "";
   try {
     const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
-    const people = await fetchUserCaredOnesWordPress();
+    const people = (await fetchUserCaredOnesWordPress()).filter((person: any) => person?.invitation_status !== "pending");
     schedules = (await Promise.all(people.map(async (person) => {
       const id = String(person.user_id).replace(/^wp-/, "");
-      const [medicine, checkins] = await Promise.all([
+      const caredOneName = person.cared_one?.full_name;
+      const [medicine, checkins, location] = await Promise.all([
         resolveMedicineFacts(id, { isChinese }),
         resolveCheckInFacts(id, { isChinese }),
+        resolveBriefingLocationFacts(id, caredOneName, { isChinese }),
       ]);
-      return join([person.cared_one?.full_name, medicine, checkins]);
+      return join([caredOneName, medicine, checkins, location]);
     }))).join("\n");
   } catch { /* optional */ }
   try {
@@ -417,7 +656,20 @@ export async function resolveBriefingFacts({ isChinese }: Lang): Promise<string>
     const n = convos.reduce((sum: number, c: any) => sum + Number(c.unread_count || 0), 0);
     unread = line(Z(isChinese, "未读消息", "Unread messages"), n);
   } catch { /* optional */ }
-  return join([viewer, tasks, schedules, bookings, unread]);
+  try {
+    const rows = await runNotificationSkill("list-notifications", { unreadOnly: true });
+    const latest = [...rows]
+      .sort((a, b) => String(b?.created_at || "").localeCompare(String(a?.created_at || "")))
+      .slice(0, 5);
+    notifications = join([
+      line(Z(isChinese, "未读通知数", "Unread notifications"), rows.length),
+      line(
+        Z(isChinese, "最近未读通知", "Recent unread notifications"),
+        latest.map((row) => [row?.title, row?.message?.slice(0, 160)].filter(Boolean).join("：")).filter(Boolean).join("；")
+      ),
+    ]);
+  } catch { /* optional */ }
+  return join([viewer, tasks, schedules, bookings, unread, notifications]);
 }
 
 /** Group facts, gated on membership. */
@@ -427,15 +679,13 @@ export async function resolveGroupFacts(
   { isChinese }: Lang
 ): Promise<string> {
   if (!groupId) {
-    return line(Z(isChinese, "当前群组", "Current group"), groupName || Z(isChinese, "未指定", "unspecified"));
+    return groupName ? line(Z(isChinese, "当前群组", "Current group"), groupName) : "";
   }
   try {
     const { wpFetchCareGroups } = await import("@/services/wp-data");
     const groups = await wpFetchCareGroups();
     const g = groups.find((x: any) => String(x.id) === String(groupId));
-    if (!g) {
-      return line(Z(isChinese, "当前群组", "Current group"), groupName || Z(isChinese, "未指定", "unspecified"));
-    }
+    if (!g) return "";
     return join([
       line(Z(isChinese, "群组名称", "Group name"), g?.name || groupName),
       line(Z(isChinese, "群组说明", "Group description"), g?.description),
@@ -445,7 +695,7 @@ export async function resolveGroupFacts(
       ),
     ]);
   } catch {
-    return line(Z(isChinese, "群组名称", "Group name"), groupName);
+    return "";
   }
 }
 
@@ -499,14 +749,85 @@ export async function resolveSettingFacts({ isChinese }: Lang): Promise<string> 
 function needs(question: string) {
   const q = (question || "").toLowerCase();
   const has = (...terms: string[]) => terms.some((t) => q.includes(t));
+  const saveAction = has("save", "remember", "write down", "note down", "record", "保存", "存下", "记下", "记住", "记录");
+  const careTipTerm = has("care tip", "care tips", "caregiving tip", "caregiving advice", "care preference", "care preferences", "care experience", "tip", "likes", "prefers", "dislikes", "hates", "favorite", "favourite", "routine", "小贴士", "照护经验", "护理建议", "偏好", "喜欢", "不喜欢", "讨厌", "最喜欢", "习惯");
   return {
     medicine: has("medicine", "medication", "dose", "pill", "用药", "吃药", "药"),
-    checkIn: has("check-in", "checkin", "check in", "visit", "签到", "探望"),
-    location: has("location", "where", "gps", "zone", "位置", "在哪", "定位", "安全区"),
+    checkIn: has("check-in", "checkin", "check in", "check-in log", "recent visit", "who visited", "签到", "探望", "探望记录"),
+    location: has("location", "gps", "safe zone", "where is she", "where is he", "where is my family", "her location", "his location", "家人在哪里", "她在哪里", "他在哪里", "被护理者在哪", "位置", "定位", "安全区"),
     pattern: has("usually", "often", "pattern", "常", "经常", "一般在", "平时"),
-    tasks: has("task", "todo", "任务", "待办"),
-    settings: has("setting", "notification", "notify", "language", "theme", "dark mode", "text size", "quiet hours", "permission", "设置", "通知", "提醒方式", "语言", "主题", "字号", "免打扰", "权限"),
+    tasks: has("my care task", "my open task", "open care tasks", "task for my family", "my to-do", "my todo", "我的任务", "未完成任务", "照护任务", "待办"),
+    settings: has("app setting", "notification setting", "notification preference", "change language", "app language", "display setting", "text size", "quiet hours", "privacy setting", "permission setting", "应用设置", "通知设置", "提醒方式", "修改语言", "更改语言", "字号设置", "免打扰", "权限设置", "隐私设置"),
+    viewer: has("who do i care for", "who is in my care group", "my care groups", "my cared ones", "my profile", "my account details", "what do you know about my family", "我照护的人", "我的护理群组", "我的群组", "我的家人", "我的资料", "账号资料", "我照顾谁"),
+    careTips: has("care tip", "care tips", "care preference", "what should i watch", "what should i know about", "daily routine", "her allergies", "his allergies", "her routine", "his routine", "what does she like", "what does he like", "tips for her", "tips for him", "护理小贴士", "照护要点", "喜好", "习惯", "忌口", "过敏", "注意事项", "今天需要注意", "她喜欢什么", "他喜欢什么", "她有什么习惯", "他有什么习惯", "照护须知"),
+    carePlans: has("care plan", "care schedule", "daily care routine", "routine for her", "routine for him", "护理计划", "照护计划", "日常护理安排", "护理安排"),
+    careNotes: has("care note", "care notes", "what is noted about", "previous care note", "护理记录", "护理笔记", "之前的记录", "保存过的照护信息"),
+    saveCareTip: saveAction && careTipTerm,
   };
+}
+
+type ChatHistoryMessage = { role: "user" | "assistant"; content: string };
+
+function hasCareTipWriteIntent(question: string, history: ChatHistoryMessage[] = []): boolean {
+  if (needs(question).saveCareTip) return true;
+  const recent = history.slice(-4);
+  const priorExplicitRequest = recent.some((message) => message.role === "user" && needs(message.content).saveCareTip);
+  const latest = recent.at(-1);
+  if (!priorExplicitRequest || latest?.role !== "assistant") return false;
+  const followUp = latest.content.toLowerCase();
+  return /(?:which|what|who).{0,120}(?:tip|save|person|care)|(?:tell me|let me know).{0,120}(?:tip|save|person|care)/i.test(followUp) ||
+    /哪(?:一条|个|位)|请(?:告诉|说明)|想保存|给哪位|谁的/.test(latest.content);
+}
+
+type AssistantSubject = { id?: string; name?: string; access: AccessLevel; choices?: string[] };
+
+async function resolveAssistantSubject(question: string, caredOneId: string | undefined, sharedCard: boolean | undefined): Promise<AssistantSubject> {
+  if (sharedCard) return { id: caredOneId, access: "shared-card" };
+  if (caredOneId) return { id: caredOneId, access: await resolveCaredOneAccess(caredOneId) };
+
+  try {
+    const { wpFetchCaredOnes } = await import("@/services/wp-data");
+    const people = (await wpFetchCaredOnes()).filter((person: any) => person?.invitation_status !== "pending");
+    const questionLower = question.toLowerCase();
+    const named = people.filter((person: any) => {
+      const name = String(person?.cared_one?.full_name || "").trim().toLowerCase();
+      return name && questionLower.includes(name);
+    });
+    const matching = named.length === 1 ? named[0] : named.length === 0 && people.length === 1 ? people[0] : undefined;
+    if (matching) {
+      return { id: String(matching.user_id), name: matching.cared_one?.full_name || undefined, access: "full" };
+    }
+    return {
+      access: "none",
+      choices: people.map((person: any) => person?.cared_one?.full_name).filter(Boolean),
+    };
+  } catch {
+    return { access: "none" };
+  }
+}
+
+function assistantSubjectFacts(subject: AssistantSubject, isChinese: boolean): string {
+  if (subject.access === "shared-card") return "";
+  if (subject.access === "full" && subject.id) {
+    return line(Z(isChinese, "相关家人", "Person concerned"), subject.name);
+  }
+  if (subject.choices?.length) {
+    return isChinese
+      ? "可查询的家人：" + subject.choices.join("、") + "。如果用户没有说明是哪一位，先自然地询问。"
+      : "People available to look up: " + subject.choices.join(", ") + ". If the user has not said which person, ask naturally before reading their details.";
+  }
+  return Z(
+    isChinese,
+    "当前没有可供查询的家人资料。若用户问个人记录，请说明目前无法查看并建议联系家属。",
+    "There is no linked cared-one profile available for this question. If the user asks about personal records, say you cannot see them and suggest contacting the family.",
+  );
+}
+
+function saveCareTipInstruction(subject: AssistantSubject, isChinese: boolean): string {
+  const names = subject.choices?.length ? subject.choices : subject.name ? [subject.name] : [];
+  return isChinese
+    ? "用户明确要求保存一条护理小贴士。只有在小贴士内容清楚且保存对象明确时，才返回单独 JSON：{\"done\":true,\"skill\":\"save-care-tip\",\"status\":\"saved\",\"summary\":\"整理后的原意，不添加事实\",\"caredOneName\":\"可选家人姓名\"}。可选对象：" + (names.join("、") || "暂无已关联家人") + "。对象不明确或内容不完整时，先用普通对话询问；不要生成 JSON，也不要声称已保存。"
+    : "The user explicitly asked to save a care tip. Return only this JSON when both the tip and its person are clear: {\"done\":true,\"skill\":\"save-care-tip\",\"status\":\"saved\",\"summary\":\"the tip, preserving its meaning without adding facts\",\"caredOneName\":\"optional cared-one name\"}. Available people: " + (names.join(", ") || "none linked") + ". If the person or tip is unclear, ask naturally first; do not return JSON or claim it was saved.";
 }
 
 export interface AssistantContextInput {
@@ -516,6 +837,16 @@ export interface AssistantContextInput {
   caredOneId?: string | undefined;
   groupId?: string | undefined;
   groupName?: string | undefined;
+  /** Current brand family for the app's static help entries. */
+  appFamily?: string | undefined;
+  /** Extra exact static skills needed by this surface, such as live voice. */
+  staticSkillNames?: string[] | undefined;
+  /** Information already visible on a card; extra private facts stay permission-gated below. */
+  sheetContext?: InfoSheetPromptContext | undefined;
+  /** Recent messages let the same skill continue a clear multi-turn write request. */
+  history?: ChatHistoryMessage[] | undefined;
+  /** Only these write skills are available from this chat surface. */
+  writeSkills?: WriteSkillName[] | undefined;
   /** Which static knowledge topics this surface is allowed to quote. */
   topics?: KnowledgeTopic[] | undefined;
   /** True when the reader came in through a public shared information card. */
@@ -527,47 +858,53 @@ export interface AssistantContextInput {
  * the question and attaches only the permitted dynamic facts the question needs.
  */
 export async function resolveAssistantContext(input: AssistantContextInput): Promise<string> {
-  const { question, isChinese, caredOneId, groupId, groupName, topics, sharedCard } = input;
+  const { question, isChinese, caredOneId, groupId, groupName, topics, sharedCard, appFamily, staticSkillNames = [], sheetContext, history = [], writeSkills = [] } = input;
   const lang: Lang = { isChinese };
   const want = needs(question);
+  const allowCareTipWrite = hasCareTipWriteIntent(question, history) && writeSkills.includes("save-care-tip");
+  const needPersonFacts = want.medicine || want.checkIn || want.location || want.careTips || want.carePlans || want.careNotes;
 
   const staticPart = retrieveStaticKnowledge(question, {
     topics,
+    skillNames: ["assistant.conversation", ...staticSkillNames],
+    appFamily,
     isChinese,
     fallbackToIndex: false,
   });
 
-  // Independent facts load together. In particular, the global viewer profile
-  // no longer waits behind the cared-one access check before the AI request can
-  // start building its context.
-  const [access, taskFacts, settingFacts, groupFacts, viewerFacts] = await Promise.all([
-    resolveCaredOneAccess(caredOneId, { sharedCard }),
+  const [subject, taskFacts, settingFacts, groupFacts, viewerFacts] = await Promise.all([
+    needPersonFacts || allowCareTipWrite
+      ? resolveAssistantSubject(question, caredOneId, sharedCard)
+      : Promise.resolve({ id: caredOneId, access: sharedCard ? "shared-card" as const : "none" as const }),
     want.tasks ? resolveTaskFacts(lang) : Promise.resolve(""),
     want.settings && !sharedCard ? resolveSettingFacts(lang) : Promise.resolve(""),
     groupId || groupName ? resolveGroupFacts(groupId, groupName, lang) : Promise.resolve(""),
-    !sharedCard ? resolveViewerFacts(lang) : Promise.resolve(""),
+    sharedCard ? Promise.resolve("") : want.viewer ? resolveViewerFacts(lang) : resolveViewerRoleFacts(lang),
   ]);
-  const dynamic: string[] = [taskFacts, settingFacts, groupFacts, viewerFacts];
+  const dynamic: string[] = [
+    sheetContext ? buildInfoSheetContext(sheetContext, isChinese) : "",
+    taskFacts,
+    settingFacts,
+    groupFacts,
+    viewerFacts,
+  ];
 
-  if (access === "full" && caredOneId) {
-    const [med, chk, loc] = await Promise.all([
-      want.medicine ? resolveMedicineFacts(caredOneId, lang) : Promise.resolve(""),
-      want.checkIn ? resolveCheckInFacts(caredOneId, lang) : Promise.resolve(""),
-      want.location
-        ? resolveLocationFacts(caredOneId, lang, { pattern: want.pattern })
+  if (subject.access === "full" && subject.id && needPersonFacts) {
+    const [med, chk, loc, details] = await Promise.all([
+      want.medicine ? resolveMedicineFacts(subject.id, lang) : Promise.resolve(""),
+      want.checkIn ? resolveCheckInFacts(subject.id, lang) : Promise.resolve(""),
+      want.location ? resolveLocationFacts(subject.id, lang, { pattern: want.pattern }) : Promise.resolve(""),
+      want.careTips || want.carePlans || want.careNotes
+        ? resolveInformationFacts(subject.id, lang, { careTips: want.careTips, carePlans: want.carePlans, careNotes: want.careNotes })
         : Promise.resolve(""),
     ]);
-    dynamic.push(med, chk, loc);
-  } else if (access === "none" && caredOneId && (want.medicine || want.checkIn || want.location)) {
-    dynamic.push(
-      Z(isChinese, "回答提示", "Response guidance") +
-        ": " +
-        Z(
-          isChinese,
-          "如果用户询问这位被护理者的详细记录，请用简单的话说明现在无法提供，并建议联系家属；不要解释内部权限或系统规则。",
-          "If the user asks about this person's detailed records, say in plain language that you can't provide them and suggest contacting the family. Don't describe internal access rules."
-        )
-    );
+    dynamic.push(assistantSubjectFacts(subject, isChinese), med, chk, loc, details);
+  } else if (needPersonFacts || allowCareTipWrite) {
+    dynamic.push(assistantSubjectFacts(subject, isChinese));
+  }
+
+  if (allowCareTipWrite) {
+    dynamic.push(saveCareTipInstruction(subject, isChinese));
   }
 
   const facts = dynamic.filter(Boolean).join("\n");
@@ -612,7 +949,6 @@ import {
   fetchHelpBubbleVisible,
   saveHelpBubbleVisible,
 } from "@/features/shared/app-profile";
-import { currentAppScope, type AppScope } from "@/features/shared/app-scope";
 import { checkPermission, requestPermission, type PermissionKind } from "@/features/settings/permissions";
 
 /** The three sub-apps this backend serves. */
@@ -1204,6 +1540,13 @@ export interface WriteTarget {
   label?: string | undefined;
   /** Extra plain-language detail, e.g. "Aricept · 5mg · 08:00". */
   detail?: string | undefined;
+  /** CCT 187 medication instructions copied to CCT 161 a97. */
+  medicationNote?: string | undefined;
+  /** Planned dose copied from CCT 187 into the Apple-shaped CCT 161 log. */
+  doseQuantity?: number | null | undefined;
+  doseUnit?: string | undefined;
+  scheduleType?: string | undefined;
+  conceptIdentifier?: string | undefined;
   /** Dose time "HH:MM" this medicine reminder answers (stored in CCT161 a88). */
   slot?: string | undefined;
 }
@@ -1221,8 +1564,12 @@ export interface WriteSkill {
   invalidateKeys: string[][];
 }
 
-const asStatus = (allowed: string[], status?: string | undefined) =>
-  status && allowed.includes(status) ? status : allowed[0];
+const asStatus = (allowed: string[], status?: string | undefined) => {
+  if (!status || !allowed.includes(status)) {
+    throw new Error("The AI returned an unsupported write status.");
+  }
+  return status;
+};
 
 export function resolveWriteSkill(
   name: WriteSkillName,
@@ -1261,11 +1608,21 @@ export function resolveWriteSkill(
       write: async ({ status, summary }) => {
         const { logMedicineWordPress } = await import("@/features/medicine/source.medicine");
         const { todayAtSlot } = await import("@/features/medicine/dose-slot");
+        const outcome = asStatus(statuses, status);
         await logMedicineWordPress({
           medicine_id: String(target.recordId),
-          status: asStatus(statuses, status) === "taken" ? "taken" : "skipped",
+          status: outcome === "taken" ? "taken" : outcome === "skipped" ? "skipped" : "missed",
           note: summary || undefined,
           user_id: target.caredOneId,
+          logged_by_ai: true,
+          medication_note: target.medicationNote,
+          dose_quantity: target.doseQuantity,
+          scheduled_dose_quantity: target.doseQuantity,
+          dose_unit: target.doseUnit,
+          schedule_type: target.scheduleType,
+          concept_identifier: target.conceptIdentifier,
+          concept_display_text: label,
+          rxcui: target.conceptIdentifier,
           scheduled_date: target.slot ? todayAtSlot(target.slot) : null,
         } as any);
       },
@@ -1305,13 +1662,15 @@ export function resolveWriteSkill(
         const { logCheckinWordPress } = await import(
           "@/features/cared-ones/source.wordpress-extended"
         );
+        const { todayAtSlot } = await import("@/features/medicine/dose-slot");
         const s = asStatus(statuses, status);
         await logCheckinWordPress({
           checkin_id: String(target.recordId),
           status: s === "checked" ? "checked" : s === "skipped" ? "skipped" : "missed",
           note: summary || "",
+          scheduled_date: target.slot ? todayAtSlot(target.slot) : new Date().toISOString(),
           checked_by_ai: true,
-          cared_one_id: target.caredOneId,
+          cared_one_id: String(target.caredOneId),
           checkin_name: label || undefined,
         });
       },
@@ -1346,6 +1705,67 @@ export function resolveWriteSkill(
     },
     invalidateKeys: [["careTips"]],
   };
+}
+
+export interface WriteSkillResult {
+  status?: string | undefined;
+  summary?: string | undefined;
+}
+
+export interface WriteSkillExecution extends WriteSkillResult {
+  message: string;
+  invalidateKeys: string[][];
+}
+
+/** Execute a named AI write after checking its target against current access. */
+export async function runWriteSkill(
+  name: WriteSkillName,
+  target: WriteTarget,
+  result: WriteSkillResult,
+  { isChinese }: Lang,
+): Promise<WriteSkillExecution> {
+  const skill = resolveWriteSkill(name, target, { isChinese });
+  const status = asStatus(skill.statuses, result.status);
+  const summary = result.summary?.trim() || undefined;
+
+  if (name === "save-care-tip" && status === "discarded") {
+    return { status, summary, message: skill.toastFor(status), invalidateKeys: [] };
+  }
+  if (name !== "save-care-tip" && !target.recordId) throw new Error("The write target is unavailable.");
+  if (!target.caredOneId || (await resolveCaredOneAccess(target.caredOneId)) !== "full") {
+    throw new Error("The cared-one record is unavailable to this account.");
+  }
+  if (name === "save-care-tip" && !summary) throw new Error("The care tip is empty.");
+
+  await skill.write({ status, summary });
+  return { status, summary, message: skill.toastFor(status), invalidateKeys: skill.invalidateKeys };
+}
+
+export async function runAssistantWriteSkill(input: {
+  skill: WriteSkillName;
+  question: string;
+  caredOneName?: string | undefined;
+  caredOneId?: string | undefined;
+  sharedCard?: boolean | undefined;
+  history?: ChatHistoryMessage[] | undefined;
+  result: WriteSkillResult;
+  isChinese: boolean;
+}): Promise<WriteSkillExecution> {
+  if (input.skill !== "save-care-tip" || !hasCareTipWriteIntent(input.question, input.history)) {
+    throw new Error("No care-tip save was requested.");
+  }
+  const skill = resolveWriteSkill(input.skill, {}, { isChinese: input.isChinese });
+  const status = asStatus(skill.statuses, input.result.status);
+  const summary = input.result.summary?.trim() || undefined;
+  if (status === "discarded") {
+    return { status, summary, message: skill.toastFor(status), invalidateKeys: [] };
+  }
+  if (!summary) throw new Error("The care tip is empty.");
+
+  const subjectQuery = input.caredOneName?.trim() || input.question;
+  const subject = await resolveAssistantSubject(subjectQuery, input.caredOneId, input.sharedCard);
+  if (subject.access !== "full" || !subject.id) throw new Error("The selected cared-one record is unavailable to this account.");
+  return runWriteSkill(input.skill, { caredOneId: subject.id }, { status, summary }, { isChinese: input.isChinese });
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

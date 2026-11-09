@@ -78,11 +78,7 @@ export default function ChallengedArticleDetail() {
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t pt-6">
-        <Button variant="outline" onClick={() => navigate(route)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {isChinese ? "返回列表" : "Back to list"}
-        </Button>
+      <div className="flex items-center justify-end border-t pt-6">
         <Button
           variant="ghost"
           onClick={() => {

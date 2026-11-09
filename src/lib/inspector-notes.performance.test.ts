@@ -3,6 +3,7 @@ import { WP } from "@/integrations/wp-schema";
 import {
   readNotesForPosition,
   readRelatedNotes,
+  updatePlainNote,
 } from "./inspector-notes.server";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -52,8 +53,8 @@ it("batch reads related note rows after resolving REL325 IDs", async () => {
       });
     return new Response(
       JSON.stringify([
-        { _ID: "201", a55: "父注释", a56: "父内容", a58: "b55" },
-        { _ID: "202", a55: "子注释", a56: "子内容", a58: "b56" },
+        { _ID: "201", a55: "父注释", a56: "父内容", a58: "b55", a65: "true" },
+        { _ID: "202", a55: "子注释", a56: "子内容", a58: "b56", a65: "false" },
       ]),
       { status: 200 },
     );
@@ -66,6 +67,7 @@ it("batch reads related note rows after resolving REL325 IDs", async () => {
     ["201", "parent"],
     ["202", "child"],
   ]);
+  expect(notes.map(({ todo }) => todo)).toEqual([true, false]);
   expect(fetchMock).toHaveBeenCalledTimes(3);
   const filters = JSON.parse(
     new URL(String(fetchMock.mock.calls[2]?.[0])).searchParams.get(
@@ -77,4 +79,42 @@ it("batch reads related note rows after resolving REL325 IDs", async () => {
     operator: "IN",
     value: ["201", "202"],
   });
+});
+
+it("writes the CCT324 to-do switch to a65 and verifies the saved value", async () => {
+  const fields = WP.cct["324"].f;
+  const row: Record<string, unknown> = {
+    _ID: "202",
+    a55: "进行中的说明",
+    a56: "草稿内容",
+    a58: "b56",
+    [fields["已手动核对笔记关联"]]: "b56",
+    [fields["已手动核对笔记关联详情"]]: "",
+  };
+  const fetchMock = vi.fn(
+    async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "POST")
+        Object.assign(row, JSON.parse(String(init.body)) as Record<string, unknown>);
+      return new Response(JSON.stringify(row), { status: 200 });
+    },
+  );
+  vi.stubGlobal("fetch", fetchMock);
+
+  await updatePlainNote(
+    "202",
+    {
+      title: "进行中的说明",
+      text: "草稿内容",
+      verified: false,
+      relationVerified: false,
+      relationDetails: "",
+      todo: true,
+    },
+    "researcher-token",
+  );
+
+  expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({
+    [fields["待完成"]]: "true",
+  });
+  expect(fetchMock).toHaveBeenCalledTimes(2);
 });

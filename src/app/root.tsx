@@ -24,6 +24,7 @@ import { useApplyDisplaySettings } from "@/features/settings/display";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SiteProvider, useSite } from "@/contexts/SiteContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ScheduleRemindersAgent } from "@/components/cared-ones/ScheduleRemindersAgent";
 import { ErrorBoundary as AppErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/NotFound";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -158,6 +159,7 @@ function SiteRouter() {
     isResearcherAccount() && !["consent", "sick"].includes(site.id);
   const sharedAgents = (
     <>
+      {locationSharingEnabled && <ScheduleRemindersAgent />}
       {locationSharingEnabled && (
         <Suspense fallback={null}>
           <LocationSharingAgent />

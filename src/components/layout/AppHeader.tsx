@@ -38,10 +38,6 @@ export function AppHeader() {
   const isCareCNC = site.id === "carecnc";
   const paidCare = site.features.paidCaregivers;
   const publicNav = buildPublicNav({ site, t, isChinese });
-  const headerContentWidth =
-    location.pathname.replace(/\/+$/, "") === "/dashboard"
-      ? "max-w-7xl"
-      : "max-w-6xl";
 
 
   // Keep the header on one row: show the first links inline, rest under "More".
@@ -134,10 +130,8 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div
-        className={`mx-auto flex h-[72px] w-full ${headerContentWidth} items-center gap-2 px-4 sm:gap-3`}
-      >
-        {/* Logo — always the first element on the left (standard convention) */}
+      <div className="flex h-[72px] w-full min-w-0 max-w-full items-center gap-2 px-4 sm:gap-3">
+        {/* Keep the logo and primary navigation on the same left gutter on every route. */}
         <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex shrink-0 items-center">
           <BrandMark size={42} showWordmark className="[&>span:last-child]:text-xl" />
           {site.showBetaLabel && (

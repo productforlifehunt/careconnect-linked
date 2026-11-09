@@ -3,11 +3,15 @@ import { fetchWPUser, fetchWPUserProfile } from "@/features/shared/wp-users";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { decodeRel72Meta } from "@/features/care-groups/rel-meta";
+import { decodeRel219Status } from "./rel219-meta";
 import { dedupeRead, fetchRelChildrenMap, fetchRelChildrenOf } from "@/features/shared/rel-batch";
 import { readLinkedCCTRows } from "@/features/shared/cct-rows";
+import { currentAppScope } from "@/features/shared/app-scope";
 import {
-  FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED, APP_CHALLENGED,
+  FC, EVENT_TYPE, STATUS_CONFIRMED, STATUS_CANCELLED,
   LOG_TYPE_AI as CAL_LOG_TYPE_AI, LOG_TYPE_HUMAN as CAL_LOG_TYPE_HUMAN,
+  REL_SCHEDULE_ASSIGNEES, REL_SCHEDULE_NOTIFICATION_RECEIVERS, fetchSchedulePeople, setSchedulePeople,
+  fetchCommonScheduleNotificationReceiverIds,
   scheduleTimeColumns, buildReminders, readReminderMinutes, toFrequencyCode, FREQ_EN,
   slotsFromRRule, frequencyFromRow, frequencyForSlots, normalizeSlots, occurrencesOn, localDay, dateOf, parseRRule, fetchEventsOfType,
   createEvent, updateEvent, deleteEvent, readEvent,
@@ -72,19 +76,27 @@ function numOrNull(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Check-in type (CCT 187 a97 Checkin log type): AI | Human. */
-function encodeCheckinLogType(value: unknown): string {
+/** CCT 187 a96 checkbox shared by medicine and check-in schedules. */
+function encodeCheckinLogType(value: unknown): string[] {
   const list = Array.isArray(value) ? value : value ? [value] : [];
-  const first = list.map((v) => String(v).toLowerCase())[0];
-  if (first === "ai" || first === CAL_LOG_TYPE_AI) return CAL_LOG_TYPE_AI;
-  if (first === "human" || first === CAL_LOG_TYPE_HUMAN) return CAL_LOG_TYPE_HUMAN;
-  return "";
+  return [...new Set(list.map((v) => String(v).toLowerCase()))]
+    .map((v) => v === "ai" || v === "b55" ? CAL_LOG_TYPE_AI : v === "human" || v === "b56" ? CAL_LOG_TYPE_HUMAN : "")
+    .filter(Boolean);
 }
 function decodeCheckinLogType(value: unknown): string[] {
-  const v = String(value ?? "");
-  if (v === CAL_LOG_TYPE_AI) return ["ai"];
-  if (v === CAL_LOG_TYPE_HUMAN) return ["human"];
-  return [];
+  let values: string[];
+  if (Array.isArray(value)) values = value.map(String);
+  else {
+    const raw = String(value ?? "").trim();
+    if (raw.startsWith("[")) {
+      try { const parsed = JSON.parse(raw); values = Array.isArray(parsed) ? parsed.map(String) : [raw]; }
+      catch { values = raw.split(",").map((v) => v.trim()); }
+    } else values = raw.split(",").map((v) => v.trim());
+  }
+  return [
+    ...(values.some((v) => [CAL_LOG_TYPE_AI, "AI", "ai"].includes(v)) ? ["ai"] : []),
+    ...(values.some((v) => [CAL_LOG_TYPE_HUMAN, "Human", "human"].includes(v)) ? ["human"] : []),
+  ];
 }
 
 function serializeTimeSlot(value: unknown): string {
@@ -284,17 +296,22 @@ export async function createCaredOnesCardWordPress(card: { name: string; descrip
 export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]> {
   try {
     const items = await fetchEventsOfType(caredOneId, EVENT_TYPE.CHECKIN);
-    return items.map((i: any) => {
+    return Promise.all(items.map(async (i: any) => {
       const slots = slotsFromRRule(i[FC.RRULE], i[FC.START_AT]);
+      const parsedRule = parseRRule(i[FC.RRULE]);
       const freqCode = frequencyFromRow(i[FC.RRULE], false, slots);
+      const id = String(i.id || i._ID);
       return {
-        id: String(i.id || i._ID),
+        id,
         user_id: caredOneId,
         name: i[FC.TITLE] || "Daily Check-In",
         detail: i[FC.DESCRIPTION] || null,
         frequency: FREQ_EN[freqCode],
         frequency_code: freqCode,
+        repeat_interval: parsedRule?.interval ?? 1,
+        repeat_weekdays: parsedRule?.byday ?? [],
         time_slot: slots,
+        recurrence: { startAt: i[FC.START_AT], rrule: i[FC.RRULE], exdates: i[FC.EXDATES], rdates: i[FC.RDATES] },
         today_slots: occurrencesOn(localDay(), { startAt: i[FC.START_AT], rrule: i[FC.RRULE], exdates: i[FC.EXDATES], rdates: i[FC.RDATES] }),
         start_date: dateOf(i[FC.START_AT]),
         end_date: parseRRule(i[FC.RRULE])?.until ?? null,
@@ -302,65 +319,59 @@ export async function fetchCheckinsWordPress(caredOneId: string): Promise<any[]>
         reminder_time_before: readReminderMinutes(i[FC.REMINDERS]),
         time_to_send_to_caregiver: numOrNull(i[FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]),
         check_in_type: decodeCheckinLogType(i[FC.CHECKIN_LOG_TYPE]),
-        checked_by_ai: String(i[FC.CHECKIN_LOG_TYPE] || "") === CAL_LOG_TYPE_AI,
         created_at: i.cct_created || i.created_at,
       };
-    });
+    }));
   } catch (e) { throw e instanceof Error ? e : new Error(String(e)); }
 }
 
-/** Assigned check-in persons — JetEngine Relation 241. */
+/** Assigned check-in persons — JetEngine Relation 262. */
 export async function fetchCheckinAssigneeIdsWordPress(checkinId: string): Promise<string[]> {
-  const rels = await wordpressFetch<any[]>(`jet-rel/${R.checkinScheduleAssignees}/children/${normalizeWpObjectId(checkinId)}`);
-  return Array.isArray(rels) ? rels.map((r: any) => String(r.child_object_id)).filter(Boolean) : [];
+  return fetchSchedulePeople(REL_SCHEDULE_ASSIGNEES, checkinId);
 }
 
 /** Check-in notification receivers — JetEngine Relation 260. */
 export async function fetchCheckinReceiverIdsWordPress(checkinId: string): Promise<string[]> {
-  const rels = await wordpressFetch<any[]>(`jet-rel/${R.checkinNotificationReceivers}/children/${normalizeWpObjectId(checkinId)}`);
-  return Array.isArray(rels) ? rels.map((r: any) => String(r.child_object_id)).filter(Boolean) : [];
+  return fetchSchedulePeople(REL_SCHEDULE_NOTIFICATION_RECEIVERS, checkinId);
 }
 
-async function setCheckinUserRelation(relationId: number, checkinId: string, userIds: Array<string | number>): Promise<void> {
-  const parentId = normalizeWpObjectId(checkinId);
-  if (!parentId) throw new Error("Invalid check-in schedule");
-  const ids = (userIds || []).map((v) => normalizeWpObjectId(v)).filter(Boolean);
-  const body = { parent_id: parentId, child_id: ids, context: "parent", store_items_type: "replace" };
-  try {
-    await wordpressFetch(`jet-rel/${relationId}`, { method: "POST", body });
-  } catch (err: any) {
-    if (!/40[13]/.test(String(err?.message || ""))) throw err;
-    const { wpAdminOps } = await import("@/services/woocommerce-api");
-    const res: any = await wpAdminOps("set_relation", {
-      relation_id: relationId, parent_id: parentId, child_ids: ids, context: "parent", store_items_type: "replace",
-    });
-    if (!res?.ok) throw new Error(res?.error || "Could not save check-in people");
-  }
+/** Accepted caregivers connected to the cared one through Relation 219. */
+export async function fetchCaredOneCaregiversWordPress(caredOneId: string): Promise<Array<{ id: string; name: string }>> {
+  const personId = normalizeWpObjectId(caredOneId);
+  if (!personId) return [];
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_USER_CARED_ONE}/parents/${personId}`);
+  const ids = [...new Set((Array.isArray(rels) ? rels : [])
+    .filter((r: any) => decodeRel219Status(r?.meta) === "accepted")
+    .map((r: any) => normalizeWpObjectId(r?.parent_object_id ?? r?.parent_id))
+    .filter((id: number) => id > 0))];
+  return Promise.all(ids.map(async (id) => {
+    const user = await fetchWPUserSafe(id);
+    return { id: String(id), name: String(user.full_name || user.name || id) };
+  }));
 }
 
 export function setCheckinAssigneesWordPress(checkinId: string, userIds: Array<string | number>) {
-  return setCheckinUserRelation(R.checkinScheduleAssignees, checkinId, userIds);
+  return setSchedulePeople(REL_SCHEDULE_ASSIGNEES, checkinId, userIds);
 }
-export function setCheckinReceiversWordPress(checkinId: string, userIds: Array<string | number>) {
-  return setCheckinUserRelation(R.checkinNotificationReceivers, checkinId, userIds);
-}
-
-export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; time_slot?: string[] | undefined; start_date?: string | undefined; end_date?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined; receiver_ids?: Array<string | number> | undefined }): Promise<void> {
+export async function createCheckinWordPress(checkin: { user_id: string; name: string; detail?: string | undefined; frequency?: string | undefined; repeat_interval?: number | undefined; repeat_weekdays?: string[] | undefined; time_slot?: string[] | undefined; start_date?: string | undefined; end_date?: string | undefined; reminder_time_before?: number | undefined; time_to_send_to_caregiver?: number | undefined; check_in_type?: string[] | undefined; assignee_ids?: Array<string | number> | undefined }): Promise<void> {
+  const receiverIds = await fetchCommonScheduleNotificationReceiverIds(
+    (await fetchEventsOfType(checkin.user_id, EVENT_TYPE.CHECKIN)).map((row: any) => String(row.id || row._ID)),
+  );
   const slots = normalizeSlots(checkin.time_slot || ["08:00"]);
   const freq = frequencyForSlots(toFrequencyCode(checkin.frequency), slots);
   const newId = await createEvent({
     [FC.TITLE]: checkin.name,
     [FC.DESCRIPTION]: checkin.detail || "",
     [FC.CUSTOM_EVENT_TYPE]: EVENT_TYPE.CHECKIN,
-    [FC.APP]: APP_CHALLENGED,
-    ...scheduleTimeColumns(freq, slots, checkin.start_date || localDay(), checkin.end_date),
+    ...scheduleTimeColumns(freq, slots, checkin.start_date || localDay(), checkin.end_date, checkin.repeat_interval, checkin.repeat_weekdays),
     [FC.STATUS]: STATUS_CONFIRMED,
     [FC.REMINDERS]: buildReminders(checkin.reminder_time_before),
     [FC.CHECKIN_LOG_TYPE]: encodeCheckinLogType(checkin.check_in_type),
     [FC.MEDICINE_CHECKIN_TO_REMIND_CAREGIVER_TIME_AFTER_MISSING]: checkin.time_to_send_to_caregiver != null ? String(checkin.time_to_send_to_caregiver) : "",
   }, checkin.user_id);
   if (checkin.assignee_ids?.length) await setCheckinAssigneesWordPress(String(newId), checkin.assignee_ids);
-  if (checkin.receiver_ids?.length) await setCheckinReceiversWordPress(String(newId), checkin.receiver_ids);
+  if (receiverIds.length) await setSchedulePeople(REL_SCHEDULE_NOTIFICATION_RECEIVERS, String(newId), receiverIds);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("care-schedule-updated"));
 }
 
 export async function updateCheckinWordPress(id: string, updates: Record<string, any>): Promise<void> {
@@ -375,10 +386,10 @@ export async function updateCheckinWordPress(id: string, updates: Record<string,
   }
   if (updates["check_in_type"] !== undefined) body[FC.CHECKIN_LOG_TYPE] = encodeCheckinLogType(updates["check_in_type"]);
   else if (updates["checked_by_ai"] !== undefined) {
-    body[FC.CHECKIN_LOG_TYPE] = updates["checked_by_ai"] ? CAL_LOG_TYPE_AI : CAL_LOG_TYPE_HUMAN;
+    body[FC.CHECKIN_LOG_TYPE] = [updates["checked_by_ai"] ? CAL_LOG_TYPE_AI : CAL_LOG_TYPE_HUMAN];
   }
 
-  if (["frequency", "time_slot", "start_date", "end_date"].some((k) => updates[k] !== undefined)) {
+  if (["frequency", "time_slot", "start_date", "end_date", "repeat_interval", "repeat_weekdays"].some((k) => updates[k] !== undefined)) {
     const row = await readEvent(id);
     const curSlots = slotsFromRRule(row?.[FC.RRULE], row?.[FC.START_AT]);
     const slots = normalizeSlots(updates["time_slot"] !== undefined ? updates["time_slot"] : curSlots);
@@ -387,21 +398,24 @@ export async function updateCheckinWordPress(id: string, updates: Record<string,
       slots);
     Object.assign(body, scheduleTimeColumns(freq, slots,
       updates["start_date"] || dateOf(row?.[FC.START_AT]) || localDay(),
-      updates["end_date"] !== undefined ? updates["end_date"] : parseRRule(row?.[FC.RRULE])?.until ?? null));
+      updates["end_date"] !== undefined ? updates["end_date"] : parseRRule(row?.[FC.RRULE])?.until ?? null,
+      updates["repeat_interval"] ?? parseRRule(row?.[FC.RRULE])?.interval ?? 1,
+      updates["repeat_weekdays"] ?? parseRRule(row?.[FC.RRULE])?.byday ?? []));
   }
 
   await updateEvent(id, body);
   if (updates["assignee_ids"] !== undefined) await setCheckinAssigneesWordPress(id, updates["assignee_ids"] || []);
-  if (updates["receiver_ids"] !== undefined) await setCheckinReceiversWordPress(id, updates["receiver_ids"] || []);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("care-schedule-updated"));
 }
 
 export async function deleteCheckinWordPress(id: string): Promise<void> {
   await deleteEvent(id);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("care-schedule-updated"));
 }
 
 // ─── Check-in log — CCT 161 user's other log event ────────────
-// a83 Check type (b55 Taken / b56 Skipped / b57 Missed), a85 Log checkin note,
-// a86 Checked by AI, a61 Log event time. Attached to its schedule by Relation 191.
+// a96 status, a84 note, a88 scheduled time, a100 app; Relation 191 → plan and
+// Relation 173 → cared one. a98 is read only for older records.
 const CHK_STATUS_CODE: Record<string, string> = { checked: "b55", skipped: "b56", missed: "b57" };
 const CHK_STATUS_LABEL: Record<string, string> = { b55: "checked", b56: "skipped", b57: "missed" };
 
@@ -416,6 +430,8 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
         if (!childIds.length) return [];
         const items = await readLinkedCCTRows(T.userLogEvent.slug, childIds);
         const logs = await Promise.all(items.map(async (item: any) => {
+          const app = String(item?.[F_LOGEVT.FOR_APP] ?? "").trim().toLowerCase();
+          if (app && app !== currentAppScope()) return null;
           const childId = String(item.id ?? item._ID);
           try {
             const statusCode = String(item[F_LOGEVT.CHECK_TYPE] || "b55");
@@ -423,7 +439,8 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
               id: String(item.id || item._ID || childId),
               checkin_id: String(checkin.id),
               status: CHK_STATUS_LABEL[statusCode] || "checked",
-              note: item[F_LOGEVT.LOG_CHECKIN_NOTE] || null,
+              note: item[F_LOGEVT.DOSE_EVENT_NOTE] || item[F_LOGEVT.LOG_CHECKIN_NOTE] || null,
+              scheduled_date: item[F_LOGEVT.SCHEDULED_DATE] || null,
               checked_by_ai: isYes(item[F_LOGEVT.CHECKED_BY_AI]),
               created_at: item[F_LOGEVT.LOG_EVENT_TIME] || item.cct_created || item.created_at,
             };
@@ -440,10 +457,14 @@ export async function fetchCheckinLogsWordPress(caredOneId: string): Promise<any
 export async function fetchTodayCheckinLogsWordPress(caredOneId: string): Promise<any[]> {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const logs = await fetchCheckinLogsWordPress(caredOneId);
-  return logs.filter((log: any) => log.created_at && new Date(log.created_at) >= today);
+  const day = localDay();
+  return logs.filter((log: any) => {
+    const scheduledDay = dateOf(log.scheduled_date);
+    return scheduledDay ? scheduledDay === day : log.created_at && new Date(log.created_at) >= today;
+  });
 }
 
-export async function logCheckinWordPress(log: { medicine_id?: string | undefined; checkin_id?: string | undefined; status?: "checked" | "skipped" | "missed" | undefined; note?: string | undefined; checked_by_ai?: boolean | undefined; cared_one_id?: string | undefined; checkin_name?: string | undefined }): Promise<void> {
+export async function logCheckinWordPress(log: { medicine_id?: string | undefined; checkin_id?: string | undefined; status?: "checked" | "skipped" | "missed" | undefined; note?: string | undefined; scheduled_date?: string | undefined; checked_by_ai?: boolean | undefined; cared_one_id: string; checkin_name?: string | undefined }): Promise<void> {
   const statusCode = CHK_STATUS_CODE[log.status || "checked"] || "b55";
   const now = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
@@ -453,21 +474,20 @@ export async function logCheckinWordPress(log: { medicine_id?: string | undefine
     body: {
       [F_LOGEVT.LOG_EVENT_NAME]: "Check-in",
       [F_LOGEVT.CHECK_TYPE]: statusCode,
-      [F_LOGEVT.LOG_CHECKIN_NOTE]: log.note || "",
-      [F_LOGEVT.CHECKED_BY_AI]: log.checked_by_ai ? YES : NO,
+      [F_LOGEVT.DOSE_EVENT_NOTE]: log.note || "",
+      [F_LOGEVT.SCHEDULED_DATE]: log.scheduled_date || stamp,
+      [F_LOGEVT.CHECKED_BY_AI]: log.checked_by_ai ? "b55" : "b56",
       [F_LOGEVT.LOG_EVENT_TIME]: stamp,
-      [F_LOGEVT.FOR_APP]: "challenged",
+      [F_LOGEVT.FOR_APP]: currentAppScope(),
     },
   });
   const newLogId = normalizeWpObjectId(result?.item_id || result?._ID || result?.id);
   const parentId = normalizeWpObjectId(log.checkin_id || log.medicine_id);
+  if (!newLogId || !parentId || !normalizeWpObjectId(log.cared_one_id)) throw new Error("The check-in log is missing its plan or cared one");
   // Relation 191 attaches the log to its CCT 187 check-in schedule; Relation 173
   // attaches it to the cared one whose log event it is.
   await linkRel(REL_CHECKIN_LOG, parentId, newLogId);
-  if (log.cared_one_id) {
-    try { await linkRel(R.userLogEvents, normalizeWpObjectId(log.cared_one_id), newLogId); }
-    catch { /* the log itself is saved */ }
-  }
+  await linkRel(R.userLogEvents, normalizeWpObjectId(log.cared_one_id), newLogId);
 
   // Notify the check-in's configured receivers (Relation 260). Non-blocking;
   // the tap-through target is a plain route in action_url, so no extra
@@ -478,7 +498,7 @@ export async function logCheckinWordPress(log: { medicine_id?: string | undefine
       const receivers = await fetchCheckinReceiverIdsWordPress(checkinId).catch(() => [] as string[]);
       const { notifyCheckIn } = await import("@/features/notifications/notify-events");
       await notifyCheckIn(
-        receivers,
+        [...new Set([...receivers.map(String), String(log.cared_one_id || "")].filter(Boolean))],
         String(log.cared_one_id || ""),
         log.checkin_name || "Check-in",
         (log.status || "checked"),
@@ -790,8 +810,10 @@ export async function createVisitLogWordPress(visit: {
   const schedule = await getOrCreateVisitSchedule(visit.user_id);
   await logCheckinWordPress({
     checkin_id: String(schedule.id),
+    cared_one_id: visit.user_id,
     status: "checked",
     note: visit.description || "",
+    scheduled_date: new Date().toISOString(),
     checked_by_ai: false,
   });
 }

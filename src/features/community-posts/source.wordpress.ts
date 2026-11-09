@@ -1,10 +1,10 @@
 import { wordpressCCTFetch, wordpressFetch } from "@/features/shared/wordpress-client";
 import { T, R } from "@/integrations/wp-schema";
-import { communityTypeCode } from "@/features/shared/app-scope";
+import { communityAppName } from "@/features/shared/app-scope";
 
 // ─── Community Posts (CCT 149 "Afresh community post") ──────
-// Shared across apps: the "Community type" radio scopes rows to ChallengeD /
-// Care-CNC, so every read filters and every write stamps it.
+// Shared across apps: CCT 149 a01 stores the canonical lowercase app name,
+// so every read filters and every write stamps the current app.
 
 const SLUG = T.afreshCommunityPost.slug;
 const F = T.afreshCommunityPost.f;
@@ -12,6 +12,10 @@ const F = T.afreshCommunityPost.f;
 // JetEngine relations
 const REL_POST_COMMENT = R.communityPostComments; // 1:M community post → comment
 const REL_COMMENT_REPLY = R.commentReplies;       // M:M comment → comment
+
+function belongsToCurrentApp(post: any): boolean {
+  return String(post?.[F.COMMUNITY_TYPE] ?? "") === communityAppName();
+}
 
 export async function fetchCommunityPostsWordPress(locale?: {
   area?: string | undefined;
@@ -27,7 +31,7 @@ export async function fetchCommunityPostsWordPress(locale?: {
       ? Math.min(50, Math.max(1, Math.floor(requestedLimit)))
       : 50;
     const params: Record<string, string | number> = { _limit: limit };
-    params[F.COMMUNITY_TYPE] = communityTypeCode();
+    params[F.COMMUNITY_TYPE] = communityAppName();
     if (locale?.category) params[F.COMMUNITY_POST_CATEGORY] = locale.category;
     const posts = await wordpressCCTFetch<any[]>(SLUG, { params });
     if (!Array.isArray(posts)) return [];
@@ -44,7 +48,7 @@ export async function fetchCommunityPostsWordPress(locale?: {
       }
       return true;
     };
-    return posts.filter(matchesLocale).map((p: any) => ({
+    return posts.filter((p: any) => belongsToCurrentApp(p) && matchesLocale(p)).map((p: any) => ({
       id: p.id,
       title: p[F.TITLE] || "",
       content: p[F.CONTENT] || "",
@@ -63,7 +67,7 @@ export async function fetchCommunityPostsWordPress(locale?: {
 export async function fetchCommunityPostByIdWordPress(id: string): Promise<any | null> {
   try {
     const p: any = await wordpressCCTFetch(SLUG, { id });
-    if (!p) return null;
+    if (!p || !belongsToCurrentApp(p)) return null;
     return {
       id: p.id,
       title: p[F.TITLE] || "",
@@ -91,7 +95,7 @@ export async function createCommunityPostWordPress(post: {
     body: {
       [F.TITLE]: post.title,
       [F.CONTENT]: post.content,
-      [F.COMMUNITY_TYPE]: communityTypeCode(),
+      [F.COMMUNITY_TYPE]: communityAppName(),
       [F.APP_AREA]: post.app_area || "",
       [F.LANGUAGE]: post.language || "",
       [F.COMMUNITY_POST_CATEGORY]: post.category || "",
@@ -105,6 +109,11 @@ export async function updateCommunityPostWordPress(
   updates: { title?: string | undefined; content?: string | undefined; app_area?: string | undefined; language?: string | undefined; category?: string | undefined },
 ): Promise<void> {
   const body: Record<string, any> = {};
+  const current = await wordpressCCTFetch<any>(SLUG, { id });
+  if (!current || !belongsToCurrentApp(current)) {
+    throw new Error("帖子不存在或不属于当前 App。 / Post not found in this app.");
+  }
+  body[F.COMMUNITY_TYPE] = communityAppName();
   if (updates.title !== undefined) body[F.TITLE] = updates.title;
   if (updates.content !== undefined) body[F.CONTENT] = updates.content;
   if (updates.app_area !== undefined) body[F.APP_AREA] = updates.app_area;
@@ -114,6 +123,10 @@ export async function updateCommunityPostWordPress(
 }
 
 export async function deleteCommunityPostWordPress(id: string): Promise<void> {
+  const current: any = await wordpressCCTFetch(SLUG, { id });
+  if (!current || !belongsToCurrentApp(current)) {
+    throw new Error("帖子不存在或不属于当前 App。 / Post not found in this app.");
+  }
   await wordpressCCTFetch(SLUG, { id, method: "DELETE" });
 }
 

@@ -74,7 +74,7 @@ export default function Articles() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [pendingDeleteArticle, setPendingDeleteArticle] = useState<any | null>(null);
-  const { data: posts, isLoading } = usePosts(articlePostType, area);
+  const { data: posts, isLoading } = usePosts(articlePostType, area, undefined, 50, true, i18n.language);
   const createPost = useCreatePost();
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();

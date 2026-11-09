@@ -6,7 +6,7 @@ import { fetchEmergencyContactsWordPress } from "@/features/cared-ones/source.wo
 import { Card, CardContent } from "@/components/ui/card";
 import { IdCard, Phone, Loader2, ShieldOff, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SheetAIPanel, SheetLocationTag, useInfoSheetKnowledge } from "@/components/cared-ones/info-sheet-parts";
+import { SheetAIPanel, SheetLocationTag } from "@/components/cared-ones/info-sheet-parts";
 import { useSite } from "@/contexts/SiteContext";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/BrandMark";
@@ -45,8 +45,6 @@ export default function SharedInformationCard() {
     },
     enabled: !!caredOneId && !!contactIds,
   });
-
-  const knowledge = useInfoSheetKnowledge(caredOneId ? String(caredOneId) : null);
 
   if (isLoading) {
     return (
@@ -133,13 +131,14 @@ export default function SharedInformationCard() {
             )}
 
             <SheetAIPanel
+              caredOneId={caredOneId ? String(caredOneId) : undefined}
+              sharedCard
               context={{
                 sheetName: card.cared_ones_information_card_name,
                 caredOneName: card.cared_ones_name,
                 description: card.cared_ones_description,
                 situationDetails: card.cared_ones_information_card_description,
                 contacts: contacts || [],
-                knowledge,
               }}
             />
           </CardContent>

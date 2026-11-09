@@ -346,76 +346,59 @@ Chat 发起人即 jet engine CCT 作者。
 
 ## 8. 用药管理
 
-### CCT: Cared one's medicine schedule
+用药安排储存在通用日历 CCT187 `users_calendar_event`，记录储存在通用日志 CCT161 `users_log_event`。旧独立用药 CCT206 不再读写；用药安排与记录都不含独立可见性字段，护理者访问来自 cared one 与护理者之间的 REL219。
 
-| Field Label | Field Type |
+### CCT187 用药安排（a60=b55）
+
+| 列 | 含义 |
 |---|---|
-| Name | Text |
-| Dosage | Text |
-| Frequency | Text |
-| Time slot | Textarea |
-| Instructions | Text |
-| Prescribing doctor | Text |
-| Pharmacy | Text |
-| Side effects | Textarea |
-| Start date | Date |
-| Is active | Radio |
-| Note | Textarea |
+| a55 | 药名／标题 |
+| a57、a58、a59 | 开始时间、结束时间、是否全天 |
+| a60 | 事件类型：b55 用药 |
+| a66、a68、a69 | RFC 5545 RRULE、EXDATES、RDATES；允许一天多个时段 |
+| a91 | 子 App |
+| a92、a93、a94、a95 | 药品标识、每次剂量、单位、服法类型（计划用药=b56） |
+| a96 | AI／人工核对多选：b55 AI、b56 人工 |
 
-#### Relation: One cared one can have many related cared one's medicine schedules
+REL190 将安排关联到被照护者；REL262 关联被指派的护理者；REL260 关联提醒接收者。
 
-| Parent | Child | Type |
-|---|---|---|
-| Users | Cared one's medicine schedule | One to Many |
+### CCT161 用药记录（a57=b69）
 
-### CCT: Care one's medicine log
+| 列 | 含义 |
+|---|---|
+| a83 | Apple LogStatus：b55 未处理、b56 未记录、b57 未发提醒、b58 跳过、b59 打盹、b60 已服 |
+| a84、a85、a86、a88、a89 | 本次备注、实际剂量、计划剂量、计划日期、服法类型 |
+| a91、a97 | 药名文字、用药备注 |
+| a99、a100 | AI／人工记录标记（b55 AI、b56 人工）、子 App |
 
-| Field Label | Field Type | Options |
-|---|---|---|
-| Status | Radio | 1. "Taken" 2. "Skipped" 3. "Missed" |
-| Note | Textarea |  |
-
-#### Relation: One cared one's medicine schedule can have many related care one's medicine logs
-
-| Parent | Child | Type |
-|---|---|---|
-| Cared one's medicine schedule | Care one's medicine log | One to Many |
+REL191 将日志关联到对应 CCT187 安排；REL173 将日志关联到被照护者。
 
 ---
 
 ## 9. 查看 / 探望 Checkin
 
-### CCT: Cared one's checkin schedule
+探望安排与用药一样储存在 CCT187 `users_calendar_event`，每次签到记录与用药共用 CCT161。安排通过 REL190 关联到被照护者（不是发布安排的护理者）；护理者查看和编辑权限来自 REL219。
 
-| Field Label | Field Type |
+### CCT187 探望签到安排（a60=b56）
+
+| 列 | 含义 |
 |---|---|
-| Name | Text |
-| Detail | Text |
-| Frequency | Text |
-| Time slot | Textarea |
-| Instructions | Text |
-| Start date | Date |
-| Is active | Radio |
-| Note | Textarea |
+| a55、a56 | 名称、详情 |
+| a57、a58、a59 | 开始时间、结束时间、是否全天 |
+| a60 | 事件类型：b56 探望签到 |
+| a66、a68、a69 | RFC 5545 RRULE、EXDATES、RDATES；允许一天多个时段 |
+| a91、a96、a102 | 子 App、AI／人工核对多选（b55 AI、b56 人工）、漏签后通知护理者的分钟数 |
 
-#### Relation: One cared one can have many related cared one's checkin schedules
+REL190 关联被照护者；REL262 关联被指派签到的人；REL260 关联提醒接收者。
 
-| Parent | Child | Type |
-|---|---|---|
-| Users | Cared one's checkin schedule | One to Many |
+### CCT161 探望签到记录
 
-### CCT: Care one's checkin log
+| 列 | 含义 |
+|---|---|
+| a96 | 签到状态：b55 已签到、b56 跳过、b57 漏签 |
+| a84、a88、a99、a100 | 备注、计划日期、AI／人工记录标记（b55 AI、b56 人工）、子 App |
 
-| Field Label | Field Type | Options |
-|---|---|---|
-| Status | Radio | 1. "Checked" 2. "Skipped" 3. "Missed" |
-| Note | Textarea |  |
-
-#### Relation: One cared one's checkin schedule can have many related care one's checkin logs
-
-| Parent | Child | Type |
-|---|---|---|
-| Cared one's checkin schedule | Care one's checkin log | One to Many |
+REL191 将记录关联到对应 CCT187 安排；REL173 将记录关联到被照护者。
 
 ---
 
@@ -691,25 +674,29 @@ Chat 发起人即 jet engine CCT 作者。
 
 ## 18. 社区与文章
 
-### CCT: Care community post
+### CCT: Community post (149, `afresh_community_pos`)
 
 | Field Label | Field Type | Options |
 |---|---|---|
 | Title | Text |  |
 | Content | Textarea |  |
+| Community type (a01) | Text | `afresh`, `adry`, `ablocked`, `benotch`, `challenged`, `carecnc` |
 | Language | Radio | 1. "English" 2. "Simplified Chinese" |
 | app area | Checkbox | 1. "Global English" 2. "China" |
-| Care community post category | Checkbox | 1. "Discussion" 2. "Article" |
+| Community post category | Radio | 1. "Discussion" 2. "Article" |
 
 发布者使用 JetEngine CCT 自带的发布者。
 
-#### Relation: One care community post can have many related comments
+#### Relations
 
-| Parent | Child | Type |
-|---|---|---|
-| Care community post | Comment | One to Many |
+| Relation | Parent | Child | Type |
+|---|---|---|---|
+| 150. One community post can have many related comments | Community post (149) | Comment (141) | One to Many |
+| 142. One comment can have many related comments | Comment (141) | Comment (141) | Many to Many |
+| 166. One community post can have many related votes | Community post (149) | Vote (30) | One to Many |
+| 167. One comment can have many related votes | Comment (141) | Vote (30) | One to Many |
 
-> 回复的作者使用 cct 默认的作者。回复的回复使用通用 Relation "One comment can have many related comments"。
+回复和回复的回复使用 CCT 141 的默认作者。发帖和评论的赞踩使用 CCT 30；投票只通过 Relation 166 / 167 关联，不写入其他关系。
 
 ---
 

@@ -29,6 +29,7 @@ export const WP = {
         "版本": "a62",
         "笔记类型": "a63",
         "笔记标签顺序": "a64",
+        "待完成": "a65",
       },
       opt: {
         "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" },
@@ -221,13 +222,12 @@ export const WP = {
       f: {
         "TITLE": "a55",  // Text
         "CONTENT": "a56",  // Textarea
-        "COMMUNITY_TYPE": "a57",  // Radio
+        "COMMUNITY_TYPE": "a01",  // Text: canonical lowercase app name
         "LANGUAGE": "a58",  // Radio
         "APP_AREA": "a59",  // Checkbox
         "COMMUNITY_POST_CATEGORY": "a60",  // Radio
       },
       opt: {
-        "COMMUNITY_TYPE": { "AFRESH": "b55", "NRTLIST": "b56", "POUCHLIST": "b57", "CHALLENGED": "b58", "CARE_CNC": "b59" },
         "LANGUAGE": { "ENGLISH": "b55", "SIMPLIFIED_CHINESE": "b56" },
         "APP_AREA": { "GLOBAL_ENGLISH": "b55", "CHINA": "b56" },
         "COMMUNITY_POST_CATEGORY": { "DISCUSSION": "b55", "ARTICLE": "b56" },
@@ -708,12 +708,12 @@ export const WP = {
         "TAGS": "a89",  // Text
         "CUSTOM_DATA": "a90",  // Textarea
         "APP": "a91",  // Radio
-        "MEDICATION_CONCEPT_IDENTIFIER": "a92",  // Text
+        "MEDICATION_CONCEPT_IDENTIFIER": "a92",  // Number (medication identifier)
         "MEDICATION_DOSE_QUANTITY": "a93",  // Number
         "MEDICATION_DOSE_UNIT": "a94",  // Text
         "MEDICATION_SCHEDULE_TYPE": "a95",  // Radio
-        "MEDICINE_LOG_TYPE": "a96",  // Radio
-        "CHECKIN_LOG_TYPE": "a97",  // Radio
+        "MEDICINE_LOG_TYPE": "a96",  // Checkbox (AI and Human may both be selected)
+        "CHECKIN_LOG_TYPE": "a96",  // Checkbox (shared schedule check-in method)
         "MEDICINE_STOCK": "a98",  // Number
         "MEDICINE_REFILL": "a99",  // Number
         "MEDICINE_PRESCRIBER": "a100",  // Text

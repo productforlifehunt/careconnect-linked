@@ -46,14 +46,16 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
 
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${isMe ? "hero-gradient text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md text-foreground"}`}>
+      <div
+        className={`min-w-0 max-w-[70%] break-words rounded-2xl px-4 py-2 ${isMe ? "hero-gradient text-primary-foreground rounded-br-md" : "bg-card border rounded-bl-md text-foreground"}`}
+      >
         {/* Attachment */}
         {hasAttachment && isImage && (
           <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="block mb-1">
-            <img 
+            <img
               src={attachmentUrl} 
               alt={isCN ? "分享的图片" : "Shared image"} 
-              className="rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+              className="block max-h-48 max-w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           </a>
@@ -75,7 +77,9 @@ export function MessageBubble({ message, isMe, conversationId, otherUserId }: Me
 
         {/* Text */}
         {textContent && (
-          <p className="text-sm whitespace-pre-wrap">{textContent}</p>
+          <p className="break-words whitespace-pre-wrap text-sm">
+            {textContent}
+          </p>
         )}
         <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
           {formatTime(message.created_at, i18n.language, { hour: "numeric", minute: "2-digit" })}
