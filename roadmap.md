@@ -1,5 +1,7 @@
 ## Current request: Frontend-only reusable category totals and page/element note aggregation (2026-11-09)
 - [ ] 2026-11-09 11:27: finish remaining totals, tabs, element/form associations and readback; repair current host output mismatch without framework or business changes.
+- [x] 11:27 continuation: host output restored to dist with SSR preserved; automatic build OK at 11:28 and 11:44; 12 inspector tests passed. Frontend real service form 22/22 controls, basic profile 6/6 controls and payout inputs 5/5 linked and read back in fresh sessions. Earlier broad tabpanel script selected inspector-owned fields; its 2/20 result is invalid and not business coverage.
+- [ ] Remaining: full-site card/display/form/modal coverage, remaining totals and source-note conflicts; Safety has no internal GPS tabs and those three notes need actual displayed-surface associations instead. Draftbit and remote publishing remain unverified. No REL325 edits were performed.
 - [x] Previous continuation: two new research/ESM totals and 30 independent tab notes saved/read back; 27 tab bindings verified. Three GPS notes were associated to the page but the Safety layout has no internal tab controls; do not fabricate those controls or count them as bound.
 - [ ] Reuse existing complete category notes and add “总” to titles through the frontend; create only genuinely absent totals, preserving current note format and verified text.
 - [ ] Complete category totals with all source-backed operations and separate push descriptions; distinguish unresolved old dictionary conflicts.
