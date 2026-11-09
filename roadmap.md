@@ -1,3 +1,9 @@
+## Current request: All-page reusable functional notes (2026-11-09)
+- [x] Snapshot all 10,491 existing notes; audit all 74 main route modules and standalone route lists from actual source.
+- [x] Reused 101 existing functional notes; created four genuinely absent shared narratives (#10591–10594); added 398 a59 bindings across 116 scopes. All 400 expected bindings (including two existing) read back; 10,491 original notes' bodies/types/check/order and all prior bindings preserved. Ten previously checked REL325 endpoints unchanged; no REL325 write.
+- [x] Numeric-record page reuse and site-qualified page identity regression tests pass; 21 relevant tests pass; latest automatic build OK. Real researcher UI readbacks pass for care notes, tips, group, content hub, article and inbox (6/7 attempted).
+- [ ] Settings UI reads 13,087 characters while fresh API reads 13,301; latest note retrieval/cache discrepancy unresolved. Exhaustive every-page runtime validation, nonnumeric dynamic-record coverage, disabled-inspector consent/sick page binding and Draftbit runtime remain unverified. Existing B55 function classifications preserved rather than silently reclassified; ESM existing notes contain source conflicts, not overwritten.
+
 ## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
 - [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
 - [x] Draftbit GUI: both Assistant and shared AssistantFabs API condition now uses real Trim. Runtime three-space submission sends zero AI requests in both paths; ordinary request still produces an AI response.

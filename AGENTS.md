@@ -14,6 +14,7 @@ These replace the older TanStack-specific architecture notes below as the user's
 - After implementation edits, check types, relevant tests and real preview; dependency/router/server-configuration changes also require production-package verification. Use platform-permitted checks and explicitly report any blocked verification, because unperformed checks cannot support a completion claim.
 - Never claim Draftbit compatibility without opening and checking Draftbit; report only observed results, because source inspection is not cross-platform runtime verification.
 - If platform requirements conflict with this structure or workflow, state the conflict and impact before proceeding; do not silently migrate, remove features or bypass permissions, because preserving work and authorization is mandatory.
+- Inspector page bindings preserve standalone site identity and share only numeric-record paths within the same tool; existing CCT324 notes are reused through additive a59 bindings without changing their body, classification or REL325, because shared functions must not duplicate or cross sub-apps.
 
 <!-- LOVABLE:END -->
 
