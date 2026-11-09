@@ -5,6 +5,7 @@ import {
   type NoteBinding,
 } from "@/features/inspector/cct-notes";
 import {
+  findPositionBindings,
   positionBindings,
   samePosition,
   updatePositionBindings,
@@ -150,6 +151,7 @@ async function wp(
   });
   if (!response.ok)
     throw new Error(`注释读取或保存失败（${response.status}），请重试。`);
+  if (response.status === 204) return null;
   return response.json();
 }
 function mapRow(row: CCTRow): CCTNote {
@@ -514,6 +516,21 @@ async function storeBinding(binding: NoteBinding, token?: string) {
   if (existing < 0) retained.push(binding);
   else retained[existing] = binding;
   await writeBindingsOnly(target, retained, token);
+}
+
+export async function unlinkNoteFromPosition(
+  key: string,
+  id: string,
+  token?: string,
+): Promise<string[]> {
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+  if (String(row._ID) !== id) throw new Error("所选注释不存在。");
+  const bindings = positionBindings(row.a59, id);
+  const removed = findPositionBindings(bindings, key);
+  if (!removed.length) throw new Error("此注释未关联到当前位置。");
+  const retained = bindings.filter((binding) => !samePosition(binding.key, key));
+  await writeBindingsOnly(row, retained, token);
+  return removed.map((binding) => binding.key);
 }
 /**
  * Reads every CCT324 row in a few large pages fetched side by side.
@@ -984,6 +1001,39 @@ export async function unlinkNotes(
   if ((await relIds("parents", child, token)).includes(parent))
     throw new Error("取消关联后核对不一致。");
 }
+
+/** Permanently remove one CCT324 note and its direct REL325 edges after clearing them. */
+export async function deleteInspectorNote(
+  id: string,
+  token?: string,
+): Promise<{ id: string; title: string }> {
+  const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+  if (String(row._ID) !== id) throw new Error("所选注释不存在。");
+  const [parents, children] = await Promise.all([
+    relIds("parents", id, token),
+    relIds("children", id, token),
+  ]);
+  const edges = [
+    ...parents.map((parent) => ({ parent, child: id })),
+    ...children.map((child) => ({ parent: id, child })),
+  ];
+  await Promise.all(
+    edges.map((edge) => unlinkNotes(edge.parent, edge.child, token)),
+  );
+  await wp(`/${id}`, "DELETE", undefined, token);
+
+  try {
+    const remaining = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+    if (String(remaining?._ID ?? "") === id)
+      throw new Error("删除后仍能读取此注释，未确认删除。");
+  } catch (error) {
+    if (!(error instanceof Error) || !/[（(]404[）)]/.test(error.message))
+      throw error;
+  }
+
+  return { id, title: row.a55 || "" };
+}
+
 /** REL325 is shown without parent/child, so the current note is stored as parent (titles no longer mark note kinds). */
 export function relationDirection(
   current: { id: string; title: string },

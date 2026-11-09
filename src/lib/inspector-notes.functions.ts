@@ -8,6 +8,14 @@ export function listInspectorPositionNotes(args?: { data?: unknown }) {
   return invokeServerAction("listInspectorPositionNotes", args?.data);
 }
 
+export function unlinkInspectorPositionNote(args?: { data?: unknown }) {
+  return invokeServerAction("unlinkInspectorPositionNote", args?.data);
+}
+
+export function deleteInspectorNote(args?: { data?: unknown }) {
+  return invokeServerAction("deleteInspectorNote", args?.data);
+}
+
 export function reorderInspectorPositionNotes(args?: { data?: unknown }) {
   return invokeServerAction("reorderInspectorPositionNotes", args?.data);
 }

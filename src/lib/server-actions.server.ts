@@ -16,6 +16,10 @@ export async function runServerAction(name: string, data: unknown, request: Requ
       return (await import("@/lib/inspector-notes.functions.server")).loadInspectorNotes(data, request);
     case "listInspectorPositionNotes":
       return (await import("@/lib/inspector-notes.functions.server")).listInspectorPositionNotes(data, request);
+    case "unlinkInspectorPositionNote":
+      return (await import("@/lib/inspector-notes.functions.server")).unlinkInspectorPositionNote(data, request);
+    case "deleteInspectorNote":
+      return (await import("@/lib/inspector-notes.functions.server")).deleteInspectorNote(data, request);
     case "reorderInspectorPositionNotes":
       return (await import("@/lib/inspector-notes.functions.server")).reorderInspectorPositionNotes(data, request);
     case "loadAllInspectorNotes":

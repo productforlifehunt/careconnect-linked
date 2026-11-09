@@ -164,6 +164,30 @@ export async function listInspectorPositionNotes(rawData: unknown, request: Requ
   }
 }
 
+export async function unlinkInspectorPositionNote(rawData: unknown, request: Request) {
+  const data = z.object({ key: z.string().min(1).max(600), id: noteId }).parse(rawData);
+  const denied = await researcherOnly(request);
+  if (denied) return { error: denied, removedKeys: [] };
+  try {
+    const { unlinkNoteFromPosition } = await import("./inspector-notes.server");
+    return { removedKeys: await unlinkNoteFromPosition(data.key, data.id, wpToken(request)) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "解除关联失败", removedKeys: [] };
+  }
+}
+
+export async function deleteInspectorNote(rawData: unknown, request: Request) {
+  const data = z.object({ id: noteId }).parse(rawData);
+  const denied = await researcherOnly(request);
+  if (denied) return { error: denied };
+  try {
+    const { deleteInspectorNote: removeNote } = await import("./inspector-notes.server");
+    return { deleted: await removeNote(data.id, wpToken(request)) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "删除注释失败" };
+  }
+}
+
 export async function reorderInspectorPositionNotes(rawData: unknown, request: Request) {
   const data = z.object({
     key: z.string().min(1).max(600),

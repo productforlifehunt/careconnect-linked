@@ -19,6 +19,35 @@ it("exposes confirmed saves immediately without a new read", async () => {
   expect(cache.peek("session-a")?.get(note.key)?.text).toBe("更正后的注释");
 });
 
+it("removes a confirmed note binding from the selected position cache only", async () => {
+  const cache = createNotesCache();
+  const pageNote = { ...note, key: "page|/community", id: "10567" };
+  const otherPosition = { ...pageNote, key: "page|/profile" };
+  const cctNote = { ...pageNote, key: "cct|10567" };
+  await cache.load("session-a", async () => ({ notes: [pageNote, otherPosition, cctNote] }));
+
+  cache.removePosition("session-a", "10567", [pageNote.key]);
+
+  const remaining = cache.peek("session-a");
+  expect(remaining?.has(pageNote.key)).toBe(false);
+  expect(remaining?.get(otherPosition.key)).toEqual(otherPosition);
+  expect(remaining?.get(cctNote.key)).toEqual(cctNote);
+});
+
+it("removes every cached reference when a note is permanently deleted", async () => {
+  const cache = createNotesCache();
+  const first = { ...note, id: "10567", key: "page|/community" };
+  const second = { ...first, key: "el|/community|button" };
+  const other = { ...note, id: "10568", key: "page|/profile" };
+  await cache.load("session-a", async () => ({ notes: [first, second, other] }));
+
+  cache.removeNote("session-a", "10567");
+
+  expect(cache.peek("session-a")?.has(first.key)).toBe(false);
+  expect(cache.peek("session-a")?.has(second.key)).toBe(false);
+  expect(cache.peek("session-a")?.get(other.key)).toEqual(other);
+});
+
 it("clears private notes on session changes and rejects late reads/saves", async () => {
   const cache = createNotesCache();
   let finish: (value: { notes: typeof note[] }) => void = () => {};

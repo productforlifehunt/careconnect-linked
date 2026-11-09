@@ -1,6 +1,15 @@
 /** Researcher manual notes for the selected element or the whole page, saved privately so they survive refresh/close. */
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -9,10 +18,13 @@ import {
   selectInspectorNote,
   duplicateInspectorNoteVersion,
   listInspectorPositionNotes,
+  unlinkInspectorPositionNote,
+  deleteInspectorNote,
   reorderInspectorPositionNotes,
   updateBoundInspectorNote,
 } from "@/lib/inspector-notes.functions";
 import { inspectorNotesCache } from "@/features/inspector/notes-cache";
+import { samePosition } from "@/features/inspector/position-bindings";
 import { getWPToken } from "@/services/wp-auth";
 import { useRef } from "react";
 import { findSameElementNote } from "@/features/inspector/route-key";
@@ -31,7 +43,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { NoteSearchList, type NotePick } from "./NoteSearchList";
-import { ChevronsUpDown, Plus, Copy } from "lucide-react";
+import { ChevronsUpDown, Plus, Copy, Trash2 } from "lucide-react";
 import { explainReadWrite } from "@/lib/inspector-ai.functions";
 import { ConflictReportView } from "./ConflictReportView";
 import type { ConflictReport } from "@/features/inspector/conflict-report";
@@ -116,6 +128,8 @@ export function ManualNotes({
   const [draftNoteType, setDraftNoteType] = useState<InspectorNoteType>("b55");
   const [savedNoteType, setSavedNoteType] = useState<InspectorNoteType>("b55");
   const [positionNotes, setPositionNotes] = useState<CCTNote[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<CCTNote | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [drafts, setDrafts] = useState<Record<string, NoteDraft>>({});
   const dragIndex = useRef<number | null>(null);
   const [title, setTitle] = useState("");
@@ -139,6 +153,7 @@ export function ManualNotes({
     successMessage?: string | undefined;
     saveStatus?: "saved" | undefined;
     saveError?: string | undefined;
+    unlinkError?: string | undefined;
     error?: string | undefined;
     warning?: string | undefined;
     migrationCandidates?: Array<{
@@ -271,6 +286,8 @@ export function ManualNotes({
     setSavedRelationVerified(false);
     setRelationDetails("");
     setSavedRelationDetails("");
+    setDeleteTarget(null);
+    setDeleteError("");
     setState({ loading: true });
     const uniqueLegacyKeys = [
       ...(legacyKeysKey ? legacyKeysKey.split("\u0000") : []),
@@ -536,6 +553,172 @@ export function ManualNotes({
     }
   };
 
+  const unlinkPositionNote = async (note: CCTNote) => {
+    if (!ready || state.saving) return;
+    const key = noteKey;
+    const session = getWPToken() || "";
+    stashActiveDraft();
+    setState((current) => ({
+      ...current,
+      saving: true,
+      activity: `正在解除「${note.title || `注释 #${note.id}`}」与当前位置的关联…`,
+      successMessage: undefined,
+      saveError: undefined,
+      unlinkError: undefined,
+      error: undefined,
+    }));
+    try {
+      const result = await unlinkInspectorPositionNote({ data: { key, id: note.id } });
+      if (activeKey.current !== key) return;
+      if (session !== (getWPToken() || ""))
+        throw new Error("登录状态已变化，请重新打开注释后再解除关联。");
+      if (result.error) throw new Error(result.error);
+      const removedKeys = result.removedKeys as string[] | undefined;
+      if (!removedKeys?.length) throw new Error("未确认当前位置的关联已解除。");
+
+      inspectorNotesCache.removePosition(session, note.id, removedKeys);
+      const nextPositionNotes = positionNotes.filter((item) => item.id !== note.id);
+      setPositionNotes(nextPositionNotes);
+      oneCache.forEach((cached, cacheKey) => {
+        const prefix = `${session}|`;
+        if (!cacheKey.startsWith(prefix) || !samePosition(cacheKey.slice(prefix.length), key)) return;
+        oneCache.set(cacheKey, {
+          ...cached,
+          note: cached.note?.id === note.id ? null : cached.note,
+          positionNotes: (cached.positionNotes || []).filter((item) => item.id !== note.id),
+        });
+      });
+      oneCache.set(`${session}|${key}`, { note: null, positionNotes: nextPositionNotes });
+
+      if (selected === note.id) {
+        const nextSelected = nextPositionNotes
+          .filter((item) => item.noteType === activeType)
+          .sort((a, b) => (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) || Number(a.id) - Number(b.id))[0];
+        if (nextSelected) setFieldsFromPositionNote(nextSelected);
+        else {
+          setSelected(undefined);
+          setTitle(label.slice(0, 240));
+          setSavedTitle("");
+          setVersion("");
+          setSavedVersion("");
+          setText("");
+          setSaved("");
+          setVerified(false);
+          setSavedVerified(false);
+          setRelationVerified(false);
+          setSavedRelationVerified(false);
+          setRelationDetails("");
+          setSavedRelationDetails("");
+          onChange?.("");
+        }
+      }
+      setState((current) => ({
+        ...current,
+        saveStatus: undefined,
+        successMessage: `已解除「${note.title || `注释 #${note.id}`}」与当前位置的关联；注释及其他位置的关联已保留。`,
+      }));
+    } catch (error) {
+      if (activeKey.current === key)
+        setState((current) => ({
+          ...current,
+          unlinkError: error instanceof Error ? error.message : String(error),
+        }));
+    } finally {
+      if (activeKey.current === key)
+        setState((current) => ({ ...current, saving: false, activity: undefined }));
+    }
+  };
+
+  const deleteNote = async () => {
+    const note = deleteTarget;
+    if (!note || !ready || state.saving) return;
+    const key = noteKey;
+    const session = getWPToken() || "";
+    stashActiveDraft();
+    setDeleteError("");
+    setState((current) => ({
+      ...current,
+      saving: true,
+      activity: `正在永久删除「${note.title || `注释 #${note.id}`}」及其关联…`,
+      successMessage: undefined,
+      saveError: undefined,
+      unlinkError: undefined,
+      error: undefined,
+    }));
+    try {
+      const result = await deleteInspectorNote({ data: { id: note.id } });
+      if (session !== (getWPToken() || ""))
+        throw new Error("登录状态已变化，请重新打开注释后再删除。");
+      if (result.deleted?.id !== note.id)
+        throw new Error(result.error || "未确认笔记已删除。");
+
+      inspectorNotesCache.removeNote(session, note.id);
+      oneCache.forEach((cached, cacheKey) => {
+        const prefix = `${session}|`;
+        if (!cacheKey.startsWith(prefix)) return;
+        if (cached.note?.id !== note.id && !cached.positionNotes?.some((item) => item.id === note.id)) return;
+        oneCache.set(cacheKey, {
+          ...cached,
+          note: cached.note?.id === note.id ? null : cached.note,
+          ...(cached.positionNotes
+            ? { positionNotes: cached.positionNotes.filter((item) => item.id !== note.id) }
+            : {}),
+        });
+      });
+      if (activeKey.current !== key) return;
+      const nextPositionNotes = positionNotes.filter((item) => item.id !== note.id);
+      setPositionNotes(nextPositionNotes);
+      const currentCachedNote = oneCache.get(`${session}|${key}`)?.note;
+      oneCache.set(`${session}|${key}`, {
+        note:
+          currentCachedNote?.id === note.id
+            ? nextPositionNotes[0] || null
+            : currentCachedNote || null,
+        positionNotes: nextPositionNotes,
+      });
+
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[note.id];
+        return next;
+      });
+      if (selected === note.id) {
+        const nextSelected = nextPositionNotes
+          .filter((item) => item.noteType === activeType)
+          .sort((a, b) => (a.tabOrder ?? Number.MAX_SAFE_INTEGER) - (b.tabOrder ?? Number.MAX_SAFE_INTEGER) || Number(a.id) - Number(b.id))[0];
+        if (nextSelected) setFieldsFromPositionNote(nextSelected);
+        else {
+          setSelected(undefined);
+          setTitle(label.slice(0, 240));
+          setSavedTitle("");
+          setVersion("");
+          setSavedVersion("");
+          setText("");
+          setSaved("");
+          setVerified(false);
+          setSavedVerified(false);
+          setRelationVerified(false);
+          setSavedRelationVerified(false);
+          setRelationDetails("");
+          setSavedRelationDetails("");
+          onChange?.("");
+        }
+      }
+      setDeleteTarget(null);
+      setState((current) => ({
+        ...current,
+        saveStatus: undefined,
+        successMessage: `「${note.title || `注释 #${note.id}`}」已删除。`,
+      }));
+    } catch (error) {
+      if (activeKey.current === key)
+        setDeleteError(error instanceof Error ? error.message : String(error));
+    } finally {
+      if (activeKey.current === key)
+        setState((current) => ({ ...current, saving: false, activity: undefined }));
+    }
+  };
+
   const createLinkedNote = async () => {
     stashActiveDraft();
     const tabOrder = Math.max(0, ...activePositionNotes.map((note) => note.tabOrder || 0)) + 1;
@@ -769,6 +952,8 @@ export function ManualNotes({
       </p>
       {state.activity && <p role="status" aria-live="polite">{state.activity}</p>}
       {state.successMessage && !state.saving && <p role="status" className="text-emerald-700">{state.successMessage}</p>}
+      {state.saveError && <p role="alert" className="text-destructive">修改失败：{state.saveError}</p>}
+      {state.unlinkError && <p role="alert" className="text-destructive">解除关联失败：{state.unlinkError}</p>}
       {scope === "site" && (
         <p className="text-muted-foreground">
           此处的注释关联到 {label}；同一注释可同时保留多个页面、元素和全站关联。
@@ -851,15 +1036,10 @@ export function ManualNotes({
           {activeType === "b55" ? `${noteScopeLabel}说明注释` : `${noteScopeLabel}关联注释`} · {activePositionNotes.length} 条
         </p>
         {activePositionNotes.length > 0 && (
-          <div className="flex gap-1 overflow-x-auto rounded-md border bg-muted/20 p-1" role="tablist" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释列表` : `${noteScopeLabel}关联注释列表`}>
+          <div className="flex flex-wrap gap-1 rounded-md border bg-muted/20 p-1" role="group" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释列表` : `${noteScopeLabel}关联注释列表`}>
             {activePositionNotes.map((note, index) => (
-              <Button
+              <div
                 key={note.id}
-                type="button"
-                size="sm"
-                variant={selected === note.id ? "default" : "ghost"}
-                role="tab"
-                aria-selected={selected === note.id}
                 draggable
                 onDragStart={() => { dragIndex.current = index; }}
                 onDragOver={(event) => event.preventDefault()}
@@ -869,15 +1049,80 @@ export function ManualNotes({
                   dragIndex.current = null;
                 }}
                 onDragEnd={() => { dragIndex.current = null; }}
-                onClick={() => activateNote(note)}
-                className="shrink-0 cursor-grab"
+                className="flex shrink-0 items-center gap-1 rounded-md border bg-background p-0.5"
               >
-                {index + 1}. {note.title || `注释 #${note.id}`}
-              </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={selected === note.id ? "default" : "ghost"}
+                  aria-pressed={selected === note.id}
+                  onClick={() => activateNote(note)}
+                  className="cursor-grab"
+                  disabled={state.saving}
+                >
+                  {index + 1}. {note.title || `注释 #${note.id}`}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`解除关联：${note.title || `注释 #${note.id}`}`}
+                  disabled={state.saving || !ready}
+                  onClick={() => void unlinkPositionNote(note)}
+                >
+                  解除关联
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`删除笔记：${note.title || `注释 #${note.id}`}`}
+                  title="永久删除笔记及所有关联"
+                  disabled={state.saving || !ready}
+                  onClick={() => {
+                    setDeleteError("");
+                    setDeleteTarget(note);
+                  }}
+                >
+                  <Trash2 className="mr-1 h-3 w-3" />删除
+                </Button>
+              </div>
             ))}
           </div>
         )}
       </div>
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !state.saving) {
+            setDeleteTarget(null);
+            setDeleteError("");
+          }
+        }}
+      >
+        <AlertDialogContent data-rw-inspector>
+          <AlertDialogHeader>
+            <AlertDialogTitle>永久删除这条笔记？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `将删除「${deleteTarget.title || `注释 #${deleteTarget.id}`}」及它在所有页面、元素和全站的位置关联，也会移除它与其他笔记之间的关联。此操作无法恢复。`
+                : "此操作无法恢复。"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && <p role="alert" className="text-sm text-destructive">删除失败：{deleteError}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={state.saving}>取消</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={state.saving || !deleteTarget}
+              onClick={() => void deleteNote()}
+            >
+              {state.saving ? "删除中…" : "永久删除"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {selected && (
       <section role="tabpanel" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释内容` : `${noteScopeLabel}关联注释内容`} className="space-y-2">
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
@@ -1008,7 +1253,6 @@ export function ManualNotes({
       {state.saveStatus === "saved" && !state.saving && !state.successMessage && (
         <p role="status" className="text-emerald-700">修改成功，已读回确认。</p>
       )}
-      {state.saveError && <p role="alert" className="text-destructive">修改失败：{state.saveError}</p>}
       {selected && (
         <div className="space-y-2 rounded-md border p-2">
           <Button

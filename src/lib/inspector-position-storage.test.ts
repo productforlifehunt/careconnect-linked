@@ -4,6 +4,7 @@ import {
   readNoteForFingerprint,
   readNotesForPosition,
   selectNote,
+  unlinkNoteFromPosition,
 } from "./inspector-notes.server";
 import { WP } from "@/integrations/wp-schema";
 
@@ -38,14 +39,14 @@ const original = {
   frontendTargets: [{ app: "afresh", pageKey: "/" }],
   inspectorBindings: [binding],
 };
-function fixture(normalizeEmpty = false) {
+function fixture(normalizeEmpty = false, document: Record<string, unknown> = original) {
   let row: TestRow = {
     _ID: "10567",
     a55: "个人设置表单",
     a56: "不可改变的原正文",
     a57: "ChallengeD",
     a58: normalizeEmpty ? null : "b55",
-    a59: JSON.stringify(original),
+    a59: JSON.stringify(document),
     [noteFields["已手动核对笔记关联"]!]:
       WP.cct["324"].opt["NOTE_RELATION_VERIFIED"]!["YES"],
     [noteFields["已手动核对笔记关联详情"]!]: "现有 REL325 关系已核对",
@@ -97,6 +98,48 @@ it("explicit binding save writes only CCT324 a59 and leaves body, verified state
     a58: "b55",
   });
   expect(JSON.parse(String(f.getRow().a59))).toEqual(original);
+});
+
+it("unlinks only the current position and preserves other a59 metadata and note fields", async () => {
+  const sameRouteBindings = [
+    { ...binding, key: "el|/care-circle/28|CareOverview|@section0" },
+    { ...binding, key: "el|/care-circle/31|CareOverview|@section0" },
+    { ...binding, key: "page|/settings" },
+  ];
+  const metadata = { ...original, inspectorBindings: sameRouteBindings };
+  const f = fixture(false, metadata);
+
+  const removed = await unlinkNoteFromPosition(
+    "el|/care-circle/46|CareOverview|@section0",
+    "10567",
+  );
+
+  expect(removed).toEqual([
+    "el|/care-circle/28|CareOverview|@section0",
+    "el|/care-circle/31|CareOverview|@section0",
+  ]);
+  expect(f.writes).toHaveLength(1);
+  expect(Object.keys(f.writes[0]?.body ?? {})).toEqual(["a59"]);
+  expect(JSON.parse(String(f.getRow().a59))).toEqual({
+    ...original,
+    inspectorBindings: [sameRouteBindings[2]],
+  });
+  expect(f.getRow()).toMatchObject({
+    a55: "个人设置表单",
+    a56: "不可改变的原正文",
+    a57: "ChallengeD",
+    a58: "b55",
+    [noteFields["版本"]!]: "1.0",
+  });
+});
+
+it("does not write when the note has no binding at the current position", async () => {
+  const f = fixture();
+
+  await expect(
+    unlinkNoteFromPosition("page|/a-different-position", "10567"),
+  ).rejects.toThrow("此注释未关联到当前位置");
+  expect(f.writes).toHaveLength(0);
 });
 
 it.each(["b55", "b56"] as const)(
