@@ -14,7 +14,7 @@ These replace the older TanStack-specific architecture notes below as the user's
 - After implementation edits, check types, relevant tests and real preview; dependency/router/server-configuration changes also require production-package verification. Use platform-permitted checks and explicitly report any blocked verification, because unperformed checks cannot support a completion claim.
 - Never claim Draftbit compatibility without opening and checking Draftbit; report only observed results, because source inspection is not cross-platform runtime verification.
 - If platform requirements conflict with this structure or workflow, state the conflict and impact before proceeding; do not silently migrate, remove features or bypass permissions, because preserving work and authorization is mandatory.
-- Keep React Router's genuine client and SSR outputs under `dist` for Lovable deployment; never fabricate an output directory or remove SSR to satisfy the host check.
+- Draftbit web publishing uses `build`; Lovable expects `dist`. React Router has one `buildDirectory`, so preserve SSR and set it for the deployment target being verified; never fabricate an output directory.
 
 <!-- LOVABLE:END -->
 
@@ -78,7 +78,7 @@ These replace the older TanStack-specific architecture notes below as the user's
     - Preserve Draftbit visual editing, explicit element-identification attributes and source tagging. Check plugin hooks exist before invoking them outside Draftbit. Do not hand-edit platform-generated .draftbit files or require sandbox-only local files missing from the saved repository; verify clean-checkout installation.
     - Preserve secrets, server/browser boundaries and existing WordPress service contracts and dictionary-defined CCT/relations. Compatibility work does not authorize database, schema, plugin, permission or business-rule changes.
     - Before reporting ready, run supported project type checks and relevant tests, inspect actual changed preview flows, and verify production client/server output for dependency, routing or server changes. After Draftbit Save, inspect the saved preview and run Recommended Changes/Recheck; list every remaining warning/error. HTTP 200 or a blank screen is not success.
-    - Never claim the other editor is compatible without its real install/build/runtime evidence. Missing dist may indicate hosting-output expectations: inspect actual job logs and supported deployment adapters, never create an empty dist, fake success, remove SSR or silently migrate frameworks.
+    - Never claim the other editor is compatible without its real install/build/runtime evidence. If a host reports a missing output directory, inspect its actual job logs and supported deployment adapters; never fabricate output, remove SSR or silently migrate frameworks.
     - Edit in one environment at a time. Pause writes during concurrent editing or repository-replacement prompts; preserve the intended latest repository version, never automatically restore old work or force-push. Report tested items, failures and unverified environments separately.
 - 严禁画蛇添足，严禁添加没有明确要求的功能，严禁添加没有明确要求的限制性代码和指令，严禁把声明性文字，比如我已100%完成，100%显示真实数据，没有mock这种开发会话写入前端UI，前端UI是对普通用户使用的，不是给开发者交流的，严禁画蛇添足，任何没有100%必要的限制，类型检测，逻辑，fallback等都不要加，只做100%有必要且我明确要求做的
 - App测试账号，researcher 密码：superstrongpassword 一切开发务必使用前端页面显示最快的方式，严禁偷懒做成序列读取，务必用前端用户显示最快的速度读写显示数据和元件
