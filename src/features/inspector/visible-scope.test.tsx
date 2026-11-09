@@ -7,6 +7,21 @@ import { stableAnchor, stableElementKey } from "./inspect-dom";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("visible inspector scopes", () => {
+  it("keeps the two scoped profile role controls independently bindable without source tags", () => {
+    const host = document.createElement("div");
+    host.innerHTML = '<div data-inspector-scope="settings-personal-form"><div><button role="switch" data-inspector-id="settings-personal-role/cared-one"></button></div><div><button role="switch" data-inspector-id="settings-personal-role/caring-one"></button></div></div>';
+    const controls = [...host.querySelectorAll('[role="switch"]')];
+    const keys = () => controls.map(control => stableElementKey("/settings", stableAnchor(control)));
+    const before = keys();
+    expect(new Set(before).size).toBe(2);
+    controls.forEach(control => {
+      control.setAttribute("data-tsd-source", "src/pages/Profile.tsx:253");
+      control.setAttribute("aria-checked", "true");
+    });
+    expect(keys()).toEqual(before);
+    controls.forEach(control => control.removeAttribute("data-tsd-source"));
+    expect(keys()).toEqual(before);
+  });
   it("keeps a portal dialog key after unrelated owner markup and content change", async () => {
     const host = document.createElement("div"); document.body.append(host);
     const portal = document.createElement("div"); document.body.append(portal);

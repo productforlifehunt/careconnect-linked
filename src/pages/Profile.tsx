@@ -250,7 +250,7 @@ export default function Profile() {
                 ]).map((role) => (
                   <div key={role.value} className="flex items-center justify-between rounded-lg border p-3">
                     <span className="text-sm font-medium">{role.label}</span>
-                    <Switch checked={roles.includes(role.value)} onCheckedChange={(checked) => toggleRole(role.value, checked)} aria-label={role.label} />
+                    <Switch data-inspector-id={`settings-personal-role/${role.value === "cared one" ? "cared-one" : "caring-one"}`} checked={roles.includes(role.value)} onCheckedChange={(checked) => toggleRole(role.value, checked)} aria-label={role.label} />
                   </div>
                 ))}
               </div>
