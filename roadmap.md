@@ -1,4 +1,5 @@
 ## Current request: Frontend audit of every note and page/element binding (2026-11-09 15:43 UTC)
+- [ ] 16:57 correction: remove all prior settings wrong bindings via actual frontend controls, independently reload every repaired element, fix reproduced role-anchor collision, and inspect loaded privacy controls/dialogs; full-site audit remains open.
 - [ ] 16:39 continuation: individually click and repair settings personal/display/notifications/privacy elements with shared published-build anchors; reuse existing notes, reopen after saving, and do not count signed-out or incomplete loading as coverage.
 - [ ] 16:05 continuation: user explicitly requests individual browser clicks for all page/element notes, corrections, additions and full-content audit; continue from real Members button missing binding, not the invalid concurrent signed-out scans.
 - [x] Logged in through the actual frontend as the supplied researcher; frontend catalogue returned 10,553 unique notes and 331 inventory scopes, with zero empty full bodies. Inventory scopes include shared portals and historical/sub-app paths; they are not 331 verified current pages.
