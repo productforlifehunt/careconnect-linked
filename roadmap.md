@@ -1,8 +1,14 @@
+## Current request: Frontend-only tab, element and form notes (2026-11-09)
+- [ ] Through frontend controls, reuse existing functional/tab/form notes and bind every multi-tab page to its individual tab notes; bind corresponding visible elements and popup forms. New notes only for genuinely missing reusable logic, with exact displayed/written CCT columns, REL and separate push section.
+- [ ] Verify saved associations through fresh frontend readback; preserve existing bodies, verified notes and REL325. Track concrete page/tab/form counts; full app completion requires every actual page and element checked.
+- [x] AI dialog: frontend reused #10565 and bound outer dialog to association category; 26,350-character body displayed. Fresh-browser persistence attempt not yet passed.
+
 ## Current request: All-page reusable functional notes (2026-11-09)
 - [x] Snapshot all 10,491 existing notes; audit all 74 main route modules and standalone route lists from actual source.
 - [x] Reused 101 existing functional notes; created four genuinely absent shared narratives (#10591–10594); added 398 a59 bindings across 116 scopes. All 400 expected bindings (including two existing) read back; 10,491 original notes' bodies/types/check/order and all prior bindings preserved. Ten previously checked REL325 endpoints unchanged; no REL325 write.
 - [x] Numeric-record page reuse and site-qualified page identity regression tests pass; 21 relevant tests pass; latest automatic build OK. Real researcher UI readbacks pass for care notes, tips, group, content hub, article and inbox (6/7 attempted).
-- [ ] Settings UI reads 13,087 characters while fresh API reads 13,301; latest note retrieval/cache discrepancy unresolved. Exhaustive every-page runtime validation, nonnumeric dynamic-record coverage, disabled-inspector consent/sick page binding and Draftbit runtime remain unverified. Existing B55 function classifications preserved rather than silently reclassified; ESM existing notes contain source conflicts, not overwritten.
+- [x] Settings exact discrepancy resolved by frontend comparison: API has 214 CRLF pairs; textarea normalizes these to LF. All text matches after newline normalization, no missing content.
+- [ ] Exhaustive every-page runtime validation, nonnumeric dynamic-record coverage, disabled-inspector consent/sick page binding and Draftbit runtime remain unverified. Existing B55 function classifications preserved rather than silently reclassified; ESM existing notes contain source conflicts, not overwritten.
 
 ## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
 - [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
