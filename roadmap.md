@@ -1,3 +1,9 @@
+## Current request: Frontend-only reusable category totals and page/element note aggregation (2026-11-09)
+- [ ] Reuse existing complete category notes and add “总” to titles through the frontend; create only genuinely absent totals, preserving current note format and verified text.
+- [ ] Complete category totals with all source-backed operations and separate push descriptions; distinguish unresolved old dictionary conflicts.
+- [ ] Bind page/tab/display/card/form/popup notes to their page overview and reuse the same note across matching functions; do not remove old bindings or change REL325.
+- [ ] Reopen each changed page in a new frontend session and verify saved title/body/associations; enumerate unverified pages and elements honestly.
+
 ## Current request: Finish Draftbit replica and every AI conversation feature (2026-11-07 13:07 UTC)
 - [x] Read original AI code through read-only audit; expanded exact acceptance criteria in draftbit-parity-checklist.md, including threads, context, four voice modes, guide, task writes, authorization and errors. Did not browse original App.
 - [x] Draftbit GUI: both Assistant and shared AssistantFabs API condition now uses real Trim. Runtime three-space submission sends zero AI requests in both paths; ordinary request still produces an AI response.
