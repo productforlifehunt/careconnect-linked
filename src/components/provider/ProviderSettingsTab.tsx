@@ -32,6 +32,7 @@ export default function ProviderSettingsTab() {
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(false);
+  const [visibilityPending, setVisibilityPending] = useState(false);
   useEffect(() => {
     if (profile) {
       setLocation(profile.location || "");
@@ -50,7 +51,6 @@ export default function ProviderSettingsTab() {
         ...((parseFloat(hourlyRate) || 0) !== (profile?.care_provider_starts_hourly_rate || 0) ? { care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0 } : {}),
         ...(bio !== (profile?.bio || "") ? { bio } : {}),
         ...(phone !== (profile?.phone || "") ? { phone } : {}),
-        ...(isActive !== !!profile?.provider_is_active ? { provider_is_active: isActive } : {}),
       });
 
 
@@ -75,12 +75,29 @@ export default function ProviderSettingsTab() {
                 </p>
               </div>
             </div>
-            <Switch aria-label={i18n.language?.startsWith("zh") ? "公开接单" : "Accept bookings publicly"} checked={isActive} onCheckedChange={next => {
+            <Switch aria-label={i18n.language?.startsWith("zh") ? "公开接单" : "Accept bookings publicly"} checked={isActive} disabled={visibilityPending} onCheckedChange={async next => {
+              const zh = i18n.language?.startsWith("zh");
               if (next && !canActivateProvider({ ...profile, location, bio, care_provider_starts_hourly_rate: parseFloat(hourlyRate) })) {
-                toast({ title: providerActivationMessage(i18n.language?.startsWith("zh")), variant: "destructive" });
+                toast({ title: providerActivationMessage(zh), variant: "destructive" });
                 return;
               }
-              setIsActive(next);
+              setVisibilityPending(true);
+              try {
+                // Turning visibility on is the commitment point: make sure the
+                // caller's own payment store exists and can sell (created once,
+                // repaired if needed, verified) before publishing.
+                if (next) {
+                  const { ensureDokanVendor } = await import("@/services/woocommerce-api");
+                  await ensureDokanVendor({ fullName: profile?.full_name || "", phone, location, bio });
+                }
+                await updateProfile.mutateAsync({ provider_is_active: next });
+                setIsActive(next);
+                toast({ title: next ? (zh ? "已公开接单" : "You are now visible and bookable") : (zh ? "已在搜索中隐藏" : "Hidden from search") });
+              } catch (e: any) {
+                toast({ title: zh ? "公开失败，请重试" : "Could not go public, please try again", description: e?.message, variant: "destructive" });
+              } finally {
+                setVisibilityPending(false);
+              }
             }} />
           </div>
         </CardContent>

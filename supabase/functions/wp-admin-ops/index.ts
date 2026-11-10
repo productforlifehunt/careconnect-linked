@@ -21,6 +21,7 @@ const ALLOWED_BASES = [DEFAULT_WP_BASE];
 type Action =
   | "ensure_seller_role"
   | "get_my_store"
+  | "ensure_vendor_ready"
   | "upsert_my_store"
   | "get_bookings_product"
   | "create_service_product"
@@ -256,6 +257,55 @@ Deno.serve(async (req) => {
         return json({ ok: res.ok, status: res.status, selling_enabled: sellingEnabled }, res.ok ? 200 : 502);
       }
 
+
+      case "ensure_vendor_ready": {
+        // Run when the caregiver turns on public visibility. One Dokan store per
+        // WP user (store id = user id), so this only ever creates or repairs the
+        // caller's own store, never a second one. Success only after a re-read
+        // confirms the store exists and selling is enabled; repairs are retried
+        // automatically once before an error is returned.
+        const store = payload?.store ?? {};
+        const storeBody = {
+          ...(store.store_name ? { store_name: String(store.store_name) } : {}),
+          ...(store.phone !== undefined ? { phone: String(store.phone) } : {}),
+          ...(store.address !== undefined ? { address: store.address } : {}),
+          ...(store.description !== undefined ? { description: String(store.description) } : {}),
+        };
+        const readStore = async () => {
+          const r = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, { headers: adminHeaders() }).catch(() => null);
+          return r && r.ok ? await r.json().catch(() => null) : null;
+        };
+        const userRoles = async (): Promise<string[]> => {
+          const r = await fetch(`${wpBase}/wp-json/wp/v2/users/${userId}?context=edit`, { headers: adminHeaders() }).catch(() => null);
+          const u = r && r.ok ? await r.json().catch(() => null) : null;
+          return Array.isArray(u?.roles) ? u.roles : [];
+        };
+        const isReady = (s: any) => Boolean(s && Number(s.id) === userId && s.enabled);
+        let current = await readStore();
+        let created = false;
+        for (let attempt = 0; attempt < 2 && !isReady(current); attempt++) {
+          const roles = await userRoles();
+          if (!roles.includes("seller") && !roles.includes("administrator")) {
+            await fetch(`${wpBase}/wp-json/wp/v2/users/${userId}`, {
+              method: "POST", headers: adminHeaders(), body: JSON.stringify({ roles: ["seller"] }),
+            }).catch(() => null);
+            created = true;
+          }
+          await Promise.all([
+            fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}/status`, {
+              method: "PUT", headers: adminHeaders(), body: JSON.stringify({ status: "approved" }),
+            }).catch(() => null),
+            fetch(`${wpBase}/wp-json/dokan/v1/stores/${userId}`, {
+              method: "PUT", headers: adminHeaders(), body: JSON.stringify({ ...storeBody, enabled: true }),
+            }).catch(() => null),
+          ]);
+          current = await readStore();
+        }
+        if (!isReady(current)) {
+          return json({ error: "Payment setup could not be completed. Please try again." }, 502);
+        }
+        return json({ ok: true, data: { store_id: userId, enabled: true, created } });
+      }
 
       case "get_my_store": {
         // Dokan ignores `include` on some versions, so filter defensively:

@@ -183,29 +183,6 @@ export async function updateProfileWordPress(updates: Partial<Profile>, loadedPr
     body[F.CARE_PROVIDER_S_CANCELLATION_POLICY] = updates.care_provider_cancellation_policy ?? "";
 
 
-  // Flipping a59 ("Is paid care provider") to Yes is the only moment the
-  // commerce side is touched before checkout: the user silently becomes a
-  // Dokan vendor so a just-in-time care-service product can later be created
-  // and paid out. No product, no catalogue, no storefront is created here and
-  // the UI never mentions vendors or stores.
-  if (updates.is_care_provider === true) {
-    void (async () => {
-      try {
-        const { ensureDokanVendor } = await import("@/services/woocommerce-api");
-        const stored = getStoredWPUser();
-        await ensureDokanVendor({
-          fullName: updates.full_name || (await fetchMyAppUserName()),
-          email: stored?.user_email || "",
-          phone: updates.phone || undefined,
-          location: updates.location || undefined,
-          bio: updates.bio ?? undefined,
-        });
-      } catch {
-        /* non-fatal: retried on the next profile save */
-      }
-    })();
-  }
-
   if (Object.keys(body).length) {
     writes.push((async () => {
       const wpUserId = String(getStoredWPUser()?.user_id ?? "");

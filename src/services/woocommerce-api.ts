@@ -84,49 +84,28 @@ async function adminOp<T = any>(action: string, body: Record<string, unknown> = 
 /** Shared entry point for other modules that need a privileged WP operation. */
 export const wpAdminOps = adminOp;
 
+/**
+ * Called when the caregiver turns public visibility on. The server checks the
+ * caller's own Dokan store (store id = WP user id, so never a duplicate),
+ * creates or repairs it if needed, re-reads it, and only resolves once the
+ * store exists with selling enabled. Throws otherwise.
+ */
 export async function ensureDokanVendor(userData: {
   fullName: string;
-  email: string;
   phone?: string | undefined;
   location?: string | undefined;
   bio?: string | undefined;
-}): Promise<any> {
-  const storedUser = (await import('@/services/wp-auth')).getStoredWPUser();
-  const wpUserId = storedUser?.user_id;
-  if (!wpUserId) {
-    console.warn('ensureDokanVendor: no stored WP user');
-    return null;
-  }
-
-  const storePayload = {
-    store_name: userData.fullName ? `${userData.fullName} Care Services` : undefined,
-    phone: userData.phone || '',
-    address: { street_1: userData.location || '' },
-    // Mirror bio into the Dokan store description so the public store page
-    // stays in sync with the caregiver profile.
-    ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
-  };
-
-  let existingStore: any = null;
-  try {
-    const stores = await adminOp<any[]>('get_my_store');
-    if (Array.isArray(stores) && stores.length > 0) existingStore = stores[0];
-  } catch { /* no store yet */ }
-
-  if (!existingStore) {
-    try {
-      await adminOp('ensure_seller_role');
-    } catch (e) {
-      console.warn('ensureDokanVendor: role assignment error', e);
-    }
-  }
-
-  try {
-    return await adminOp('upsert_my_store', { store: storePayload });
-  } catch (e) {
-    console.warn('ensureDokanVendor: store setup error', e);
-    return existingStore;
-  }
+}): Promise<{ store_id: number; enabled: boolean; created: boolean }> {
+  const result = await adminOp<{ store_id: number; enabled: boolean; created: boolean }>('ensure_vendor_ready', {
+    store: {
+      store_name: userData.fullName ? `${userData.fullName} Care Services` : undefined,
+      phone: userData.phone || '',
+      address: { street_1: userData.location || '' },
+      ...(userData.bio !== undefined ? { description: userData.bio || '' } : {}),
+    },
+  });
+  if (!result?.enabled) throw new Error('Payment setup could not be completed. Please try again.');
+  return result;
 }
 
 
