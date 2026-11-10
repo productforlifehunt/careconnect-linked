@@ -2,7 +2,7 @@ import type { Config } from "@react-router/dev/config";
 
 export default {
   appDirectory: "src/app",
-  // Keep genuine client and SSR outputs together in the host's required root.
-  buildDirectory: "build",
+  // Lovable requires dist; keep Draftbit's default build output outside Lovable.
+  buildDirectory: process.env["LOVABLE_PROJECT_ID"] ? "dist" : "build",
   ssr: true,
 } satisfies Config;
