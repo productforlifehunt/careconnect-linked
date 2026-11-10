@@ -243,15 +243,17 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
         if (id) memberUserIds.add(id);
       }
     }
-    const { fetchCareGroupsWordPress } = await import("@/features/care-groups/source.wordpress");
-    const groups = scope === "group" ? await fetchCareGroupsWordPress() : [];
-    for (const group of groups) {
-      const members = (group as any).members || [];
-      for (const member of members) {
-        const memberId = String(member.user_id || member.id || "");
-        if (memberId && memberId !== String(storedUser.user_id)) {
-          memberUserIds.add(memberId);
-        }
+    if (scope === "group") {
+      // Everyone with an accepted membership row in any of my groups.
+      const { fetchMyCareGroupIdsWordPress } = await import("@/features/care-groups/source.wordpress");
+      const { decodeRel72Meta } = await import("@/features/care-groups/rel-meta");
+      const groupIds = await fetchMyCareGroupIdsWordPress();
+      const rows = await Promise.all(groupIds.map((gid) =>
+        wordpressFetch<any[]>(`jet-rel/${R.careGroupMembers}/children/${gid}`).catch(() => [])));
+      for (const rel of rows.flat()) {
+        if (decodeRel72Meta(rel?.meta).invitationStatus !== "accepted") continue;
+        const memberId = String(rel?.child_object_id || "");
+        if (memberId && memberId !== String(storedUser.user_id)) memberUserIds.add(memberId);
       }
     }
 

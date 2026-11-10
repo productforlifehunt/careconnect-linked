@@ -58,7 +58,8 @@ if (typeof document !== "undefined" && !document.getElementById("loc-pulse-kf"))
 let L: any = null;
 async function getL() {
   if (L) return L;
-  L = await import("leaflet");
+  const mod: any = await import("leaflet");
+  L = mod.default ?? mod;
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",

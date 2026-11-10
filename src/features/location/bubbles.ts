@@ -42,27 +42,29 @@ function isLive(row: any): boolean {
   return Number.isFinite(end) && end > Date.now();
 }
 
-/** Active bubbles in every group I belong to. */
+/**
+ * Active bubbles in the given groups. One filtered read of the few active rows
+ * (a60 = b55), then each live row's group and creator from REL 329 / REL 328 in parallel.
+ */
 export async function fetchActiveBubblesInGroups(groupIds: string[]): Promise<LocationBubble[]> {
-  const ids = [...new Set(groupIds.map(bare).filter(Boolean))];
-  if (!ids.length) return [];
-  const perGroup = await Promise.all(ids.map(async (gid) => {
-    const rels = await wordpressFetch<any[]>(`jet-rel/${R.careGroupLocationBubbles}/children/${gid}`).catch(() => []);
-    return (Array.isArray(rels) ? rels : []).map((r: any) => ({ gid, bid: String(r.child_object_id || "") })).filter((x) => x.bid);
-  }));
-  const links = perGroup.flat();
-  if (!links.length) return [];
-  const rows = await readLinkedCCTRows(B.slug, links.map((l) => l.bid));
-  const live = rows.filter(isLive);
-  const groupOf = new Map(links.map((l) => [l.bid, l.gid]));
+  const mine = new Set(groupIds.map(bare).filter(Boolean));
+  if (!mine.size) return [];
+  const rows = await wordpressCCTFetch<any[]>(B.slug, {
+    params: { _limit: 200, _filters: JSON.stringify([{ field: F.STATUS, operator: "=", value: S.ACTIVE }]) },
+  });
+  const live = (Array.isArray(rows) ? rows : []).filter(isLive);
   const out = await Promise.all(live.map(async (row) => {
     const id = String(row.id ?? row._ID);
-    const parents = await wordpressFetch<any[]>(`jet-rel/${R.userLocationBubbles}/parents/${id}`).catch(() => []);
-    const creatorId = Array.isArray(parents) && parents[0] ? String(parents[0].parent_object_id) : "";
-    if (!creatorId) return null;
+    const [groups, creators] = await Promise.all([
+      wordpressFetch<any[]>(`jet-rel/${R.careGroupLocationBubbles}/parents/${id}`).catch(() => []),
+      wordpressFetch<any[]>(`jet-rel/${R.userLocationBubbles}/parents/${id}`).catch(() => []),
+    ]);
+    const groupId = Array.isArray(groups) && groups[0] ? String(groups[0].parent_object_id) : "";
+    const creatorId = Array.isArray(creators) && creators[0] ? String(creators[0].parent_object_id) : "";
+    if (!groupId || !creatorId || !mine.has(groupId)) return null;
     return {
       id,
-      groupId: groupOf.get(id) || "",
+      groupId,
       creatorId,
       latitude: Number(row[F.CENTER_LATITUDE]),
       longitude: Number(row[F.CENTER_LONGITUDE]),

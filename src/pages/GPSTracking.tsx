@@ -38,7 +38,9 @@ import { ZoneColorPicker, defaultZoneColor, zoneColorOf } from "@/components/loc
 import { useToast } from "@/hooks/use-toast";
 import { runSettingSkill } from "@/lib/ai-dynamic-knowledge";
 import { useAuth } from "@/contexts/AuthContext";
-import * as L from "leaflet";
+import * as LeafletModule from "leaflet";
+// Leaflet is a UMD bundle: depending on the bundler its API sits on the namespace or on `default`.
+const L = (((LeafletModule as any).default ?? LeafletModule) as typeof LeafletModule);
 import "leaflet/dist/leaflet.css";
 import { themeColor } from "@/lib/theme-color";
 import { useTranslation } from "react-i18next";

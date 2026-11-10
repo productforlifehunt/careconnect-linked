@@ -50,7 +50,8 @@ export function ZonePathEditor({ map, initial, isZh, onChange }: Props) {
   useEffect(() => {
     let active = true;
     const render = async () => {
-      const L = await import("leaflet");
+      const mod: any = await import("leaflet");
+      const L: typeof import("leaflet") = mod.default ?? mod;
       if (!active) return;
       layers.current.forEach(l => l.remove()); layers.current = [];
       const add = <T extends Layer,>(layer: T): T => { layer.addTo(map); layers.current.push(layer); return layer; };
