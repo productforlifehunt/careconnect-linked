@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,7 +16,7 @@ import { CareTipContextPicker } from "./CareTipContextPicker";
 beforeEach(() => { localStorage.clear(); state.site = "challenged"; state.user = "46"; state.fail = false; });
 afterEach(cleanup);
 function mount() {
-  const onActiveTipsChange = vi.fn(); const onSendTips = vi.fn(async () => true);
+  const onActiveTipsChange = vi.fn(); const onSendTips = vi.fn(async (_tips: unknown[]) => true);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rendered = render(<QueryClientProvider client={client}><CareTipContextPicker enabled onActiveTipsChange={onActiveTipsChange} onSendTips={onSendTips} /></QueryClientProvider>);
   return { ...rendered, onActiveTipsChange, onSendTips, client };
@@ -46,15 +46,19 @@ describe("care-tip picker acceptance", () => {
     fireEvent.click(screen.getByRole("button", { name: "加入常用栏：饭后" }));
     await waitFor(() => expect(JSON.parse(localStorage.getItem(key) || "{}").favorites).toEqual([{ caredOneId: "46", tipId: "101" }]));
     expect(onActiveTipsChange).toHaveBeenLastCalledWith([]);
-    fireEvent.click(screen.getAllByRole("button", { name: "使用", exact: true })[0]);
+    const use = screen.getAllByRole("button", { name: /^使用$/ })[0];
+    if (!use) throw new Error("Missing use control");
+    fireEvent.click(use);
     await waitFor(() => expect(onActiveTipsChange.mock.calls.at(-1)?.[0]).toHaveLength(1));
-    fireEvent.click(screen.getByRole("button", { name: "停止使用", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^停止使用$/ }));
     await waitFor(() => expect(onActiveTipsChange).toHaveBeenLastCalledWith([]));
   });
   it("restores active references and favorite order after remount without storing bodies", async () => {
     localStorage.setItem(key, JSON.stringify({ active: [{ caredOneId: "46", tipId: "101" }], favorites: [{ caredOneId: "46", tipId: "102" }, { caredOneId: "46", tipId: "101" }] }));
     const first = mount(); await waitFor(() => expect(first.onActiveTipsChange.mock.calls.at(-1)?.[0]).toHaveLength(1));
-    fireEvent.click(screen.getAllByRole("button", { name: "下移常用贴士" })[0]);
+    const down = screen.getAllByRole("button", { name: "下移常用贴士" })[0];
+    if (!down) throw new Error("Missing reorder control");
+    fireEvent.click(down);
     await waitFor(() => expect(JSON.parse(localStorage.getItem(key) || "{}").favorites[0].tipId).toBe("101"));
     first.unmount(); const second = mount();
     await waitFor(() => expect(second.onActiveTipsChange.mock.calls.at(-1)?.[0]).toHaveLength(1));
