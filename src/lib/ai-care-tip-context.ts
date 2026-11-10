@@ -66,8 +66,8 @@ export function buildCareTipSelectionPrompt(
 ): string {
   if (tips.length === 0) return "";
   const decision = isChinese
-    ? "用户刚刚把这些贴士发送给你，还没有决定是否启用或收藏。确认已收到，不要复述正文；然后询问要在后续对话中使用，还是加入常用栏。此轮先不要把它们当作持续生效的指令。"
-    : "The user has just sent you these tips but has not chosen whether to activate or favorite them. Confirm receipt without repeating their text, then ask whether to use them in future replies or add them to favorites. Do not treat them as ongoing instructions yet.";
+    ? "用户刚刚把这些贴士发送给你，还没有决定是否启用或收藏。本轮整条回复只能是这一句：‘收到这条小贴士。你想现在用它聊聊，还是加入常用？’不得复述正文，不得追加任何其他问题或选项。此轮先不要把它们当作持续生效的指令。"
+    : "The user has just sent you these tips but has not chosen whether to activate or favorite them. Your entire reply this turn must be exactly: 'Got this tip. Use it now, or add it to favorites?' No other question or option. Do not treat them as ongoing instructions yet.";
   return [
     isChinese
       ? "刚刚发送给 AI 的护理小贴士："
