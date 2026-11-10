@@ -309,7 +309,7 @@ export function AICompanionChat({
 
   // Stop any playback as soon as the assistant is closed.
   useEffect(() => { if (!active) { stopSpeaking(); recorderRef.current?.cancel(); recorderRef.current = null; setRecording(false); } }, [active]);
-  useEffect(() => () => { stopSpeaking(); recorderRef.current?.cancel(); }, []);
+  useEffect(() => () => { abortRef.current?.abort(); stopSpeaking(); recorderRef.current?.cancel(); }, []);
 
   /**
    * On-demand context: the static snippets that match this question plus only
@@ -359,20 +359,33 @@ export function AICompanionChat({
   const speakRef = useRef(speak);
   speakRef.current = speak;
 
-  // Saved thread: restore its messages once.
+  // Restore the selected thread, not whichever transcript was previously visible.
   const [saveError, setSaveError] = useState<string | null>(null);
+  const historyThreadRef = useRef(threadId);
+  const sentTurnVersionRef = useRef(0);
   useEffect(() => {
     if (!threadId) return;
+    const changedThread = historyThreadRef.current !== threadId;
+    historyThreadRef.current = threadId;
+    if (changedThread) {
+      abortRef.current?.abort();
+      abortRef.current = null;
+      setLoading(false);
+      stopSpeaking();
+      setMessages([]);
+      setPendingTipSave(null);
+      setChatError(null);
+    }
+    setSaveError(null);
+    const sentTurnVersion = sentTurnVersionRef.current;
     let alive = true;
     runAssistantConversationSkill(ASSISTANT_CONVERSATION_SKILL, "load", { id: threadId })
       .then((rows) => {
         if (!alive) return;
-        // Never wipe messages the user already sent while the history loaded.
-        setMessages((prev) =>
-          prev.some((m) => m.role === "user")
-            ? prev
-            : rows.length ? rows : [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]
-        );
+        // Only a NEW turn sent during this read can supersede its result.
+        // User messages belonging to the previous thread must not block it.
+        if (sentTurnVersionRef.current !== sentTurnVersion) return;
+        setMessages(rows.length ? rows : [{ role: "assistant", content: aiGreeting(!!isZh, site.id) }]);
       })
       .catch(() => { if (alive) setSaveError(isZh ? "无法读取这段对话。" : "Couldn't load this conversation."); });
     return () => { alive = false; };
@@ -469,6 +482,7 @@ export function AICompanionChat({
     const text = (submittedText ?? input).trim();
     const image = pendingImage;
     if ((!text && !image) || loading || preparingImage) return false;
+    sentTurnVersionRef.current += 1;
     const userText = text || (isZh ? "请看看这张图片。" : "Please take a look at this image.");
     const savedUserText = image ? `${userText}\n[${isZh ? "图片附件" : "Image attached"}]` : userText;
     setPendingTipSave(null);
