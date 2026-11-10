@@ -1,5 +1,5 @@
 import { R } from "@/integrations/wp-schema";
-import { Link, useNavigate, useParams } from "@/lib/router-compat";
+import { useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePost, useDeletePost, useUpdatePost, useToggleVote, useVoteCount } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { CommentsSection } from "@/components/comments/CommentsSection";
-import { ArrowLeft, Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 import { useState } from "react";
