@@ -76,7 +76,7 @@ import { fetchArticlesWordPress } from "@/features/articles/source.wordpress";
 import { fetchEntityReviewsWordPress, createReviewWordPress } from "@/features/reviews/source.wordpress";
 import { setMyGroupDisplayNameWordPress } from "@/features/care-groups/source.wordpress";
 import { fetchDirectMessagesWordPress, sendMessageWordPress, markMessagesReadWordPress, startConversationWordPress, getOrCreateGroupConversationWordPress } from "@/features/conversations/source.wordpress";
-import { fetchSavedProvidersWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
+import { fetchSavedProvidersWordPress, fetchSavedProviderIdsWordPress, toggleSavedProviderWordPress } from "@/features/saved-providers/source.wordpress";
 import { fetchCommentsWordPress, createCommentWordPress, updateCommentWordPress, deleteCommentWordPress } from "@/features/comments/source.wordpress";
 import { fetchVoteSummaries, fetchVoteSummary, toggleVote } from "@/features/votes/source.wordpress";
 import { fetchLocationSharesWordPress } from "@/features/location/source.wordpress";
@@ -160,7 +160,7 @@ function dedupeFacilities(list: CareFacility[]) {
 export function useProvider(id: string | undefined) {
   return useQuery({
     queryKey: ["provider", id],
-    queryFn: () => fetchProviderByIdWordPress(id!),
+    queryFn: () => id ? fetchProviderByIdWordPress(id, false) : Promise.resolve(null),
     enabled: !!id,
   });
 }
@@ -594,16 +594,31 @@ export function useMarkAllNotificationsRead() {
 // ─── Favorites / Saved Providers ────────────────────────────
 export function useSavedProviders() {
   return useQuery({
-    queryKey: ["savedProviders"],
+    queryKey: ["savedProviders", getStoredWPUser()?.user_id],
     queryFn: () => fetchSavedProvidersWordPress(),
+    enabled: hasWPSession(),
+  });
+}
+
+export function useSavedProviderIds() {
+  return useQuery({
+    queryKey: ["savedProviderIds", getStoredWPUser()?.user_id],
+    queryFn: fetchSavedProviderIdsWordPress,
+    enabled: hasWPSession(),
   });
 }
 
 export function useToggleSavedProvider() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (providerId: string) => toggleSavedProviderWordPress(providerId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["savedProviders"] }); },
+    mutationFn: (input: string | { providerId: string; currentlySaved: boolean }) =>
+      typeof input === "string" ? toggleSavedProviderWordPress(input) : toggleSavedProviderWordPress(input.providerId, input.currentlySaved),
+    onSuccess: (saved, input) => {
+      const providerId = String(typeof input === "string" ? input : input.providerId).replace(/^wp-/, "");
+      qc.setQueryData<string[]>(["savedProviderIds", getStoredWPUser()?.user_id], (old = []) =>
+        saved ? [...new Set([...old, providerId])] : old.filter((id) => id !== providerId));
+      void qc.invalidateQueries({ queryKey: ["savedProviders"] });
+    },
   });
 }
 

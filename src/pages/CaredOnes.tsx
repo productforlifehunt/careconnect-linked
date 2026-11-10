@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
-  Phone, MapPin, FolderOpen, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
+  Phone, MapPin, FolderOpen, Trash2, Check, X, Clock, SkipForward,
   Search, UserPlus, IdCard, Pencil, ListChecks, AudioLines,
 
 } from "lucide-react";
@@ -56,11 +56,11 @@ function FeatureDetail(props: { cardKey: string; caredOneId: string; caredOneNam
 
 function featureContent({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
-    case "medicine": return <MedicineCard caredOneId={caredOneId} />;
+    case "medicine": return <MedicineCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "checkin":
     case "check-in":
     case "check_in":
-    case "check-ins": return <CheckInCard caredOneId={caredOneId} />;
+    case "check-ins": return <CheckInCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "tips": return <TipsCard caredOneId={caredOneId} />;
     case "tasks": return <CareTasksCard caredOneId={caredOneId} />;
     case "plan": return <CarePlanCard caredOneId={caredOneId} />;
@@ -298,7 +298,6 @@ export default function CaredOnes() {
 
           {openCard ? (
             <div>
-              <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}><ArrowLeft className="h-4 w-4 mr-1" /> {t("caredOnes.backToCards")}</Button>
               {selectedId && <FeatureDetail key={`${bare(selectedId)}:${openCard}`} cardKey={openCard} caredOneId={selectedId} caredOneName={caredOneName} />}
             </div>
           ) : (

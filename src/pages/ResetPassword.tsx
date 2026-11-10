@@ -54,7 +54,6 @@ export default function ResetPassword() {
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
             <h1 className="text-lg font-semibold text-foreground">{t("resetPw.verifyingLink")}</h1>
             <p className="text-xs text-muted-foreground mt-2">{t("resetPw.linkExpired")}</p>
-            <Button variant="outline" className="mt-4" onClick={() => navigate("/auth")}>{t("resetPw.backToSignIn")}</Button>
           </CardContent>
         </Card>
       </div>

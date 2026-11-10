@@ -132,22 +132,21 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters | undefi
   return filterProviders(await fetchProviderDirectoryWordPress(), filters);
 }
 
-export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
+export async function fetchProviderByIdWordPress(id: string, includeRatings = true): Promise<Profile | null> {
   try {
     const numericId = String(id).replace(/^wp-/, "");
     // Profile page reads the same dictionary row as search (CCT 258), so the
     // card price and the profile price can never disagree, and no Dokan/Woo
     // store call happens before checkout.
-    const rows = await wordpressCCTFetch<any[]>(P2.slug, { params: { cct_author_id: numericId, _limit: 20 } });
+    const [rows, user, rating] = await Promise.all([
+      wordpressCCTFetch<any[]>(P2.slug, { params: { cct_author_id: numericId, _limit: 20 } }),
+      fetchWPUserPublicProfile(numericId),
+      includeRatings ? fetchProviderRatingSummary(numericId) : Promise.resolve({ average: null, count: 0 }),
+    ]);
     const row = (Array.isArray(rows) ? rows : []).find(
       (r: any) => String(r.author_id || r.cct_author_id || r.user_id) === numericId,
     );
     if (!row || !isListedProviderRow(row)) return null;
-    const userId = Number(row.author_id || row.cct_author_id || row.user_id);
-    const [user, rating] = await Promise.all([
-      userId ? fetchWPUserPublicProfile(userId) : Promise.resolve(null),
-      fetchProviderRatingSummary(numericId),
-    ]);
     if (!user) return null;
     const profile = mapProviderRow(row, user);
     if (!profile) return null;

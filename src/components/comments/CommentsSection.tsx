@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/locale";
 import { useQuery } from "@tanstack/react-query";
 import { fetchForumNames } from "@/features/shared/wp-users";
 import { R } from "@/integrations/wp-schema";
+import { isPostAuthor } from "@/features/posts/ownership";
 
 interface CommentsSectionProps {
   /** Dictionary number of the parent→comment JetEngine relation (from `R`, e.g. R.communityPostComments = 150). */
@@ -148,7 +149,7 @@ function CommentItem({
                     {isZh ? "回复" : "Reply"}
                   </Button>
                 )}
-                {comment.author_id === userId && (
+                {isPostAuthor(comment.author_id, userId) && (
                   <>
                     <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px] text-muted-foreground" onClick={() => setEditing(true)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" />

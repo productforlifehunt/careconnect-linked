@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "@/lib/router-compat";
+import { useLocation, useSearchParams } from "@/lib/router-compat";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag, ArrowLeft } from "lucide-react";
+import { Send, Search, Phone, Video, MoreVertical, Loader2, Plus, X, Tag } from "lucide-react";
 import { MessageAttachment } from "@/components/messages/MessageAttachment";
 import { MessageBubble } from "@/components/messages/MessageBubble";
 import { QuoteDialog } from "@/components/messages/QuoteDialog";
@@ -24,6 +24,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
   const { toast } = useToast();
   const { data: profile } = useMyProfile();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const { data: conversations, isLoading: convosLoading } = useConversations();
   const sendMessage = useSendMessage();
@@ -45,6 +46,30 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
   // Once the reader taps back to the list we must never yank them into a chat
   // again — the auto-open is a first-load convenience for wide screens only.
   const closedByUserRef = useRef(false);
+  const conversationParam = searchParams.get("conversation");
+  const previousConversationParam = useRef(conversationParam);
+  useEffect(() => {
+    if (conversationParam) {
+      const conversation = conversations?.find((c: any) => String(c.id) === conversationParam);
+      if (conversation) {
+        setSelectedConvoId(conversation.id);
+        setSelectedOtherUser(getOtherUser(conversation));
+      }
+    } else if (previousConversationParam.current) {
+      closedByUserRef.current = true;
+      setSelectedConvoId(null);
+      setSelectedOtherUser(null);
+    }
+    previousConversationParam.current = conversationParam;
+  }, [conversationParam, conversations, profile?.id]);
+  const openConversation = (id: string, person: any) => {
+    closedByUserRef.current = true;
+    setSelectedConvoId(id);
+    setSelectedOtherUser(person);
+    const next = new URLSearchParams(searchParams);
+    next.set("conversation", String(id));
+    setSearchParams(next);
+  };
   const { data: newConvoResults } = useSearchProfiles(newConvoSearch);
   const [handledNavState, setHandledNavState] = useState(false);
 
@@ -95,8 +120,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
       const conversation = conversations.find((c: any) => String(c.id) === String(navState.conversationId));
       if (!conversation) return;
       navHandledRef.current = true;
-      setSelectedConvoId(conversation.id);
-      setSelectedOtherUser(getOtherUser(conversation));
+      openConversation(conversation.id, getOtherUser(conversation));
       return;
     }
     if (navState?.targetUserId && !navHandledRef.current) {
@@ -109,8 +133,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
       };
       startConversation.mutate(navState.targetUserId, {
         onSuccess: (convoId: string) => {
-          setSelectedConvoId(convoId);
-          setSelectedOtherUser(targetUser);
+          openConversation(convoId, targetUser);
           qc.invalidateQueries({ queryKey: ["conversations"] });
           if (navState.openQuote) {
             if (navState.quotePrefill) setQuotePrefill(navState.quotePrefill);
@@ -210,8 +233,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
   const handleStartConversation = (person: any) => {
     startConversation.mutate(person.id, {
       onSuccess: (convoId: string) => {
-        setSelectedOtherUser(person);
-        setSelectedConvoId(convoId);
+        openConversation(convoId, person);
         setNewConvoOpen(false);
         setNewConvoSearch("");
       },
@@ -277,8 +299,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
                   key={c.id}
                   className={`p-4 cursor-pointer border-b transition-colors ${isSelected ? "bg-accent" : "hover:bg-muted/50"}`}
                   onClick={() => {
-                    setSelectedConvoId(c.id);
-                    setSelectedOtherUser(other);
+                    openConversation(c.id, other);
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -352,19 +373,6 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
         <div className={`flex-1 min-w-0 flex flex-col ${selectedConvoId ? "flex" : "hidden md:flex"}`}>
           <div className="p-3 sm:p-4 border-b flex items-center justify-between bg-card">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden min-h-11 min-w-11 shrink-0"
-                aria-label={Z("返回消息列表", "Back to messages")}
-                onClick={() => {
-                  closedByUserRef.current = true;
-                  setSelectedConvoId(null);
-                  setSelectedOtherUser(null);
-                }}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
               <div className="relative">
                 {selectedOtherUser.avatar_url ? (
                   <img src={selectedOtherUser.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />

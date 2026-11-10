@@ -1,7 +1,7 @@
-import { useParams, useNavigate, Link, useLocation } from "@/lib/router-compat";
+import { useParams, Link } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Share2 } from "lucide-react";
+import { Clock, Share2 } from "lucide-react";
 import { StudyNotesPanel } from "@/components/challenged/StudyNotesPanel";
 import { useTranslation } from "react-i18next";
 import { getHubArticle, HUB_ARTICLE_CONTENT_IDS, type HubKey } from "@/data/hub-articles";
@@ -24,21 +24,14 @@ const CATEGORY_NAMES: Record<HubKey, { en: string; zh: string }> = {
 
 export default function ChallengedArticleDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
   const { i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const article = id ? getHubArticle(id) : undefined;
-  const fallbackRoute = "/" + (location.pathname.split("/")[1] || "awared");
 
   if (!article) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
         <h2 className="text-xl font-semibold mb-2">{isChinese ? "文章未找到" : "Article not found"}</h2>
-        <Button variant="outline" onClick={() => navigate(fallbackRoute)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {isChinese ? "返回" : "Go Back"}
-        </Button>
       </div>
     );
   }

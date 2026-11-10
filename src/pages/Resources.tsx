@@ -1,8 +1,7 @@
-import { useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@/lib/router-compat";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   ChevronRight,
   Search,
   CheckCircle2,
@@ -60,8 +59,9 @@ function saveProgress(set: Set<string>) {
 export default function Resources() {
   const { i18n, t } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
-  const [activeModuleKey, setActiveModuleKey] = useState<string | null>(null);
-  const [activeLessonKey, setActiveLessonKey] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeModuleKey = searchParams.get("module");
+  const activeLessonKey = searchParams.get("lesson");
   const [activeLesson, setActiveLesson] = useState<ISupportLesson | null>(null);
   const [lessonLoading, setLessonLoading] = useState(false);
   const [lessonLoadFailed, setLessonLoadFailed] = useState(false);
@@ -71,10 +71,15 @@ export default function Resources() {
 
   const activeModule = activeModuleKey ? getModule(activeModuleKey) : null;
 
-  const openLesson = async (moduleKey: string, lessonKey: string) => {
+  const openLesson = (moduleKey: string, lessonKey: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("module", moduleKey);
+    next.set("lesson", lessonKey);
+    setSearchParams(next);
+  };
+
+  const loadLesson = async (moduleKey: string, lessonKey: string) => {
     const requestId = ++lessonLoadRequest.current;
-    setActiveModuleKey(moduleKey);
-    setActiveLessonKey(lessonKey);
     setActiveLesson(null);
     setLessonLoadFailed(false);
     setLessonLoading(true);
@@ -93,13 +98,13 @@ export default function Resources() {
     }
   };
 
-  const closeLesson = () => {
-    lessonLoadRequest.current += 1;
-    setActiveLessonKey(null);
+  useEffect(() => {
     setActiveLesson(null);
-    setLessonLoading(false);
     setLessonLoadFailed(false);
-  };
+    setLessonLoading(false);
+    if (activeModuleKey && activeLessonKey) void loadLesson(activeModuleKey, activeLessonKey);
+    return () => { lessonLoadRequest.current += 1; };
+  }, [activeModuleKey, activeLessonKey]);
 
   // search across all lessons (must run before any early return)
   const searchResults = useMemo(() => {
@@ -136,7 +141,6 @@ export default function Resources() {
         isZh={isZh}
         isComplete={progress.has(activeLesson.key)}
         onToggleComplete={() => toggleComplete(activeLesson.key)}
-        onBack={closeLesson}
       />
     );
   }
@@ -149,9 +153,6 @@ export default function Resources() {
       >
         <Loader2 className="h-8 w-8 animate-spin" />
         <p>{isZh ? "正在加载课程内容…" : "Loading lesson…"}</p>
-        <Button variant="outline" onClick={closeLesson}>
-          {isZh ? "返回课程" : "Back to lessons"}
-        </Button>
       </div>
     );
   }
@@ -163,10 +164,7 @@ export default function Resources() {
           {isZh ? "课程暂时无法加载，请重试。" : "This lesson could not load. Please try again."}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={closeLesson}>
-            {isZh ? "返回课程" : "Back to lessons"}
-          </Button>
-          <Button onClick={() => void openLesson(activeModule.key, activeLessonKey)}>
+          <Button onClick={() => void loadLesson(activeModule.key, activeLessonKey)}>
             {isZh ? "重试" : "Try again"}
           </Button>
         </div>
@@ -181,10 +179,6 @@ export default function Resources() {
         module={activeModule}
         isZh={isZh}
         progress={progress}
-        onBack={() => {
-          closeLesson();
-          setActiveModuleKey(null);
-        }}
         onSelectLesson={(key) => void openLesson(activeModule.key, key)}
       />
     );
@@ -334,8 +328,10 @@ export default function Resources() {
                 <button
                   key={m.key}
                   onClick={() => {
-                    closeLesson();
-                    setActiveModuleKey(m.key);
+                    const next = new URLSearchParams(searchParams);
+                    next.set("module", m.key);
+                    next.delete("lesson");
+                    setSearchParams(next);
                   }}
                   className="text-left group"
                 >
@@ -399,13 +395,11 @@ function ModuleView({
   module,
   isZh,
   progress,
-  onBack,
   onSelectLesson,
 }: {
   module: ISupportModule;
   isZh: boolean;
   progress: Set<string>;
-  onBack: () => void;
   onSelectLesson: (key: string) => void;
 }) {
   const completed = module.lessons.filter((l) => progress.has(l.key)).length;
@@ -415,15 +409,6 @@ function ModuleView({
     <div className="min-h-full bg-background">
       <section className={`bg-gradient-to-br ${module.accent} text-white py-8`}>
         <div className="max-w-3xl mx-auto px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            className="text-white hover:bg-white/20 mb-3 -ml-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            {isZh ? "返回资源中心" : "All Resources"}
-          </Button>
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2.5">
               <module.icon className="h-6 w-6" />
@@ -497,14 +482,12 @@ function LessonView({
   isZh,
   isComplete,
   onToggleComplete,
-  onBack,
 }: {
   module: ISupportModule;
   lesson: ISupportLesson;
   isZh: boolean;
   isComplete: boolean;
   onToggleComplete: () => void;
-  onBack: () => void;
 }) {
 
   const lessonSections = lesson.sections ?? [];
@@ -519,15 +502,6 @@ function LessonView({
     <div className="min-h-full bg-background">
       <section className={`bg-gradient-to-br ${module.accent} text-white py-6`}>
         <div className="max-w-3xl mx-auto px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            className="text-white hover:bg-white/20 mb-3 -ml-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            {isZh ? module.titleZh : module.title}
-          </Button>
           <h1 className="text-2xl md:text-3xl font-bold">
             {isZh ? lesson.titleZh : lesson.title}
           </h1>

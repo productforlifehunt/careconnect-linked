@@ -55,14 +55,20 @@ export async function fetchSavedProvidersWordPress(): Promise<any[]> {
   return enriched.filter(Boolean) as any[];
 }
 
-export async function toggleSavedProviderWordPress(providerId: string): Promise<void> {
+/** A heart only needs relationship IDs, never the full saved-provider directory. */
+export async function fetchSavedProviderIdsWordPress(): Promise<string[]> {
+  const userId = requireUserId();
+  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAVED_PROVIDERS}/children/${userId}`);
+  if (!Array.isArray(rels)) throw new Error("Could not read favorites");
+  return rels.map((r: any) => stripWp(r.child_object_id ?? r.child_id)).filter(Boolean);
+}
+
+export async function toggleSavedProviderWordPress(providerId: string, currentlySaved?: boolean): Promise<boolean> {
   const userId = requireUserId();
   const childId = Number(stripWp(providerId));
   if (!childId) throw new Error("Invalid provider id");
 
-  const rels = await wordpressFetch<any[]>(`jet-rel/${REL_SAVED_PROVIDERS}/children/${userId}`);
-  const already = Array.isArray(rels)
-    && rels.some((r: any) => Number(r.child_object_id ?? r.child_id) === childId);
+  const already = currentlySaved ?? (await fetchSavedProviderIdsWordPress()).includes(String(childId));
 
   await wordpressFetch(`jet-rel/${REL_SAVED_PROVIDERS}`, {
     method: "POST",
@@ -73,4 +79,5 @@ export async function toggleSavedProviderWordPress(providerId: string): Promise<
       store_items_type: already ? "disconnect" : "update",
     },
   });
+  return !already;
 }

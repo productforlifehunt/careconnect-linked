@@ -1,5 +1,7 @@
 export async function runServerAction(name: string, data: unknown, request: Request): Promise<unknown> {
   switch (name) {
+    case "editOwnReview":
+      return (await import("@/features/reviews/edit.server")).editOwnReview(data, request);
     case "familyVoiceAction":
       return (await import("@/lib/family-voice.functions.server")).familyVoiceAction(data, request);
     case "getInterviewOverview":
