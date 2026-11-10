@@ -659,7 +659,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
   const renderLocationAlertToggle = (surface: "header" | "safezones") =>
     !readOnly && (
       <div
-        className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5"
+        className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5"
         data-inspector-id="location-alert-receiver-toggle"
         data-testid={
           surface === "header"
@@ -667,12 +667,13 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
             : "location-alert-toggle-safezones"
         }
       >
-        <span className="text-xs text-foreground">
-          {isZh ? "接收安全/危险区域推送" : "Receive safe/danger zone alerts"}
+        <span className="min-w-0 break-words text-xs text-foreground">
+          {isZh ? `接收${caredOneName}的位置提醒` : `Receive location alerts for ${caredOneName}`}
         </span>
         <Switch
+          className="shrink-0"
           aria-label={
-            isZh ? "接收安全/危险区域推送" : "Receive safe/danger zone alerts"
+            isZh ? `接收${caredOneName}的位置提醒` : `Receive location alerts for ${caredOneName}`
           }
           checked={Boolean(locationAlertSubscription.data)}
           onCheckedChange={handleLocationAlertSubscriptionChange}

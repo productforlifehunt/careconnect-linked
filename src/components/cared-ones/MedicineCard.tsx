@@ -804,10 +804,11 @@ export function MedicineCard({ caredOneId }: { caredOneId: string }) {
             <Button role="tab" aria-selected={view === "records"} variant="ghost" onClick={() => setView("records")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "records" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("记录","Records")}</Button>
             <Button role="tab" aria-selected={view === "manage"} variant="ghost" onClick={() => setView("manage")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "manage" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("用药管理","Manage")}</Button>
           </div>
-          <div className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-2.5" data-inspector-id="medicine-notification-receiver-toggle" data-testid="medicine-notification-receiver-toggle">
-            <span className="whitespace-nowrap text-xs">{Z("接收用药提醒", "Medication reminders")}</span>
+          <div className="flex min-h-9 max-w-full items-center gap-2 rounded-md border border-border px-2.5 py-1" data-inspector-id="medicine-notification-receiver-toggle" data-testid="medicine-notification-receiver-toggle">
+            <span className="min-w-0 break-words text-xs">{Z(`接收${caredOneName}的用药提醒`, `Receive medication reminders for ${caredOneName}`)}</span>
             <Switch
-              aria-label={Z("接收用药提醒推送", "Receive medication reminder notifications")}
+              className="shrink-0"
+              aria-label={Z(`接收${caredOneName}的用药提醒`, `Receive medication reminders for ${caredOneName}`)}
               checked={receivesMedicationReminders}
               onCheckedChange={handleMedicationReminderSubscription}
               disabled={!receiverId || scheduleIds.length === 0 || scheduleReceiversLoading || setScheduleSubscription.isPending}

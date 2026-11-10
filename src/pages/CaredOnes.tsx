@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Plus, Pill, ClipboardCheck, HeartPulse, Lightbulb, Target, FileText,
-  Phone, MapPin, FolderOpen, Trash2, Check, X, ArrowLeft, Clock, SkipForward,
+  Phone, MapPin, FolderOpen, Trash2, Check, X, Clock, SkipForward,
   Search, UserPlus, IdCard, Pencil, ListChecks, AudioLines,
 
 } from "lucide-react";
@@ -298,7 +298,6 @@ export default function CaredOnes() {
 
           {openCard ? (
             <div>
-              <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenCard(null)}><ArrowLeft className="h-4 w-4 mr-1" /> {t("caredOnes.backToCards")}</Button>
               {selectedId && <FeatureDetail key={`${bare(selectedId)}:${openCard}`} cardKey={openCard} caredOneId={selectedId} caredOneName={caredOneName} />}
             </div>
           ) : (

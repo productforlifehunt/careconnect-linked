@@ -1,3 +1,9 @@
+## Current request: Named reminder toggles and single global back navigation (2026-11-10 12:23 UTC)
+- [ ] Show current app display name in medicine, check-in and location receiver labels; preserve subscription behavior.
+- [ ] Remove all duplicate page back buttons; retain shared page-header history navigation and non-navigation controls.
+- [ ] Update every relevant unlocked note, preserve locked notes and bindings, independently read back changes.
+- [ ] Run relevant checks and verify actual pages; report preview/deployment and Draftbit blockers honestly.
+
 ## Current request: Uploaded AI conversation acceptance standard (2026-11-10 09:26 UTC)
 - [x] Read every paragraph and inventory all 11 acceptance clauses; two independent source audits completed. Initial existing AI tests 10/10 passed, not behavioral acceptance.
 - [x] Implemented selected-only standard context, cancellation gate, editable content/person confirmation before writes, exact hidden-body/partial-stream filtering, complete context transmission and account/App query keys. Added 16 rule/interaction tests; 23/23 focused tests passed. Paraphrased disclosure and real persistence remain unverified.

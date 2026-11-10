@@ -396,10 +396,11 @@ export function CheckInCard({ caredOneId }: { caredOneId: string }) {
             <Button role="tab" aria-selected={view === "records"} variant="ghost" onClick={() => setView("records")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "records" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("记录", "Records")}</Button>
             <Button role="tab" aria-selected={view === "manage"} variant="ghost" onClick={() => setView("manage")} className={`h-full min-w-0 rounded-none px-2 text-xs ${view === "manage" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "text-muted-foreground"}`}>{Z("签到管理", "Manage")}</Button>
           </div>
-          <div className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-2.5" data-inspector-id="checkin-notification-receiver-toggle" data-testid="checkin-notification-receiver-toggle">
-            <span className="whitespace-nowrap text-xs">{Z("接收探望提醒", "Check-in notifications")}</span>
+          <div className="flex min-h-9 max-w-full items-center gap-2 rounded-md border border-border px-2.5 py-1" data-inspector-id="checkin-notification-receiver-toggle" data-testid="checkin-notification-receiver-toggle">
+            <span className="min-w-0 break-words text-xs">{Z(`接收${caredOneName}的探望提醒`, `Receive check-in reminders for ${caredOneName}`)}</span>
             <Switch
-              aria-label={Z("接收探望提醒推送", "Receive check-in notifications")}
+              className="shrink-0"
+              aria-label={Z(`接收${caredOneName}的探望提醒`, `Receive check-in reminders for ${caredOneName}`)}
               checked={receivesCheckinNotifications}
               onCheckedChange={handleCheckinNotificationSubscription}
               disabled={!receiverId || scheduleIds.length === 0 || scheduleReceiversLoading || setScheduleSubscription.isPending}
