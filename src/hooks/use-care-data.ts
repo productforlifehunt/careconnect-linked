@@ -638,26 +638,6 @@ export function useUpdateProfile() {
   });
 }
 
-// ─── Become Provider ────────────────────────────────────────
-export function useSubmitProviderApplication() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: any) => {
-      return updateProfileWordPress({
-        is_care_provider: true,
-        provider_is_active: true,
-        service_type_slugs: input.service_type_slugs || [],
-        care_provider_starts_hourly_rate: input.hourlyRate || input.care_provider_starts_hourly_rate || 0,
-        bio: input.bio || '',
-        location: input.location || '',
-        phone: input.phone || input.phone_number || undefined,
-
-      });
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
-  });
-}
-
 // ─── Care Group Posts ───────────────────────────────────────
 export function useCareGroupPosts(groupId: string | null, type?: string | undefined) {
   // One shared query per group (all types), filtered locally per caller.
