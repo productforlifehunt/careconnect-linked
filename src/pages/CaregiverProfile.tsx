@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Star, MapPin, Shield, Clock, CheckCircle, Calendar, MessageSquare, Heart, Phone, Loader2 } from "lucide-react";
 import { CommentsSection } from "@/components/comments/CommentsSection";
-import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviders, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
+import { useProvider, useProviderReviews, useCreateReview, useToggleSavedProvider, useSavedProviderIds, useStartConversation, useProviderAvailability } from "@/hooks/use-care-data";
 import { useAddToCart } from "@/hooks/use-cart";
 import { getProviderCalendarBookingConflictMessage as getProviderBookingConflictMessage, getAvailabilityConflictMessage } from "@/features/calendar/booking-availability";
 import { createCareBookingProduct } from "@/services/care-booking-product";
@@ -72,7 +72,7 @@ export default function CaregiverProfile() {
   const reviewAverage = reviewCount
     ? (reviews || []).reduce((sum: number, r: any) => sum + (Number(r.rating) || 0), 0) / reviewCount
     : null;
-  const { data: savedProviders } = useSavedProviders();
+  const { data: savedProviderIds, isLoading: favoritesLoading } = useSavedProviderIds();
   const toggleSaved = useToggleSavedProvider();
   const createReview = useCreateReview();
   const startConversation = useStartConversation();
@@ -91,7 +91,10 @@ export default function CaregiverProfile() {
   const [reviewComment, setReviewComment] = useState("");
 
   const { data: availability } = useProviderAvailability(id ?? null);
-  const isFavorited = savedProviders?.some((sp: any) => sp.provider_id === id) || false;
+  const isFavorited = savedProviderIds?.includes(String(id ?? "").replace(/^wp-/, "")) || false;
+  const favoriteLabel = toggleSaved.isPending
+    ? (isZh ? (isFavorited ? "正在取消中" : "正在收藏中") : (isFavorited ? "Removing…" : "Saving…"))
+    : (isZh ? (isFavorited ? "取消收藏" : "收藏") : (isFavorited ? "Remove from favorites" : "Save"));
 
   /**
    * Bookable services come from the caregiver's dictionary record (CCT 258):
@@ -371,8 +374,8 @@ export default function CaregiverProfile() {
 
   const handleToggleFavorite = () => {
     if (!isAuthenticated) { navigate("/auth"); return; }
-    toggleSaved.mutate(caregiver.id, {
-      onSuccess: () => toast({ title: isZh ? (isFavorited ? "你已取消收藏该护理者" : "你已收藏该护理者") : (isFavorited ? "Caregiver removed from favorites" : "Caregiver added to favorites") }),
+    toggleSaved.mutate({ providerId: caregiver.id, currentlySaved: isFavorited }, {
+      onSuccess: (saved) => toast({ title: isZh ? (saved ? "收藏成功" : "已取消收藏") : (saved ? "Saved" : "Removed from favorites") }),
       onError: () => toast({ title: isZh ? "收藏操作失败，请重试" : "Could not update favorites. Please try again.", variant: "destructive" }),
     });
   };
@@ -409,32 +412,31 @@ export default function CaregiverProfile() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="min-h-11 min-w-11 shrink-0"
+                          className="h-12 w-12 rounded-full border border-border bg-card shadow-lg shrink-0"
                           onClick={handleToggleFavorite}
-                          disabled={toggleSaved.isPending}
-                          title={isZh ? (isFavorited ? "取消收藏" : "收藏") : (isFavorited ? "Remove from favorites" : "Save")}
-                          aria-label={isZh ? (isFavorited ? "取消收藏" : "收藏") : (isFavorited ? "Remove from favorites" : "Save")}
+                          disabled={toggleSaved.isPending || (isAuthenticated && favoritesLoading)}
+                          title={favoriteLabel}
+                          aria-label={favoriteLabel}
                           aria-pressed={isFavorited}
                         >
-                          <Heart className={`h-5 w-5 ${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}`} />
+                          {toggleSaved.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Heart className={`h-5 w-5 ${isFavorited ? "fill-coral text-coral" : "text-muted-foreground"}`} />}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {isZh
-                          ? (isFavorited ? "点击取消收藏该护理者" : "点击收藏该护理者")
-                          : (isFavorited ? "Click to remove this caregiver from favorites" : "Click to save this caregiver to your favorites")}
+                        {favoriteLabel}
                       </TooltipContent>
                     </Tooltip>
 
                   </div>
                   <div className="flex flex-wrap gap-2 mt-4">
                     {(caregiver.service_location_slugs || []).map((slug: string) => (
-                      <Badge key={`loc-${slug}`} variant="outline" className="border-primary/40 text-primary">{deliveryModeLabel(slug, isZh)}</Badge>
+                      <Button key={`loc-${slug}`} variant="outline" size="sm" className="h-auto min-h-7 px-2 py-1 text-xs border-primary/40 text-primary" onClick={() => navigate(`/search-caregiver?service_location=${encodeURIComponent(slug)}`)}>{deliveryModeLabel(slug, isZh)}</Button>
                     ))}
                     {(caregiver.service_type_slugs || []).map((slug: string) => (
-                      <Badge key={slug} variant="secondary" className="bg-accent text-accent-foreground">{careServiceTypeLabel(slug, isZh)}</Badge>
+                      <Button key={slug} variant="secondary" size="sm" className="h-auto min-h-7 px-2 py-1 text-xs whitespace-normal" onClick={() => navigate(`/search-caregiver?service_type=${encodeURIComponent(slug)}`)}>{careServiceTypeLabel(slug, isZh)}</Button>
                     ))}
                   </div>
+                  {toggleSaved.isPending && <p role="status" className="mt-2 text-xs text-muted-foreground">{favoriteLabel}</p>}
                 </div>
               </div>
             </CardContent>
@@ -743,7 +745,7 @@ export default function CaregiverProfile() {
                 {(reviews || []).length > 0 ? (reviews || []).map((review: any) => (
                   <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-foreground">{review.reviewer?.full_name || (isZh ? "未填姓名" : "No name")}</span>
+                      <span className="font-medium text-sm text-foreground">{review.author_name || (isZh ? "未填姓名" : "No name")}</span>
                       <span className="text-xs text-muted-foreground">{formatDate(review.created_at, i18n.language, { month: "short", day: "numeric", year: "numeric" })}</span>
                     </div>
                     <div className="flex gap-0.5 mb-2">
