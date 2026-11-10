@@ -768,7 +768,8 @@ function needs(question: string) {
 
 type ChatHistoryMessage = { role: "user" | "assistant"; content: string };
 
-function hasCareTipWriteIntent(question: string, history: ChatHistoryMessage[] = []): boolean {
+export function hasCareTipWriteIntent(question: string, history: ChatHistoryMessage[] = []): boolean {
+  if (/(?:不要|别|不用|不必|取消|停止).{0,16}(?:保存|存下|记下|记住|记录)|(?:不保存|算了)|\b(?:don't|do not|never|stop|cancel)\b.{0,30}\b(?:save|remember|record|write|note)\b|\bnever mind\b/i.test(question)) return false;
   if (needs(question).saveCareTip) return true;
   const recent = history.slice(-4);
   const priorExplicitRequest = recent.some((message) => message.role === "user" && needs(message.content).saveCareTip);
@@ -851,6 +852,8 @@ export interface AssistantContextInput {
   topics?: KnowledgeTopic[] | undefined;
   /** True when the reader came in through a public shared information card. */
   sharedCard?: boolean | undefined;
+  /** Standard chats supply tips only through the user's active selection. */
+  selectedCareTipsOnly?: boolean | undefined;
 }
 
 /**
@@ -861,6 +864,7 @@ export async function resolveAssistantContext(input: AssistantContextInput): Pro
   const { question, isChinese, caredOneId, groupId, groupName, topics, sharedCard, appFamily, staticSkillNames = [], sheetContext, history = [], writeSkills = [] } = input;
   const lang: Lang = { isChinese };
   const want = needs(question);
+  if (input.selectedCareTipsOnly) want.careTips = false;
   const allowCareTipWrite = hasCareTipWriteIntent(question, history) && writeSkills.includes("save-care-tip");
   const needPersonFacts = want.medicine || want.checkIn || want.location || want.careTips || want.carePlans || want.careNotes;
 
@@ -1750,6 +1754,7 @@ export async function runAssistantWriteSkill(input: {
   history?: ChatHistoryMessage[] | undefined;
   result: WriteSkillResult;
   isChinese: boolean;
+  confirmed?: boolean | undefined;
 }): Promise<WriteSkillExecution> {
   if (input.skill !== "save-care-tip" || !hasCareTipWriteIntent(input.question, input.history)) {
     throw new Error("No care-tip save was requested.");
@@ -1760,12 +1765,25 @@ export async function runAssistantWriteSkill(input: {
   if (status === "discarded") {
     return { status, summary, message: skill.toastFor(status), invalidateKeys: [] };
   }
+  if (!input.confirmed) throw new Error("Confirm the care-tip content and person before saving.");
   if (!summary) throw new Error("The care tip is empty.");
 
   const subjectQuery = input.caredOneName?.trim() || input.question;
   const subject = await resolveAssistantSubject(subjectQuery, input.caredOneId, input.sharedCard);
   if (subject.access !== "full" || !subject.id) throw new Error("The selected cared-one record is unavailable to this account.");
   return runWriteSkill(input.skill, { caredOneId: subject.id }, { status, summary }, { isChinese: input.isChinese });
+}
+
+/** Resolve the proposed save target before showing the user's confirmation. */
+export async function prepareAssistantCareTipTarget(question: string, caredOneName?: string, caredOneId?: string, sharedCard?: boolean) {
+  const subject = await resolveAssistantSubject(caredOneName?.trim() || question, caredOneId, sharedCard);
+  if (subject.access !== "full" || !subject.id) throw new Error("The selected cared-one record is unavailable to this account.");
+  if (!subject.name) {
+    const { wpFetchCaredOnes } = await import("@/services/wp-data");
+    const person = (await wpFetchCaredOnes()).find((row: any) => String(row.user_id) === subject.id && row.invitation_status !== "pending");
+    subject.name = person?.cared_one?.full_name || undefined;
+  }
+  return { id: subject.id, name: subject.name || subject.id };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

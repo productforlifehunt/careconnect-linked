@@ -1,3 +1,10 @@
+## Current request: Uploaded AI conversation acceptance standard (2026-11-10 09:26 UTC)
+- [x] Read every paragraph and inventory all 11 acceptance clauses; two independent source audits completed. Initial existing AI tests 10/10 passed, not behavioral acceptance.
+- [x] Implemented selected-only standard context, cancellation gate, editable content/person confirmation before writes, exact hidden-body/partial-stream filtering, complete context transmission and account/App query keys. Added 16 rule/interaction tests; 23/23 focused tests passed. Paraphrased disclosure and real persistence remain unverified.
+- [ ] Verify all 11 clauses through real browser/model flows, including sorting, refresh, account/App isolation, error/retry and authorized save/readback. Current local preview blocked by oj/React Router ssrLoadModule incompatibility; one supervised restart attempted.
+- [x] Existing ai deployed. Same-input meal/unknown-listener cases failed before prompt correction and passed after; confirmed-listener response now starts with Dad, simulated call does not reconfirm listener. Service tests only, not frontend acceptance.
+- [ ] Pending-tip acknowledgment still appends extra choices in some real model replies; not fully accepted. Exact clause-by-clause evidence in docs/ai-acceptance-2026-11-10.md. Locked notes/standard untouched; no WordPress writes. Root AGENTS.md already exceeds its size budget, so no new rule inserted there.
+
 ## Current request: Preserve user's master note and AI editing lock (2026-11-10)
 - [x] Read #6856 fresh through GUI, preserved exact body; verified CCT258 a107 textarea/CCT151 a98 text in JetEngine GUI. Updated own profile read/write and public provider biography; app-profile phone stays scoped by existing a01 + REL152. Review flow already permits logged-in reviewers without an order.
 - [x] Both note types and related-note editors show existing a66 lock, default off and persisted by Save; AI correction endpoint and lower-level AI-origin writes re-read and reject locked notes, reports filter locked targets and chat cannot return replacement text for them. Manual editing remains available.

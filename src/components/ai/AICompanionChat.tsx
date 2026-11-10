@@ -13,6 +13,7 @@ import {
   resolveAssistantContext,
   runAssistantConversationSkill,
   runAssistantWriteSkill,
+  prepareAssistantCareTipTarget,
 } from "@/lib/ai-dynamic-knowledge";
 import { appGuideEntries, type AppGuideEntry } from "@/lib/ai-static-knowledge";
 import { useSite } from "@/contexts/SiteContext";
@@ -21,7 +22,7 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { CareTipContextPicker } from "@/components/ai/CareTipContextPicker";
-import { buildActiveCareTipsPrompt, buildCareTipSelectionPrompt, type ActiveCareTip } from "@/lib/ai-care-tip-context";
+import { buildActiveCareTipsPrompt, buildCareTipSelectionPrompt, hideCareTipBodies, type ActiveCareTip } from "@/lib/ai-care-tip-context";
 
 type Msg = { role: "user" | "assistant"; content: string; imageDataUrl?: string | undefined };
 type PendingChatImage = { dataUrl: string; name: string };
@@ -84,6 +85,9 @@ export function AICompanionChat({
   const [preparingImage, setPreparingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [pendingTipSave, setPendingTipSave] = useState<{ question: string; personId: string; personName: string; content: string } | null>(null);
+  const [savingTip, setSavingTip] = useState(false);
+  const hiddenTipsRef = useRef<ActiveCareTip[]>([]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<{ abort: () => void } | null>(null);
   const activeRequestId = useRef<string | undefined>(undefined);
@@ -341,6 +345,7 @@ export function AICompanionChat({
         sheetContext: contextScope.sheetContext,
         history: messages.slice(-4).map((message) => ({ role: message.role, content: message.content })),
         writeSkills: contextScope.writeSkills,
+        selectedCareTipsOnly: !contextScope.sharedCard,
         sharedCard: contextScope.sharedCard,
       });
     } catch (e) {
@@ -466,6 +471,7 @@ export function AICompanionChat({
     if ((!text && !image) || loading || preparingImage) return false;
     const userText = text || (isZh ? "请看看这张图片。" : "Please take a look at this image.");
     const savedUserText = image ? `${userText}\n[${isZh ? "图片附件" : "Image attached"}]` : userText;
+    setPendingTipSave(null);
     onChatEngaged?.();
     setInput("");
     setPendingImage(null);
@@ -485,10 +491,11 @@ export function AICompanionChat({
         next.slice(0, -1).map((m) => ({ role: m.role, content: m.content, ...(m.imageDataUrl ? { imageDataUrl: m.imageDataUrl } : {}) }))
       );
       const contextPrompt = await buildContext(userText, selectionTips);
+      hiddenTipsRef.current = [...hiddenTipsRef.current, ...activeCareTipsRef.current, ...selectionTips];
       const onDelta = (full: string) =>
         setMessages((prev) => {
           const copy = [...prev];
-          copy[copy.length - 1] = { role: "assistant", content: full };
+          copy[copy.length - 1] = { role: "assistant", content: hideCareTipBodies(full, hiddenTipsRef.current, true) };
           return copy;
         });
 
@@ -542,7 +549,7 @@ export function AICompanionChat({
         abortRef.current = { abort };
         reply = await result;
       }
-      let persistedReply = reply;
+      let persistedReply = hideCareTipBodies(reply, hiddenTipsRef.current);
       const parsed = parseAIJson<{
         done?: boolean | undefined;
         skill?: string | undefined;
@@ -573,18 +580,10 @@ export function AICompanionChat({
       } else if (parsed?.done && parsed.skill === "save-care-tip") {
         if (contextScope?.writeSkills?.includes("save-care-tip")) {
           try {
-            const written = await runAssistantWriteSkill({
-              skill: "save-care-tip",
-              question: userText,
-              caredOneName: parsed.caredOneName,
-              caredOneId: contextScope.caredOneId,
-              sharedCard: contextScope.sharedCard,
-              history: messages.slice(-4).map((message) => ({ role: message.role, content: message.content })),
-              result: { status: parsed.status, summary: parsed.summary },
-              isChinese: !!isZh,
-            });
-            written.invalidateKeys.forEach((queryKey) => void queryClient.invalidateQueries({ queryKey }));
-            persistedReply = `✅ ${written.message}`;
+            const person = await prepareAssistantCareTipTarget(userText, parsed.caredOneName, contextScope.caredOneId, contextScope.sharedCard);
+            if (!parsed.summary?.trim() || parsed.status !== "saved") throw new Error("No tip to confirm.");
+            setPendingTipSave({ question: userText, personId: person.id, personName: person.name, content: parsed.summary.trim() });
+            persistedReply = isZh ? "请确认要保存的小贴士和对应家人。" : "Please confirm the care tip and the person it is for.";
           } catch {
             persistedReply = isZh
               ? "我没能保存这条护理小贴士。请确认可以查看这位家人的资料后再试。"
@@ -601,6 +600,11 @@ export function AICompanionChat({
           return copy;
         });
       }
+      setMessages((prev) => {
+        const copy = [...prev];
+        copy[copy.length - 1] = { role: "assistant", content: persistedReply };
+        return copy;
+      });
       persistTurn(savedUserText, persistedReply, !messages.some((m) => m.role === "user"));
       if (!liveRef.current) {
         if (clonedVoice && persistedReply.trim()) void speakCloned(persistedReply, next.length - 1, clonedVoice);
@@ -745,6 +749,26 @@ export function AICompanionChat({
       </Conversation>
 
       <div className="border-t p-3 space-y-2">
+        {pendingTipSave && (
+          <div className="space-y-2 border-b pb-3" role="group" aria-label={isZh ? "确认保存护理小贴士" : "Confirm care tip save"}>
+            <p className="text-sm font-medium">{pendingTipSave.personName}</p>
+            <textarea aria-label={isZh ? "待保存的小贴士" : "Care tip to save"} value={pendingTipSave.content} onChange={(event) => setPendingTipSave({ ...pendingTipSave, content: event.target.value })} className="w-full rounded-md border bg-background p-2 text-sm" />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" disabled={savingTip} onClick={() => setPendingTipSave(null)}>{isZh ? "取消" : "Cancel"}</Button>
+              <Button disabled={savingTip || !pendingTipSave.content.trim()} onClick={async () => {
+                setSavingTip(true);
+                try {
+                  const written = await runAssistantWriteSkill({ skill: "save-care-tip", question: pendingTipSave.question, caredOneId: pendingTipSave.personId, result: { status: "saved", summary: pendingTipSave.content }, confirmed: true, isChinese: !!isZh, history: messages.slice(-4) });
+                  written.invalidateKeys.forEach((queryKey) => void queryClient.invalidateQueries({ queryKey }));
+                  setPendingTipSave(null);
+                  setMessages((prev) => [...prev, { role: "assistant", content: written.message }]);
+                } catch {
+                  setChatError(isZh ? "没能保存这条护理小贴士，请重试。" : "Couldn't save this care tip. Please try again.");
+                } finally { setSavingTip(false); }
+              }}>{isZh ? "确认保存" : "Confirm save"}</Button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-1 rounded-xl bg-muted p-1" role="group" aria-label={isZh ? "回复方式" : "Reply mode"}>
           {([
             { id: "text" as const, icon: MessageSquare, zh: "文字", en: "Text" },

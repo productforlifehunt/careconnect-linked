@@ -148,7 +148,7 @@ async function handleChat(req: Request): Promise<Response> {
       ? payload.messages.filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
       : [];
     const contextPrompt = typeof payload?.contextPrompt === "string"
-      ? payload.contextPrompt.slice(0, 8000).trim()
+      ? payload.contextPrompt.trim()
       : "";
 
     if (messages.length === 0) {
@@ -268,7 +268,7 @@ async function handleStream(req: Request, allowVision = false): Promise<Response
       );
     }
 
-    const contextPrompt = typeof rawContextPrompt === "string" ? rawContextPrompt.slice(0, 8000).trim() : "";
+    const contextPrompt = typeof rawContextPrompt === "string" ? rawContextPrompt.trim() : "";
     const systemPrompt = [buildSystemPrompt(language, site), contextPrompt].filter(Boolean).join("\n\n");
 
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
