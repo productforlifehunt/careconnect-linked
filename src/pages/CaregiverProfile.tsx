@@ -313,6 +313,8 @@ export default function CaregiverProfile() {
       toast({ title: isZh ? "该时段不可预约" : "Time slot unavailable", description: scheduleConflictMessage, variant: "destructive" });
       return;
     }
+    // The stale-cart wipe does not depend on the conflict read, so both run at once.
+    const clearing = isAuthenticated ? clearCart().catch(() => undefined) : Promise.resolve(undefined);
     const conflictMessage = await getProviderBookingConflictMessage(caregiver.id, bookingDate, bookingTime, durationHours);
     if (conflictMessage) {
       setAvailabilityWarning(conflictMessage);
@@ -339,11 +341,7 @@ export default function CaregiverProfile() {
       // One booking request = one checkout. WooCommerce resurrects the
       // persistent cart of an abandoned session for logged-in customers, so
       // without this the client can silently pay for old, stale bookings.
-      try {
-        await clearCart();
-      } catch {
-        /* non-fatal: worst case the client removes stale lines by hand */
-      }
+      await clearing;
       const recurringNote = recurringPattern !== "none" ? `[Recurring: ${recurringPattern}] ` : "";
       const packageNote = `[Service: ${selectedResource.label}] `;
       // Just-in-time: create the WooCommerce product for this exact service and

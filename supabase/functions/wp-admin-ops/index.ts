@@ -391,23 +391,13 @@ Deno.serve(async (req) => {
               { method: "POST", headers: adminHeaders(), body: JSON.stringify({ author: vendorId }) },
             ],
           ];
-          for (const [url, init] of attempts) {
-            const attemptRes = await fetch(url, init).catch(() => null);
-            if (!attemptRes) continue;
-            const body = await attemptRes.text().catch(() => "");
-            if (attemptRes.ok) {
-              // Confirm Dokan now lists the product under the caregiver's store.
-              const check = await fetch(`${wpBase}/wp-json/dokan/v1/stores/${vendorId}/products?per_page=20`, {
-                headers: adminHeaders(),
-              }).catch(() => null);
-              const list = check && check.ok ? await check.json().catch(() => []) : [];
-              authorAssigned = Array.isArray(list)
-                ? list.some((prod: any) => Number(prod?.id) === newId)
-                : false;
-              if (authorAssigned) break;
-            }
-            console.error(`author assign attempt failed [${attemptRes.status}] ${url}`, body.slice(0, 200));
-          }
+          // All three hand-over paths run at once; their own responses report the author.
+          const results = await Promise.all(attempts.map(async ([url, init]) => {
+            const r = await fetch(url, init).catch(() => null);
+            const body = r ? await r.json().catch(() => null) : null;
+            return Number(body?.post_author ?? body?.author) === vendorId;
+          }));
+          authorAssigned = results.some(Boolean);
           if (!authorAssigned) {
             console.error(`create_service_product could not assign vendor ${vendorId} to product ${newId}`);
           }

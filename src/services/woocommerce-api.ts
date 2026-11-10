@@ -391,7 +391,7 @@ export async function addToCart({
   // caches, in which case the Store API answers "not available for purchase".
   // Retry briefly instead of failing the booking.
   let lastError: unknown = null;
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const cart = await storeApiFetch('cart/add-item', {
         method: 'POST',
@@ -403,7 +403,7 @@ export async function addToCart({
     } catch (error) {
       lastError = error;
       if (!String(error).includes('not_purchasable')) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await new Promise((resolve) => setTimeout(resolve, 700));
     }
   }
   throw lastError instanceof Error ? lastError : new Error('Could not add the service to the cart');
@@ -736,22 +736,6 @@ export async function createServiceProduct(input: {
   });
   if (!result?.id) throw new Error('Could not create the service product');
   const id = Number(result.id);
-
-  // The store's object cache can lag a second or two behind a freshly created
-  // product, and the Store API refuses to add a line it still sees as
-  // non-purchasable. Wait until it reports the product as ready.
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    try {
-      const res = await fetch(buildWPUrl(`wc/store/v1/products/${id}`), { headers: getAuthHeaders() });
-      if (res.ok) {
-        const product = await res.json();
-        if (product?.is_purchasable) break;
-      }
-    } catch {
-      /* keep waiting */
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-  }
 
   return { id, price: Number(result.price || input.amount) };
 }

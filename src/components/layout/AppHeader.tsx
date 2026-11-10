@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavLink } from "@/components/NavLink";
-import { Menu, LogOut, LayoutDashboard, Bell, Heart, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Building2, Briefcase, Settings, ChevronDown } from "lucide-react";
+import { Menu, LogOut, LayoutDashboard, Bell, Heart, HelpCircle, CalendarDays, Users, MapPin, MessageSquare, Building2, Briefcase, Settings, ChevronDown, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
@@ -263,6 +263,13 @@ export function AppHeader() {
                   <DropdownMenuItem asChild>
                     <Link to="/favorite-caregiver">
                       <Heart className="mr-2 h-4 w-4" /> {t("nav.favorites")}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {paidCare && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/cart">
+                      <ShoppingCart className="mr-2 h-4 w-4" /> {isChinese ? "购物车" : "Cart"}
                     </Link>
                   </DropdownMenuItem>
                 )}
