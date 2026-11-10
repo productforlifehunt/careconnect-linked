@@ -20,13 +20,13 @@ import PayoutAccountsCard from "@/components/provider/PayoutAccountsCard";
 
 import {
   useProviderBookings, useUpdateBookingStatus, useMyProfile,
-  useProviderAvailability, useUpsertProviderAvailability,
+  useProviderAvailability, useUpsertProviderAvailability, useUpdateProfile,
 } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { cleanBookingNote } from "@/lib/utils";
-import { Navigate, useSearchParams } from "@/lib/router-compat";
+import { useSearchParams } from "@/lib/router-compat";
 
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -44,6 +44,7 @@ export default function ProviderDashboard() {
   const updateBookingStatus = useUpdateBookingStatus();
   const { data: availability } = useProviderAvailability(providerId);
   const upsertAvailability = useUpsertProviderAvailability();
+  const becomeProvider = useUpdateProfile();
   
 
   const [schedule, setSchedule] = useState<Record<number, { enabled: boolean; start: string; end: string }>>(() => {
@@ -156,7 +157,17 @@ export default function ProviderDashboard() {
 
   if (profileLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (profileError) return <div className="px-4 py-8 space-y-4"><p className="text-destructive">{profileError.message}</p><Button onClick={() => void refetchProfile()}>{isZh ? "重试" : "Retry"}</Button></div>;
-  if (!profile?.is_care_provider) return <Navigate to="/become-caregiver" replace />;
+  if (!profile?.is_care_provider) return (
+    <div className="max-w-lg mx-auto px-4 py-10 space-y-4">
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{isZh ? "成为护理者" : "Become a Caregiver"}</h1>
+      <p className="text-sm text-muted-foreground">{isZh ? "开启后即可在这里设置所在地、服务类型与价格、可约时间。" : "Turn this on to set your location, services, rates and open times here."}</p>
+      {becomeProvider.error && <p className="text-sm text-destructive">{becomeProvider.error.message}</p>}
+      <Button variant="coral" size="lg" className="w-full" disabled={becomeProvider.isPending}
+        onClick={() => becomeProvider.mutate({ is_care_provider: true }, { onSuccess: () => setSearchParams(p => { const n = new URLSearchParams(p); n.set("tab", "settings"); return n; }) })}>
+        {becomeProvider.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (isZh ? "成为护理者" : "Become a Caregiver")}
+      </Button>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
