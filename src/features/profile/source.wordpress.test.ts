@@ -7,6 +7,15 @@ vi.mock('@/features/profile/app-user-name', () => ({ fetchMyAppUserName: mocks.n
 vi.mock('@/features/shared/app-profile', () => ({ getAppProfileRow: mocks.appRow, patchAppProfile: mocks.appWrite, APP_PROFILE_F: { PHONE: 'a98' } }));
 vi.mock('@/services/wp-auth', () => ({ getStoredWPUser: () => ({ user_id: 46 }) }));
 import { fetchMyProfileWordPress, updateProfileWordPress } from './source.wordpress';
+it('starts the CCT258 write without waiting for the independent phone save', async () => {
+  mocks.row.mockResolvedValue({ _ID: '2581' });
+  let finishPhone: (() => void) | undefined;
+  mocks.appWrite.mockImplementation(() => new Promise<void>(resolve => { finishPhone = resolve; }));
+  const saving = updateProfileWordPress({ bio: '介绍', phone: '12345678' });
+  await vi.waitFor(() => expect(mocks.cct).toHaveBeenCalledWith('user_ext_profile_2', expect.objectContaining({ method: 'PUT', body: { a107: '介绍' } })), { timeout: 100 });
+  finishPhone?.();
+  await saving;
+});
 afterEach(() => vi.resetAllMocks());
 it('saves biography to CCT258 a107, never WordPress description', async () => {
   mocks.row.mockResolvedValue({ _ID: '2581' });
