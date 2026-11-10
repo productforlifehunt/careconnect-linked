@@ -76,9 +76,6 @@ type Pages = {
       "token": string;
     };
   };
-  "/become-caregiver": {
-    params: {};
-  };
   "/community": {
     params: {};
   };
@@ -282,7 +279,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/cared-ones/:personId" | "/cared-ones/:personId/:card" | "/api/public/family-voices" | "/search-remote-caregiver" | "/search-local-caregiver" | "/care-circle/:groupId" | "/search-care-facility" | "/facilities/:id/edit" | "/accompanied" | "/api/server-actions" | "/favorite-caregiver" | "/order-confirmation" | "/sync-test-draftbit" | "/cared-ones" | "/caregiver-setting" | "/delete-after-read" | "/share/card/:token" | "/become-caregiver" | "/community" | "/search-caregiver" | "/accompanied/:id" | "/articles" | "/xianyu-listings" | "/facilities/new" | "/group/:groupId" | "/reset-password" | "/awared" | "/brand-compare" | "/caregiver/:id" | "/community/:id" | "/notifications" | "/ai-companion" | "/appointments" | "/articles/:id" | "/cared" | "/coped" | "/facility/:id" | "/how-it-works" | "/safed" | "/trust-safety" | "/care-circle" | "/get-started" | "/awared/:id" | "/join/:code" | "/onboarding" | "/share/note" | "/assistant" | "/cared/:id" | "/check-ins" | "/companion" | "/coped/:id" | "/dashboard" | "/documents" | "/resources" | "/safed/:id" | "/sync-test" | "/bookings" | "/calendar" | "/medicine" | "/messages" | "/settings" | "/checkin" | "/profile" | "/welcome" | "/places" | "/search" | "/inbox" | "/learn" | "/tasks" | "/auth" | "/cart" | "/chat" | "/find" | "/help" | "/ai" | "/*";
+    page: "/" | "/cared-ones/:personId" | "/cared-ones/:personId/:card" | "/api/public/family-voices" | "/search-remote-caregiver" | "/search-local-caregiver" | "/care-circle/:groupId" | "/search-care-facility" | "/facilities/:id/edit" | "/accompanied" | "/api/server-actions" | "/favorite-caregiver" | "/order-confirmation" | "/sync-test-draftbit" | "/cared-ones" | "/caregiver-setting" | "/delete-after-read" | "/share/card/:token" | "/community" | "/search-caregiver" | "/accompanied/:id" | "/articles" | "/xianyu-listings" | "/facilities/new" | "/group/:groupId" | "/reset-password" | "/awared" | "/brand-compare" | "/caregiver/:id" | "/community/:id" | "/notifications" | "/ai-companion" | "/appointments" | "/articles/:id" | "/cared" | "/coped" | "/facility/:id" | "/how-it-works" | "/safed" | "/trust-safety" | "/care-circle" | "/get-started" | "/awared/:id" | "/join/:code" | "/onboarding" | "/share/note" | "/assistant" | "/cared/:id" | "/check-ins" | "/companion" | "/coped/:id" | "/dashboard" | "/documents" | "/resources" | "/safed/:id" | "/sync-test" | "/bookings" | "/calendar" | "/medicine" | "/messages" | "/settings" | "/checkin" | "/profile" | "/welcome" | "/places" | "/search" | "/inbox" | "/learn" | "/tasks" | "/auth" | "/cart" | "/chat" | "/find" | "/help" | "/ai" | "/*";
   };
   "routes/cared-ones.$personId._index.tsx": {
     id: "routes/cared-ones.$personId._index";
@@ -351,10 +348,6 @@ type RouteFiles = {
   "routes/share.card.$token.tsx": {
     id: "routes/share.card.$token";
     page: "/share/card/:token";
-  };
-  "routes/become-caregiver.tsx": {
-    id: "routes/become-caregiver";
-    page: "/become-caregiver";
   };
   "routes/community._index.tsx": {
     id: "routes/community._index";
@@ -613,7 +606,6 @@ type RouteModules = {
   "routes/caregiver-setting": typeof import("./src/app/routes/caregiver-setting.tsx");
   "routes/delete-after-read": typeof import("./src/app/routes/delete-after-read.tsx");
   "routes/share.card.$token": typeof import("./src/app/routes/share.card.$token.tsx");
-  "routes/become-caregiver": typeof import("./src/app/routes/become-caregiver.tsx");
   "routes/community._index": typeof import("./src/app/routes/community._index.tsx");
   "routes/search-caregiver": typeof import("./src/app/routes/search-caregiver.tsx");
   "routes/accompanied.$id": typeof import("./src/app/routes/accompanied.$id.tsx");
