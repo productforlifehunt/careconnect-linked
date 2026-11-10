@@ -1,3 +1,4 @@
+import { MapPinCheck } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useLocation as useRouterLocation } from "@/lib/router-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -475,6 +476,23 @@ export default function GPSTracking() {
     }
   };
 
+  const [checkingIn, setCheckingIn] = useState(false);
+  const handleCheckIn = async () => {
+    setCheckingIn(true);
+    try {
+      const pos = await getCurrentPosition({ timeout: 8000 });
+      if (!pos) throw new Error(t("gps.couldNotGetLocation"));
+      await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy, is_cared_one: selfIsCaredOne });
+      await (await import("@/features/location/circle-alerts")).checkInToCircles(`${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)}`);
+      refetch();
+      toast({ title: Z("已签到，圈子成员已收到通知", "Checked in — your circle was notified") });
+    } catch (err: any) {
+      toast({ title: Z("签到失败", "Check-in failed"), description: err?.message, variant: "destructive" });
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+
   const handleAcknowledgeAlert = async (alertId: string) => {
     try {
       await acknowledgeAlertWordPress(alertId);
@@ -938,6 +956,16 @@ export default function GPSTracking() {
                 aria-label={t("gps.sos")}
               >
                 <AlertTriangle className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="pointer-events-auto shadow-lg"
+                onClick={handleCheckIn}
+                disabled={checkingIn}
+                aria-label={Z("签到", "Check in")}
+              >
+                {checkingIn ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPinCheck className="h-4 w-4" />}
               </Button>
             </div>
 

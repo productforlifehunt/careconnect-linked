@@ -119,7 +119,7 @@ export function maskWithBubble<T extends Record<string, any>>(row: T, bubble: Lo
 }
 
 /** Accepted members of one group (REL careGroupMembers), excluding me. */
-async function otherMemberIds(groupId: string): Promise<string[]> {
+export async function otherMemberIds(groupId: string): Promise<string[]> {
   const rels = await wordpressFetch<any[]>(`jet-rel/${R.careGroupMembers}/children/${bare(groupId)}`).catch(() => []);
   const me = meId();
   return (Array.isArray(rels) ? rels : [])

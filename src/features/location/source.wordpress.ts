@@ -341,6 +341,9 @@ export async function writeLocationAndCheckZones(
       .then((m) => m.checkMyBubblesAfterPosition(lat, lng, !!opts?.isEmergency))
       .catch(() => {});
     if (opts?.isEmergency) await check;
+    void import("@/features/location/circle-alerts")
+      .then((m) => m.maybeAlertLowBattery(opts?.battery_level, opts?.phone_is_charging))
+      .catch(() => {});
   }
 
   // Run zone breach detection
