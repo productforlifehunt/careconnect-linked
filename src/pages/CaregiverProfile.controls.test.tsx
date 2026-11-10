@@ -28,19 +28,19 @@ function mount() {
 }
 it("selects the clicked service in the existing caregiver search", async () => {
   const router = mount();
-  fireEvent.click(screen.getByRole("button", { name: "上门长者照护与陪伴", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "上门长者照护与陪伴" }));
   await waitFor(() => expect(router.state.location.search).toBe("?service_type=in-person-elderly-care-and-companion"));
 });
 it("submits explicit unsaved membership without waiting for a favorite directory", () => {
-  mount(); fireEvent.click(screen.getByRole("button", { name: "收藏", exact: true }));
+  mount(); fireEvent.click(screen.getByRole("button", { name: "收藏" }));
   expect(mocks.mutate).toHaveBeenCalledWith({ providerId: "wp-46", currentlySaved: false }, expect.any(Object));
 });
 it("allows the writer to edit the saved review", async () => {
-  mount(); fireEvent.click(screen.getByRole("button", { name: "编辑", exact: true }));
+  mount(); fireEvent.click(screen.getByRole("button", { name: "编辑" }));
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "作者修订" } });
-  fireEvent.click(screen.getByRole("button", { name: "保存", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "保存" }));
   await waitFor(() => expect(mocks.edit).toHaveBeenCalledWith({ id: "118", rating: 5, content: "作者修订" }));
 });
 it("does not offer editing to the reviewed caregiver", () => {
-  mocks.userId = 46; mount(); expect(screen.queryByRole("button", { name: "编辑", exact: true })).toBeNull();
+  mocks.userId = 46; mount(); expect(screen.queryByRole("button", { name: "编辑" })).toBeNull();
 });
