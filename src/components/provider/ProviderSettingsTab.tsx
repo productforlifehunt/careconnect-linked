@@ -32,18 +32,15 @@ export default function ProviderSettingsTab() {
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
   useEffect(() => {
-    if (profile && !loaded) {
+    if (profile) {
       setLocation(profile.location || "");
       setHourlyRate(profile.care_provider_starts_hourly_rate?.toString() || "");
       setBio(profile.bio || "");
       setPhone(profile.phone || "");
       setIsActive(profile.provider_is_active || false);
-      setLoaded(true);
     }
-  }, [profile, loaded]);
+  }, [profile]);
 
   const handleSave = async () => {
     if (isActive && !canActivateProvider({ ...profile, location, care_provider_hourly_rate_in_person: parseFloat(hourlyRate) })) {
