@@ -93,7 +93,7 @@ function weeklyDays(event: CalendarEvent): number[] {
 function calendarEventsToAvailability(events: CalendarEvent[]): AvailabilitySlot[] {
   return events
     .filter((event) => event.status !== "cancelled" && isAvailabilityManagedEvent(event))
-    .flatMap((event) => {
+    .flatMap((event): AvailabilitySlot[] => {
       const available = event.is_availability || event.show_as === "free";
       const start = new Date(event.start_at);
       const end = new Date(event.end_at || event.start_at);
