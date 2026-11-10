@@ -1,7 +1,8 @@
 ## Current request: Approved post-Draftbit restoration and Edge deployment (2026-11-10)
 - [x] Incoming snapshot 71aa36b0 includes Draftbit 0f934704; restore only the authorized two independent profile-role inspector IDs and their regression test.
-- [ ] Run restored inspector tests and verify the two real settings controls in the browser.
-- [ ] Deploy existing ai function (Draftbit changed ai/index.ts and its imported _shared/ai-prompts.ts); verify deployed responses.
+- [x] Restored inspector tests passed 12/12. Actual test1 login and settings show two distinct role IDs; removing development source tags leaves both IDs intact. No profile save performed.
+- [x] Deployed existing ai function including Draftbit's imported _shared/ai-prompts.ts. Live chat-chat returns 200 and OK; vision-chat without an image returns the implemented 400 image-required validation rather than the former 501. Actual image/audio end-to-end remains unverified.
+- [ ] Incoming AI code also reports five type errors (info-sheet-parts and ai-dynamic-knowledge); outside the approved restoration, pending authorization to repair incoming code. Requested restored test itself passes.
 - [ ] Existing host build failure: Draftbit uses build but Lovable requires dist. Preserve incoming configuration pending user authorization; do not silently restore a divergence.
 
 ## Current request: Frontend audit of every note and page/element binding (2026-11-09 15:43 UTC)
