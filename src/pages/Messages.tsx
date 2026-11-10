@@ -47,6 +47,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
   // again — the auto-open is a first-load convenience for wide screens only.
   const closedByUserRef = useRef(false);
   const conversationParam = searchParams.get("conversation");
+  const previousConversationParam = useRef(conversationParam);
   useEffect(() => {
     if (conversationParam) {
       const conversation = conversations?.find((c: any) => String(c.id) === conversationParam);
@@ -54,11 +55,13 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
         setSelectedConvoId(conversation.id);
         setSelectedOtherUser(getOtherUser(conversation));
       }
-    } else {
+    } else if (previousConversationParam.current) {
+      closedByUserRef.current = true;
       setSelectedConvoId(null);
       setSelectedOtherUser(null);
     }
-  }, [conversationParam, conversations]);
+    previousConversationParam.current = conversationParam;
+  }, [conversationParam, conversations, profile?.id]);
   const openConversation = (id: string, person: any) => {
     closedByUserRef.current = true;
     setSelectedConvoId(id);
@@ -117,8 +120,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
       const conversation = conversations.find((c: any) => String(c.id) === String(navState.conversationId));
       if (!conversation) return;
       navHandledRef.current = true;
-      setSelectedConvoId(conversation.id);
-      setSelectedOtherUser(getOtherUser(conversation));
+      openConversation(conversation.id, getOtherUser(conversation));
       return;
     }
     if (navState?.targetUserId && !navHandledRef.current) {
@@ -131,8 +133,7 @@ export default function Messages({ embedded = false, readFilter = "all" }: { emb
       };
       startConversation.mutate(navState.targetUserId, {
         onSuccess: (convoId: string) => {
-          setSelectedConvoId(convoId);
-          setSelectedOtherUser(targetUser);
+          openConversation(convoId, targetUser);
           qc.invalidateQueries({ queryKey: ["conversations"] });
           if (navState.openQuote) {
             if (navState.quotePrefill) setQuotePrefill(navState.quotePrefill);
