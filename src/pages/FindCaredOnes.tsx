@@ -10,6 +10,8 @@ import { getCurrentPosition } from "@/lib/geolocation";
 import { fetchWPUserProfile } from "@/features/shared/wp-users";
 import { getStoredWPUser } from "@/services/wp-auth";
 import LocationCard from "@/components/care/LocationCard";
+import { CircleSharingSwitches } from "@/components/location/CircleSharingSwitches";
+import { fetchPausedGroupIds } from "@/features/location/circle-sharing";
 import {
   useUserCaredOnes, useCareGroups, useGroupCaredOnes,
   useRespondToLocationRequest, useLocationSharingFlags, useSetLocationSharingFlags,
@@ -52,10 +54,19 @@ function GroupsTab({ Z }: { Z: (cn: string, en: string) => string }) {
   const [groupId, setGroupId] = useState<string | null>(null);
   const activeGroup = list.find((g) => String(g.id) === groupId) || list[0];
   const { data: groupCaredOnes, isLoading: loadingPeople } = useGroupCaredOnes(activeGroup ? String(activeGroup.id) : null);
-  const people: Person[] = (groupCaredOnes || []).map((c: any) => ({
+  const allPeople: Person[] = (groupCaredOnes || []).map((c: any) => ({
     id: bare(c.user_id || c.id),
     name: c.full_name || c.name || Z("被护理者", "Cared one"),
   }));
+  const gid = activeGroup ? bare(activeGroup.id) : "";
+  // Life360 per-circle sharing: hide people who paused their location for this group (fail closed).
+  const { data: visibleIds, isLoading: loadingPaused } = useQuery({
+    queryKey: ["groupVisible", gid, allPeople.map((p) => p.id).join(",")],
+    enabled: !!gid && allPeople.length > 0,
+    queryFn: async () => new Set((await Promise.all(allPeople.map((p) =>
+      fetchPausedGroupIds(p.id).then((s) => (s.has(gid) ? null : p.id), () => null)))).filter(Boolean) as string[]),
+  });
+  const people = allPeople.filter((p) => visibleIds?.has(p.id));
   if (isLoading) return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
   if (!list.length) return <p className="text-muted-foreground py-8 text-center">{Z("你还没有加入护理群组。", "You are not in a care group yet.")}</p>;
   return (
@@ -69,7 +80,7 @@ function GroupsTab({ Z }: { Z: (cn: string, en: string) => string }) {
           ))}
         </div>
       )}
-      {loadingPeople ? (
+      {loadingPeople || (allPeople.length > 0 && loadingPaused) ? (
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       ) : (
         <PeopleSwitcher key={String(activeGroup?.id)} people={people} empty={Z("这个群组还没有被护理者。", "This group has no cared ones yet.")} />
@@ -83,6 +94,18 @@ function MeTab({ Z }: { Z: (cn: string, en: string) => string }) {
   const me = bare(getStoredWPUser()?.user_id);
   const { data: flags } = useLocationSharingFlags(me || null);
   const setFlags = useSetLocationSharingFlags();
+  const [checking, setChecking] = useState(false);
+  const checkIn = async () => {
+    setChecking(true);
+    try {
+      const pos = await getCurrentPosition({ timeout: 8000 });
+      if (!pos) throw new Error(Z("无法获取位置", "Location unavailable"));
+      const n = await (await import("@/features/location/circle-alerts")).checkInToCircles(`${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)}`);
+      toast({ title: Z("已签到", "Checked in"), description: Z(`已通知 ${n} 人`, `Notified ${n}`) });
+    } catch (e: any) {
+      toast({ title: Z("签到失败", "Check-in failed"), description: e?.message, variant: "destructive" });
+    } finally { setChecking(false); }
+  };
   const save = (patch: { shareOn?: boolean; emergencyAllowed?: boolean }) =>
     setFlags.mutate({ userId: me, ...patch }, {
       onError: (e: any) => toast({ title: Z("保存失败", "Could not save"), description: e?.message, variant: "destructive" }),
@@ -105,6 +128,11 @@ function MeTab({ Z }: { Z: (cn: string, en: string) => string }) {
             </span>
             <Switch checked={!!flags?.emergencyAllowed} disabled={setFlags.isPending} onCheckedChange={(v) => save({ emergencyAllowed: v })} />
           </label>
+          {me && <CircleSharingSwitches userId={me} />}
+          <Button size="sm" variant="outline" disabled={checking} onClick={checkIn}>
+            {checking ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <MapPin className="h-4 w-4 mr-1" />}
+            {Z("签到", "Check in")}
+          </Button>
         </CardContent>
       </Card>
       {me && <LocationCard caredOneId={me} caredOneName={Z("我", "Me")} />}
