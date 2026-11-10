@@ -161,14 +161,6 @@ export default function CommunityPost() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex items-center justify-between gap-4">
-        <Button variant="ghost" asChild className="px-0 hover:bg-transparent">
-          <Link to="/community">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {isZh ? "返回社区" : "Back to Community"}
-          </Link>
-        </Button>
-      </div>
 
       {isLoading ? (
         <Card>
