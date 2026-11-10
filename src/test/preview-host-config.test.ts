@@ -18,7 +18,7 @@ async function config(command: "serve" | "build", marker: string) {
 
 it("uses host refresh only in Lovable development and declares runnable SSR", async () => {
   const result = await config("serve", "test-project");
-  expect(result.environments?.ssr?.dev?.createEnvironment).toBeTypeOf("function");
+  expect(result.environments?.['ssr']?.dev?.createEnvironment).toBeTypeOf("function");
   const plugins = result.plugins?.flat();
   expect(plugins).toContainEqual(expect.objectContaining({ name: "react-router-request-url" }));
   expect(plugins).not.toContainEqual(expect.objectContaining({ name: "react-router:react-refresh-babel" }));
@@ -26,7 +26,7 @@ it("uses host refresh only in Lovable development and declares runnable SSR", as
 
 it("preserves native Draftbit development refresh", async () => {
   const result = await config("serve", "");
-  expect(result.environments?.ssr?.dev?.createEnvironment).toBeUndefined();
+  expect(result.environments?.['ssr']?.dev?.createEnvironment).toBeUndefined();
   expect(result.plugins?.flat()).toContainEqual(expect.objectContaining({ name: "react-router:react-refresh-babel" }));
 });
 
