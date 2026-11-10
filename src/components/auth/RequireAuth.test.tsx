@@ -6,12 +6,13 @@ const m = vi.hoisted(() => ({
   list: vi.fn(),
   onboarding: vi.fn(),
   cachedOnboarding: undefined as boolean | undefined,
+  pathname: "/cared-ones/46/tips",
 }));
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ isAuthenticated: m.authenticated, isLoading: false }),
 }));
 vi.mock("@/lib/router-compat", () => ({
-  useLocation: () => ({ pathname: "/cared-ones/46/tips", search: "" }),
+  useLocation: () => ({ pathname: m.pathname, search: "" }),
   Navigate: ({ to }: { to: string }) => <div>{to}</div>,
 }));
 vi.mock("@/features/shared/app-profile", () => ({
@@ -27,6 +28,7 @@ afterEach(() => {
   cleanup();
   m.authenticated = true;
   m.cachedOnboarding = undefined;
+  m.pathname = "/cared-ones/46/tips";
   vi.clearAllMocks();
 });
 it("prefetches related people during onboarding without exposing children early", async () => {
@@ -76,4 +78,26 @@ it("opens immediately from the confirmed onboarding cache and rechecks in the ba
   expect(screen.getByText("Private care content")).toBeInTheDocument();
   await waitFor(() => expect(m.onboarding).toHaveBeenCalledTimes(1));
   expect(screen.getByText("Private care content")).toBeInTheDocument();
+});
+it("opens caregiver settings without a separate onboarding form", async () => {
+  m.pathname = "/caregiver-setting";
+  m.cachedOnboarding = false;
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <RequireAuth skipOnboarding><div>Caregiver settings</div></RequireAuth>
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText("Caregiver settings")).toBeInTheDocument();
+  expect(m.onboarding).not.toHaveBeenCalled();
+});
+it("still requires login for caregiver settings and preserves its return address", () => {
+  m.pathname = "/caregiver-setting";
+  m.authenticated = false;
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <RequireAuth skipOnboarding><div>Caregiver settings</div></RequireAuth>
+    </QueryClientProvider>,
+  );
+  expect(screen.getByText("/auth?next=%2Fcaregiver-setting")).toBeInTheDocument();
+  expect(screen.queryByText("Caregiver settings")).not.toBeInTheDocument();
 });
