@@ -30,8 +30,8 @@ import { getWordPressFeature, updateWordPressFeature } from "@/features/shared/w
 import { wordpressCCTFetch } from "@/features/shared/wordpress-client";
 import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
-import { findOwnRow, linkOwnRow } from "@/features/shared/own-profile-row";
-import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
+import { findOwnRow, findOwnRowId, linkOwnRow } from "@/features/shared/own-profile-row";
+import { fetchMyAppUserName } from "@/features/profile/app-user-name";
 import { getAppProfileRow, patchAppProfile, APP_PROFILE_F } from "@/features/shared/app-profile";
 import {
   careServiceIdsToSlugs,
@@ -45,7 +45,7 @@ const F = P2.f;
 const CCT_SLUG = P2.slug;
 
 // Targets come only from this account's JetEngine relations, never from a caller's id.
-const profileTargets = new WeakMap<Profile, { userId: string; providerRowId?: string; appRowId?: string }>();
+const profileTargets = new WeakMap<Profile, { userId: string; providerRowId?: string | undefined; appRowId?: string | undefined }>();
 
 // Role checkbox: opaque → role label
 const ROLE_OPT_TO_LABEL: Record<string, string> = { b55: "cared one", b56: "caring one" };
@@ -209,7 +209,7 @@ export async function updateProfileWordPress(updates: Partial<Profile>, loadedPr
   if (Object.keys(body).length) {
     writes.push((async () => {
       const wpUserId = String(getStoredWPUser()?.user_id ?? "");
-      const existingId = ownTargets?.providerRowId ?? await import("@/features/shared/own-profile-row").then(m => m.findOwnRowId(R.userProfile2Rel));
+      const existingId = ownTargets?.providerRowId ?? await findOwnRowId(R.userProfile2Rel);
       if (existingId) {
         await wordpressCCTFetch(CCT_SLUG, { id: existingId, method: "PUT", body });
         return;
