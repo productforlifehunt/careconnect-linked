@@ -18,6 +18,7 @@ vi.mock("@/hooks/use-care-data", () => {
 afterEach(cleanup);
 
 it("returns to the conversation list and restores selected chat with history", async () => {
+  HTMLElement.prototype.scrollTo = vi.fn();
   window.matchMedia = vi.fn().mockReturnValue({ matches: false });
   const router = createMemoryRouter([{ path: "/inbox", Component: Messages }], { initialEntries: ["/inbox?tab=messages"] });
   render(<QueryClientProvider client={new QueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
