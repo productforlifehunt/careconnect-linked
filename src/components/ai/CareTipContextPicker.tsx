@@ -34,6 +34,14 @@ type CaredOneOption = {
 
 type StoredPreferences = { key: string; value: TipPreferences };
 const EMPTY_PREFERENCES: TipPreferences = { active: [], favorites: [] };
+let tipSource: Promise<typeof import("@/features/cared-ones/source.wordpress-extended")> | undefined;
+function loadTipSource() {
+  tipSource ??= import("@/features/cared-ones/source.wordpress-extended").catch((error) => {
+    tipSource = undefined;
+    throw error;
+  });
+  return tipSource;
+}
 
 function referenceKey(reference: TipReference): string {
   return `${reference.caredOneId}::${reference.tipId}`;
@@ -185,7 +193,7 @@ function MountedCareTipContextPicker({
       queryKey: ["careTips", person.id, site.id, userId],
       queryFn: async () => {
         const { fetchCareTipsWordPress } =
-          await import("@/features/cared-ones/source.wordpress-extended");
+          await loadTipSource();
         return fetchCareTipsWordPress(person.id);
       },
       enabled,
