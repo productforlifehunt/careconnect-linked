@@ -22,7 +22,7 @@ it("turning visibility on verifies the payment store before publishing", async (
   const toggle = screen.getByRole("switch", { name: "公开接单" });
   fireEvent.click(toggle);
   await waitFor(() => expect(mocks.save).toHaveBeenCalledWith({ provider_is_active: true }));
-  expect(mocks.vendor.mock.invocationCallOrder[0]).toBeLessThan(mocks.save.mock.invocationCallOrder[0]);
+  expect(mocks.vendor.mock.invocationCallOrder[0]!).toBeLessThan(mocks.save.mock.invocationCallOrder[0]!);
   await waitFor(() => expect(toggle.getAttribute("aria-checked")).toBe("true"));
 });
 it("stays hidden when the payment store cannot be verified", async () => {
