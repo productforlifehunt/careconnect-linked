@@ -16,6 +16,7 @@ import { ChevronDown, MapPin, Bot } from "lucide-react";
 import type { InfoSheetPromptContext } from "@/lib/ai-dynamic-knowledge";
 import { buildInfoSheetIntroduction } from "@/lib/ai-dynamic-knowledge";
 import { AICompanionChat } from "@/components/ai/AICompanionChat";
+import type { AssistantRequest } from "@/contexts/AIAssistantContext";
 import LocationCard from "@/components/care/LocationCard";
 
 /* ─────────────── Location tag ─────────────── */
@@ -65,7 +66,7 @@ export function SheetAIPanel({
   const [open, setOpen] = useState(false);
 
   const task = context.situationDetails?.trim();
-  const request = useMemo(
+  const request = useMemo<AssistantRequest>(
     () => ({
       id: `information-card-${context.caredOneName || "shared"}`,
       title: Z("信息卡助手", "Information card assistant"),

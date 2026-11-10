@@ -111,7 +111,7 @@ export function runAssistantConversationSkill(
 export async function runAssistantConversationSkill(
   skill: typeof ASSISTANT_CONVERSATION_SKILL,
   operation: AssistantConversationOperation,
-  input: { id?: string; title?: string; role?: AiThreadMessage["role"]; content?: string } = {},
+  input: { id?: string; title?: string | undefined; role?: AiThreadMessage["role"]; content?: string } = {},
 ): Promise<AiThread[] | AiThreadMessage[] | string | void> {
   if (skill !== ASSISTANT_CONVERSATION_SKILL) throw new Error(`Unknown AI skill: ${skill}`);
 
@@ -779,7 +779,7 @@ function hasCareTipWriteIntent(question: string, history: ChatHistoryMessage[] =
     /哪(?:一条|个|位)|请(?:告诉|说明)|想保存|给哪位|谁的/.test(latest.content);
 }
 
-type AssistantSubject = { id?: string; name?: string; access: AccessLevel; choices?: string[] };
+type AssistantSubject = { id?: string | undefined; name?: string | undefined; access: AccessLevel; choices?: string[] };
 
 async function resolveAssistantSubject(question: string, caredOneId: string | undefined, sharedCard: boolean | undefined): Promise<AssistantSubject> {
   if (sharedCard) return { id: caredOneId, access: "shared-card" };
