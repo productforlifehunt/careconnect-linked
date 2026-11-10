@@ -20,6 +20,8 @@ export interface CCTNote extends SourceAnnotation {
   locked?: boolean | undefined;
   /** CCT324 a65: note is still being edited. */
   todo?: boolean | undefined;
+  /** CCT324 a66: prohibit AI changes; human editing remains available. */
+  aiLocked?: boolean | undefined;
   /** CCT324 已手动核对 (a58): b55 是 / b56 否。 */
   verified?: boolean | undefined;
   /** CCT324 a60/a61: whether the note's REL325 connections were reviewed and the review details. */
@@ -51,6 +53,7 @@ export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CC
         noteType: updated.noteType,
         tabOrder: updated.tabOrder,
         todo: updated.todo,
+        aiLocked: updated.aiLocked,
         updatedAt: updated.updatedAt,
         verified: updated.verified,
         relationVerified: updated.relationVerified,

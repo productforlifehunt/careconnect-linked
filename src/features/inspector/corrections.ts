@@ -17,7 +17,7 @@ export function attachCorrectionNotes(report: ConflictReport, notes: ReportNote[
   return { ...report, notes: trusted, findings: report.findings.map(finding => ({ ...finding, suggestions: (finding.suggestions || []).filter(suggestion => {
     if (suggestion.target === 'code') return suggestion.noteId === null;
     const note = trusted.find(note => note.id === suggestion.noteId);
-    return !!note && !!note.current && note.role === suggestion.target;
+    return !!note && !note.aiLocked && !!note.current && note.role === suggestion.target;
   }) })) };
 }
 

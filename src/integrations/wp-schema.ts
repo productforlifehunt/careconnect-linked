@@ -30,6 +30,7 @@ export const WP = {
         "笔记类型": "a63",
         "笔记标签顺序": "a64",
         "待完成": "a65",
+        "严禁ai编辑": "a66", // User-created Switcher, verified through /afresh GUI 2026-11-10.
       },
       opt: {
         "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" },

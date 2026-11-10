@@ -19,6 +19,7 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
   const code = suggestion.target === 'code';
+  const aiLocked = !code && !!original?.aiLocked;
   const chat = chatAboutCorrection;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [ask, setAsk] = useState('');
@@ -47,7 +48,7 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
     finally { setThinking(false); }
   };
   const save = async () => {
-    if (code || !original || !suggestion.noteId || busy) return;
+    if (code || aiLocked || !original || !suggestion.noteId || busy) return;
     const session = getWPToken() || '';
     setBusy(true); setError('');
     try {
@@ -72,7 +73,8 @@ export function CorrectionEditor({ suggestion, original, onSaved }: { suggestion
     {editorStatus && <p role="status">{editorStatus}</p>}
     {code ? <><p>仅供手动修改页面逻辑；不会写入笔记，也不会自动执行代码。</p><Button size="sm" variant="outline" onClick={() => { const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' })); const a = document.createElement('a'); a.href = url; a.download = '页面逻辑建议修改或补充.txt'; a.click(); URL.revokeObjectURL(url); setEditorStatus('页面逻辑建议已下载。'); }}>下载</Button><Button size="sm" variant="outline" disabled={clipboardStatus === '正在复制…'} onClick={() => void copy(text)}>{clipboardStatus === '正在复制…' ? '复制中…' : '复制'}</Button></> : <>
       {original?.verified && <p className="text-destructive">这条笔记已手动核对。只有你明确确认后才会修改，核对状态保持不变。</p>}
-      {!confirm && !saved && <Button size="sm" variant="outline" disabled={!original || !title.trim() || !text.trim() || busy} onClick={() => setConfirm(true)}>提交修改到 #{original?.id}</Button>}
+      {aiLocked && <p className="text-destructive">严禁 AI 编辑：此笔记为核对标准，只能对齐页面或其他未锁定笔记。</p>}
+      {!confirm && !saved && <Button size="sm" variant="outline" disabled={aiLocked || !original || !title.trim() || !text.trim() || busy} onClick={() => setConfirm(true)}>提交修改到 #{original?.id}</Button>}
       {confirm && <div className="space-y-2"><p>确认用上面完整正文替换 CCT324 #{original?.id} 的名字和正文？不改变关联及核对状态。</p><div className="flex flex-wrap gap-2"><Button size="sm" disabled={busy} onClick={save}>{busy ? '提交中…' : '确认提交修改'}</Button><Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirm(false)}>取消</Button></div></div>}
       {saved && <p role="status">已保存到 CCT324 #{original?.id} 并读回核验；旧分析已过时，请重新分析。</p>}
     </>}

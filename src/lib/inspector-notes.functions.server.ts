@@ -257,6 +257,7 @@ export async function updateBoundInspectorNote(rawData: unknown, request: Reques
     verified: z.boolean(),
     relationVerified: z.boolean(),
     relationDetails: z.string().max(100_000),
+    aiLocked: z.boolean().optional(),
   }).parse(rawData);
   const denied = await researcherOnly(request);
   if (denied) return { error: denied };
@@ -290,6 +291,7 @@ export async function submitNoteCorrection(rawData: unknown, request: Request) {
       const s = await import('./inspector-notes.server');
       const { assertUnchangedNote } = await import('@/features/inspector/corrections');
       const current = await s.readNoteById(data.id, token);
+      if (current.aiLocked) throw new Error('这条笔记已开启严禁 AI 编辑，不允许提交 AI 修改，也不能通过确认绕过。');
       assertUnchangedNote(current, data.expected);
       if (current.verified && !data.confirmVerified) throw new Error('这条笔记已手动核对，请先明确确认修改。');
       await s.updatePlainNote(data.id, {
@@ -298,7 +300,7 @@ export async function submitNoteCorrection(rawData: unknown, request: Request) {
         verified: current.verified,
         relationVerified: current.relationVerified,
         relationDetails: current.relationDetails,
-      }, token);
+      }, token, "ai");
       return { note: await s.readNoteById(data.id, token) };
     } catch (e) { return { error: e instanceof Error ? e.message : '提交失败，未确认保存。' }; }
   
