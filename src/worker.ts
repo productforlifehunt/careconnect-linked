@@ -2,7 +2,7 @@
 import { createRequestHandler } from "react-router";
 import * as build from "virtual:react-router/server-build";
 
-const handler = createRequestHandler(build as never, "production");
+const handler = createRequestHandler(build, "production");
 
 export default {
   fetch(request: Request) {
