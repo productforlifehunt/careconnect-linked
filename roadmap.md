@@ -1,4 +1,13 @@
+## Current request: Approved post-Draftbit restoration and Edge deployment (2026-11-10)
+- [x] Incoming snapshot 71aa36b0 includes Draftbit 0f934704; restore only the authorized two independent profile-role inspector IDs and their regression test.
+- [ ] Run restored inspector tests and verify the two real settings controls in the browser.
+- [ ] Deploy existing ai function (Draftbit changed ai/index.ts and its imported _shared/ai-prompts.ts); verify deployed responses.
+- [ ] Existing host build failure: Draftbit uses build but Lovable requires dist. Preserve incoming configuration pending user authorization; do not silently restore a divergence.
+
 ## Current request: Frontend audit of every note and page/element binding (2026-11-09 15:43 UTC)
+- [x] Restored audit record: nine AwareD/study-note body corrections saved and reopened through WordPress GUI; settings dialog buttons independently read back 4/4, understanding article elements 13/13. These are limited checks, not whole-site completion.
+- [x] Restored correction: element notes may intentionally bind both the element and its page; multiple page notes and missing standalone overviews are not automatically defects. Incomplete #6854/#6135/#6137 bodies were corrected and read back.
+- [ ] Remaining page audit: verify and remove genuinely unrelated /bookings association #6537; continue actual page/body checks. AwareD stages partially checked; treatments/types and existing-note editing controls remain unverified. Full-site audit remains open.
 - [ ] 16:05 continuation: user explicitly requests individual browser clicks for all page/element notes, corrections, additions and full-content audit; continue from real Members button missing binding, not the invalid concurrent signed-out scans.
 - [x] Logged in through the actual frontend as the supplied researcher; frontend catalogue returned 10,553 unique notes and 331 inventory scopes, with zero empty full bodies. Inventory scopes include shared portals and historical/sub-app paths; they are not 331 verified current pages.
 - [x] 16:03 audit continuation: 109 current route/sub-app scopes probed through frontend. Initial scan: 91 returned DOM, 17 lacked concrete record addresses, 1 sick picture-only page timed out the inappropriate text predicate. Four other pages displayed load-error screens during concurrent dependency optimization; these are not confirmed persistent bugs. Many protected scans captured Anonymous/loading state and are NOT authenticated coverage. No all-page pass claim.
