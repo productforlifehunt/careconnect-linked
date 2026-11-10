@@ -22,6 +22,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { isPostAuthor } from "@/features/posts/ownership";
+import { editOwnReview } from "@/features/reviews/edit";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TIME_STEP_MINUTES = 30;
 
@@ -63,6 +66,7 @@ export default function CaregiverProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
   const { isAuthenticated, user } = useAuth();
@@ -89,6 +93,8 @@ export default function CaregiverProfile() {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [reviewSaving, setReviewSaving] = useState(false);
 
   const { data: availability } = useProviderAvailability(id ?? null);
   const isFavorited = savedProviderIds?.includes(String(id ?? "").replace(/^wp-/, "")) || false;
@@ -707,7 +713,7 @@ export default function CaregiverProfile() {
                         <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
-                        <DialogHeader><DialogTitle>{isZh ? "评价 " : "Review "}{caregiver.full_name}</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{editingReviewId ? (isZh ? "编辑评价" : "Edit review") : (isZh ? "评价 " : "Review ")}{!editingReviewId && caregiver.full_name}</DialogTitle></DialogHeader>
                         <div className="space-y-4 mt-4">
                           <div>
                             <Label className="mb-2 block">{isZh ? "评分" : "Rating"}</Label>
@@ -723,18 +729,25 @@ export default function CaregiverProfile() {
                             <Label>{isZh ? "评论" : "Comment"}</Label>
                             <Textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={isZh ? "分享您的体验…" : "Share your experience..."} rows={4} />
                           </div>
-                          <Button variant="coral" className="w-full" disabled={createReview.isPending} onClick={async () => {
+                          <Button variant="coral" className="w-full" disabled={createReview.isPending || reviewSaving} onClick={async () => {
                             try {
-                              await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
+                              setReviewSaving(true);
+                              if (editingReviewId) {
+                                await editOwnReview({ id: editingReviewId, rating: reviewRating, content: reviewComment });
+                                await queryClient.invalidateQueries({ queryKey: ["entityReviews"] });
+                              } else await createReview.mutateAsync({ entity_id: caregiver.id, entity_type: "provider", rating: reviewRating, comment: reviewComment });
                               toast({ title: isZh ? "评价已提交！" : "Review submitted!", description: isZh ? "感谢您的反馈。" : "Thank you for your feedback." });
                               setReviewDialogOpen(false);
                               setReviewRating(5);
                               setReviewComment("");
+                              setEditingReviewId(null);
                             } catch (err: any) {
                               toast({ title: isZh ? "提交评价失败" : "Failed to submit review", description: err.message, variant: "destructive" });
+                            } finally {
+                              setReviewSaving(false);
                             }
                           }}>
-                            {createReview.isPending ? (isZh ? "提交中…" : "Submitting...") : (isZh ? "提交评价" : "Submit Review")}
+                            {createReview.isPending || reviewSaving ? (isZh ? "提交中…" : "Submitting...") : (editingReviewId ? (isZh ? "保存" : "Save") : (isZh ? "提交评价" : "Submit Review"))}
                           </Button>
                         </div>
                       </DialogContent>
@@ -754,6 +767,7 @@ export default function CaregiverProfile() {
                       ))}
                     </div>
                     {review.content && <p className="text-sm text-muted-foreground">{review.content}</p>}
+                    {isPostAuthor(review.author_id, user?.user_id) && <Button variant="ghost" size="sm" onClick={() => { setEditingReviewId(review.id); setReviewRating(review.rating); setReviewComment(review.content); setReviewDialogOpen(true); }}>{isZh ? "编辑" : "Edit"}</Button>}
                     {review.response_text && (
                       <div className="mt-2 ml-4 p-2 bg-muted/50 rounded-sm text-sm text-muted-foreground">
                         <span className="font-medium">{isZh ? "服务者回复：" : "Provider response:"}</span> {review.response_text}
