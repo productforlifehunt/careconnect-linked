@@ -44,6 +44,9 @@ const P2 = T.userProfile2;
 const F = P2.f;
 const CCT_SLUG = P2.slug;
 
+// Targets come only from this account's JetEngine relations, never from a caller's id.
+const profileTargets = new WeakMap<Profile, { userId: string; providerRowId?: string; appRowId?: string }>();
+
 // Role checkbox: opaque → role label
 const ROLE_OPT_TO_LABEL: Record<string, string> = { b55: "cared one", b56: "caring one" };
 const ROLE_LABEL_TO_OPT: Record<string, string> = { "cared one": "b55", "caring one": "b56" };
@@ -113,6 +116,11 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
 
     }
 
+    profileTargets.set(wpProfile, {
+      userId: String(getStoredWPUser()?.user_id ?? ""),
+      providerRowId: cct ? String(cct._ID ?? cct.id) : undefined,
+      appRowId: appProfile ? String(appProfile._ID ?? appProfile.id) : undefined,
+    });
     return wpProfile;
   } catch (error) {
     // No fabricated profile: the WordPress account name is never a fallback for
@@ -123,21 +131,26 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
 }
 
 
-export async function updateProfileWordPress(updates: Partial<Profile>): Promise<void> {
+export async function updateProfileWordPress(updates: Partial<Profile>, loadedProfile?: Profile): Promise<void> {
+  const targets = loadedProfile ? profileTargets.get(loadedProfile) : undefined;
+  const ownTargets = targets?.userId === String(getStoredWPUser()?.user_id ?? "") ? targets : undefined;
+  const writes: Promise<unknown>[] = [];
   // 1) Update WP user core fields
   const wpFields: Partial<Profile> = {};
   if (updates.first_name !== undefined) wpFields.first_name = updates.first_name;
   if (updates.last_name !== undefined) wpFields.last_name = updates.last_name;
   if (Object.keys(wpFields).length > 0) {
-    await updateWordPressFeature("profile_me", wpFields);
+    writes.push(updateWordPressFeature("profile_me", wpFields));
   }
 
   // The app display name goes to CCT 151, this app's own column.
-  if (updates.full_name !== undefined) {
-    await saveMyAppUserName(updates.full_name ?? "");
-  }
-  if (updates.phone !== undefined) {
-    await patchAppProfile({ [APP_PROFILE_F.PHONE]: updates.phone ?? "" });
+  const appBody: Record<string, unknown> = {};
+  if (updates.full_name !== undefined) appBody[APP_PROFILE_F.NAME] = updates.full_name ?? "";
+  if (updates.phone !== undefined) appBody[APP_PROFILE_F.PHONE] = updates.phone ?? "";
+  if (Object.keys(appBody).length) {
+    writes.push(ownTargets?.appRowId
+      ? wordpressCCTFetch(T.userProfile.slug, { id: ownTargets.appRowId, method: "PUT", body: appBody })
+      : patchAppProfile(appBody));
   }
 
   // 2) Update CCT 258 extended profile 2 (opaque codes)
@@ -193,20 +206,21 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
     })();
   }
 
-  if (Object.keys(body).length === 0) return;
-
-  const storedUser = getStoredWPUser();
-  const wpUserId = storedUser?.user_id != null ? String(storedUser.user_id) : "";
-  const existing = await findOwnRow(R.userProfile2Rel, CCT_SLUG);
-  if (existing) {
-    await wordpressCCTFetch(CCT_SLUG, { id: existing._ID || existing.id, method: "PUT", body });
-    return;
+  if (Object.keys(body).length) {
+    writes.push((async () => {
+      const wpUserId = String(getStoredWPUser()?.user_id ?? "");
+      const existingId = ownTargets?.providerRowId ?? await import("@/features/shared/own-profile-row").then(m => m.findOwnRowId(R.userProfile2Rel));
+      if (existingId) {
+        await wordpressCCTFetch(CCT_SLUG, { id: existingId, method: "PUT", body });
+        return;
+      }
+      const created: any = await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
+      const newId = created?.item_id ?? created?._ID ?? created?.id;
+      if (!newId) throw new Error("Could not create the extended profile 2 row");
+      await linkOwnRow(R.userProfile2Rel, newId);
+    })());
   }
-  // JetEngine CCT REST requires cct_author_id as a string.
-  const created: any = await wordpressCCTFetch(CCT_SLUG, { method: "POST", body: { ...body, cct_author_id: wpUserId } });
-  const newId = created?.item_id ?? created?._ID ?? created?.id;
-  if (!newId) throw new Error("Could not create the extended profile 2 row");
-  await linkOwnRow(R.userProfile2Rel, newId);
+  await Promise.all(writes);
 }
 
 
