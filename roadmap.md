@@ -1,8 +1,9 @@
 ## Current request: Settings save and publication performance (2026-11-10 13:00 UTC)
 - [x] Measured unchanged profile save on authenticated Draftbit: 11.96 seconds, with phone write then REL259 read, CCT258 read and write in sequence; initial settings load 17.86 seconds.
-- [ ] Reuse current-account relation-resolved row targets and run independent profile writes together; preserve fields and activation rules.
-- [ ] Remove unnecessary payout save/refetch waiting and verify payout endpoint behavior without changing payout data.
-- [ ] Run regression checks and changed-page save/readback; report actual timings separately from code tests and blocked environments.
+- [x] Profile writes reuse current-account relation-resolved row targets, fall back to relation ID reads without redundant CCT reads, and run independent writes together. Settings submit changed fields only; visibility-only save does not write phone/bio. Parallelism regression failed before and passed after.
+- [x] Payout save uses existing same-origin server-action dispatcher with live WP caller verification and one caller-scoped Dokan store PUT, avoiding the rejected-settings retry path. Successful returned payment updates payment cache without fetching balance/history again. Endpoint ownership/request tests passed; real payout mutation not exercised because saved test account has no payment details and changed local UI returns SSR 500.
+- [x] Focused checks: 24/24 across profile, payout, activation, provider/favorite controls; additional settings visibility test passed (25 distinct tests total). Latest automatic check build OK. Browser baseline measured on Draftbit; changed localhost page reproduced HTTP 500 ssrLoadModule and screenshot inspected.
+- [ ] Changed-page save/readback and after timings blocked by existing localhost SSR failure. Draftbit saved baseline is not the changed version; actual payout save and changed publication timing not verified. Do not claim a measured speedup or 100% completion.
 
 ## Current request: Caregiver reviews, search chips, speed and preservation (2026-11-10 12:38 UTC)
 - [x] Corrected review author_name display; edit offered only to normalized saved author. New existing-dispatcher action verifies live WP identity + CCT author before writing content/rating only. Comment author normalization and UI ownership use the same identity comparator. Server tests verify other-author rejection and own-author update; WordPress direct endpoint permission enforcement remains unverified.
