@@ -157,12 +157,21 @@ export default function CaregiverProfile() {
       : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     // Show every published weekly window — truncating the list made days the
     // booking form actually accepts (e.g. Fri/Sat) look unavailable.
-    return (availability || [])
+    const weekly = (availability || [])
       .filter((slot: any) => slot.is_available && typeof slot.day_of_week === "number" && slot.start_time && slot.end_time)
       .sort((a: any, b: any) => a.day_of_week - b.day_of_week || String(a.start_time).localeCompare(String(b.start_time)))
       .map((slot: any) => ({
         label: `${weekdayLabels[slot.day_of_week]} ${slot.start_time}–${slot.end_time}`,
       }));
+    // Upcoming one-off dates the caregiver opened are bookable too.
+    const today = new Date().toISOString().slice(0, 10);
+    const dated = (availability || [])
+      .filter((slot: any) => slot.is_available && slot.specific_date && slot.specific_date >= today && slot.start_time && slot.end_time)
+      .sort((a: any, b: any) => String(a.specific_date).localeCompare(String(b.specific_date)) || String(a.start_time).localeCompare(String(b.start_time)))
+      .map((slot: any) => ({
+        label: `${slot.specific_date} ${slot.start_time}–${slot.end_time}`,
+      }));
+    return [...weekly, ...dated];
   }, [availability, isZh]);
   // The chosen dictionary option carries its own published rate.
   const effectiveRate = Number(selectedResource?.rate || 0);
@@ -485,16 +494,18 @@ export default function CaregiverProfile() {
                 </div>
               )}
 
-              {availabilityPreview.length > 0 && (
-                <div className="mb-5 space-y-2">
-                  <p className="text-sm font-medium text-foreground">{isZh ? "可约时间" : "Availability"}</p>
+              <div className="mb-5 space-y-2">
+                <p className="text-sm font-medium text-foreground">{isZh ? "可约时间" : "Availability"}</p>
+                {availabilityPreview.length > 0 ? (
                   <div className="space-y-1.5">
                     {availabilityPreview.map((slot) => (
                       <div key={slot.label} className="text-sm text-muted-foreground">{slot.label}</div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground">{isZh ? "暂未开放可约时间" : "No open times yet"}</p>
+                )}
+              </div>
 
               <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
                 <DialogTrigger asChild>

@@ -103,7 +103,7 @@ export default function Auth() {
       });
       // Signing up already signed you in, so land on the setup screen instead
       // of leaving the sign-up form on screen.
-      navigate(nextPath === "/become-caregiver" ? nextPath : withNext("/onboarding", nextPath));
+      navigate(nextPath === "/caregiver-setting" || nextPath === "/become-caregiver" ? "/caregiver-setting" : withNext("/onboarding", nextPath));
     } catch (err: any) {
       toast({ title: t("auth.signupFailed"), description: err.message, variant: "destructive" });
     } finally {

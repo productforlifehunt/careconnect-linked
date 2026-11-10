@@ -39,7 +39,7 @@ async function submitSignup() {
 
 it("returns a successful common signup directly to the caregiver entry", async () => {
   await submitSignup();
-  await waitFor(() => expect(m.navigate).toHaveBeenCalledWith("/become-caregiver"));
+  await waitFor(() => expect(m.navigate).toHaveBeenCalledWith("/caregiver-setting"));
 });
 it("preserves onboarding for unrelated common signup returns", async () => {
   m.next = "/care-circle/28";

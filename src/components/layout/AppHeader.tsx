@@ -278,10 +278,10 @@ export function AppHeader() {
                     <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
                   </Link>
                 </DropdownMenuItem>
-                {paidCare && profile?.is_care_provider && (
+                {paidCare && (
                   <DropdownMenuItem asChild>
-                    <Link to="/caregiver-setting?tab=profile">
-                      <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}
+                    <Link to="/caregiver-setting?tab=settings">
+                      <Briefcase className="mr-2 h-4 w-4" /> {profile?.is_care_provider ? (isChinese ? "护理者设置" : "Caregiver Settings") : (isChinese ? "成为护理者" : "Become Caregiver")}
                     </Link>
                   </DropdownMenuItem>
                 )}

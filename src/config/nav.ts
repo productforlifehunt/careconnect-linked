@@ -152,7 +152,7 @@ export function buildPublicNav({ site, t, isChinese, withHome }: Opts): NavItem[
     ...(isCareCNC || !community ? [] : [{ title: t("nav.community"), url: "/community", icon: Newspaper }]),
     { title: t("nav.articles"), url: "/articles", icon: Newspaper },
     { title: t("nav.howItWorks"), url: "/how-it-works", icon: HelpCircle },
-    ...(paidCare ? [{ title: t("nav.becomeCaregiver"), url: "/become-caregiver", icon: UserPlus }] : []),
+    ...(paidCare ? [{ title: t("nav.becomeCaregiver"), url: "/caregiver-setting", icon: UserPlus }] : []),
   ];
 }
 
