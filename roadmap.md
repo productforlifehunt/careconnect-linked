@@ -1,8 +1,8 @@
 ## Current request: Named reminder toggles and single global back navigation (2026-11-10 12:23 UTC)
-- [ ] Show current app display name in medicine, check-in and location receiver labels; preserve subscription behavior.
-- [ ] Remove all duplicate page back buttons; retain shared page-header history navigation and non-navigation controls.
-- [ ] Update every relevant unlocked note, preserve locked notes and bindings, independently read back changes.
-- [ ] Run relevant checks and verify actual pages; report preview/deployment and Draftbit blockers honestly.
+- [x] Show current app display name in medicine, check-in and location receiver labels, including group check-ins; subscription behavior unchanged.
+- [x] Remove duplicate page back buttons across care pages, error states, resources and messages; retain shared page-header history navigation, pagination and survey-step controls. Resource and inbox selections now participate in browser history.
+- [x] Scanned 10,557 notes and direct REL325 connections; updated 57 relevant unlocked notes with 57/57 exact full-body readbacks. Titles/bindings unchanged; all three locked records, including #6856/#6859, exactly unchanged. Plugin normalized 101 empty a65/a66 fields without enabling switches.
+- [ ] Actual changed-page browser acceptance blocked: localhost returns HTTP 500 with existing oj/React Router ssrLoadModule incompatibility. Draftbit login page is reachable but serves its saved version, not this turn's edits. Focused tests are being run; do not claim full page acceptance or Draftbit synchronization.
 
 ## Current request: Uploaded AI conversation acceptance standard (2026-11-10 09:26 UTC)
 - [x] Read every paragraph and inventory all 11 acceptance clauses; two independent source audits completed. Initial existing AI tests 10/10 passed, not behavioral acceptance.
