@@ -237,17 +237,11 @@ export function MobileBottomBar() {
           icon: HeartHandshake,
         },
         {
-          id: "work-become",
-          title: isChinese ? "成为护理者" : "Become Caregiver",
-          url: "/become-caregiver",
-          icon: UserPlus,
-        },
-        ...(profile?.is_care_provider ? [{
-          id: "work-provider",
-          title: isChinese ? "护理者设置" : "Caregiver Settings",
+          id: profile?.is_care_provider ? "work-provider" : "work-become",
+          title: profile?.is_care_provider ? (isChinese ? "护理者设置" : "Caregiver Settings") : (isChinese ? "成为护理者" : "Become Caregiver"),
           url: "/caregiver-setting",
-          icon: LayoutDashboard,
-        }] : []),
+          icon: profile?.is_care_provider ? LayoutDashboard : UserPlus,
+        },
       ];
 
   const dailyCareItems: ToolItem[] = isChallenged

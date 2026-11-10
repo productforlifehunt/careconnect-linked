@@ -354,7 +354,7 @@ const Index = () => {
                 { label: t(site.family === "challenged" ? "nav.careTeams" : "nav.careGroups"), href: "/care-circle" },
               ] },
               { title: t("home.forCaregivers"), links: paidCare ? [
-                { label: t("home.joinAsCaregiver"), href: "/become-caregiver" },
+                { label: t("home.joinAsCaregiver"), href: "/caregiver-setting" },
                 { label: t("nav.tasksNeedingHelp"), href: "/tasks" },
                 { label: t("nav.providerDashboard"), href: "/caregiver-setting" },
                 { label: t("nav.trustSafety"), href: "/trust-safety" },
