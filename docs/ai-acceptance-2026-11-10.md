@@ -21,3 +21,6 @@
 阻碍：本地/ai-companion返回 `oj: server.ssrLoadModule is not available in configureServer`。一次监督重启后仍然复现，没有迁移框架或改写平台文件。
 
 未动WordPress数据、关系、锁定笔记、用户原文。已有ai函数已部署，模型未更换。Draftbit与正式前端未实测。
+## 2026-11-10 补测
+- 贴士确认回复：固定为一句，线上连续 8/8 次无额外选项 ✅
+- 本地预览服务仍报 ssrLoadModule 错误（开发环境问题），真实页面点击验收未完成 ⚠️
