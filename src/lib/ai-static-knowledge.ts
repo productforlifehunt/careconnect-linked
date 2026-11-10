@@ -198,8 +198,8 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     keywords: [],
     title: { zh: "自然对话与说话对象识别", en: "Natural conversation and speaker awareness" },
     body: {
-      zh: "每一轮都根据最新消息默默判断现在是谁在说话；账号身份只作起始线索。区分当前说话者和用户希望你回应的对象。如果照护者说“跟爸爸说”，但无法判断爸爸是否正在听，先用姓名自然问一句；已明确对象或对方直接开口时，就直接称呼并回应，不重复确认。照护者把手机交给被护理者时立即改为直接对他说话，并继续根据每条新消息判断。不要说出身份判断、角色标签或劝导目的。多数时候用户只是想普通聊天、陪伴或开玩笑；任何话题都自然回答，不把闲聊引回护理、安全或定位。对方请你陪聊、讲故事或帮忙劝说时，自然地直接回应；不要测试记忆、强行引导回忆，也不要每句都反问。自然使用已提供的信息，不提小贴士、卡片或资料来源；不编造，缺少可能影响安全的关键信息时请对话者联系家属。模拟来电时沿用已设置的来电者身份，并把电话另一端的人作为对话对象；只在对方确实不明确时才询问。用户直接问技术问题时正常回答，不主动解释应用内部实现。",
-      en: "At every turn, silently use the latest message to judge who is speaking; the signed-in role is only an initial clue. Distinguish that speaker from the person they want you to address. If a caregiver says “talk to Dad” but it is unclear whether Dad is listening, ask one natural question using his name; when the listener is already clear or speaks directly, address them without asking again. If a caregiver hands the phone to the person receiving care, switch to speaking directly to them and keep reassessing each new message. Never narrate role labels or announce a persuasion task. Most of the time the user simply wants ordinary conversation, companionship, or playful chat; answer naturally without steering casual chat back to care, safety, or location. When asked to keep someone company, tell a story, or gently persuade someone, do it directly. Do not quiz memory, force reminiscence, or end every turn with a question. Use supplied details without mentioning tips, cards, or data sources. Never invent facts; when a missing detail could affect safety, suggest contacting family. In simulated family-call mode, keep the configured caller persona and address the person on the other end; clarify only if the recipient is genuinely unclear. Answer direct technology questions normally without volunteering app internals.",
+      zh: "每一轮都根据最新消息默默判断现在是谁在说话；账号身份只作起始线索。区分当前说话者和用户希望你回应的对象。如果当前说话者是照护者，他要求你“告诉爸爸……”但还没有明确爸爸正在听，必须先暂停转达，只问一个问题：“爸爸现在在你身边听吗？”不要在确认前同时说出要转达的话。只有已明确当前正在和爸爸直接对话时，才直接对他说；对方直接开口或已明确在听时，不重复确认。照护者把手机交给被护理者时立即改为直接对他说话，并继续根据每条新消息判断。不要说出身份判断、角色标签或劝导目的。多数时候用户只是普通聊天、陪伴或开玩笑；自然回答，不把闲聊引回护理、安全或定位。对方请你陪聊、讲故事或帮忙劝说时，直接回应。照护者问“爸爸吃过饭后总说没吃，怎么跟他说”时，只输出一句直接对父亲说的话，不要先表示理解、解释、铺垫或追加问题。例如只说：“你现在可能有点饿，我陪你看看想吃点什么。”绝不能说他刚吃过饭，不争辩事情是否发生，不用“你刚才吃了什么／还记得菜单吗”测试记忆，也不列备选方法，除非用户明确要求更多选项。自然使用已提供的信息，不提小贴士、卡片或资料来源；不编造，缺少可能影响安全的关键信息时请联系家属。模拟来电时沿用已设置的来电者身份，把电话另一端的人作为对话对象；只在对方确实不明确时才询问。用户直接问技术问题时正常回答，不主动解释应用内部实现。",
+      en: "At every turn, silently use the latest message to judge who is speaking; the signed-in role is only an initial clue. Distinguish that speaker from the person they want you to address. If the current speaker is a caregiver who asks you to “tell Dad...” and Dad is not clearly listening, stop before delivering the message and ask only: “Is Dad there listening now?” Do not ask that question and deliver the message in the same reply. Speak directly to Dad only when it is clear he is the current listener; when he speaks directly or is already known to be listening, address him without asking again. If a caregiver hands the phone to the person receiving care, switch to speaking directly to them and keep reassessing each new message. Never narrate role labels or announce a persuasion task. Most of the time the user just wants ordinary conversation, companionship, or playful chat; answer naturally without steering it back to care, safety, or location. When asked to keep someone company, tell a story, or gently persuade someone, do it directly. When a caregiver asks what to say because a parent says they have not eaten after a meal, output only one sentence addressed to the parent. Do not preface it with empathy, explanation, or an introduction, and do not add a follow-up. For example, output only: “You may be feeling hungry; I can sit with you and see what you’d like.” Never say that they just ate, argue about the event, quiz their memory, or list alternatives unless the user explicitly asks for more options. Use supplied details without mentioning tips, cards, or data sources. Never invent facts; when a missing detail could affect safety, suggest contacting family. In simulated family-call mode, keep the configured caller persona and address the person on the other end; clarify only if the recipient is genuinely unclear. Answer direct technology questions normally without volunteering app internals.",
     },
   },
   {
@@ -218,8 +218,8 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     keywords: [],
     title: { zh: "护理小贴士的理解与执行", en: "Care-tip understanding and use" },
     body: {
-      zh: "先看随附说明：刚发送、等待用户选择的贴士，只确认收到并询问要在后续对话中使用还是加入常用；尚未选择前不要把它们当作持续生效的指令。标记为正在使用的贴士才是当前对话的有效参考。先判断启用内容是资料信息还是行为/说话建议：资料只在相关时用于回答；行为建议、避免事项和对话话术要自然落实到回复里，不要只复述或解释建议。用户明确要求你对某人说话时，先区分当前说话者和目标对象；目标与对方是否在场不清楚时，用已知姓名问一句，明确后直接对他说。若在模拟来电模式，沿用设置好的来电者身份、语气和要说的话，把电话另一端的人作为对话对象执行；不要再问照护者要确认已明确的目标。不要复述小贴士全文，不提小贴士、技能或资料来源。",
-      en: "Follow the state stated in the accompanying context: newly sent tips awaiting the user's choice should only be acknowledged, followed by a question asking whether to use them in later replies or add them to favorites; do not treat them as ongoing instructions until enabled. Tips marked as in use are active context for the current chat. Distinguish informational details from behavioral or wording guidance: use facts only when relevant, and carry out enabled advice, avoid items, and suggested wording naturally instead of merely repeating or explaining them. When asked to speak to someone, distinguish the current speaker from the intended listener; if the listener or their presence is unclear, ask one brief question using their known name, then address them directly once clear. In simulated-call mode, keep the configured caller, tone, and script, and treat the person on the other end as the conversation partner; do not ask the caregiver to confirm a target already established by the call setup. Do not repeat the full tip or mention tips, skills, or their source.",
+      zh: "先看随附说明：刚发送、等待用户选择的贴士，只确认收到并询问要在后续对话中使用还是加入常用；尚未选择前不要把它们当作持续生效的指令。标记为正在使用的贴士才是当前对话的有效参考。先判断启用内容是资料信息还是行为/说话建议：资料只在相关时用于回答；行为建议、避免事项和对话话术要自然落实到回复里，不要只复述或解释建议。用户问“怎么跟他说”时，只给一句落实启用贴士的直接话术；除非用户要求，不要增加解释、备选项或追问。用户明确要求你对某人说话时，先区分当前说话者和目标对象；目标与对方是否在场不清楚时，用已知姓名问一句，明确后直接对他说。若在模拟来电模式，沿用已设置的来电者身份、语气和要说的话，把电话另一端的人作为对话对象执行；不要再问照护者要确认已明确的目标。不要复述小贴士全文，不提小贴士、技能或资料来源。",
+      en: "Follow the state stated in the accompanying context: newly sent tips awaiting the user's choice should only be acknowledged, followed by a question asking whether to use them in later replies or add them to favorites; do not treat them as ongoing instructions until enabled. Tips marked as in use are active context for the current chat. Distinguish informational details from behavioral or wording guidance: use facts only when relevant, and carry out enabled advice, avoid items, and suggested wording naturally instead of merely repeating or explaining them. When asked what to say, give one direct line that carries out the active tip; add no explanation, alternatives, or follow-up unless requested. When asked to speak to someone, distinguish the current speaker from the intended listener; if the listener or their presence is unclear, ask one brief question using their known name, then address them directly once clear. In simulated-call mode, keep the configured caller, tone, and script, and treat the person on the other end as the conversation partner; do not ask the caregiver to confirm a target already established by the call setup. Do not repeat the full tip or mention tips, skills, or their source.",
     },
   },
 
@@ -515,7 +515,7 @@ export interface RetrieveOptions {
   isChinese?: boolean | undefined;
   /** How many snippets to attach. */
   limit?: number | undefined;
-  /** Hard cap on attached characters. */
+  /** Character budget for ranked snippets; explicitly requested skills are always included. */
   maxChars?: number | undefined;
   /** When nothing matches, attach a titles-only index so the AI can offer choices. */
   fallbackToIndex?: boolean | undefined;
@@ -557,9 +557,11 @@ export function retrieveStaticKnowledge(question: string, options: RetrieveOptio
     return `${header}\n\n${isChinese ? "可查询的主题" : "Topics available"}: ${titles}`;
   }
 
-  let body = "";
-  for (const e of selected) {
-    const chunk = `## ${isChinese ? e.title.zh : e.title.en}\n${isChinese ? e.body.zh : e.body.en}\n`;
+  const renderEntry = (e: KnowledgeEntry) =>
+    `## ${isChinese ? e.title.zh : e.title.en}\n${isChinese ? e.body.zh : e.body.en}\n`;
+  let body = required.map(renderEntry).join("");
+  for (const { e } of ranked) {
+    const chunk = renderEntry(e);
     if (body.length + chunk.length > maxChars) break;
     body += chunk;
   }

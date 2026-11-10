@@ -28,18 +28,25 @@ describe("central AI prompt registry", () => {
     const prompt = buildSystemPrompt("en", "carecnc");
     expect(prompt).toContain("CareCNC AI Assistant");
     expect(prompt).toContain("without refusing");
-    expect(prompt).not.toContain("who is speaking");
+    expect(prompt).toContain("identify who is currently speaking");
+    expect(prompt).toContain("do not ask and relay the message in the same reply");
+    expect(prompt).toContain("treat the callee as the listener");
     expect(prompt.length).toBeLessThan(1000);
   });
 
   it("loads speaker, companion, and open-chat guidance from the static skill", () => {
     const context = retrieveStaticKnowledge("", {
-      skillNames: ["assistant.conversation"],
+      skillNames: ["assistant.conversation", "assistant.care-tip-execution"],
       fallbackToIndex: false,
     });
     expect(context).toContain("At every turn");
-    expect(context).toContain("99% of the time");
-    expect(context).toContain("do not steer back to care, safety, or location");
+    expect(context).toContain("Do not ask that question and deliver the message in the same reply");
+    expect(context).toContain("output only one sentence addressed to the parent");
+    expect(context).toContain("Do not preface it with empathy, explanation, or an introduction");
+    expect(context).toContain("Never say that they just ate");
+    expect(context).toContain("without steering it back to care, safety, or location");
+    expect(context).toContain("## Care-tip understanding and use");
+    expect(context).toContain("newly sent tips awaiting the user's choice");
   });
 
   it("cuts greeting boilerplate off the reply", () => {
