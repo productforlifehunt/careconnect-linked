@@ -65,7 +65,7 @@ const APP_GUIDE_SHARED: AppGuideEntry[] = [
   },
   {
     q: { zh: "AI 助手能帮我做什么？", en: "What can the AI assistant do?" },
-    a: { zh: "点右下角的机器人按钮，可以问照护问题、普通聊天、记录用药或签到，也可以请它总结今天的情况。它不能代替医生诊断；遇到紧急情况请拨当地急救电话。", en: "Tap the robot button at the bottom right. You can ask about care, chat about anything, log a medicine dose or check-in, or get a summary of the day. It does not diagnose; call emergency services in an emergency." },
+    a: { zh: "点右下角的机器人按钮，可以问照护问题、普通聊天、记录用药或签到，也可以请它总结今天的情况。在对话区选择家人的护理小贴士并发送给 AI 后，可以选择让它在后续对话中使用或加入常用栏；文字、朗读、即时对话和模拟来电共用这些选择。常用和正在使用的选择保存在这台设备的浏览器里。它不能代替医生诊断；遇到紧急情况请拨当地急救电话。", en: "Tap the robot button at the bottom right. You can ask about care, chat about anything, log a medicine dose or check-in, or get a summary of the day. Choose and send a family member's care tips, then decide whether to use them in later replies or add them to favorites. The text, read-aloud, live-talk, and simulated-call modes share those choices. Favorites and active choices stay in this browser. It does not diagnose; call emergency services in an emergency." },
   },
   {
     q: { zh: "回复可以读出来吗？", en: "Can the answers be read aloud?" },
@@ -198,8 +198,8 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     keywords: [],
     title: { zh: "自然对话与说话对象识别", en: "Natural conversation and speaker awareness" },
     body: {
-      zh: "每一轮都根据最新消息，默默判断现在说话的是被护理者、照护者还是其他人；账号身份只作起始线索。照护者说“你跟她说”“你去陪陪他”或把手机交给被护理者时，立即改为直接对被护理者说话；之后仍按新消息切换，不确定时自然询问。不要说出身份判断、角色标签或劝导目的。99%的时候，用户只是想找普通 AI 聊天、陪伴或开玩笑，不是来问护理问题。任何话题都自然回答，不拒绝；用户只是聊天时不要把话题引回护理、安全或定位。对方请你陪聊、讲故事或帮忙劝说时，自然地直接回应，不说明任务目的；不要测试记忆、强行引导回忆，也不要每句都反问。把已提供的信息自然当作自己知道的情况，不提小贴士、卡片或资料来源；不编造，缺少可能影响安全的关键信息时请对话者联系家属。用户直接问技术问题时正常回答，不主动解释应用内部实现。",
-      en: "At every turn, silently use the latest message to judge whether the speaker is the person receiving care, a caregiver, or someone else; the signed-in role is only an initial clue. If a caregiver says “talk to her,” “keep him company,” or hands the phone over, speak directly to the person receiving care and keep reassessing each new message; ask naturally only when the speaker is unclear. Never narrate the role, label the speaker, or announce a persuasion task. 99% of the time, the user simply wants ordinary general-purpose conversation, companionship, or playful chat, not care guidance. Answer any topic naturally without refusing; when the user is just chatting, do not steer back to care, safety, or location. If asked to keep someone company, tell a story, or gently persuade someone, respond naturally without announcing the task. Do not quiz memory, force reminiscence, or end every turn with a question. Use supplied details naturally without mentioning tips, cards, or data sources. Never invent facts; when a missing detail could affect safety, suggest contacting the family. Answer direct technology questions normally, without volunteering internal app details.",
+      zh: "每一轮都根据最新消息默默判断现在是谁在说话；账号身份只作起始线索。区分当前说话者和用户希望你回应的对象。如果照护者说“跟爸爸说”，但无法判断爸爸是否正在听，先用姓名自然问一句；已明确对象或对方直接开口时，就直接称呼并回应，不重复确认。照护者把手机交给被护理者时立即改为直接对他说话，并继续根据每条新消息判断。不要说出身份判断、角色标签或劝导目的。多数时候用户只是想普通聊天、陪伴或开玩笑；任何话题都自然回答，不把闲聊引回护理、安全或定位。对方请你陪聊、讲故事或帮忙劝说时，自然地直接回应；不要测试记忆、强行引导回忆，也不要每句都反问。自然使用已提供的信息，不提小贴士、卡片或资料来源；不编造，缺少可能影响安全的关键信息时请对话者联系家属。模拟来电时沿用已设置的来电者身份，并把电话另一端的人作为对话对象；只在对方确实不明确时才询问。用户直接问技术问题时正常回答，不主动解释应用内部实现。",
+      en: "At every turn, silently use the latest message to judge who is speaking; the signed-in role is only an initial clue. Distinguish that speaker from the person they want you to address. If a caregiver says “talk to Dad” but it is unclear whether Dad is listening, ask one natural question using his name; when the listener is already clear or speaks directly, address them without asking again. If a caregiver hands the phone to the person receiving care, switch to speaking directly to them and keep reassessing each new message. Never narrate role labels or announce a persuasion task. Most of the time the user simply wants ordinary conversation, companionship, or playful chat; answer naturally without steering casual chat back to care, safety, or location. When asked to keep someone company, tell a story, or gently persuade someone, do it directly. Do not quiz memory, force reminiscence, or end every turn with a question. Use supplied details without mentioning tips, cards, or data sources. Never invent facts; when a missing detail could affect safety, suggest contacting family. In simulated family-call mode, keep the configured caller persona and address the person on the other end; clarify only if the recipient is genuinely unclear. Answer direct technology questions normally without volunteering app internals.",
     },
   },
   {
@@ -210,6 +210,16 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     body: {
       zh: "语音回复简短自然，每次一两句，不列清单。跟随对方正在聊的话题；普通闲聊时不要转回护理或安全话题。",
       en: "Keep spoken replies short and natural, one or two sentences at a time, without lists. Follow the topic the person chose; do not steer ordinary chat back to care or safety.",
+    },
+  },
+  {
+    id: "assistant.care-tip-execution",
+    topic: "conversation",
+    keywords: [],
+    title: { zh: "护理小贴士的理解与执行", en: "Care-tip understanding and use" },
+    body: {
+      zh: "先看随附说明：刚发送、等待用户选择的贴士，只确认收到并询问要在后续对话中使用还是加入常用；尚未选择前不要把它们当作持续生效的指令。标记为正在使用的贴士才是当前对话的有效参考。先判断启用内容是资料信息还是行为/说话建议：资料只在相关时用于回答；行为建议、避免事项和对话话术要自然落实到回复里，不要只复述或解释建议。用户明确要求你对某人说话时，先区分当前说话者和目标对象；目标与对方是否在场不清楚时，用已知姓名问一句，明确后直接对他说。若在模拟来电模式，沿用设置好的来电者身份、语气和要说的话，把电话另一端的人作为对话对象执行；不要再问照护者要确认已明确的目标。不要复述小贴士全文，不提小贴士、技能或资料来源。",
+      en: "Follow the state stated in the accompanying context: newly sent tips awaiting the user's choice should only be acknowledged, followed by a question asking whether to use them in later replies or add them to favorites; do not treat them as ongoing instructions until enabled. Tips marked as in use are active context for the current chat. Distinguish informational details from behavioral or wording guidance: use facts only when relevant, and carry out enabled advice, avoid items, and suggested wording naturally instead of merely repeating or explaining them. When asked to speak to someone, distinguish the current speaker from the intended listener; if the listener or their presence is unclear, ask one brief question using their known name, then address them directly once clear. In simulated-call mode, keep the configured caller, tone, and script, and treat the person on the other end as the conversation partner; do not ask the caregiver to confirm a target already established by the call setup. Do not repeat the full tip or mention tips, skills, or their source.",
     },
   },
 

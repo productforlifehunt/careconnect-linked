@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { loadSavedFamilyVoices, savedVoiceAudio, onFamilyVoicesChanged, playBase64Mp3, type FamilyVoice } from "@/lib/family-voices";
 import { FAMILY_VOICE_STATE } from "@/features/family-voices/schema";
@@ -20,9 +20,12 @@ import { Conversation, ConversationContent, ConversationScrollButton } from "@/c
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { CareTipContextPicker } from "@/components/ai/CareTipContextPicker";
+import { buildActiveCareTipsPrompt, buildCareTipSelectionPrompt, type ActiveCareTip } from "@/lib/ai-care-tip-context";
 
 type Msg = { role: "user" | "assistant"; content: string; imageDataUrl?: string | undefined };
 type PendingChatImage = { dataUrl: string; name: string };
+type ChatSend = (submittedText?: string | undefined, selectionTips?: ActiveCareTip[] | undefined) => Promise<boolean>;
 
 /** Reply mode: text only / read aloud / live back-and-forth talk. Remembered. */
 const READ_ALOUD_KEY = "ai-read-aloud";
@@ -93,6 +96,17 @@ export function AICompanionChat({
     topics: ["app-basics", "care-group", "care-tips"],
     writeSkills: ["save-care-tip"],
   });
+  const activeCareTipsRef = useRef<ActiveCareTip[]>([]);
+  const sendRef = useRef<ChatSend | null>(null);
+  const updateActiveCareTips = useCallback((tips: ActiveCareTip[]) => {
+    activeCareTipsRef.current = tips;
+  }, []);
+  const sendCareTipSelection = useCallback((tips: ActiveCareTip[]) => {
+    const status = isZh
+      ? `已向 AI 发送 ${tips.length} 条护理小贴士。`
+      : `Sent ${tips.length} care ${tips.length === 1 ? "tip" : "tips"} to AI.`;
+    return sendRef.current?.(status, tips) ?? Promise.resolve(false);
+  }, [isZh]);
 
   useEffect(() => {
     threadIdRef.current = threadId;
@@ -297,10 +311,17 @@ export function AICompanionChat({
    * On-demand context: the static snippets that match this question plus only
    * the permitted dynamic facts it needs. See src/lib/ai-dynamic-knowledge.ts.
    */
-  const buildContext = async (question: string): Promise<string | undefined> => {
+  const buildContext = async (question: string, selectionTips: ActiveCareTip[] = []): Promise<string | undefined> => {
+    const selectionHandoff = selectionTips.length > 0;
+    const activeCareTips = activeCareTipsRef.current;
+    const careTipContext = [
+      buildActiveCareTipsPrompt(activeCareTips, !!isZh),
+      buildCareTipSelectionPrompt(selectionTips, !!isZh),
+    ].filter(Boolean).join("\n\n");
+    const hasCareTipContext = activeCareTips.length > 0 || selectionTips.length > 0;
     if (!contextScope) {
-      const liveOnly = voiceStyle();
-      return [request.contextPrompt, liveOnly].filter(Boolean).join("\n\n") || undefined;
+      const liveOnly = selectionHandoff ? "" : voiceStyle();
+      return [request.contextPrompt, liveOnly, careTipContext].filter(Boolean).join("\n\n") || undefined;
     }
     let resolved = "";
     try {
@@ -313,7 +334,8 @@ export function AICompanionChat({
         topics: contextScope.topics,
         staticSkillNames: [
           ...(contextScope.staticSkillNames || []),
-          ...(modeRef.current === "live" || modeRef.current === "call" ? ["assistant.live-voice"] : []),
+          ...(!selectionHandoff && (modeRef.current === "live" || modeRef.current === "call") ? ["assistant.live-voice"] : []),
+          ...(hasCareTipContext ? ["assistant.care-tip-execution"] : []),
         ],
         appFamily: site.family,
         sheetContext: contextScope.sheetContext,
@@ -324,8 +346,8 @@ export function AICompanionChat({
     } catch (e) {
       console.warn("AI context resolution failed, continuing without facts:", e);
     }
-    const live = voiceStyle();
-    return [request.contextPrompt, resolved, live].filter(Boolean).join("\n\n") || undefined;
+    const live = selectionHandoff ? "" : voiceStyle();
+    return [request.contextPrompt, resolved, live, careTipContext].filter(Boolean).join("\n\n") || undefined;
   };
   const buildContextRef = useRef(buildContext);
   buildContextRef.current = buildContext;
@@ -438,10 +460,10 @@ export function AICompanionChat({
     }
   }, [active]);
 
-  const send = async (submittedText?: string | undefined) => {
+  const send = async (submittedText?: string | undefined, selectionTips: ActiveCareTip[] = []): Promise<boolean> => {
     const text = (submittedText ?? input).trim();
     const image = pendingImage;
-    if ((!text && !image) || loading || preparingImage) return;
+    if ((!text && !image) || loading || preparingImage) return false;
     const userText = text || (isZh ? "请看看这张图片。" : "Please take a look at this image.");
     const savedUserText = image ? `${userText}\n[${isZh ? "图片附件" : "Image attached"}]` : userText;
     onChatEngaged?.();
@@ -462,7 +484,7 @@ export function AICompanionChat({
       const history = trimMessagesToCharLimit(
         next.slice(0, -1).map((m) => ({ role: m.role, content: m.content, ...(m.imageDataUrl ? { imageDataUrl: m.imageDataUrl } : {}) }))
       );
-      const contextPrompt = await buildContext(userText);
+      const contextPrompt = await buildContext(userText, selectionTips);
       const onDelta = (full: string) =>
         setMessages((prev) => {
           const copy = [...prev];
@@ -472,7 +494,19 @@ export function AICompanionChat({
 
       let reply = "";
       const clonedVoice = modeRef.current === "call" ? callRef.current.voiceId : undefined;
-      if (clonedVoice) {
+      if (selectionTips.length > 0) {
+        // Tip selection is a control handoff to the signed-in user, not a line
+        // for the simulated caller to say to the person on the other end.
+        stopSpeaking();
+        const { abort, result } = streamChatTextOnly(history, {
+          language: isZh ? "zh" : "en",
+          contextPrompt,
+          onTextDelta: (_d, full) => onDelta(full),
+          onError: (e) => console.error("AI care-tip selection error:", e),
+        });
+        abortRef.current = { abort };
+        reply = await result;
+      } else if (clonedVoice) {
         stopSpeaking();
         const { abort, result } = streamChatTextOnly(history, {
           language: isZh ? "zh" : "en",
@@ -572,6 +606,7 @@ export function AICompanionChat({
         if (clonedVoice && persistedReply.trim()) void speakCloned(persistedReply, next.length - 1, clonedVoice);
         else if (readAloudRef.current && persistedReply.trim()) speak(persistedReply, next.length - 1);
       }
+      return true;
     } catch (e) {
       console.error(e);
       const message = isZh ? "图片或消息暂时没有发送成功，请稍后再试。" : "Your image or message couldn't be sent. Please try again.";
@@ -589,12 +624,12 @@ export function AICompanionChat({
           copy[copy.length - 1] = { role: "assistant", content: message };
         return copy;
       });
+      return false;
     } finally {
       setLoading(false);
       abortRef.current = null;
     }
   };
-  const sendRef = useRef(send);
   sendRef.current = send;
 
   useEffect(() => {
@@ -604,7 +639,7 @@ export function AICompanionChat({
     handledInitialPromptRef.current = promptKey;
     onInitialPromptConsumed?.();
     onChatEngaged?.();
-    void sendRef.current(prompt);
+    void sendRef.current?.(prompt);
   }, [active, initialPrompt, loading, request.id, onInitialPromptConsumed, onChatEngaged]);
 
   return (
@@ -734,6 +769,15 @@ export function AICompanionChat({
             );
           })}
         </div>
+        {contextScope && !request.appGuide && !contextScope.sharedCard && (!contextScope.topics || contextScope.topics.includes("care-tips")) && (
+          <CareTipContextPicker
+            enabled={active}
+            sending={loading}
+            initialCaredOneId={contextScope.caredOneId}
+            onActiveTipsChange={updateActiveCareTips}
+            onSendTips={sendCareTipSelection}
+          />
+        )}
         {mode === "live" && (
           <p className="text-xs text-muted-foreground">
             {isZh ? "按住麦克风说话，松手就会马上回答，一句一句读出来。" : "Hold the microphone and talk — the reply comes back spoken, sentence by sentence."}
@@ -813,7 +857,7 @@ export function AICompanionChat({
           aria-label={isZh ? "选择要发送的图片" : "Choose an image to send"}
           onChange={(event) => void chooseImage(event)}
         />
-        <PromptInput onSubmit={({ text }) => send(text)}>
+        <PromptInput onSubmit={({ text }) => { void send(text); }}>
           <PromptInputBody>
             <PromptInputTextarea
               autoFocus={active}

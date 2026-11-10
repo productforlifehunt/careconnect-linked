@@ -516,7 +516,7 @@ export {
   logMedicineWordPress,
 } from "@/features/medicine/source.medicine";
 
-// ─── Care Tip (CCT 19) ───────────────────────────────────────
+// ─── Care Tip (CCT 209) ──────────────────────────────────────
 // a55=title, a56=content, a57=category (b55=tip, b56=avoid), a58=is_pinned (b55/b56)
 const TIP_CATEGORY_CODE: Record<string, string> = { tip: "b55", avoid: "b56" };
 const TIP_CATEGORY_LABEL: Record<string, string> = { b55: "tip", b56: "avoid" };
