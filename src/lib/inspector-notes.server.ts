@@ -191,13 +191,10 @@ function mapRow(row: CCTRow): CCTNote {
 }
 /** Filter on the existing a59 field; never download the entire note catalogue for one element. */
 async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
-  const { routePattern } = await import("@/features/inspector/route-key");
+  const { bindingSearchNeedle } = await import("@/features/inspector/position-bindings");
   // Legacy record-specific keys retain their exact spelling. Query their full anchor then verify
   // the complete key, rather than rewriting or guessing a different element's binding.
-  const pattern = routePattern(key);
-  const parts = key.split("|");
-  const needle =
-    pattern || key.includes("/:id") ? parts.slice(2).join("|") : key;
+  const needle = bindingSearchNeedle(key);
   const encoded = JSON.stringify(needle).slice(1, -1);
   const rows: CCTRow[] = [];
   for (let offset = 0; ; offset += 100) {

@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
   findPositionBindings,
+  bindingSearchNeedle,
   positionBindings,
   updatePositionBindings,
 } from "./position-bindings";
@@ -65,4 +66,18 @@ it("returns every note linked to the same position across record routes", () => 
     binding,
     otherNote,
   ]);
+});
+it("shares the caregiver page note across wp-prefixed provider IDs without crossing pages", () => {
+  const note = { ...binding, id: "10657", scope: "page" as const, key: "page|/caregiver/wp-46", page: "/caregiver/wp-46" };
+  expect(findPositionBindings([note], "page|/caregiver/wp-47")).toEqual([note]);
+  expect(findPositionBindings([note], "page|/caregiver/47")).toEqual([note]);
+  expect(findPositionBindings([note], "page|/caregiver/:id")).toEqual([note]);
+  expect(findPositionBindings([note], "page|/facility/47")).toEqual([]);
+  expect(findPositionBindings([note], "page|/caregiver/wp-47/bookings")).toEqual([]);
+});
+it("queries the caregiver route prefix rather than another provider's exact ID or an empty anchor", () => {
+  expect(bindingSearchNeedle("page|/caregiver/wp-47")).toBe("page|/caregiver/");
+  expect(bindingSearchNeedle("page|/caregiver/:id")).toBe("page|/caregiver/");
+  expect(bindingSearchNeedle("page|/settings")).toBe("page|/settings");
+  expect(bindingSearchNeedle(binding.key)).toBe("Stats|@div0>span0");
 });

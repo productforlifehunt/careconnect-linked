@@ -1,8 +1,10 @@
-/** One element on /care-circle/28 and /care-circle/31 is the same element: match its note across record ids in the page path. */
+/** Record pages and their elements share notes across numeric and WordPress-prefixed IDs. */
 export function routePattern(key: string): string | undefined {
   const parts = key.split("|");
-  if (parts[0] !== "el" || !parts[1] || !/\/\d+(?=\/|$)/.test(parts[1])) return undefined;
-  return ["el", parts[1].replace(/\/\d+(?=\/|$)/g, "/:id"), ...parts.slice(2)].join("|");
+  if (!["el", "page", "al"].includes(parts[0] ?? "") || !parts[1]) return undefined;
+  const path = parts[1].replace(/\/(?:wp-)?\d+(?=\/|$)/g, "/:id");
+  if (path === parts[1] && !path.includes("/:id")) return undefined;
+  return [parts[0], path, ...parts.slice(2)].join("|");
 }
 /**
  * Build-independent second key for an element: page pattern + the app's own component names + tag + slot.
