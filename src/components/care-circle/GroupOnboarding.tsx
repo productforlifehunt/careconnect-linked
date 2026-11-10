@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "@/lib/router-compat";
 import { Loader2, CheckCircle2, XCircle, Users, UserPlus, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +80,7 @@ export function GroupOnboarding({ groupId, inviteToken, onClearInvite }: {
   if (!user || stateLoading || (inviteToken && tokenLoading)) {
     body = <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   } else if (isError || !state?.found) {
-    body = <Result icon="error" text={Z("找不到这个群组，链接可能有误。", "We couldn't find this group. The link may be wrong.")} back={Z("返回我的护理小组", "Back to my care groups")} />;
+    body = <Result icon="error" text={Z("找不到这个群组，链接可能有误。", "We couldn't find this group. The link may be wrong.")} />;
   } else if (state.my_status === "accepted") {
     // Just joined — the page switches to the group once the group list refreshes.
     body = (
@@ -91,7 +90,7 @@ export function GroupOnboarding({ groupId, inviteToken, onClearInvite }: {
       </div>
     );
   } else if (!state.is_active) {
-    body = <Result icon="error" text={Z(`「${groupName}」已停用，暂时不能加入。`, `${groupName} is no longer active, so it can't be joined.`)} back={Z("返回我的护理小组", "Back to my care groups")} />;
+    body = <Result icon="error" text={Z(`「${groupName}」已停用，暂时不能加入。`, `${groupName} is no longer active, so it can't be joined.`)} />;
   } else if (state.my_status === "pending" && !declined) {
     body = (
       <div className="space-y-4 text-left">
@@ -187,12 +186,11 @@ export function GroupOnboarding({ groupId, inviteToken, onClearInvite }: {
   );
 }
 
-function Result({ icon, text, back }: { icon: "error" | "done"; text: string; back: string }) {
+function Result({ icon, text }: { icon: "error" | "done"; text: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-4">
       {icon === "error" ? <XCircle className="h-10 w-10 text-destructive" /> : <CheckCircle2 className="h-10 w-10 text-primary" />}
       <p className="text-muted-foreground">{text}</p>
-      <Button asChild variant="outline"><Link to="/care-circle">{back}</Link></Button>
     </div>
   );
 }
