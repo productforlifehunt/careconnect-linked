@@ -1,3 +1,9 @@
+## Current request: Settings save and publication performance (2026-11-10 13:00 UTC)
+- [x] Measured unchanged profile save on authenticated Draftbit: 11.96 seconds, with phone write then REL259 read, CCT258 read and write in sequence; initial settings load 17.86 seconds.
+- [ ] Reuse current-account relation-resolved row targets and run independent profile writes together; preserve fields and activation rules.
+- [ ] Remove unnecessary payout save/refetch waiting and verify payout endpoint behavior without changing payout data.
+- [ ] Run regression checks and changed-page save/readback; report actual timings separately from code tests and blocked environments.
+
 ## Current request: Caregiver reviews, search chips, speed and preservation (2026-11-10 12:38 UTC)
 - [x] Corrected review author_name display; edit offered only to normalized saved author. New existing-dispatcher action verifies live WP identity + CCT author before writing content/rating only. Comment author normalization and UI ownership use the same identity comparator. Server tests verify other-author rejection and own-author update; WordPress direct endpoint permission enforcement remains unverified.
 - [x] Delivery/service labels now buttons opening /search-caregiver with service_location/service_type selected; interaction test passed.
