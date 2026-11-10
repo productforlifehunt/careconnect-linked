@@ -22,6 +22,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useStandaloneMode } from "@/hooks/useStandaloneMode";
 import { BrandMark } from "@/components/BrandMark";
 import { buildPublicNav } from "@/config/nav";
+import { useMyProfile } from "@/hooks/use-care-data";
 
 
 export function AppHeader() {
@@ -37,6 +38,7 @@ export function AppHeader() {
   const isChallenged = site.family === "challenged";
   const isCareCNC = site.id === "carecnc";
   const paidCare = site.features.paidCaregivers;
+  const { data: profile } = useMyProfile();
   const publicNav = buildPublicNav({ site, t, isChinese });
 
 
@@ -276,7 +278,7 @@ export function AppHeader() {
                     <Settings className="mr-2 h-4 w-4" /> {isChinese ? "设置" : "Settings"}
                   </Link>
                 </DropdownMenuItem>
-                {paidCare && (
+                {paidCare && profile?.is_care_provider && (
                   <DropdownMenuItem asChild>
                     <Link to="/caregiver-setting?tab=profile">
                       <Briefcase className="mr-2 h-4 w-4" /> {isChinese ? "护理者设置" : "Caregiver Settings"}

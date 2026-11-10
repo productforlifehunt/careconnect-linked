@@ -629,27 +629,12 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (updates: Partial<Profile>) => updateProfileWordPress(updates),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
-  });
-}
-
-// ─── Become Provider ────────────────────────────────────────
-export function useSubmitProviderApplication() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: any) => {
-      return updateProfileWordPress({
-        is_care_provider: true,
-        provider_is_active: true,
-        service_type_slugs: input.service_type_slugs || [],
-        care_provider_starts_hourly_rate: input.hourlyRate || input.care_provider_starts_hourly_rate || 0,
-        bio: input.bio || '',
-        location: input.location || '',
-        phone: input.phone || input.phone_number || undefined,
-
-      });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["myProfile"] });
+      qc.invalidateQueries({ queryKey: ["providers"] });
+      qc.invalidateQueries({ queryKey: ["provider"] });
+      qc.invalidateQueries({ queryKey: ["savedProviders"] });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
   });
 }
 

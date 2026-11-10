@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { CARE_SERVICE_TYPES, SERVICE_DELIVERY_MODES } from "@/lib/care-service-types";
 import { useToast } from "@/hooks/use-toast";
+import { canActivateProvider, providerActivationMessage } from "@/features/providers/activation";
 
 /**
  * Provider Dashboard → "My Care Services" tab.
@@ -57,21 +58,24 @@ export default function MyBookingServicesTab() {
   const num = (v: string) => (v.trim() === "" ? null : parseFloat(v));
 
   const handleSave = async () => {
+    const updates = {
+      service_location_slugs: delivery,
+      service_type_slugs: services,
+      care_provider_hourly_rate_in_person: num(rateInPerson),
+      care_provider_hourly_rate_remote: num(rateRemote),
+      care_provider_rate_remote_checkin: num(rateCheckin),
+      care_provider_rate_remote_medicine: num(rateMedicine),
+      care_provider_cancellation_policy: cancellation,
+    };
+    if (profile?.provider_is_active && !canActivateProvider({ ...profile, ...updates })) {
+      toast({ title: providerActivationMessage(isZh), variant: "destructive" });
+      return;
+    }
     try {
-      await updateProfile.mutateAsync({
-        service_location_slugs: delivery,
-        service_type_slugs: services,
-        care_provider_hourly_rate_in_person: num(rateInPerson),
-        care_provider_hourly_rate_remote: num(rateRemote),
-        care_provider_rate_remote_checkin: num(rateCheckin),
-        care_provider_rate_remote_medicine: num(rateMedicine),
-        care_provider_cancellation_policy: cancellation,
-      });
+      await updateProfile.mutateAsync(updates);
       toast({
         title: isZh ? "服务与价格已保存" : "Services and rates saved",
-        description: isZh
-          ? "客户现在可以在搜索中看到这些服务和价格。"
-          : "Clients can now see these services and rates in search.",
+        description: profile?.provider_is_active ? (isZh ? "客户可以在搜索中看到这些服务和价格。" : "Clients can see these services and rates in search.") : undefined,
       });
     } catch (e: any) {
       toast({

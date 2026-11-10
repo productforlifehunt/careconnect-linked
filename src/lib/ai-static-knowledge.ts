@@ -130,7 +130,7 @@ const APP_GUIDE_BY_APP: Record<"challenged" | "carecnc" | "notchsafety", AppGuid
     },
     {
       q: { zh: "我自己想接单，怎么成为护理者？", en: "How do I sign up as a caregiver?" },
-      a: { zh: "底部“工具” → 成为护理者，填服务项目、服务区域、价格和可预约时间，提交等审核。通过后用“护理者设置”管理请求、排班和收入。", en: "More → Become Caregiver: list your services, area, rates and availability, then submit for review. Once approved, use Caregiver Settings to handle requests, your schedule and earnings." },
+      a: { zh: "底部“工具” → 成为护理者。未登录先注册或登录，随后进入护理者设置。填写所在地、保存服务类型和对应价格，再开启公开接单并保存，即可出现在搜索中；不需要另外申请或等待审核。", en: "More → Become Caregiver. Sign up or sign in if needed, then open Caregiver Settings. Complete your location, save service types and corresponding rates, then enable public bookings and save to appear in search. No separate application or approval is required." },
     },
     {
       q: { zh: "怎么找需要帮手的活？", en: "Where do I find work?" },

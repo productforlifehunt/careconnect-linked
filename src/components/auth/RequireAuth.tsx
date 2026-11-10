@@ -11,7 +11,7 @@ import {
 import { withNext } from "@/lib/return-path";
 import { getStoredWPUser } from "@/services/wp-auth";
 
-export function RequireAuth({ children }: { children: React.ReactNode }) {
+export function RequireAuth({ children, skipOnboarding = false }: { children: React.ReactNode; skipOnboarding?: boolean }) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   const app = currentAppId();
@@ -38,7 +38,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     queryFn: () => fetchOnboardingDone(app),
     initialData: () => getCachedOnboardingDone(app),
     initialDataUpdatedAt: 0,
-    enabled: isAuthenticated && location.pathname !== "/onboarding",
+    enabled: !skipOnboarding && isAuthenticated && location.pathname !== "/onboarding",
     refetchOnMount: true,
     staleTime: 60 * 60 * 1000,
     retry: 0,
@@ -65,7 +65,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (location.pathname !== "/onboarding") {
+  if (!skipOnboarding && location.pathname !== "/onboarding") {
     if (checkingOnboarding) {
       return (
         <div className="flex justify-center items-center min-h-[60vh]">

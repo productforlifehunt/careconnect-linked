@@ -10,6 +10,8 @@ import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import PayoutAccountsCard from "./PayoutAccountsCard";
+import { canActivateProvider, providerActivationMessage } from "@/features/providers/activation";
+import { Link } from "@/lib/router-compat";
 
 /**
  * Profile tab — Basic Info, Active toggle, Payout accounts.
@@ -30,20 +32,21 @@ export default function ProviderSettingsTab() {
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
   useEffect(() => {
-    if (profile && !loaded) {
+    if (profile) {
       setLocation(profile.location || "");
       setHourlyRate(profile.care_provider_starts_hourly_rate?.toString() || "");
       setBio(profile.bio || "");
       setPhone(profile.phone || "");
       setIsActive(profile.provider_is_active || false);
-      setLoaded(true);
     }
-  }, [profile, loaded]);
+  }, [profile]);
 
   const handleSave = async () => {
+    if (isActive && !canActivateProvider({ ...profile, location, care_provider_hourly_rate_in_person: parseFloat(hourlyRate) })) {
+      toast({ title: providerActivationMessage(i18n.language?.startsWith("zh")), variant: "destructive" });
+      return;
+    }
     try {
       // Save profile via WordPress
       await updateProfile.mutateAsync({
@@ -52,10 +55,6 @@ export default function ProviderSettingsTab() {
         bio,
         phone,
         provider_is_active: isActive,
-        // Turning marketplace visibility on also marks the account as a paid
-        // care provider (a59) — search only lists rows where a59 and a60 are
-        // both Yes, and this is the flag that provisions the payout account.
-        ...(isActive ? { is_care_provider: true } : {}),
       });
 
 
@@ -80,7 +79,13 @@ export default function ProviderSettingsTab() {
                 </p>
               </div>
             </div>
-            <Switch checked={isActive} onCheckedChange={setIsActive} />
+            <Switch aria-label={i18n.language?.startsWith("zh") ? "公开接单" : "Accept bookings publicly"} checked={isActive} onCheckedChange={next => {
+              if (next && !canActivateProvider({ ...profile, location, care_provider_hourly_rate_in_person: parseFloat(hourlyRate) })) {
+                toast({ title: providerActivationMessage(i18n.language?.startsWith("zh")), variant: "destructive" });
+                return;
+              }
+              setIsActive(next);
+            }} />
           </div>
         </CardContent>
       </Card>
@@ -96,8 +101,8 @@ export default function ProviderSettingsTab() {
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5"><MapPin className="h-3.5 w-3.5" /> {t("common.location")}</Label>
-              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder={t("providerDash.locationPlaceholder")} />
+              <Label htmlFor="provider-location" className="flex items-center gap-1.5 mb-1.5"><MapPin className="h-3.5 w-3.5" /> {t("common.location")} *</Label>
+              <Input id="provider-location" value={location} onChange={e => setLocation(e.target.value)} placeholder={t("providerDash.locationPlaceholder")} />
             </div>
             <div>
               <Label className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> {t("becomeCaregiver.hourlyRateDollar")} ({t("providerDash.defaultRate")})</Label>
@@ -122,6 +127,7 @@ export default function ProviderSettingsTab() {
       {/* Service Packages moved to the "My Booking Services" tab. */}
 
       {/* Save */}
+      <Button variant="outline" asChild><Link to="/caregiver-setting?tab=services">{i18n.language?.startsWith("zh") ? "服务类型与价格" : "Service types and rates"}</Link></Button>
       <Button
         variant="coral"
         className="w-full"
