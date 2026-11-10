@@ -13,12 +13,11 @@ vi.mock("@/features/cared-ones/source.wordpress-extended", () => ({ fetchCareTip
 }) }));
 import { CareTipContextPicker } from "./CareTipContextPicker";
 
-beforeEach(() => { localStorage.clear(); state.site = "challenged"; state.user = "46"; state.fail = false; });
+beforeEach(async () => { await import("@/features/cared-ones/source.wordpress-extended"); localStorage.clear(); state.site = "challenged"; state.user = "46"; state.fail = false; });
 afterEach(cleanup);
 function mount() {
   const onActiveTipsChange = vi.fn(); const onSendTips = vi.fn(async (_tips: unknown[]) => true);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  client.getQueryCache().subscribe((event) => { if (event.query.state.error) console.error(event.query.state.error); });
   const rendered = render(<QueryClientProvider client={client}><CareTipContextPicker enabled onActiveTipsChange={onActiveTipsChange} onSendTips={onSendTips} /></QueryClientProvider>);
   return { ...rendered, onActiveTipsChange, onSendTips, client };
 }
