@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from '@/lib/router-compat';
+import { useParams } from '@/lib/router-compat';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, CheckCircle2, Clock } from 'lucide-react';
+import { CheckCircle2, Clock } from 'lucide-react';
 import { fetchConsultation, confirmDelivery, markDelivered } from '@/services/consultation-delivery';
 import { VideoConsultRoom } from '@/components/consultation/VideoConsultRoom';
 import { TextChatRoom } from '@/components/consultation/TextChatRoom';
@@ -19,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function ConsultationRoom() {
   const { orderId, itemId } = useParams<{ orderId: string; itemId: string }>();
-  const navigate = useNavigate();
   const { i18n } = useTranslation();
   const { toast } = useToast();
   const zh = i18n.language?.startsWith('zh');
@@ -59,10 +58,6 @@ export default function ConsultationRoom() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">{zh ? '问诊未找到' : 'Consultation not found'}</p>
-            <Button variant="ghost" onClick={() => navigate('/bookings')} className="mt-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {zh ? '返回预约' : 'Back to Bookings'}
-            </Button>
           </CardContent>
         </Card>
       </div>

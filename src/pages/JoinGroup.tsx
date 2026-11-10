@@ -1,7 +1,6 @@
 import { useEffect } from "react";
-import { useParams, useNavigate, Link } from "@/lib/router-compat";
+import { useParams, useNavigate } from "@/lib/router-compat";
 import { Loader2, XCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGroupInvitePreview } from "@/hooks/use-care-data";
@@ -40,7 +39,6 @@ export default function JoinGroup() {
             <>
               <XCircle className="h-10 w-10 text-destructive" />
               <p className="text-muted-foreground">{Z("这个邀请链接无效或已过期。请向群管理员要群组链接。", "This invite link is invalid or expired. Ask an admin for the group link.")}</p>
-              <Button asChild variant="outline"><Link to="/care-circle">{Z("返回我的护理小组", "Back to my care groups")}</Link></Button>
             </>
           ) : (
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

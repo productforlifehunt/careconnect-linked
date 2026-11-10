@@ -279,7 +279,6 @@ export default function CaregiverProfile() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <h1 className="text-lg font-semibold text-foreground">{isZh ? "未找到该护理者" : "Caregiver not found"}</h1>
-        <Button variant="outline" onClick={() => navigate("/search")}>{isZh ? "返回搜索" : "Back to Search"}</Button>
       </div>
     );
   }

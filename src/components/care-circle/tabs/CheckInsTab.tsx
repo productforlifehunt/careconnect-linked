@@ -37,7 +37,7 @@ export function CheckInsTab({ groupCaredOnes, activeGroupId }: CheckInsTabProps)
           ))}
         </div>
       )}
-      {activeCOId ? <CheckInCard caredOneId={activeCOId} /> : null}
+      {activeCOId ? <CheckInCard caredOneId={activeCOId} caredOneName={groupCaredOnes.find((co: any) => co.user_id === activeCOId)?.profile?.full_name || (isCN ? "被护理者" : site.caredOneSingular)} /> : null}
     </div>
   );
 }

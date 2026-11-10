@@ -15,6 +15,7 @@ These replace the older TanStack-specific architecture notes below as the user's
 - Never claim Draftbit compatibility without opening and checking Draftbit; report only observed results, because source inspection is not cross-platform runtime verification.
 - If platform requirements conflict with this structure or workflow, state the conflict and impact before proceeding; do not silently migrate, remove features or bypass permissions, because preserving work and authorization is mandatory.
 - Draftbit web publishing uses `build`; Lovable expects `dist`. React Router has one `buildDirectory`, so preserve SSR and set it for the deployment target being verified; never fabricate an output directory.
+- Shared history navigation is the sole page-back UI; resource module/lesson and inbox conversation selections use existing-route query parameters so browser back/forward restores internal views.
 
 <!-- LOVABLE:END -->
 
