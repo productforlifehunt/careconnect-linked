@@ -235,6 +235,7 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
 
     const memberUserIds = new Set<string>();
     const memberNames = new Map<string, string>();
+    const memberGroups = new Map<string, Set<string>>();
     if (scope === "cared-ones") {
       const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
       const caredOnes = await fetchUserCaredOnesWordPress();
@@ -251,13 +252,14 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
       const groupIds = await fetchMyCareGroupIdsWordPress();
       const rows = await Promise.all(groupIds.map((gid) =>
         wordpressFetch<any[]>(`jet-rel/${R.careGroupMembers}/children/${gid}`).catch(() => [])));
-      for (const rel of rows.flat()) {
+      rows.forEach((groupRows, gi) => { for (const rel of groupRows) {
         if (decodeRel72Meta(rel?.meta).invitationStatus !== "accepted") continue;
         const memberId = String(rel?.child_object_id || "");
+        if (memberId) { if (!memberGroups.has(memberId)) memberGroups.set(memberId, new Set()); memberGroups.get(memberId)!.add(String(groupIds[gi])); }
         if (memberId && memberId !== String(storedUser.user_id)) memberUserIds.add(memberId);
         const nickname = String(decodeRel72Meta(rel?.meta).displayName || "").trim();
         if (memberId && nickname && !memberNames.has(memberId)) memberNames.set(memberId, nickname);
-      }
+      } });
     }
 
     // Also include self
@@ -269,7 +271,17 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
     const locations = await Promise.all(
       Array.from(memberUserIds).map(async (uid) => {
         try {
-          const snapshot = await fetchCurrentLocation(uid);
+          const groupsInCommon = memberGroups.get(uid);
+          const [snapshot, paused] = await Promise.all([
+            fetchCurrentLocation(uid),
+            groupsInCommon && uid !== String(storedUser.user_id)
+              ? import("@/features/location/circle-sharing").then((m) => m.fetchPausedGroupIds(uid))
+              : Promise.resolve(null),
+          ]);
+          if (paused && groupsInCommon) {
+            const { visibleThroughGroups } = await import("@/features/location/circle-sharing");
+            if (!visibleThroughGroups(groupsInCommon, paused)) return null;
+          }
           if (!snapshot || !snapshot.latitude || !snapshot.longitude) return null;
           return maskWithBubble({
             id: snapshot.id,

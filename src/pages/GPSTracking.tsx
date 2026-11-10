@@ -1,4 +1,5 @@
 import { MapPinCheck } from "lucide-react";
+import { CircleSharingSwitches } from "@/components/location/CircleSharingSwitches";
 import { useState, useEffect, useRef } from "react";
 import { useLocation as useRouterLocation } from "@/lib/router-compat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -987,6 +988,7 @@ export default function GPSTracking() {
                   />
                 </div>
               </div>
+              {selfKey && <CircleSharingSwitches userId={selfKey} />}
               {selfKey && <div className="mb-2"><BubbleControls subjectId={selfKey} subjectName={Z("我", "Me")} /></div>}
 
               {isLoading ? (

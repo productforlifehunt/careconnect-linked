@@ -1665,6 +1665,8 @@ export const R = {
   userLocationBubbles: 328,
   /** 329. One care group can have many related location bubbles (GUI-created 2026-11-11) */
   careGroupLocationBubbles: 329,
+  /** 330. Many users pause location sharing with many care groups (GUI-created 2026-11-11) */
+  userPausedLocationGroups: 330,
   /** 290. One cared one’s location notification can have many added related receivers */
   caredOneLocationReceivers: 290,
   /** 249. One care facility can have many related facility members */
