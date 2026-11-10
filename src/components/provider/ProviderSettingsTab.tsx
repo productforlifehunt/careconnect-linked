@@ -50,11 +50,11 @@ export default function ProviderSettingsTab() {
     try {
       // Save profile via WordPress
       await updateProfile.mutateAsync({
-        location,
-        care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0,
-        bio,
-        phone,
-        provider_is_active: isActive,
+        ...(location !== (profile?.location || "") ? { location } : {}),
+        ...((parseFloat(hourlyRate) || 0) !== (profile?.care_provider_starts_hourly_rate || 0) ? { care_provider_starts_hourly_rate: parseFloat(hourlyRate) || 0 } : {}),
+        ...(bio !== (profile?.bio || "") ? { bio } : {}),
+        ...(phone !== (profile?.phone || "") ? { phone } : {}),
+        ...(isActive !== !!profile?.provider_is_active ? { provider_is_active: isActive } : {}),
       });
 
 

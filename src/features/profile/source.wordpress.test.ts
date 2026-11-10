@@ -2,12 +2,33 @@ import { afterEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ coreRead: vi.fn(), coreWrite: vi.fn(), row: vi.fn(), name: vi.fn(), saveName: vi.fn(), appRow: vi.fn(), appWrite: vi.fn(), cct: vi.fn() }));
 vi.mock('@/features/shared/wordpress-adapter', () => ({ getWordPressFeature: mocks.coreRead, updateWordPressFeature: mocks.coreWrite }));
 vi.mock('@/features/shared/wordpress-client', () => ({ wordpressCCTFetch: mocks.cct }));
-vi.mock('@/features/shared/own-profile-row', () => ({ findOwnRow: mocks.row, linkOwnRow: vi.fn() }));
+vi.mock('@/features/shared/own-profile-row', () => ({ findOwnRow: mocks.row, findOwnRowId: async () => (await mocks.row())?._ID ?? null, linkOwnRow: vi.fn() }));
 vi.mock('@/features/profile/app-user-name', () => ({ fetchMyAppUserName: mocks.name, saveMyAppUserName: mocks.saveName }));
-vi.mock('@/features/shared/app-profile', () => ({ getAppProfileRow: mocks.appRow, patchAppProfile: mocks.appWrite, APP_PROFILE_F: { PHONE: 'a98' } }));
+vi.mock('@/features/shared/app-profile', () => ({ getAppProfileRow: mocks.appRow, patchAppProfile: mocks.appWrite, APP_PROFILE_F: { PHONE: 'a98', NAME: 'a55' } }));
 vi.mock('@/services/wp-auth', () => ({ getStoredWPUser: () => ({ user_id: 46 }) }));
 import { fetchMyProfileWordPress, updateProfileWordPress } from './source.wordpress';
+it('starts the CCT258 write without waiting for the independent phone save', async () => {
+  mocks.row.mockResolvedValue({ _ID: '2581' });
+  let finishPhone: (() => void) | undefined;
+  mocks.appWrite.mockImplementation(() => new Promise<void>(resolve => { finishPhone = resolve; }));
+  const saving = updateProfileWordPress({ bio: '介绍', phone: '12345678' });
+  await vi.waitFor(() => expect(mocks.cct).toHaveBeenCalledWith('user_ext_profile_2', expect.objectContaining({ method: 'PUT', body: { a107: '介绍' } })), { timeout: 100 });
+  finishPhone?.();
+  await saving;
+});
 afterEach(() => vi.resetAllMocks());
+it('reuses both relation-resolved own rows for one write each without preflight reads', async () => {
+  mocks.coreRead.mockResolvedValue({ id: 'wp-46' });
+  mocks.row.mockResolvedValue({ _ID: '2581' });
+  mocks.appRow.mockResolvedValue({ _ID: '1511' });
+  const profile = await fetchMyProfileWordPress();
+  mocks.row.mockClear();
+  await updateProfileWordPress({ phone: '12345678', provider_is_active: false }, profile ?? undefined);
+  expect(mocks.row).not.toHaveBeenCalled();
+  expect(mocks.appWrite).not.toHaveBeenCalled();
+  expect(mocks.cct).toHaveBeenCalledWith('users_extended_prof', { id: '1511', method: 'PUT', body: { a98: '12345678' } });
+  expect(mocks.cct).toHaveBeenCalledWith('user_ext_profile_2', { id: '2581', method: 'PUT', body: { a60: 'b56' } });
+});
 it('saves biography to CCT258 a107, never WordPress description', async () => {
   mocks.row.mockResolvedValue({ _ID: '2581' });
   await updateProfileWordPress({ bio: '我的介绍' });

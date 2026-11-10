@@ -5,6 +5,7 @@
 import { getWPToken, getStoredWPUser } from './wp-auth';
 import { buildWPUrl, buildWPHeaders, IS_DEV } from '@/lib/wp-url';
 import { getActiveServer } from '@/lib/wp-servers';
+import { invokeServerAction } from '@/lib/server-action-client';
 import {
   createBookingCalendarEvent,
   getProviderCalendarAvailability,
@@ -697,7 +698,7 @@ export async function saveMyPayout(payment: {
   paypal?: { email: string } | undefined;
   bank?: Record<string, string> | undefined;
 }) {
-  return adminOp('save_my_payout', { payment });
+  return invokeServerAction<MyPayoutData["payment"]>('saveOwnPayout', payment);
 }
 
 export async function requestWithdrawal(amount: number, method: string) {

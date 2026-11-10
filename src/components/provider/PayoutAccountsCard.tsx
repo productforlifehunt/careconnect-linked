@@ -74,8 +74,8 @@ export default function PayoutAccountsCard({
       }
       return saveMyPayout(payment);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["my-payout"] });
+    onSuccess: (payment) => {
+      qc.setQueryData<Awaited<ReturnType<typeof getMyPayout>>>(["my-payout"], old => old ? { ...old, payment } : old);
       toast({ title: isZh ? "收款信息已保存" : "Payout details saved" });
     },
     onError: (err: any) =>
