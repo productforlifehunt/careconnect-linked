@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import Resources from "./Resources";
@@ -22,11 +22,11 @@ it("restores the module and lesson selection through back and forward history", 
   fireEvent.click(screen.getByRole("button", { name: /第一课/ }));
   await waitFor(() => expect(router.state.location.search).toBe("?module=module-one&lesson=lesson-one"));
   await waitFor(() => expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("第一课"));
-  await router.navigate(-1);
+  await act(async () => { await router.navigate(-1); });
   await waitFor(() => expect(router.state.location.search).toBe("?module=module-one"));
-  await router.navigate(-1);
+  await act(async () => { await router.navigate(-1); });
   await waitFor(() => expect(router.state.location.search).toBe(""));
-  await router.navigate(1);
-  await router.navigate(1);
+  await act(async () => { await router.navigate(1); });
+  await act(async () => { await router.navigate(1); });
   await waitFor(() => expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("第一课"));
 });
