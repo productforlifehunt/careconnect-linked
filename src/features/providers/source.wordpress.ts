@@ -132,7 +132,7 @@ export async function fetchProvidersWordPress(filters?: ProviderFilters | undefi
   return filterProviders(await fetchProviderDirectoryWordPress(), filters);
 }
 
-export async function fetchProviderByIdWordPress(id: string): Promise<Profile | null> {
+export async function fetchProviderByIdWordPress(id: string, includeRatings = true): Promise<Profile | null> {
   try {
     const numericId = String(id).replace(/^wp-/, "");
     // Profile page reads the same dictionary row as search (CCT 258), so the
@@ -141,7 +141,7 @@ export async function fetchProviderByIdWordPress(id: string): Promise<Profile | 
     const [rows, user, rating] = await Promise.all([
       wordpressCCTFetch<any[]>(P2.slug, { params: { cct_author_id: numericId, _limit: 20 } }),
       fetchWPUserPublicProfile(numericId),
-      fetchProviderRatingSummary(numericId),
+      includeRatings ? fetchProviderRatingSummary(numericId) : Promise.resolve({ average: null, count: 0 }),
     ]);
     const row = (Array.isArray(rows) ? rows : []).find(
       (r: any) => String(r.author_id || r.cct_author_id || r.user_id) === numericId,

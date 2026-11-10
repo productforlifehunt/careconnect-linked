@@ -707,10 +707,11 @@ export default function CaregiverProfile() {
                         navigate("/auth");
                         return;
                       }
+                      if (!open) { setEditingReviewId(null); setReviewRating(5); setReviewComment(""); }
                       setReviewDialogOpen(open);
                     }}>
                       <DialogTrigger asChild>
-                        <Button variant="coral" size="sm"><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
+                        <Button variant="coral" size="sm" onClick={() => { setEditingReviewId(null); setReviewRating(5); setReviewComment(""); }}><Star className="h-3.5 w-3.5 mr-1" /> {isZh ? "撰写评价" : "Write Review"}</Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader><DialogTitle>{editingReviewId ? (isZh ? "编辑评价" : "Edit review") : (isZh ? "评价 " : "Review ")}{!editingReviewId && caregiver.full_name}</DialogTitle></DialogHeader>

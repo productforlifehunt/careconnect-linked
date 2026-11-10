@@ -16,6 +16,8 @@ These replace the older TanStack-specific architecture notes below as the user's
 - If platform requirements conflict with this structure or workflow, state the conflict and impact before proceeding; do not silently migrate, remove features or bypass permissions, because preserving work and authorization is mandatory.
 - Draftbit web publishing uses `build`; Lovable expects `dist`. React Router has one `buildDirectory`, so preserve SSR and set it for the deployment target being verified; never fabricate an output directory.
 - Shared history navigation is the sole page-back UI; resource module/lesson and inbox conversation selections use existing-route query parameters so browser back/forward restores internal views.
+- Favorite hearts read account-scoped REL295 IDs, not hydrated provider lists; explicit save/remove intent writes the relation once and updates membership only after success, preventing profile fan-out and stale heart states.
+- Review editing uses the existing server-action dispatcher with fresh WordPress session and saved CCT-author verification; only content/rating may change, because the reviewed provider is not the review's author.
 
 <!-- LOVABLE:END -->
 

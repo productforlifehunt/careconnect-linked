@@ -160,7 +160,7 @@ function dedupeFacilities(list: CareFacility[]) {
 export function useProvider(id: string | undefined) {
   return useQuery({
     queryKey: ["provider", id],
-    queryFn: () => fetchProviderByIdWordPress(id!),
+    queryFn: () => id ? fetchProviderByIdWordPress(id, false) : Promise.resolve(null),
     enabled: !!id,
   });
 }
