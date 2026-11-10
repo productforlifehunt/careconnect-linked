@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDate, formatTime, formatDateTime } from "@/lib/locale";
 import { cleanBookingNote } from "@/lib/utils";
+import { Navigate, useSearchParams } from "@/lib/router-compat";
 
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -35,7 +36,9 @@ export default function ProviderDashboard() {
   const isZh = i18n.language?.startsWith("zh");
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { data: profile } = useMyProfile();
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useMyProfile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "profile" ? "settings" : searchParams.get("tab") || "requests";
   const providerId = profile?.id || null;
   const { data: bookings, isLoading: bookingsLoading } = useProviderBookings();
   const updateBookingStatus = useUpdateBookingStatus();
@@ -151,10 +154,14 @@ export default function ProviderDashboard() {
 
   const statusColors: Record<string, string> = { confirmed: "bg-success text-success-foreground", pending: "bg-warning text-warning-foreground", completed: "bg-muted text-muted-foreground", cancelled: "bg-destructive text-destructive-foreground" };
 
+  if (profileLoading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (profileError) return <div className="px-4 py-8 space-y-4"><p className="text-destructive">{profileError.message}</p><Button onClick={() => void refetchProfile()}>{isZh ? "重试" : "Retry"}</Button></div>;
+  if (!profile?.is_care_provider) return <Navigate to="/become-caregiver" replace />;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-5">
       <div className="mb-5">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{isZh ? "照护者设置" : "Caregiver Settings"}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{isZh ? "护理者设置" : "Caregiver Settings"}</h1>
         <p className="text-sm text-muted-foreground">{isZh ? "管理预约、排班、收款与你的资料" : "Manage your bookings, schedule, payments, and your details"}</p>
       </div>
 
@@ -179,7 +186,7 @@ export default function ProviderDashboard() {
         ))}
       </div>
 
-      <Tabs defaultValue="requests">
+      <Tabs value={activeTab} onValueChange={tab => setSearchParams(previous => { const next = new URLSearchParams(previous); next.set("tab", tab); return next; })}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="requests" className="text-xs sm:text-sm">{isZh ? "预约请求" : "Requests"} ({pendingBookings.length})</TabsTrigger>
           <TabsTrigger value="schedule" className="text-xs sm:text-sm">{isZh ? "排班" : "Schedule"}</TabsTrigger>

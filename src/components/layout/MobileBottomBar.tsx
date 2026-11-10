@@ -3,6 +3,7 @@ import { NavLink } from "@/components/NavLink";
 import { Link, useLocation } from "@/lib/router-compat";
 import { useSite } from "@/contexts/SiteContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMyProfile } from "@/hooks/use-care-data";
 import { useTranslation } from "react-i18next";
 import {
   Heart as HeartIcon,
@@ -82,6 +83,7 @@ function savePrefs(p: Prefs) {
 export function MobileBottomBar() {
   const site = useSite();
   const { isAuthenticated } = useAuth();
+  const { data: profile } = useMyProfile();
   const { t, i18n } = useTranslation();
   const isChinese = i18n.language?.startsWith("zh");
   const isStandalone = useStandaloneMode();
@@ -240,12 +242,12 @@ export function MobileBottomBar() {
           url: "/become-caregiver",
           icon: UserPlus,
         },
-        {
+        ...(profile?.is_care_provider ? [{
           id: "work-provider",
-          title: isChinese ? "护理者面板" : "Caregiver Dashboard",
+          title: isChinese ? "护理者设置" : "Caregiver Settings",
           url: "/caregiver-setting",
           icon: LayoutDashboard,
-        },
+        }] : []),
       ];
 
   const dailyCareItems: ToolItem[] = isChallenged

@@ -629,7 +629,12 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (updates: Partial<Profile>) => updateProfileWordPress(updates),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["myProfile"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["myProfile"] });
+      qc.invalidateQueries({ queryKey: ["providers"] });
+      qc.invalidateQueries({ queryKey: ["provider"] });
+      qc.invalidateQueries({ queryKey: ["savedProviders"] });
+    },
   });
 }
 
