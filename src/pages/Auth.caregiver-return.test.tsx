@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
-  next: "/become-caregiver",
+  next: "/caregiver-setting",
   navigate: vi.fn(),
   signup: vi.fn().mockResolvedValue(undefined),
 }));
@@ -24,7 +24,7 @@ vi.stubGlobal("ResizeObserver", class {
   disconnect() {}
 });
 
-afterEach(() => { cleanup(); vi.clearAllMocks(); m.next = "/become-caregiver"; });
+afterEach(() => { cleanup(); vi.clearAllMocks(); m.next = "/caregiver-setting"; });
 
 async function submitSignup() {
   render(<Auth />);
