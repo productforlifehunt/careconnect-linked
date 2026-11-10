@@ -44,7 +44,7 @@ function rangesOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
 
 function isBlockingEvent(event: CalendarEvent) {
   if (event.status === "cancelled") return false;
-  if (event.is_availability) return false;
+  if (isAvailabilityManagedEvent(event)) return false;
   return event.show_as !== "free";
 }
 
@@ -64,7 +64,10 @@ function expandEventRanges(event: CalendarEvent, windowStart: Date, windowEnd: D
       dtstart: eventStart,
       ...(until && !Number.isNaN(until.getTime()) ? { until } : {}),
     });
-    return rule.between(windowStart, windowEnd, true).map((start) => ({ start, end: new Date(start.getTime() + duration) }));
+    const skipped = new Set(String(event.exdates || "").split(/[,\n]/).map((d) => d.trim().slice(0, 10).replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")).filter(Boolean));
+    return rule.between(windowStart, windowEnd, true)
+      .filter((start) => !skipped.has(localDay(start)))
+      .map((start) => ({ start, end: new Date(start.getTime() + duration) }));
   } catch {
     return [{ start: eventStart, end: eventEnd }];
   }
@@ -74,29 +77,51 @@ function isAvailabilityManagedEvent(event: CalendarEvent) {
   return event.is_availability || event.event_type === "availability";
 }
 
+const BYDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+function localDay(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Weekdays an RFC 5545 weekly rule repeats on (BYDAY, else DTSTART's weekday). */
+function weeklyDays(event: CalendarEvent): number[] {
+  const byday = /BYDAY=([^;]+)/.exec(event.rrule || "")?.[1];
+  if (!byday) return [new Date(event.start_at).getDay()];
+  return byday.split(",").map((d) => BYDAY.indexOf(d.slice(-2))).filter((d) => d >= 0);
+}
+
 function calendarEventsToAvailability(events: CalendarEvent[]): AvailabilitySlot[] {
   return events
     .filter((event) => event.status !== "cancelled" && isAvailabilityManagedEvent(event))
-    .map((event) => ({
-      kind: event.rrule?.includes("FREQ=WEEKLY") ? "weekly" as const : "date" as const,
-      type: "calendar-event",
-      day_of_week: event.rrule?.includes("FREQ=WEEKLY") ? new Date(event.start_at).getDay() : undefined,
-      specific_date: event.rrule?.includes("FREQ=WEEKLY") ? undefined : event.start_at.slice(0, 10),
-      start_time: toTime(new Date(event.start_at)),
-      end_time: toTime(new Date(event.end_at || event.start_at)),
-      is_available: event.is_availability || event.show_as === "free",
-      priority: 10,
-      bookable: event.is_availability || event.show_as === "free" ? "yes" : "no",
-      from: event.start_at,
-      to: event.end_at,
-    }));
+    .flatMap((event) => {
+      const available = event.is_availability || event.show_as === "free";
+      const start = new Date(event.start_at);
+      const end = new Date(event.end_at || event.start_at);
+      const base = {
+        type: "calendar-event",
+        start_time: event.all_day ? null : toTime(start),
+        end_time: event.all_day ? null : toTime(end),
+        is_available: available,
+        priority: 10,
+        bookable: available ? "yes" : "no",
+        from: event.start_at,
+        to: event.end_at,
+      };
+      if (event.rrule?.includes("FREQ=WEEKLY")) {
+        return weeklyDays(event).map((day) => ({ ...base, kind: "weekly" as const, day_of_week: day }));
+      }
+      return [{ ...base, kind: "date" as const, specific_date: localDay(start) }];
+    });
 }
 
+/** A date with its own availability rows replaces the weekly hours that day. */
 function availabilityRangesForDate(events: CalendarEvent[], date: string) {
   const dayStart = new Date(`${date}T00:00:00`);
   const dayEnd = new Date(`${date}T23:59:59`);
-  return events
-    .filter((event) => event.status !== "cancelled" && isAvailabilityManagedEvent(event))
+  const managed = events.filter((event) => event.status !== "cancelled" && isAvailabilityManagedEvent(event));
+  const dated = managed.filter((event) => !event.rrule && localDay(new Date(event.start_at)) === date);
+  const source = dated.length > 0 ? dated : managed.filter((event) => Boolean(event.rrule));
+  return source
     .flatMap((event) => expandEventRanges(event, dayStart, dayEnd).map((range) => ({
       start: range.start,
       end: range.end,
@@ -109,6 +134,8 @@ export async function getProviderCalendarAvailability(providerId: string): Promi
   return calendarEventsToAvailability(events);
 }
 
+/** Writes availability as ordinary CCT 187 calendar rows: local `YYYY-MM-DD HH:mm:ss`
+ * times, RFC 5545 weekly RRULE with BYDAY, free/busy show-as, and the timezone. */
 export async function upsertProviderCalendarAvailability(providerIdInput: string, slots: AvailabilitySlot[]) {
   const providerId = normalizeWPUserId(providerIdInput);
   if (!providerId) throw new Error("Provider user id is required");
@@ -120,25 +147,27 @@ export async function upsertProviderCalendarAvailability(providerIdInput: string
       .map((event) => deleteCalendarEventWordPress(event.id).catch(() => undefined)),
   );
 
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
+  const written = (slots || []).filter((slot) => slot.specific_date || slot.is_available);
 
   const created = await Promise.all(
-    (slots || []).map((slot) => {
+    written.map((slot) => {
       const isAvailable = Boolean(slot.is_available);
       const date = slot.specific_date || (() => {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + Number(slot.day_of_week || 0));
-        return d.toISOString().slice(0, 10);
+        const d = new Date(today);
+        d.setDate(today.getDate() + ((Number(slot.day_of_week || 0) - today.getDay() + 7) % 7));
+        return localDay(d);
       })();
-      const startTime = slot.start_time || "00:00";
-      const endTime = slot.end_time || (isAvailable ? "23:59" : "23:59");
+      const allDay = !isAvailable;
+      const startTime = allDay ? "00:00" : slot.start_time || "09:00";
+      const endTime = allDay ? "23:59" : slot.end_time || "17:00";
       return createCalendarEventForUserWordPress(providerId, {
         title: isAvailable ? "Available" : "Unavailable",
-        start_at: toDate(date, startTime).toISOString(),
-        end_at: toDate(date, endTime).toISOString(),
-        all_day: !isAvailable && !slot.start_time && !slot.end_time,
+        start_at: `${date}T${startTime}:00`,
+        end_at: `${date}T${endTime}:00`,
+        all_day: allDay,
+        timezone,
         status: "confirmed",
         priority: "normal",
         color: EVENT_TYPE_COLORS.availability,
@@ -147,7 +176,7 @@ export async function upsertProviderCalendarAvailability(providerIdInput: string
         visibility: "public",
         is_availability: isAvailable,
         availability_note: isAvailable ? "Available for care booking" : "Unavailable",
-        rrule: slot.specific_date ? undefined : "FREQ=WEEKLY",
+        rrule: slot.specific_date ? undefined : `FREQ=WEEKLY;BYDAY=${BYDAY[Number(slot.day_of_week || 0)]}`,
       });
     }),
   );
