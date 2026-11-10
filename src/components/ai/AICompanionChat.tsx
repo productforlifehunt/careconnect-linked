@@ -471,6 +471,7 @@ export function AICompanionChat({
     if ((!text && !image) || loading || preparingImage) return false;
     const userText = text || (isZh ? "请看看这张图片。" : "Please take a look at this image.");
     const savedUserText = image ? `${userText}\n[${isZh ? "图片附件" : "Image attached"}]` : userText;
+    setPendingTipSave(null);
     onChatEngaged?.();
     setInput("");
     setPendingImage(null);
