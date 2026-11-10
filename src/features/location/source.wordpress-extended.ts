@@ -681,11 +681,13 @@ export async function answerEmergencyRequestWordPress(input: {
   if (!me?.user_id) throw new Error("Not authenticated");
   const flags = await fetchLocationSharingFlags(me.user_id);
   if (!flags.emergencyAllowed) throw new Error("Emergency requests are not allowed");
-  await writeCaredOneSnapshot(input.position, !flags.shareOn);
-  // An emergency answer bursts my bubbles, as in Life360.
-  void import("@/features/location/bubbles")
-    .then((m) => m.checkMyBubblesAfterPosition(input.position.latitude, input.position.longitude, true))
-    .catch(() => {});
+  // An emergency answer bursts my bubbles, as in Life360; both finish before the requester is told.
+  await Promise.all([
+    writeCaredOneSnapshot(input.position, !flags.shareOn),
+    import("@/features/location/bubbles")
+      .then((m) => m.checkMyBubblesAfterPosition(input.position.latitude, input.position.longitude, true))
+      .catch(() => {}),
+  ]);
   const requester = normalizeWpUserId(input.requesterId);
   if (requester) await notifyRequester(requester, true, true);
 }

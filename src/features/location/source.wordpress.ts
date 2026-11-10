@@ -234,6 +234,7 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
     if (!storedUser?.user_id) return [];
 
     const memberUserIds = new Set<string>();
+    const memberNames = new Map<string, string>();
     if (scope === "cared-ones") {
       const { fetchUserCaredOnesWordPress } = await import("@/features/cared-ones/source.wordpress");
       const caredOnes = await fetchUserCaredOnesWordPress();
@@ -254,6 +255,8 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
         if (decodeRel72Meta(rel?.meta).invitationStatus !== "accepted") continue;
         const memberId = String(rel?.child_object_id || "");
         if (memberId && memberId !== String(storedUser.user_id)) memberUserIds.add(memberId);
+        const nickname = String(decodeRel72Meta(rel?.meta).displayName || "").trim();
+        if (memberId && nickname && !memberNames.has(memberId)) memberNames.set(memberId, nickname);
       }
     }
 
@@ -262,6 +265,7 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
 
     const { activeBubblesForMe, bubbleHiding, maskWithBubble } = await import("@/features/location/bubbles");
     const bubblesP = activeBubblesForMe();
+    bubblesP.catch(() => {});
     const locations = await Promise.all(
       Array.from(memberUserIds).map(async (uid) => {
         try {
@@ -280,7 +284,7 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
             speed: snapshot.speed,
             address_text: snapshot.address_text,
             is_sharing_enabled: true,
-            user_name: null, // will be enriched by caller
+            user_name: memberNames.get(uid) || null, // otherwise enriched by caller
             user_avatar: null,
             updated_at: snapshot.captured_at,
             created_at: snapshot.captured_at,
@@ -333,9 +337,10 @@ export async function writeLocationAndCheckZones(
 
   // Leaving a bubble pops it; an SOS bursts every bubble of mine.
   if (storedUser?.user_id) {
-    void import("@/features/location/bubbles")
+    const check = import("@/features/location/bubbles")
       .then((m) => m.checkMyBubblesAfterPosition(lat, lng, !!opts?.isEmergency))
       .catch(() => {});
+    if (opts?.isEmergency) await check;
   }
 
   // Run zone breach detection

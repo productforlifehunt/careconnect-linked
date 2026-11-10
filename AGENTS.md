@@ -90,3 +90,4 @@ These replace the older TanStack-specific architecture notes below as the user's
     
 
 - Hosted production builds enter through `src/worker.ts` (default fetch handler only) with a web-stream `entry.server.tsx` and `scripts/worker-require-shim.ts` replacing `createRequire`, because the Worker host rejects non-handler exports and has no CommonJS require; builds with REACT_ROUTER_BUILD_DIRECTORY keep the standard React Router server build.
+- Location bubbles (Life360-style) live in GUI-created CCT327 with creator REL328 and group REL329; every location read path masks through `src/features/location/bubbles.ts`, and a failed bubble read hides the person instead of showing exact coordinates, because masking is client-side and must fail closed.

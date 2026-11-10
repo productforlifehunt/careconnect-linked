@@ -271,7 +271,9 @@ export function activeBubblesForMe(): Promise<LocationBubble[]> {
   const p = (async () => {
     const { fetchMyCareGroupIdsWordPress } = await import("@/features/care-groups/source.wordpress");
     return fetchActiveBubblesInGroups(await fetchMyCareGroupIdsWordPress());
-  })().catch(() => [] as LocationBubble[]);
+  })();
+  // A failed read must not fall back to exact positions: callers then hide the person.
+  p.catch(() => { if (forMeCache?.p === p) forMeCache = null; });
   forMeCache = { at: Date.now(), p };
   return p;
 }

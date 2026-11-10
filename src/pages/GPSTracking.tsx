@@ -215,7 +215,7 @@ export default function GPSTracking() {
     return {
       id: ls.id,
       userId: ls.user_id,
-      name: ls.profile?.full_name || nameByUserId[key] || t("common.unknown"),
+      name: ls.profile?.full_name || nameByUserId[key] || ls.user_name || t("common.unknown"),
       avatar_url: ls.profile?.avatar_url || ls.user_avatar,
       lastLocation: ls.bubble ? Z("在泡泡中，只显示大概范围", "In a Bubble — general area only") : ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
       bubble: ls.bubble || null,
