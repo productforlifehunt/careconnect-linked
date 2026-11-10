@@ -1,9 +1,6 @@
-// Hosting runs the server bundle as a Worker module that needs a default fetch
-// handler; the named React Router build exports stay for Node-style servers.
+// Hosting runs the server bundle as a Worker module, which accepts only handler exports.
 import { createRequestHandler } from "react-router";
 import * as build from "virtual:react-router/server-build";
-
-export * from "virtual:react-router/server-build";
 
 const handler = createRequestHandler(build as never, "production");
 

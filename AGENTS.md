@@ -89,4 +89,4 @@ These replace the older TanStack-specific architecture notes below as the user's
 - App测试账号，researcher 密码：superstrongpassword 一切开发务必使用前端页面显示最快的方式，严禁偷懒做成序列读取，务必用前端用户显示最快的速度读写显示数据和元件
     
 
-- Production server bundle enters through `src/worker.ts` (default fetch handler plus re-exported React Router build) with a web-stream `entry.server.tsx`, because hosting loads it as a Worker module while Node servers still read the named build exports.
+- Hosted production builds enter through `src/worker.ts` (default fetch handler only) with a web-stream `entry.server.tsx` and `scripts/worker-require-shim.ts` replacing `createRequire`, because the Worker host rejects non-handler exports and has no CommonJS require; builds with REACT_ROUTER_BUILD_DIRECTORY keep the standard React Router server build.

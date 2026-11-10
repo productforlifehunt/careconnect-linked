@@ -4,6 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { createRunnableDevEnvironment, defineConfig, type Plugin } from "vite";
 import { vitePlugin as injectJsxSourcePlugin } from "./.draftbit/draftbit-integration.mjs";
 import { inspectorSourcePlugin } from "./scripts/inspector-source-plugin";
+import { workerRequireShim } from "./scripts/worker-require-shim";
 
 const draftbitSource = injectJsxSourcePlugin();
 
@@ -55,7 +56,7 @@ export default defineConfig(({ command }) => {
   return ({
   environments: {
     ...(lovableDev ? { ssr: { dev: { createEnvironment: (name, config) => createRunnableDevEnvironment(name, config) } } } : {}),
-    ...(command === "build" ? { ssr: { build: { rollupOptions: { input: "./src/worker.ts" } } } } : {}),
+    ...(command === "build" && !process.env["REACT_ROUTER_BUILD_DIRECTORY"] ? { ssr: { build: { rollupOptions: { input: "./src/worker.ts" } } } } : {}),
   },
   plugins: [
     ...(lovableDev ? [requestUrlPlugin] : []),
@@ -64,6 +65,7 @@ export default defineConfig(({ command }) => {
     tsconfigPaths(),
     draftbitPlugin,
     inspectorSourcePlugin(),
+    workerRequireShim(),
   ],
   server: {
     host: true,
