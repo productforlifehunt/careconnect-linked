@@ -644,11 +644,19 @@ export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (updates: Partial<Profile>) => updateProfileWordPress(updates, qc.getQueryData<Profile>(["myProfile"])),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["myProfile"] });
-      qc.invalidateQueries({ queryKey: ["providers"] });
-      qc.invalidateQueries({ queryKey: ["provider"] });
-      qc.invalidateQueries({ queryKey: ["savedProviders"] });
+    onSuccess: async (_result, updates) => {
+      const previous = qc.getQueryData<Profile>(["myProfile"]);
+      if (previous) {
+        qc.setQueryData<Profile>(["myProfile"], { ...previous, ...updates });
+        const next = qc.getQueryData<Profile>(["myProfile"]);
+        if (next) {
+          const { carryProfileWriteTargets } = await import("@/features/profile/source.wordpress");
+          carryProfileWriteTargets(previous, next);
+        }
+      }
+      void qc.invalidateQueries({ queryKey: ["providers"] });
+      void qc.invalidateQueries({ queryKey: ["provider"] });
+      void qc.invalidateQueries({ queryKey: ["savedProviders"] });
     },
   });
 }

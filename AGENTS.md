@@ -18,7 +18,7 @@ These replace the older TanStack-specific architecture notes below as the user's
 - Shared history navigation is the sole page-back UI; resource module/lesson and inbox conversation selections use existing-route query parameters so browser back/forward restores internal views.
 - Favorite hearts read account-scoped REL295 IDs, not hydrated provider lists; explicit save/remove intent writes the relation once and updates membership only after success, preventing profile fan-out and stale heart states.
 - Review editing uses the existing server-action dispatcher with fresh WordPress session and saved CCT-author verification; only content/rating may change, because the reviewed provider is not the review's author.
-- Profile writes reuse relation-resolved current-account targets and run independent CCT writes together; payout saves use caller-verified Dokan store writes and update payment cache after success, avoiding redundant reads.
+- Profile writes reuse relation-resolved current-account targets and run independent CCT writes together; confirmed saves update the own-profile cache and carry targets across structural sharing rather than refetching it. Payout saves update payment cache after caller-verified Dokan writes, avoiding redundant reads.
 
 <!-- LOVABLE:END -->
 

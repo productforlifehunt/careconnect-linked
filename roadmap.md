@@ -1,3 +1,9 @@
+## Current request: Three visibility fields, save latency and booking test provider (2026-11-10 13:10 UTC)
+- [x] Visibility checks only location, default hourly rate and biography; all three labels starred. Both profile and service settings save incomplete data. Rule/UI tests passed.
+- [x] Current Draftbit baseline save 10.09 seconds: REL152 read → phone PUT → REL259 read → CCT258 read → PUT. Prior parallel/changed-only writes retained; own-profile success now updates cache and carries resolved targets instead of refetching profile. Target reuse regression passed.
+- [x] Existing test1 /caregiver/52 configured through frontend: 北京, test biography, in-person elderly care/companionship 40/hour, public enabled, seven days 09:00–17:00. Fresh login/window readback confirmed service selection/rate, all 7 days/14 time values and public profile screenshot.
+- [ ] New local UI and after latency cannot be verified: localhost still HTTP500 oj ssrLoadModule. Draftbit saved UI is older; no measured speedup claim. Test account has no app name/photo; no real payment details invented, no purchase submitted.
+
 ## Current request: Settings save and publication performance (2026-11-10 13:00 UTC)
 - [x] Measured unchanged profile save on authenticated Draftbit: 11.96 seconds, with phone write then REL259 read, CCT258 read and write in sequence; initial settings load 17.86 seconds.
 - [x] Profile writes reuse current-account relation-resolved row targets, fall back to relation ID reads without redundant CCT reads, and run independent writes together. Settings submit changed fields only; visibility-only save does not write phone/bio. Parallelism regression failed before and passed after.

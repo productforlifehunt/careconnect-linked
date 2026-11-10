@@ -223,4 +223,10 @@ export async function updateProfileWordPress(updates: Partial<Profile>, loadedPr
   await Promise.all(writes);
 }
 
+/** Preserve resolved write targets when Query's structural sharing creates a new object. */
+export function carryProfileWriteTargets(previous: Profile, next: Profile): void {
+  const targets = profileTargets.get(previous);
+  if (targets) profileTargets.set(next, targets);
+}
+
 

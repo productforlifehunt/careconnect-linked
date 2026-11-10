@@ -6,7 +6,7 @@ vi.mock('@/features/shared/own-profile-row', () => ({ findOwnRow: mocks.row, fin
 vi.mock('@/features/profile/app-user-name', () => ({ fetchMyAppUserName: mocks.name, saveMyAppUserName: mocks.saveName }));
 vi.mock('@/features/shared/app-profile', () => ({ getAppProfileRow: mocks.appRow, patchAppProfile: mocks.appWrite, APP_PROFILE_F: { PHONE: 'a98', NAME: 'a55' } }));
 vi.mock('@/services/wp-auth', () => ({ getStoredWPUser: () => ({ user_id: 46 }) }));
-import { fetchMyProfileWordPress, updateProfileWordPress } from './source.wordpress';
+import { carryProfileWriteTargets, fetchMyProfileWordPress, updateProfileWordPress } from './source.wordpress';
 it('starts the CCT258 write without waiting for the independent phone save', async () => {
   mocks.row.mockResolvedValue({ _ID: '2581' });
   let finishPhone: (() => void) | undefined;
@@ -34,6 +34,19 @@ it('saves biography to CCT258 a107, never WordPress description', async () => {
   await updateProfileWordPress({ bio: '我的介绍' });
   expect(mocks.cct).toHaveBeenCalledWith('user_ext_profile_2', { id: '2581', method: 'PUT', body: { a107: '我的介绍' } });
   expect(mocks.coreWrite).not.toHaveBeenCalled();
+});
+it('keeps relation-resolved targets after a confirmed cache update', async () => {
+  mocks.coreRead.mockResolvedValue({ id: 'wp-46' });
+  mocks.row.mockResolvedValue({ _ID: '2581' });
+  mocks.appRow.mockResolvedValue({ _ID: '1511' });
+  const previous = await fetchMyProfileWordPress();
+  if (!previous) throw new Error('Expected loaded profile');
+  const next = { ...previous, bio: '已保存' };
+  carryProfileWriteTargets(previous, next);
+  mocks.row.mockClear();
+  await updateProfileWordPress({ provider_is_active: true }, next);
+  expect(mocks.row).not.toHaveBeenCalled();
+  expect(mocks.cct).toHaveBeenCalledWith('user_ext_profile_2', { id: '2581', method: 'PUT', body: { a60: 'b55' } });
 });
 it('saves optional phone to app-scoped CCT151 a98', async () => {
   await updateProfileWordPress({ phone: '12345678' });

@@ -43,10 +43,6 @@ export default function ProviderSettingsTab() {
   }, [profile]);
 
   const handleSave = async () => {
-    if (isActive && !canActivateProvider({ ...profile, location, care_provider_hourly_rate_in_person: parseFloat(hourlyRate) })) {
-      toast({ title: providerActivationMessage(i18n.language?.startsWith("zh")), variant: "destructive" });
-      return;
-    }
     try {
       // Save profile via WordPress
       await updateProfile.mutateAsync({
@@ -80,7 +76,7 @@ export default function ProviderSettingsTab() {
               </div>
             </div>
             <Switch aria-label={i18n.language?.startsWith("zh") ? "公开接单" : "Accept bookings publicly"} checked={isActive} onCheckedChange={next => {
-              if (next && !canActivateProvider({ ...profile, location, care_provider_hourly_rate_in_person: parseFloat(hourlyRate) })) {
+              if (next && !canActivateProvider({ ...profile, location, bio, care_provider_starts_hourly_rate: parseFloat(hourlyRate) })) {
                 toast({ title: providerActivationMessage(i18n.language?.startsWith("zh")), variant: "destructive" });
                 return;
               }
@@ -105,8 +101,8 @@ export default function ProviderSettingsTab() {
               <Input id="provider-location" value={location} onChange={e => setLocation(e.target.value)} placeholder={t("providerDash.locationPlaceholder")} />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> {t("becomeCaregiver.hourlyRateDollar")} ({t("providerDash.defaultRate")})</Label>
-              <Input type="number" min="0" step="5" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} placeholder={t("providerDash.ratePlaceholder")} />
+              <Label htmlFor="provider-hourly-rate" className="flex items-center gap-1.5 mb-1.5"><DollarSign className="h-3.5 w-3.5" /> {t("becomeCaregiver.hourlyRateDollar")} ({t("providerDash.defaultRate")}) *</Label>
+              <Input id="provider-hourly-rate" type="number" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} placeholder={t("providerDash.ratePlaceholder")} />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -116,8 +112,8 @@ export default function ProviderSettingsTab() {
             </div>
           </div>
           <div>
-            <Label className="mb-1.5">{t("providerDash.bioAboutMe")}</Label>
-            <Textarea value={bio} onChange={e => setBio(e.target.value)} placeholder={t("providerDash.bioPlaceholder")} rows={4} />
+            <Label htmlFor="provider-bio" className="mb-1.5">{t("providerDash.bioAboutMe")} *</Label>
+            <Textarea id="provider-bio" value={bio} onChange={e => setBio(e.target.value)} placeholder={t("providerDash.bioPlaceholder")} rows={4} />
           </div>
         </CardContent>
       </Card>

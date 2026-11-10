@@ -10,7 +10,6 @@ import { useTranslation } from "react-i18next";
 import { useMyProfile, useUpdateProfile } from "@/hooks/use-care-data";
 import { CARE_SERVICE_TYPES, SERVICE_DELIVERY_MODES } from "@/lib/care-service-types";
 import { useToast } from "@/hooks/use-toast";
-import { canActivateProvider, providerActivationMessage } from "@/features/providers/activation";
 
 /**
  * Provider Dashboard → "My Care Services" tab.
@@ -67,10 +66,6 @@ export default function MyBookingServicesTab() {
       care_provider_rate_remote_medicine: num(rateMedicine),
       care_provider_cancellation_policy: cancellation,
     };
-    if (profile?.provider_is_active && !canActivateProvider({ ...profile, ...updates })) {
-      toast({ title: providerActivationMessage(isZh), variant: "destructive" });
-      return;
-    }
     try {
       await updateProfile.mutateAsync(updates);
       toast({
