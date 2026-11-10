@@ -12,6 +12,7 @@ it("writes client and SSR builds to dist without editor environment variables", 
   const { default: config } = await import("../../react-router.config");
   expect(config.buildDirectory).toBe("dist");
   expect(config.ssr).toBe(true);
+  expect(config.future.v8_viteEnvironmentApi).toBe(true);
 });
 
 it("supports an explicit Draftbit build directory without disabling SSR", async () => {

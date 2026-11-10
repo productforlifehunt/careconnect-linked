@@ -1,7 +1,7 @@
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { defineConfig, type Plugin } from "vite";
+import { createRunnableDevEnvironment, defineConfig, type Plugin } from "vite";
 import { vitePlugin as injectJsxSourcePlugin } from "./.draftbit/draftbit-integration.mjs";
 import { inspectorSourcePlugin } from "./scripts/inspector-source-plugin";
 
@@ -22,9 +22,43 @@ const draftbitPlugin: Plugin = {
   },
 };
 
-export default defineConfig({
+// React Router expects Connect's originalUrl; alternate Vite hosts may omit it.
+const requestUrlPlugin: Plugin = {
+  name: "react-router-request-url",
+  enforce: "pre",
+  async resolveId(id) {
+    if (id.startsWith("\0virtual:react-router/")) {
+      return this.resolve(id.slice(1), undefined, { skipSelf: true });
+    }
+    return null;
+  },
+  load(id) {
+    if (id.endsWith("/src/styles.css?url")) {
+      return 'export default "/src/styles.css?direct";';
+    }
+    if (id === "\0virtual:react-router/inject-hmr-runtime") {
+      return 'import "/@oj/refresh-preamble.js";';
+    }
+    return null;
+  },
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      req.originalUrl ??= req.url;
+      next();
+    });
+  },
+};
+
+export default defineConfig(({ command }) => {
+  const lovableDev = command === "serve" && Boolean(process.env["LOVABLE_PROJECT_ID"]);
+  const routerPlugins = reactRouter().filter(plugin => !lovableDev || plugin.name !== "react-router:react-refresh-babel");
+  return ({
+  environments: {
+    ...(lovableDev ? { ssr: { dev: { createEnvironment: (name, config) => createRunnableDevEnvironment(name, config) } } } : {}),
+  },
   plugins: [
-    reactRouter(),
+    ...(lovableDev ? [requestUrlPlugin] : []),
+    routerPlugins,
     tailwindcss(),
     tsconfigPaths(),
     draftbitPlugin,
@@ -77,6 +111,7 @@ export default defineConfig({
       "leaflet",
     ],
   },
-  ssr: { noExternal: ["rrule"] },
+  ssr: { noExternal: command === "build" ? true : ["rrule"] },
   build: { rolldownOptions: { output: { keepNames: true } } },
+});
 });

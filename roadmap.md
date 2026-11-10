@@ -1,3 +1,9 @@
+## Current request: Repair preview (2026-11-10 13:31 UTC)
+- [x] Fresh browser reproduced local 500 from legacy ssrLoadModule; published 502 logs identify external @react-router/node.
+- [x] Vite environment API + Lovable-only runnable SSR environment; normalize Connect URL/virtual ID/CSS and let the host alone handle React refresh. Production noExternal=true; native Draftbit refresh preserved. No business or WP data change.
+- [x] Fresh homepage HTTP200 with actual heading; real test1 sign-in and settings display saved 北京/40/biography. User viewport 874×673 has no overflow; zero page errors. Screenshots inspected.
+- [ ] Hosted rebuilt preview and production bundle verification pending. Published remains existing 502; preview-only request does not authorize publishing. Draftbit new-config runtime not verified.
+
 ## Current request: Three visibility fields, save latency and booking test provider (2026-11-10 13:10 UTC)
 - [x] Visibility checks only location, default hourly rate and biography; all three labels starred. Both profile and service settings save incomplete data. Rule/UI tests passed.
 - [x] Current Draftbit baseline save 10.09 seconds: REL152 read → phone PUT → REL259 read → CCT258 read → PUT. Prior parallel/changed-only writes retained; own-profile success now updates cache and carries resolved targets instead of refetching profile. Target reuse regression passed.
