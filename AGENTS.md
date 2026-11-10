@@ -88,3 +88,5 @@ These replace the older TanStack-specific architecture notes below as the user's
 - 严禁画蛇添足，严禁添加没有明确要求的功能，严禁添加没有明确要求的限制性代码和指令，严禁把声明性文字，比如我已100%完成，100%显示真实数据，没有mock这种开发会话写入前端UI，前端UI是对普通用户使用的，不是给开发者交流的，严禁画蛇添足，任何没有100%必要的限制，类型检测，逻辑，fallback等都不要加，只做100%有必要且我明确要求做的
 - App测试账号，researcher 密码：superstrongpassword 一切开发务必使用前端页面显示最快的方式，严禁偷懒做成序列读取，务必用前端用户显示最快的速度读写显示数据和元件
     
+
+- Production server bundle enters through `src/worker.ts` (default fetch handler plus re-exported React Router build) with a web-stream `entry.server.tsx`, because hosting loads it as a Worker module while Node servers still read the named build exports.

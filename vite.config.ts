@@ -55,6 +55,7 @@ export default defineConfig(({ command }) => {
   return ({
   environments: {
     ...(lovableDev ? { ssr: { dev: { createEnvironment: (name, config) => createRunnableDevEnvironment(name, config) } } } : {}),
+    ...(command === "build" ? { ssr: { build: { rollupOptions: { input: "./src/worker.ts" } } } } : {}),
   },
   plugins: [
     ...(lovableDev ? [requestUrlPlugin] : []),
