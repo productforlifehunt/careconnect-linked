@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AppHeader } from "./AppHeader";
+import { PageHistoryNav } from "./PageHistoryNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "@/lib/router-compat";
 import { lazyRetry } from "@/lib/lazy-retry";
@@ -41,6 +42,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main
         className={`w-full min-w-0 max-w-full flex-1 overflow-x-hidden ${hasBottomNav ? "pb-16" : ""}`}
       >
+        <PageHistoryNav />
         {children}
       </main>
       <AuthenticatedBottomBar />

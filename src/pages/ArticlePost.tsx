@@ -1,5 +1,5 @@
 import { R } from "@/integrations/wp-schema";
-import { Link, useNavigate, useParams } from "@/lib/router-compat";
+import { useNavigate, useParams } from "@/lib/router-compat";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCategoryOptions, useCategoryTypes, useCustomFieldTypes, useDeletePost, useEntityCategoryOptions, useEntityCustomFieldValues, useMyProfile, usePost, usePostTypes, useToggleVote, useUpdatePost, useVoteCount } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { CommentsSection } from "@/components/comments/CommentsSection";
-import { ArrowLeft, Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { Loader2, MoreHorizontal, Pencil, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";
 
@@ -93,7 +93,7 @@ export default function ArticlePost() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Button variant="ghost" asChild className="px-0 hover:bg-transparent"><Link to="/articles"><ArrowLeft className="h-4 w-4 mr-2" />{isZh ? "返回文章" : "Back to Articles"}</Link></Button>
+
 
       {isLoading ? (
         <Card><CardHeader className="space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-2/3" /></CardHeader><CardContent className="space-y-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-4/6" /></CardContent></Card>
