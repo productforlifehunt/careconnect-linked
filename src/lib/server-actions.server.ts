@@ -1,5 +1,7 @@
 export async function runServerAction(name: string, data: unknown, request: Request): Promise<unknown> {
   switch (name) {
+    case "saveOwnPayout":
+      return (await import("@/features/providers/payout.server")).saveOwnPayout(data, request);
     case "editOwnReview":
       return (await import("@/features/reviews/edit.server")).editOwnReview(data, request);
     case "familyVoiceAction":
