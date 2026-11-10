@@ -1,3 +1,7 @@
+## Current request: Update care-commerce notes after source audit (2026-11-10 11:19 UTC)
+- [x] Read all 10,557 current CCT324 records and protected master #6856; updated 212 unlocked care-commerce notes (173 descriptions, 39 associations) through the authorized API. Corrected fabricated CCT/REL chains in 115 of those notes; preserved titles, types, bindings and REL325.
+- [x] Final independent full-body readback 212/212 passed; protected master full record exactly unchanged. Plugin normalized null a65/a66 to empty strings on 203 records (both remain off); other metadata unchanged. All 17 prior audit finding categories documented without claiming implementation fixes; corrected prior audit's false fixed-divide-by-100 claim for current OrderConfirmation. Evidence: docs/commerce-note-verification-2026-11-10.md. No business-code, payment, order or schema changes; unrelated commerce notes and full-site audit remain outside this targeted update.
+
 ## Current request: Uploaded AI conversation acceptance standard (2026-11-10 09:26 UTC)
 - [x] Read every paragraph and inventory all 11 acceptance clauses; two independent source audits completed. Initial existing AI tests 10/10 passed, not behavioral acceptance.
 - [x] Implemented selected-only standard context, cancellation gate, editable content/person confirmation before writes, exact hidden-body/partial-stream filtering, complete context transmission and account/App query keys. Added 16 rule/interaction tests; 23/23 focused tests passed. Paraphrased disclosure and real persistence remain unverified.
