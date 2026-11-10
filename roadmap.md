@@ -1,3 +1,7 @@
+## Current request: Update care-commerce notes after source audit (2026-11-10 11:19 UTC)
+- [ ] Read current CCT324 catalogue and protected master #6856; update unlocked related booking, quote, cart, order and payout notes through the authorized API, preserving titles, bindings, lock and REL325.
+- [ ] Re-read every saved body and unchanged metadata; distinguish required business behavior from current implementation gaps. No business-code or backend-configuration changes requested.
+
 ## Current request: Uploaded AI conversation acceptance standard (2026-11-10 09:26 UTC)
 - [x] Read every paragraph and inventory all 11 acceptance clauses; two independent source audits completed. Initial existing AI tests 10/10 passed, not behavioral acceptance.
 - [x] Implemented selected-only standard context, cancellation gate, editable content/person confirmation before writes, exact hidden-body/partial-stream filtering, complete context transmission and account/App query keys. Added 16 rule/interaction tests; 23/23 focused tests passed. Paraphrased disclosure and real persistence remain unverified.
