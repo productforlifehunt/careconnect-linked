@@ -31,6 +31,12 @@ import { useSearchParams } from "@/lib/router-compat";
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
+function weeklySlotsOf(schedule: Record<number, { enabled: boolean; ranges: { start: string; end: string }[] }>) {
+  return Object.entries(schedule).flatMap(([day, d]) => d.enabled
+    ? d.ranges.map((r) => ({ day_of_week: parseInt(day), start_time: r.start, end_time: r.end, is_available: true }))
+    : []);
+}
+
 export default function ProviderDashboard() {
   const { i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
@@ -47,9 +53,11 @@ export default function ProviderDashboard() {
   const becomeProvider = useUpdateProfile();
   
 
-  const [schedule, setSchedule] = useState<Record<number, { enabled: boolean; start: string; end: string }>>(() => {
-    const initial: Record<number, { enabled: boolean; start: string; end: string }> = {};
-    for (let i = 0; i < 7; i++) initial[i] = { enabled: false, start: "09:00", end: "17:00" };
+  // Each weekday can hold several time ranges (e.g. morning and afternoon).
+  type DaySchedule = { enabled: boolean; ranges: { start: string; end: string }[] };
+  const [schedule, setSchedule] = useState<Record<number, DaySchedule>>(() => {
+    const initial: Record<number, DaySchedule> = {};
+    for (let i = 0; i < 7; i++) initial[i] = { enabled: false, ranges: [{ start: "09:00", end: "17:00" }] };
     return initial;
   });
   const [scheduleLoaded, setScheduleLoaded] = useState(false);
@@ -64,11 +72,17 @@ export default function ProviderDashboard() {
 
   useEffect(() => {
     if (availability && availability.length > 0 && !scheduleLoaded) {
-      const loaded: Record<number, { enabled: boolean; start: string; end: string }> = {};
-      for (let i = 0; i < 7; i++) loaded[i] = { enabled: false, start: "09:00", end: "17:00" };
-      (availability || []).filter((a: any) => !a.specific_date).forEach((a: any) => {
-        loaded[a.day_of_week] = { enabled: a.is_available, start: a.start_time || "09:00", end: a.end_time || "17:00" };
+      const loaded: Record<number, DaySchedule> = {};
+      for (let i = 0; i < 7; i++) loaded[i] = { enabled: false, ranges: [] };
+      (availability || []).filter((a: any) => !a.specific_date && a.is_available).forEach((a: any) => {
+        const day = loaded[a.day_of_week]!;
+        day.enabled = true;
+        day.ranges.push({ start: a.start_time || "09:00", end: a.end_time || "17:00" });
       });
+      for (let i = 0; i < 7; i++) {
+        loaded[i]!.ranges.sort((x, y) => x.start.localeCompare(y.start));
+        if (loaded[i]!.ranges.length === 0) loaded[i]!.ranges = [{ start: "09:00", end: "17:00" }];
+      }
       setSchedule(loaded);
       setScheduleLoaded(true);
     }
@@ -88,9 +102,7 @@ export default function ProviderDashboard() {
 
   const handleSaveSchedule = () => {
     if (!providerId) return;
-    const weeklySlots = Object.entries(schedule).map(([day, s]) => ({
-      day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
-    }));
+    const weeklySlots = weeklySlotsOf(schedule);
     const overrideSlots = dateOverrides.map((o) => ({
       specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
     }));
@@ -105,9 +117,7 @@ export default function ProviderDashboard() {
     setSavingOverrides(true);
     try {
       const nextOverrides = [...dateOverrides.filter(o => o.date !== newOverride.date), newOverride];
-      const weeklySlots = Object.entries(schedule).map(([day, s]) => ({
-        day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
-      }));
+      const weeklySlots = weeklySlotsOf(schedule);
       const overrideSlots = nextOverrides.map((o) => ({
         specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
       }));
@@ -126,9 +136,7 @@ export default function ProviderDashboard() {
     if (!providerId) return;
     try {
       const nextOverrides = dateOverrides.filter(o => o.date !== date);
-      const weeklySlots = Object.entries(schedule).map(([day, s]) => ({
-        day_of_week: parseInt(day), start_time: s.start, end_time: s.end, is_available: s.enabled,
-      }));
+      const weeklySlots = weeklySlotsOf(schedule);
       const overrideSlots = nextOverrides.map((o) => ({
         specific_date: o.date, start_time: o.start, end_time: o.end, is_available: o.available,
       }));
@@ -336,10 +344,18 @@ export default function ProviderDashboard() {
                     </div>
                   </div>
                   {schedule[i]?.enabled ? (
-                    <div className="flex items-center gap-2">
-                      <Input type="time" value={schedule[i]?.start || "09:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i]!, start: e.target.value } }))} className="w-32" />
-                      <span className="text-muted-foreground">{isZh ? "至" : "to"}</span>
-                      <Input type="time" value={schedule[i]?.end || "17:00"} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i]!, end: e.target.value } }))} className="w-32" />
+                    <div className="space-y-2">
+                      {schedule[i]!.ranges.map((r, ri) => (
+                        <div key={ri} className="flex flex-wrap items-center gap-2">
+                          <Input type="time" value={r.start} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i]!, ranges: p[i]!.ranges.map((x, xi) => xi === ri ? { ...x, start: e.target.value } : x) } }))} className="w-32" />
+                          <span className="text-muted-foreground">{isZh ? "至" : "to"}</span>
+                          <Input type="time" value={r.end} onChange={e => setSchedule(p => ({ ...p, [i]: { ...p[i]!, ranges: p[i]!.ranges.map((x, xi) => xi === ri ? { ...x, end: e.target.value } : x) } }))} className="w-32" />
+                          {schedule[i]!.ranges.length > 1 && (
+                            <Button variant="ghost" size="icon" aria-label={isZh ? "删除时段" : "Remove time range"} onClick={() => setSchedule(p => ({ ...p, [i]: { ...p[i]!, ranges: p[i]!.ranges.filter((_, xi) => xi !== ri) } }))}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={() => setSchedule(p => ({ ...p, [i]: { ...p[i]!, ranges: [...p[i]!.ranges, { start: "13:00", end: "17:00" }] } }))}><Plus className="h-3.5 w-3.5 mr-1" />{isZh ? "添加时段" : "Add time range"}</Button>
                     </div>
                   ) : <span className="text-sm text-muted-foreground">{isZh ? "不可约" : "Unavailable"}</span>}
                 </div>
