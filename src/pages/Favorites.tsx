@@ -16,7 +16,7 @@ export default function Favorites() {
   const isZh = i18n.language?.startsWith("zh");
 
   const removeFavorite = (providerId: string) => {
-    toggleSaved.mutate(providerId);
+    toggleSaved.mutate({ providerId, currentlySaved: true });
   };
 
   if (isLoading) {
@@ -29,7 +29,6 @@ export default function Favorites() {
     <div className="max-w-4xl mx-auto px-4 py-5">
       <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{t("favorites.favorites")}</h1>
       <p className="text-sm text-muted-foreground mt-0.5 mb-1">{t("favorites.caregiversSaved")}</p>
-      <p className="text-xs text-muted-foreground mb-5">{isZh ? "这份名单只存在你现在用的这台设备上，换手机看不到。" : "This list is kept on the device you are using now, so it will not show up on another phone."}</p>
 
 
       {favorites.length > 0 ? (
@@ -62,8 +61,8 @@ export default function Favorites() {
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
                       <Button variant="coral" size="sm" onClick={() => navigate(`/caregiver/${cg.id}`)}>{t("common.book")}</Button>
-                      <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label={isZh ? "取消收藏" : "Remove from favorites"} onClick={() => removeFavorite(sp.provider_id)}>
-                        <Heart className="h-4 w-4 fill-coral text-coral" />
+                      <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full border border-border shadow-lg" disabled={toggleSaved.isPending} aria-label={isZh ? (toggleSaved.isPending ? "正在取消中" : "取消收藏") : (toggleSaved.isPending ? "Removing…" : "Remove from favorites")} onClick={() => removeFavorite(sp.provider_id)}>
+                        {toggleSaved.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Heart className="h-4 w-4 fill-coral text-coral" />}
                       </Button>
                     </div>
                   </div>

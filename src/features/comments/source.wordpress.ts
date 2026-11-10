@@ -51,7 +51,7 @@ async function loadMap(relationId: number) {
 function mapComment(c: any): CommentRow {
   return {
     id: String(c.id ?? c._ID),
-    author_id: c.author_id ?? null,
+    author_id: c.author_id || c.cct_author_id ? String(c.author_id || c.cct_author_id).replace(/^wp-/, "") : null,
     title: c[F.TITLE] || "",
     content: c[F.CONTENT] || "",
     created_at: c.created_at,

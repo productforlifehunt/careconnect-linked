@@ -18,12 +18,13 @@ vi.mock("@/hooks/use-care-data", () => {
 afterEach(cleanup);
 
 it("returns to the conversation list and restores selected chat with history", async () => {
+  HTMLElement.prototype.scrollTo = vi.fn();
   window.matchMedia = vi.fn().mockReturnValue({ matches: false });
   const router = createMemoryRouter([{ path: "/inbox", Component: Messages }], { initialEntries: ["/inbox?tab=messages"] });
   render(<QueryClientProvider client={new QueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
-  fireEvent.click(screen.getByText("甲"));
+  fireEvent.click(screen.getByText("甲", { selector: ".truncate" }));
   await waitFor(() => expect(router.state.location.search).toBe("?tab=messages&conversation=7"));
-  fireEvent.click(screen.getByText("乙"));
+  fireEvent.click(screen.getByText("乙", { selector: ".truncate" }));
   await waitFor(() => expect(router.state.location.search).toBe("?tab=messages&conversation=8"));
   await act(async () => { await router.navigate(-1); });
   await waitFor(() => expect(router.state.location.search).toBe("?tab=messages&conversation=7"));
