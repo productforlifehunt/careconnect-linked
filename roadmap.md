@@ -451,9 +451,11 @@
 # UI/UX verification roadmap
 
 ## Current request: Caregiver entry and activation
-- [ ] Gate settings by a59, require the existing basic/service fields before a60 can be enabled, preserve explicit Save and directory a59/a60 filtering.
-- [ ] Update related existing CCT324 notes through WordPress GUI and read back; preserve bindings and REL325.
-- [ ] Run focused rule tests and real browser entry/save/visibility checks; report any unverified environment.
+- [x] Replace the separate application with common login/signup and caregiver settings; successful signup returns directly to the entry. Existing-account entry verified in browser; signup return covered by regression tests.
+- [x] Gate settings by a59; require location, services and corresponding prices before a60 activation. Explicit Save and public a59/a60 filters retained. Browser checked missing location, saved activation, persisted deactivation, retained identity, and public-row disappearance.
+- [x] Update 115 existing related CCT324 note bodies through WordPress GUI, reopen every record and compare full body plus title/site/type/order/binding metadata. All 115 passed; REL325 untouched.
+- [x] Run 20 focused tests (signup return, auth gate, price completeness, element identity): all passed. Browser at 754×673 has no horizontal overflow or runtime page errors.
+- [ ] Real new-account registration end-to-end remains unverified: authorized test accounts already exist, and user forbids invented accounts. Draftbit and production deployment not checked this turn.
 
 ## NotchSafety shared homepage and knowledge-topic audit
 
