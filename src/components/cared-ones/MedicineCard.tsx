@@ -612,7 +612,7 @@ function RxNormNameInput({ value, onChange, onPick }: {
 }
 
 // ─── Main MedicineCard ──────────────────────────────────────
-export function MedicineCard({ caredOneId }: { caredOneId: string }) {
+export function MedicineCard({ caredOneId, caredOneName }: { caredOneId: string; caredOneName: string }) {
   const { toast } = useToast();
   const { data: meds, isLoading } = useMedicines(caredOneId);
   const { data: caregivers = [] } = useCheckinCaregivers(caredOneId);

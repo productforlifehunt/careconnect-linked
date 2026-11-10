@@ -56,11 +56,11 @@ function FeatureDetail(props: { cardKey: string; caredOneId: string; caredOneNam
 
 function featureContent({ cardKey, caredOneId, caredOneName }: { cardKey: string; caredOneId: string; caredOneName: string }) {
   switch (cardKey) {
-    case "medicine": return <MedicineCard caredOneId={caredOneId} />;
+    case "medicine": return <MedicineCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "checkin":
     case "check-in":
     case "check_in":
-    case "check-ins": return <CheckInCard caredOneId={caredOneId} />;
+    case "check-ins": return <CheckInCard caredOneId={caredOneId} caredOneName={caredOneName} />;
     case "tips": return <TipsCard caredOneId={caredOneId} />;
     case "tasks": return <CareTasksCard caredOneId={caredOneId} />;
     case "plan": return <CarePlanCard caredOneId={caredOneId} />;

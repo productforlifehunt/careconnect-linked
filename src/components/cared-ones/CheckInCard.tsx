@@ -107,7 +107,7 @@ function resizeCheckinSlots(frequency: string, value: string[]) {
   return slots;
 }
 
-export function CheckInCard({ caredOneId }: { caredOneId: string }) {
+export function CheckInCard({ caredOneId, caredOneName }: { caredOneId: string; caredOneName: string }) {
   const { toast } = useToast();
   const { user } = useAuth();
   const { i18n } = useTranslation();
