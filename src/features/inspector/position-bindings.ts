@@ -36,6 +36,14 @@ export function samePosition(a: string, b: string): boolean {
   return a === b || (routePattern(a) ?? a) === (routePattern(b) ?? b);
 }
 
+/** Narrow the read to a route family for pages, or the exact anchor for elements. */
+export function bindingSearchNeedle(key: string): string {
+  const pattern = routePattern(key);
+  if (!pattern) return key;
+  if (key.startsWith("page|")) return pattern.split(":id")[0] ?? key;
+  return key.split("|").slice(2).join("|");
+}
+
 export function updatePositionBindings(
   raw: unknown,
   bindings: NoteBinding[],
