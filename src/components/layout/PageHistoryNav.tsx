@@ -43,19 +43,17 @@ export function PageHistoryNav() {
   if (pathname === "/" || (!state.back && !state.forward)) return null;
 
   const btn =
-    "inline-flex h-12 items-center gap-2 rounded-full border bg-card px-4 text-base font-medium text-foreground shadow-lg transition-transform hover:scale-105 active:scale-95";
+    "flex h-12 w-12 items-center justify-center rounded-full border bg-card text-foreground shadow-lg transition-transform hover:scale-105 active:scale-95";
 
   return (
     <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pt-3" data-testid="page-history-nav">
       {state.back ? (
-        <button type="button" className={btn} onClick={() => window.history.back()} data-testid="page-back">
+        <button type="button" className={btn} onClick={() => window.history.back()} data-testid="page-back" aria-label={isZh ? "返回" : "Back"} title={isZh ? "返回" : "Back"}>
           <ArrowLeft className="h-5 w-5" />
-          {isZh ? "返回" : "Back"}
         </button>
       ) : <span />}
       {state.forward ? (
-        <button type="button" className={btn} onClick={() => window.history.forward()} data-testid="page-forward">
-          {isZh ? "前进" : "Forward"}
+        <button type="button" className={btn} onClick={() => window.history.forward()} data-testid="page-forward" aria-label={isZh ? "前进" : "Forward"} title={isZh ? "前进" : "Forward"}>
           <ArrowRight className="h-5 w-5" />
         </button>
       ) : <span />}
