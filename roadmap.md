@@ -2,8 +2,8 @@
 - [x] Incoming snapshot 71aa36b0 includes Draftbit 0f934704; restore only the authorized two independent profile-role inspector IDs and their regression test.
 - [x] Restored inspector tests passed 12/12. Actual test1 login and settings show two distinct role IDs; removing development source tags leaves both IDs intact. No profile save performed.
 - [x] Deployed existing ai function including Draftbit's imported _shared/ai-prompts.ts. Live chat-chat returns 200 and OK; vision-chat without an image returns the implemented 400 image-required validation rather than the former 501. Actual image/audio end-to-end remains unverified.
-- [ ] Current explicit fix request: correct five incoming AI type errors using the existing AssistantRequest type and explicit undefined-compatible optional types, without changing runtime behavior; verify automatic checks.
-- [ ] Current explicit fix request: use genuine dist client/server output required by Lovable, preserving SSR; verify automatic build. Draftbit publishing with this directory remains unverified.
+- [x] Corrected five incoming AI type errors using the existing AssistantRequest type and explicit undefined-compatible optional types, without changing runtime behavior. Automatic check reports build OK at 03:37:03 UTC; 12/12 relevant AI and inspector tests pass.
+- [x] Restored genuine dist client/server output required by Lovable with SSR preserved; automatic build OK. Draftbit publishing with this directory remains unverified.
 
 ## Current request: Frontend audit of every note and page/element binding (2026-11-09 15:43 UTC)
 - [x] Restored audit record: nine AwareD/study-note body corrections saved and reopened through WordPress GUI; settings dialog buttons independently read back 4/4, understanding article elements 13/13. These are limited checks, not whole-site completion.
