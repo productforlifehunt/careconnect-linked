@@ -182,7 +182,7 @@ function MountedCareTipContextPicker({
 
   const tipQueries = useQueries({
     queries: people.map((person) => ({
-      queryKey: ["careTips", person.id],
+      queryKey: ["careTips", person.id, site.id, userId],
       queryFn: async () => {
         const { fetchCareTipsWordPress } =
           await import("@/features/cared-ones/source.wordpress-extended");

@@ -6,6 +6,25 @@ export type ActiveCareTip = {
   category?: string | undefined;
 };
 
+/** Keep hidden bodies out of displayed/saved replies, including partial stream tails. */
+export function hideCareTipBodies(text: string, tips: ActiveCareTip[], streaming = false): string {
+  let visible = text;
+  for (const tip of tips) {
+    const body = tip.content.trim();
+    if (!body) continue;
+    visible = visible.split(body).join(tip.title);
+    if (streaming) {
+      for (let length = Math.min(body.length - 1, visible.length); length > 0; length--) {
+        if (visible.endsWith(body.slice(0, length))) {
+          visible = visible.slice(0, -length);
+          break;
+        }
+      }
+    }
+  }
+  return visible;
+}
+
 function careTipDetails(tips: ActiveCareTip[], isChinese: boolean): string {
   return tips
     .map((tip) => {

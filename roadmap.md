@@ -1,3 +1,9 @@
+## Current request: Uploaded AI conversation acceptance standard (2026-11-10 09:26 UTC)
+- [x] Read every paragraph and inventory all 11 acceptance clauses; two independent source audits completed. Initial existing AI tests 10/10 passed, not behavioral acceptance.
+- [ ] Fix stopped-tip automatic retrieval, cancelled save intent, explicit content/person confirmation, hidden-body leakage, long-context truncation and account-scoped picker reads; add rule tests.
+- [ ] Verify all 11 clauses through real browser/model flows, including sorting, refresh, account/App isolation, error/retry and authorized save/readback. Current local preview blocked by oj/React Router ssrLoadModule incompatibility; one supervised restart attempted.
+- [ ] Deploy the existing ai function and retest speaker/listener and call scenarios; report each clause with actual evidence. Do not modify locked notes or the uploaded standard.
+
 ## Current request: Preserve user's master note and AI editing lock (2026-11-10)
 - [x] Read #6856 fresh through GUI, preserved exact body; verified CCT258 a107 textarea/CCT151 a98 text in JetEngine GUI. Updated own profile read/write and public provider biography; app-profile phone stays scoped by existing a01 + REL152. Review flow already permits logged-in reviewers without an order.
 - [x] Both note types and related-note editors show existing a66 lock, default off and persisted by Save; AI correction endpoint and lower-level AI-origin writes re-read and reject locked notes, reports filter locked targets and chat cannot return replacement text for them. Manual editing remains available.
