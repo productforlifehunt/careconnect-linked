@@ -32,6 +32,7 @@ import { getStoredWPUser } from "@/services/wp-auth";
 import { T, R } from "@/integrations/wp-schema";
 import { findOwnRow, linkOwnRow } from "@/features/shared/own-profile-row";
 import { fetchMyAppUserName, saveMyAppUserName } from "@/features/profile/app-user-name";
+import { getAppProfileRow, patchAppProfile, APP_PROFILE_F } from "@/features/shared/app-profile";
 import {
   careServiceIdsToSlugs,
   careServiceSlugsToIds,
@@ -70,16 +71,19 @@ function serializeRoleList(roles: string[] | null | undefined): string {
 
 export async function fetchMyProfileWordPress(): Promise<Profile | null> {
   try {
-    const [wpProfile, appName, cct] = await Promise.all([
+    const [wpProfile, appName, cct, appProfile] = await Promise.all([
       getWordPressFeature<Profile>("profile_me"),
       fetchMyAppUserName(),
       findOwnRow(R.userProfile2Rel, CCT_SLUG),
+      getAppProfileRow(),
     ]);
     if (!wpProfile) return null;
 
     // Display name lives ONLY in this app's own column on CCT 151
     // (a556 ChallengeD / a557 CareCNC) — never the shared WP user name.
     wpProfile.full_name = appName;
+    wpProfile.phone = appProfile?.[APP_PROFILE_F.PHONE] ?? null;
+    wpProfile.bio = cct?.[F.CARE_PROVIDER_DESCRIPTION] ?? null;
 
     // Resolved through Relation 259 (one-to-one). A cct_author_id query filter
     // is ignored by JetEngine on this route and returns another user's row.
@@ -105,8 +109,7 @@ export async function fetchMyProfileWordPress(): Promise<Profile | null> {
       wpProfile.care_provider_rate_remote_medicine = num(cct[F.CARE_PROVIDER_S_RATE_FOR_REMOTE_MEDICINE_SUPERVISION]);
       wpProfile.care_provider_cancellation_policy = cct[F.CARE_PROVIDER_S_CANCELLATION_POLICY] || null;
       wpProfile.location = cct[F.CARE_PROVIDER_S_LOCATION] || wpProfile.location;
-      // Phone / years / certifications / specialty have no column in CCT 258;
-      // keep WP-user-derived values where present.
+      // Phone belongs to this app's CCT151 a98; biography belongs to CCT258 a107.
 
     }
 
@@ -125,7 +128,6 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   const wpFields: Partial<Profile> = {};
   if (updates.first_name !== undefined) wpFields.first_name = updates.first_name;
   if (updates.last_name !== undefined) wpFields.last_name = updates.last_name;
-  if (updates.bio !== undefined) wpFields.bio = updates.bio;
   if (Object.keys(wpFields).length > 0) {
     await updateWordPressFeature("profile_me", wpFields);
   }
@@ -134,9 +136,13 @@ export async function updateProfileWordPress(updates: Partial<Profile>): Promise
   if (updates.full_name !== undefined) {
     await saveMyAppUserName(updates.full_name ?? "");
   }
+  if (updates.phone !== undefined) {
+    await patchAppProfile({ [APP_PROFILE_F.PHONE]: updates.phone ?? "" });
+  }
 
   // 2) Update CCT 258 extended profile 2 (opaque codes)
   const body: Record<string, any> = {};
+  if (updates.bio !== undefined) body[F.CARE_PROVIDER_DESCRIPTION] = updates.bio ?? "";
   if (updates.general_user_role !== undefined) body[F.GENERAL_USER_ROLE] = serializeRoleList(updates.general_user_role as string[] | null);
   if (updates.is_care_provider !== undefined) body[F.IS_PAID_CARE_PROVIDER] = boolToYesNo(updates.is_care_provider);
   if (updates.provider_is_active !== undefined) body[F.CARE_PROVIDER_IS_ACTIVE] = boolToYesNo(updates.provider_is_active);

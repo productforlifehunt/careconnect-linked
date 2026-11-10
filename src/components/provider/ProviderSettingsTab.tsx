@@ -16,7 +16,7 @@ import { Link } from "@/lib/router-compat";
 /**
  * Profile tab — Basic Info, Active toggle, Payout accounts.
  *
- * Writes to CCT 258 only. Nothing here touches WooCommerce/Dokan: a Woo
+ * Writes service settings and biography to CCT258 and phone to app-scoped CCT151. A Woo
  * product is created just-in-time when a buyer adds a service to the cart,
  * per the data dictionary. Rates per service live in "My Booking Services".
  */
@@ -113,7 +113,6 @@ export default function ProviderSettingsTab() {
             <div>
               <Label className="flex items-center gap-1.5 mb-1.5"><Phone className="h-3.5 w-3.5" /> {t("providerDash.phoneNumber")}</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t("providerDash.phonePlaceholder")} />
-              <p className="text-xs text-muted-foreground mt-1">{i18n.language?.startsWith("zh") ? "仅用于收款账户，不会公开显示。" : "Used for your payout account only — never shown publicly."}</p>
             </div>
           </div>
           <div>
