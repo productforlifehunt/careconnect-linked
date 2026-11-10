@@ -28,6 +28,7 @@ export interface InspectorNote {
   tabOrder?: number | undefined;
   locked?: boolean | undefined;
   verified?: boolean | undefined;
+  aiLocked?: boolean | undefined;
   relationVerified?: boolean | undefined;
   relationDetails?: string | undefined;
   source?:
@@ -125,6 +126,7 @@ type CCTRow = {
   a63?: string;
   a64?: string | number | null;
   a65?: string | boolean | number | null;
+  a66?: string | boolean | number | null;
   cct_modified?: string;
 };
 const NOTE_FIELDS = WP.cct["324"].f;
@@ -179,6 +181,7 @@ function mapRow(row: CCTRow): CCTNote {
         : undefined,
     tabOrder: tabOrder !== undefined && Number.isFinite(tabOrder) ? tabOrder : undefined,
     todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
+    aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
     verified: row.a58 === "b55",
     relationVerified:
       row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -657,6 +660,7 @@ export async function writeNote(
       [NOTE_FIELDS["笔记类型"]]: note.noteType || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
       [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder ?? 1),
       a58: note.verified ? "b55" : "b56",
+      [NOTE_FIELDS["严禁ai编辑"]]: storedNoteTodo(note.aiLocked ?? false),
       [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
         ? NOTE_RELATION_VERIFIED["YES"]
         : NOTE_RELATION_VERIFIED["NO"],
@@ -678,6 +682,7 @@ export async function writeNote(
       [NOTE_FIELDS["笔记类型"]]: note.noteType || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
       [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder ?? 1),
       a58: note.verified ? "b55" : "b56",
+      ...(note.aiLocked === undefined ? {} : { [NOTE_FIELDS["严禁ai编辑"]]: storedNoteTodo(note.aiLocked) }),
       [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
         ? NOTE_RELATION_VERIFIED["YES"]
         : NOTE_RELATION_VERIFIED["NO"],
@@ -688,6 +693,7 @@ export async function writeNote(
   if (
     row.a56 !== note.text ||
     row.a55 !== (note.title || note.label) ||
+    (note.aiLocked !== undefined && noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]) !== note.aiLocked) ||
     (isNew && row.a57 !== "ChallengeD") ||
     (row[NOTE_FIELDS["版本"]] || "") !== (note.version || "") ||
     (row[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) !==
@@ -720,7 +726,7 @@ export async function writeNote(
 export async function updateBoundNote(
   key: string,
   id: string,
-  note: { title: string; text: string; version: string; noteType: "b55" | "b56"; tabOrder: number; verified: boolean; relationVerified: boolean; relationDetails: string },
+  note: { title: string; text: string; version: string; noteType: "b55" | "b56"; tabOrder: number; verified: boolean; aiLocked?: boolean | undefined; relationVerified: boolean; relationDetails: string },
   token?: string,
 ): Promise<CCTNote> {
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
@@ -739,6 +745,7 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   title: string;
   text: string;
   todo: boolean;
+  aiLocked: boolean;
   verified: boolean;
   relationVerified: boolean;
   relationDetails: string;
@@ -753,6 +760,7 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
     title: row.a55 || "",
     text: row.a56 || "",
     todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
+    aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
     verified: row.a58 === "b55",
     relationVerified:
       row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -798,6 +806,7 @@ export interface RelatedNote {
   text: string;
   side: "parent" | "child";
   todo: boolean;
+  aiLocked: boolean;
   verified: boolean;
   relationVerified: boolean;
   relationDetails: string;
@@ -877,6 +886,7 @@ export async function readRelatedNotes(
       text: row.a56 || "",
       side,
       todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
+      aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
       verified: row.a58 === "b55",
       relationVerified:
         row[NOTE_FIELDS["已手动核对笔记关联"]] ===
@@ -899,9 +909,16 @@ export async function updatePlainNote(
     noteType?: "b55" | "b56" | undefined;
     tabOrder?: number | undefined;
     todo?: boolean | undefined;
+    aiLocked?: boolean | undefined;
   },
   token?: string,
+  origin: "human" | "ai" = "human",
 ): Promise<void> {
+  if (origin === "ai") {
+    const current = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
+    if (noteTodo(current[NOTE_FIELDS["严禁ai编辑"]]))
+      throw new Error("这条笔记已开启严禁 AI 编辑，不能修改任何文字，也不能由 AI 解锁。");
+  }
   await wp(
     `/${id}`,
     "POST",
@@ -917,6 +934,7 @@ export async function updatePlainNote(
       ...(note.noteType === undefined ? {} : { [NOTE_FIELDS["笔记类型"]]: note.noteType }),
       ...(note.tabOrder === undefined ? {} : { [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder) }),
       ...(note.todo === undefined ? {} : { [NOTE_FIELDS["待完成"]]: storedNoteTodo(note.todo) }),
+      ...(note.aiLocked === undefined ? {} : { [NOTE_FIELDS["严禁ai编辑"]]: storedNoteTodo(note.aiLocked) }),
     },
     token,
   );
@@ -935,7 +953,8 @@ export async function updatePlainNote(
     (note.version !== undefined && (row[NOTE_FIELDS["版本"]] || "") !== note.version) ||
     (note.noteType !== undefined && row[NOTE_FIELDS["笔记类型"]] !== note.noteType) ||
     (note.tabOrder !== undefined && String(row[NOTE_FIELDS["笔记标签顺序"]] || "") !== String(note.tabOrder)) ||
-    (note.todo !== undefined && noteTodo(row[NOTE_FIELDS["待完成"]]) !== note.todo)
+    (note.todo !== undefined && noteTodo(row[NOTE_FIELDS["待完成"]]) !== note.todo) ||
+    (note.aiLocked !== undefined && noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]) !== note.aiLocked)
   )
     throw new Error("保存后的内容核对不一致。");
 }
@@ -1065,6 +1084,7 @@ export async function readNoteById(
   text: string;
   version: string;
   verified: boolean;
+  aiLocked: boolean;
   relationVerified: boolean;
   relationDetails: string;
 }> {
@@ -1076,6 +1096,7 @@ export async function readNoteById(
     text: row.a56 || "",
     version: row[NOTE_FIELDS["版本"]] || "",
     verified: row.a58 === "b55",
+    aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
     relationVerified:
       row[NOTE_FIELDS["已手动核对笔记关联"]] ===
       NOTE_RELATION_VERIFIED["YES"],
@@ -1101,6 +1122,7 @@ export async function createPlainNote(
         : NOTE_RELATION_VERIFIED["NO"],
       [NOTE_FIELDS["已手动核对笔记关联详情"]]: note.relationDetails,
       [NOTE_FIELDS["待完成"]]: storedNoteTodo(note.todo ?? false),
+      [NOTE_FIELDS["严禁ai编辑"]]: storedNoteTodo(false),
       cct_status: "publish",
     },
     token,
@@ -1159,6 +1181,7 @@ export async function duplicateNoteVersion(
       [NOTE_FIELDS["笔记类型"]]: source[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
       [NOTE_FIELDS["笔记标签顺序"]]: source[NOTE_FIELDS["笔记标签顺序"]] || "1",
       [NOTE_FIELDS["待完成"]]: storedNoteTodo(noteTodo(source[NOTE_FIELDS["待完成"]])),
+      [NOTE_FIELDS["严禁ai编辑"]]: storedNoteTodo(noteTodo(source[NOTE_FIELDS["严禁ai编辑"]])),
       cct_status: "publish",
     },
     token,
@@ -1186,7 +1209,8 @@ export async function duplicateNoteVersion(
     (fresh[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) !==
       (source[NOTE_FIELDS["笔记类型"]] || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"]) ||
     (fresh[NOTE_FIELDS["笔记标签顺序"]] || "1") !== (source[NOTE_FIELDS["笔记标签顺序"]] || "1") ||
-    noteTodo(fresh[NOTE_FIELDS["待完成"]]) !== noteTodo(source[NOTE_FIELDS["待完成"]])
+    noteTodo(fresh[NOTE_FIELDS["待完成"]]) !== noteTodo(source[NOTE_FIELDS["待完成"]]) ||
+    noteTodo(fresh[NOTE_FIELDS["严禁ai编辑"]]) !== noteTodo(source[NOTE_FIELDS["严禁ai编辑"]])
   )
     throw new Error(`新版本 #${newId} 的内容回读不一致，关联尚未复制。`);
 

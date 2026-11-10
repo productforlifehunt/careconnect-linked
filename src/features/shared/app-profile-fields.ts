@@ -9,4 +9,5 @@ export const APP_PROFILE_F = {
   SETTINGS_JSON: "a87",
   AI_CREDITS: "a91",
   HELP_HIDDEN: "a92",
+  PHONE: "a98",
 } as const;

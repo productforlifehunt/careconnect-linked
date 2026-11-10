@@ -70,7 +70,7 @@ function mapProviderRow(row: any, user: WPUserPublicProfile): Profile | null {
     full_name: fullName,
     user_name: user.slug || null,
     avatar_url: user.avatar_url || null,
-    bio: null,
+    bio: row[F_PROFILE.CARE_PROVIDER_DESCRIPTION] || null,
     general_user_role: parseWpList(row[F_PROFILE.GENERAL_USER_ROLE]),
     is_care_provider: String(row[F_PROFILE.IS_PAID_CARE_PROVIDER]) === P2.opt.IS_PAID_CARE_PROVIDER.YES,
     provider_is_active: String(row[F_PROFILE.CARE_PROVIDER_IS_ACTIVE]) === P2.opt.CARE_PROVIDER_IS_ACTIVE.YES,

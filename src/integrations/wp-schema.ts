@@ -30,6 +30,7 @@ export const WP = {
         "笔记类型": "a63",
         "笔记标签顺序": "a64",
         "待完成": "a65",
+        "严禁ai编辑": "a66", // User-created Switcher, verified through /afresh GUI 2026-11-10.
       },
       opt: {
         "NOTE_RELATION_VERIFIED": { "YES": "b55", "NO": "b56" },
@@ -280,6 +281,7 @@ export const WP = {
       slug: "users_extended_prof",
       name: "User‘s extended profile",
       f: {
+        "USER_PHONE": "a98", // GUI: User’s phone number (text).
         "USER_NAME_FOR_AFRESH": "a55",  // Text
         "USER_NAME_FOR_ADRY": "a551",  // Text
         "USER_NAME_FOR_ABLOCKED": "a552",  // Text
@@ -360,6 +362,7 @@ export const WP = {
       slug: "user_ext_profile_2",
       name: "User‘s extended profile 2",
       f: {
+        "CARE_PROVIDER_DESCRIPTION": "a107", // GUI: Care provider description (textarea).
         "ALLOW_EMERGENCY_LOCATION_REQUEST": "a55",  // Radio
         "LOCATION_SHARE_IS_ON": "a56",  // Radio
         "GENERAL_USER_ROLE": "a58",  // Checkbox

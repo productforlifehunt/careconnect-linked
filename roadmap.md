@@ -1,3 +1,10 @@
+## Current request: Preserve user's master note and AI editing lock (2026-11-10)
+- [x] Read #6856 fresh through GUI, preserved exact body; verified CCT258 a107 textarea/CCT151 a98 text in JetEngine GUI. Updated own profile read/write and public provider biography; app-profile phone stays scoped by existing a01 + REL152. Review flow already permits logged-in reviewers without an order.
+- [x] Both note types and related-note editors show existing a66 lock, default off and persisted by Save; AI correction endpoint and lower-level AI-origin writes re-read and reject locked notes, reports filter locked targets and chat cannot return replacement text for them. Manual editing remains available.
+- [x] Real researcher frontend: #6856 lock Save and fresh-window reload passed with exact unchanged body; JetEngine GUI confirmed full original and lock true. B55 settings note lock Save passed and restored original off state without changing text. 32 related bodies corrected via GUI and immediately reopened with full-body/other-field equality; other inspected targets needed no change. No REL325 operations.
+- [x] Relevant tests 44/44 passed; latest automatic build OK. Root architecture save was rejected by its existing size budget; no claim that rule was recorded there.
+- [ ] Not verified this turn: changed phone/biography save/reload through actual caregiver settings; independent-window B55 persistence, Draftbit and published runtime. Full-site paragraph audit remains a separate incomplete earlier task, not claimed complete.
+
 ## Current request: Approved post-Draftbit restoration and Edge deployment (2026-11-10)
 - [x] Incoming snapshot 71aa36b0 includes Draftbit 0f934704; restore only the authorized two independent profile-role inspector IDs and their regression test.
 - [x] Restored inspector tests passed 12/12. Actual test1 login and settings show two distinct role IDs; removing development source tags leaves both IDs intact. No profile save performed.

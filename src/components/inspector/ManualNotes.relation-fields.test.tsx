@@ -136,3 +136,15 @@ it("copies a new version and switches the current position only after Yes", asyn
   await waitFor(() => expect(screen.getByDisplayValue("2.0")).toBeDefined());
   expect(mocks.select).toHaveBeenCalledWith({ data: expect.objectContaining({ key: original.key, id: "102", scope: "page", page: "/care-circle" }) });
 });
+it.each(['b55', 'b56'] as const)('saves the AI lock without altering the %s note text', async (noteType) => {
+  const note = { ...original, key: `page|/lock-${noteType}`, noteType, aiLocked: false };
+  mocks.load.mockResolvedValue({ notes: [note], positionNotes: [note] });
+  mocks.save.mockImplementation(async ({ data }) => ({ note: { ...note, ...data } }));
+  render(<ManualNotes noteKey={note.key} scope="page" page={`/lock-${noteType}`} label="核对" />);
+  const lock = await screen.findByRole('switch', { name: '严禁 AI 编辑' });
+  expect(lock.getAttribute('aria-checked')).toBe('false');
+  fireEvent.click(lock);
+  fireEvent.click(screen.getByRole('button', { name: '保存注释' }));
+  await waitFor(() => expect(mocks.save).toHaveBeenCalledWith({ data: expect.objectContaining({ aiLocked: true, text: '已有内容', title: '群组注释', noteType }) }));
+  expect(await screen.findByText('「群组注释」已保存并读回确认。')).toBeDefined();
+});

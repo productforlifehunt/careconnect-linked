@@ -35,3 +35,9 @@ it('never targets a related note; only the current page/element note may be chan
   const notes = [{ id:'1', title:'元素', text:'x', verified:false, role:'element_note' as const, current:true }, { id:'2', title:'功能逻辑', text:'y', verified:true, role:'functional_note' as const }];
   expect(attachCorrectionNotes(report, notes).findings[0]?.suggestions?.map(s => s.noteId)).toEqual(['1']);
 });
+it('keeps a locked current note as a baseline and accepts only the code correction', () => {
+  const suggestion = { target: 'functional_note' as const, noteId: '6855', basisNoteIds: ['6855'], reason: '冲突', title: '不能替换', text: '不能写入' };
+  const code = { ...suggestion, target: 'code' as const, noteId: null, text: '修改代码' };
+  const result = attachCorrectionNotes({ summary: '核查', comparedNoteIds: ['6855'], comparedPairs: [], comparedCodeNoteIds: ['6855'], codeCompared: true, findings: [{ kind: 'conflict', title: '冲突', noteIds: ['6855'], evidence: '证据', verdict: '按标准', fix: '改代码', suggestions: [suggestion, code] }] }, [{ ...note, aiLocked: true, current: true }]);
+  expect(result.findings[0]?.suggestions).toEqual([code]);
+});
