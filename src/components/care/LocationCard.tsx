@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getCurrentPosition } from "@/lib/geolocation";
+import { BubbleControls } from "@/components/location/BubbleControls";
 import {
   useSafeZones, useCreateSafeZone, useUpdateSafeZone, useDeleteSafeZone,
   useLocationReceiverSubscription,
@@ -363,6 +364,10 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
           .bindPopup(`<b>${caredOneName}</b><br>${currentLocation.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}`);
         personMarker.getElement()?.setAttribute("data-inspector-id", "location-map/person-marker");
         mapLayersRef.current.push(personMarker);
+        // A bubble shows only the general area.
+        if (currentLocation.bubble) {
+          mapLayersRef.current.push(Lx.circle([lat, lng], { radius: currentLocation.bubble.radiusMeters, color: "#10B981", weight: 2, fillOpacity: 0.12, dashArray: "2 6" }).addTo(map));
+        }
       }
     }
 
@@ -703,6 +708,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
             {!readOnly && !flagsLoading && <Badge variant="outline" className="text-xs">
               {flags?.emergencyAllowed ? (isZh ? "允许紧急请求" : "Emergency requests allowed") : (isZh ? "未允许紧急请求" : "Emergency requests not allowed")}
             </Badge>}
+            <BubbleControls subjectId={caredOneId} subjectName={caredOneName} bubble={currentLocation?.bubble} />
             {lastSeen && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />

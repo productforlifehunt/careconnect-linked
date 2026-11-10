@@ -40,6 +40,8 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
     join_code: g.a58 || null,
     // No default: a missing a59 is unknown, never assumed active.
     is_active: String(g.a59 ?? "") === "b55",
+    // a60: only an explicit "No" turns Bubbles off (Life360 default is on).
+    bubbles_allowed: String(g[T.careGroup.f.MEMBERS_CAN_USE_BUBBLES] ?? "") !== T.careGroup.opt.MEMBERS_CAN_USE_BUBBLES.NO,
     created_by: g.cct_author_id ? `wp-${g.cct_author_id}` : (g.author_id ? `wp-${g.author_id}` : null),
     created_at: g.created_at,
   })) as unknown as CareGroup[];

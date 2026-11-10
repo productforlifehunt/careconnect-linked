@@ -178,6 +178,7 @@ export async function updateCareGroupWordPress(id: string, updates: {
   is_private?: boolean | undefined;
   join_code?: string | undefined;
   is_active?: boolean | undefined;
+  bubbles_allowed?: boolean | undefined;
 }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body[F_GROUP.NAME] = updates.name;
@@ -188,6 +189,9 @@ export async function updateCareGroupWordPress(id: string, updates: {
   if (updates.join_code !== undefined) body[F_GROUP.JOIN_CODE] = updates.join_code;
   if (updates.is_active !== undefined) {
     body[F_GROUP.STATUS] = updates.is_active ? O_GROUP.STATUS.ACTIVE : O_GROUP.STATUS.NO;
+  }
+  if (updates.bubbles_allowed !== undefined) {
+    body[F_GROUP.MEMBERS_CAN_USE_BUBBLES] = updates.bubbles_allowed ? O_GROUP.MEMBERS_CAN_USE_BUBBLES.YES : O_GROUP.MEMBERS_CAN_USE_BUBBLES.NO;
   }
   await wordpressCCTFetch(T.careGroup.slug, { id, method: "PUT", body });
 }

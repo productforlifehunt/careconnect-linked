@@ -368,6 +368,8 @@ export interface CareGroup {
   is_private: boolean;
   group_type: string;
   join_code: string | null;
+  /** CCT 199 a60 — members can create location bubbles. */
+  bubbles_allowed?: boolean;
   invite_code: string | null;
   is_active: boolean;
   member_count: number | null;

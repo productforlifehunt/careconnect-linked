@@ -24,6 +24,7 @@ import {
   deleteSafeZoneWordPress,
 } from "@/features/location/source.wordpress-extended";
 import { writeLocationAndCheckZones } from "@/features/location/source.wordpress";
+import { BubbleControls } from "@/components/location/BubbleControls";
 import { getDistanceMeters } from "@/lib/locationService";
 import {
   ZONE_TYPE, ZONE_TYPE_CODES, isCustomZone, isDangerZone,
@@ -214,7 +215,8 @@ export default function GPSTracking() {
       userId: ls.user_id,
       name: ls.profile?.full_name || nameByUserId[key] || t("common.unknown"),
       avatar_url: ls.profile?.avatar_url || ls.user_avatar,
-      lastLocation: ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      lastLocation: ls.bubble ? Z("在泡泡中，只显示大概范围", "In a Bubble — general area only") : ls.address_text || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      bubble: ls.bubble || null,
       coordinates: { lat, lng },
       lastUpdated: ls.updated_at
         ? formatTime(typeof ls.updated_at === "number" ? ls.updated_at * 1000 : ls.updated_at, "en", { hour: "numeric", minute: "2-digit" })
@@ -358,8 +360,20 @@ export default function GPSTracking() {
       marker.on("click", () => setSelectedPerson(person));
       markersRef.current.push(marker);
 
+      // A bubble shows only the general area.
+      if (person.bubble) {
+        const area = L.circle([person.coordinates.lat, person.coordinates.lng], {
+          radius: person.bubble.radiusMeters,
+          color: themeColor("--primary", "#4c1d95"),
+          weight: 2,
+          fillOpacity: 0.12,
+          dashArray: "2 6",
+        }).addTo(map);
+        trailLinesRef.current.push(area as unknown as L.Polyline);
+      }
+
       // Draw trail polyline
-      const trail = trailData[person.userId];
+      const trail = person.bubble ? null : trailData[person.userId];
       if (trail && trail.length > 1) {
         const polyline = L.polyline(trail, {
           color: themeColor("--primary", "#4c1d95"),
@@ -943,6 +957,7 @@ export default function GPSTracking() {
                   />
                 </div>
               </div>
+              {selfKey && <div className="mb-2"><BubbleControls subjectId={selfKey} subjectName={Z("我", "Me")} /></div>}
 
               {isLoading ? (
                 <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -1016,6 +1031,7 @@ export default function GPSTracking() {
                             </span>
                           ) : null}
                         </button>
+                        {p.bubble && <div className="px-3 pb-1 pt-1"><BubbleControls subjectId={String(p.userId)} subjectName={p.name} bubble={p.bubble} /></div>}
                       </li>
                     );
                   })}
@@ -1126,6 +1142,7 @@ export default function GPSTracking() {
                       {!p.isSharing && <Badge variant="secondary" className="text-[10px] mt-0.5">{t("gps.notSharing")}</Badge>}
                     </div>
                   </div>
+                  {p.bubble && <div className="mt-2" onClick={(e) => e.stopPropagation()}><BubbleControls subjectId={String(p.userId)} subjectName={p.name} bubble={p.bubble} /></div>}
                   {p.isSharing && (
                     <div className="mt-2 text-xs text-muted-foreground">
                       <p className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {p.lastLocation}</p>
@@ -1187,6 +1204,7 @@ export default function GPSTracking() {
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Shield className="h-3 w-3" /> {t("gps.locationEncrypted", { groups: site.navLabels.careGroups.toLowerCase() })}
               </p>
+              {selfKey && <BubbleControls subjectId={selfKey} subjectName={Z("我", "Me")} />}
             </CardContent>
           </Card>
         </div>

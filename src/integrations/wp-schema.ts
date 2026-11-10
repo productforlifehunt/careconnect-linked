@@ -16,6 +16,23 @@ export interface WPCCTDef {
 
 export const WP = {
   cct: {
+    /** GUI-created CCT327 (2026-11-11): one member's temporary location bubble in one care group. */
+    "327": {
+      id: 327,
+      slug: "location_bubble",
+      name: "Location bubble",
+      f: {
+        "CENTER_LATITUDE": "a55",  // Text
+        "CENTER_LONGITUDE": "a56",  // Text
+        "RADIUS_METERS": "a57",  // Number
+        "START_TIME": "a58",  // Text (ISO UTC)
+        "END_TIME": "a59",  // Text (ISO UTC)
+        "STATUS": "a60",  // Radio
+      },
+      opt: {
+        "STATUS": { "ACTIVE": "b55", "POPPED_BY_CREATOR": "b56", "BURST": "b57" },
+      },
+    },
     /** GUI-verified CCT324: user-created inspector manual notes. */
     "324": {
       id: 324,
@@ -839,10 +856,12 @@ export const WP = {
         "GROUP_TYPE": "a57",  // Radio
         "JOIN_CODE": "a58",  // Text
         "STATUS": "a59",  // Radio
+        "MEMBERS_CAN_USE_BUBBLES": "a60",  // Radio, added through /afresh GUI 2026-11-11 (empty = allowed)
       },
       opt: {
         "GROUP_TYPE": { "PUBLIC": "b55", "PRIVATE": "b56" },
         "STATUS": { "ACTIVE": "b55", "NO": "b56" },
+        "MEMBERS_CAN_USE_BUBBLES": { "YES": "b55", "NO": "b56" },
       },
     },
     /** 200. Care group invite link */
@@ -1447,6 +1466,8 @@ export const T = {
   currentLocation: WP.cct["213"],
   /** 214. Safe Zone */
   safeZone: WP.cct["214"],
+  /** 327. Location bubble */
+  locationBubble: WP.cct["327"],
   /** 215. Care Facility */
   careFacility: WP.cct["215"],
   /** 217. Challenged App Content */
@@ -1640,6 +1661,10 @@ export const R = {
   userCurrentLocations: 247,
   /** 248. One user can have many related safe zones */
   userSafeZones: 248,
+  /** 328. One user can have many created location bubbles (GUI-created 2026-11-11) */
+  userLocationBubbles: 328,
+  /** 329. One care group can have many related location bubbles (GUI-created 2026-11-11) */
+  careGroupLocationBubbles: 329,
   /** 290. One cared one’s location notification can have many added related receivers */
   caredOneLocationReceivers: 290,
   /** 249. One care facility can have many related facility members */
@@ -1702,6 +1727,7 @@ export const CCT_SLUG: Readonly<Record<string, string>> = {
   "212": "care_document",
   "213": "current_location",
   "214": "safe_zone",
+  "327": "location_bubble",
   "215": "care_facility",
   "217": "challenged_content",
   "218": "study_notes",

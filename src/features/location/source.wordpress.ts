@@ -258,12 +258,14 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
     // Also include self
     memberUserIds.add(String(storedUser.user_id));
 
+    const { activeBubblesForMe, bubbleHiding, maskWithBubble } = await import("@/features/location/bubbles");
+    const bubblesP = activeBubblesForMe();
     const locations = await Promise.all(
       Array.from(memberUserIds).map(async (uid) => {
         try {
           const snapshot = await fetchCurrentLocation(uid);
           if (!snapshot || !snapshot.latitude || !snapshot.longitude) return null;
-          return {
+          return maskWithBubble({
             id: snapshot.id,
             user_id: uid,
             latitude: snapshot.latitude,
@@ -280,7 +282,7 @@ export async function fetchLocationSharesWordPress(scope: "cared-ones" | "group"
             user_avatar: null,
             updated_at: snapshot.captured_at,
             created_at: snapshot.captured_at,
-          };
+          }, bubbleHiding(await bubblesP, uid));
         } catch {
           return null;
         }
@@ -326,6 +328,13 @@ export async function writeLocationAndCheckZones(
     is_emergency: opts?.isEmergency,
     is_cared_one: opts?.is_cared_one,
   });
+
+  // Leaving a bubble pops it; an SOS bursts every bubble of mine.
+  if (storedUser?.user_id) {
+    void import("@/features/location/bubbles")
+      .then((m) => m.checkMyBubblesAfterPosition(lat, lng, !!opts?.isEmergency))
+      .catch(() => {});
+  }
 
   // Run zone breach detection
   if (storedUser?.user_id) {

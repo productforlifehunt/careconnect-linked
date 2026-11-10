@@ -39,6 +39,7 @@ export function GroupSettingsTab({
   const [isPrivate, setIsPrivate] = useState(!!activeGroup?.is_private);
   const [joinCode, setJoinCode] = useState(activeGroup?.join_code || "");
   const [isActive, setIsActive] = useState(activeGroup?.is_active !== false);
+  const [bubbles, setBubbles] = useState(activeGroup?.bubbles_allowed !== false);
   const [origin, setOrigin] = useState("");
   useEffect(() => { setOrigin(window.location.origin); }, []);
   const groupLink = careGroupLink(origin, activeGroupId);
@@ -52,7 +53,8 @@ export function GroupSettingsTab({
     setIsPrivate(!!activeGroup?.is_private);
     setJoinCode(activeGroup?.join_code || "");
     setIsActive(activeGroup?.is_active !== false);
-  }, [activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private, activeGroup?.join_code, activeGroup?.is_active]);
+    setBubbles(activeGroup?.bubbles_allowed !== false);
+  }, [activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private, activeGroup?.join_code, activeGroup?.is_active, activeGroup?.bubbles_allowed]);
 
   useEffect(() => { setMyName(myDisplayName); }, [myDisplayName, activeGroup?.id]);
 
@@ -66,7 +68,7 @@ export function GroupSettingsTab({
 
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
-    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, join_code: joinCode.trim(), ...(isActive !== (activeGroup?.is_active !== false) ? { is_active: isActive } : {}) }, {
+    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, join_code: joinCode.trim(), bubbles_allowed: bubbles, ...(isActive !== (activeGroup?.is_active !== false) ? { is_active: isActive } : {}) }, {
       onSuccess: () => toast({ title: Z("群组已更新！", "Group updated!") }),
       onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
     });
@@ -119,6 +121,13 @@ export function GroupSettingsTab({
             <p className="text-xs text-muted-foreground">{Z("关闭后群组首页显示\u201c此群组已停用\u201d。", "When off, the group shows as no longer active.")}</p>
           </div>
           <Switch checked={isActive} onCheckedChange={setIsActive} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>{Z("成员可以使用泡泡", "Members can use Bubbles")}</Label>
+            <p className="text-xs text-muted-foreground">{Z("泡泡让成员在一段时间内只显示大概范围。", "A Bubble lets a member show only their general area for a while.")}</p>
+          </div>
+          <Switch checked={bubbles} onCheckedChange={setBubbles} aria-label={Z("成员可以使用泡泡", "Members can use Bubbles")} />
         </div>
         <Button variant="coral" className="w-full" onClick={handleSave} disabled={updateGroup.isPending || !name.trim()}>{Z("保存修改", "Save Changes")}</Button>
 

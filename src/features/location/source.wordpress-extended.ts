@@ -429,9 +429,10 @@ export async function acknowledgeAllAlertsWordPress(_caredOneId: string): Promis
 // ─── Cared One Location (delegates to source.wordpress.ts) ───
 
 export async function fetchCaredOneLocationWordPress(caredOneId: string): Promise<any | null> {
-  const snapshot = await fetchCurrentLocation(caredOneId);
+  const { activeBubblesForMe, bubbleHiding, maskWithBubble } = await import("@/features/location/bubbles");
+  const [snapshot, bubbles] = await Promise.all([fetchCurrentLocation(caredOneId), activeBubblesForMe()]);
   if (!snapshot) return null;
-  return {
+  return maskWithBubble({
     id: snapshot.id,
     user_id: caredOneId,
     latitude: snapshot.latitude,
@@ -446,11 +447,16 @@ export async function fetchCaredOneLocationWordPress(caredOneId: string): Promis
     captured_at: snapshot.captured_at,
     updated_at: snapshot.captured_at,
     created_at: snapshot.captured_at,
-  };
+  }, bubbleHiding(bubbles, caredOneId));
 }
 
 export async function fetchCaredOneLocationHistoryWordPress(caredOneId: string): Promise<any[]> {
-  const snapshots = await fetchLocationHistory(caredOneId, { limit: 200 });
+  const { activeBubblesForMe, bubbleHiding } = await import("@/features/location/bubbles");
+  const [all, bubbles] = await Promise.all([fetchLocationHistory(caredOneId, { limit: 200 }), activeBubblesForMe()]);
+  // Points recorded while a bubble hides this person are not shown to me.
+  const bubble = bubbleHiding(bubbles, caredOneId);
+  const since = bubble ? new Date(bubble.startsAt).getTime() : Infinity;
+  const snapshots = all.filter((s) => !s.captured_at || new Date(s.captured_at).getTime() < since);
   return snapshots.map(s => ({
     id: s.id,
     user_id: caredOneId,
@@ -676,6 +682,10 @@ export async function answerEmergencyRequestWordPress(input: {
   const flags = await fetchLocationSharingFlags(me.user_id);
   if (!flags.emergencyAllowed) throw new Error("Emergency requests are not allowed");
   await writeCaredOneSnapshot(input.position, !flags.shareOn);
+  // An emergency answer bursts my bubbles, as in Life360.
+  void import("@/features/location/bubbles")
+    .then((m) => m.checkMyBubblesAfterPosition(input.position.latitude, input.position.longitude, true))
+    .catch(() => {});
   const requester = normalizeWpUserId(input.requesterId);
   if (requester) await notifyRequester(requester, true, true);
 }
