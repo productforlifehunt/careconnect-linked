@@ -13,8 +13,8 @@ import type { ConflictReport } from '@/features/inspector/conflict-report';
 import type { CCTNote } from '@/features/inspector/cct-notes';
 import { ConflictReportView } from './ConflictReportView';
 
-type Related = { id: string; title: string; version: string; text: string; side: "parent" | "child"; todo: boolean; verified: boolean; relationVerified: boolean; relationDetails: string };
-type Edit = { title: string; version: string; text: string; todo: boolean; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Related = { id: string; title: string; version: string; text: string; side: "parent" | "child"; todo: boolean; aiLocked?: boolean | undefined; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Edit = { title: string; version: string; text: string; todo: boolean; aiLocked?: boolean | undefined; verified: boolean; relationVerified: boolean; relationDetails: string };
 
 export function RelatedNotes({ noteId }: { noteId: string }) {
   const list = listRelatedNotes; const link = linkRelatedNote;
@@ -145,6 +145,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                   version: n.version || "",
                   text: n.text,
                   todo: n.todo,
+                  aiLocked: !!n.aiLocked,
                   verified: n.verified,
                   relationVerified: n.relationVerified,
                   relationDetails: n.relationDetails,
@@ -156,11 +157,17 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                   e.version !== (n.version || "") ||
                   e.text !== n.text ||
                   e.todo !== n.todo ||
+                  !!e.aiLocked !== !!n.aiLocked ||
                   e.verified !== n.verified ||
                   e.relationVerified !== n.relationVerified ||
                   e.relationDetails !== n.relationDetails;
                 return (
                   <>
+                    <label className="flex items-center gap-2">
+                      <Switch aria-label={`关联注释 ${n.id} 严禁 AI 编辑`} checked={!!e.aiLocked}
+                        disabled={busy} onCheckedChange={(aiLocked) => set({ aiLocked })} />
+                      <span>严禁 AI 编辑</span>
+                    </label>
                     <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
                       <label className="block space-y-1 text-sm"><span>标题</span>
                         <Input aria-label="关联注释名字" value={e.title} maxLength={240} disabled={busy} onChange={(ev) => set({ title: ev.target.value })} />
@@ -241,6 +248,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                                   version: e.version,
                                   text: e.text,
                                   todo: e.todo,
+                                  aiLocked: !!e.aiLocked,
                                   verified: e.verified,
                                   relationVerified: e.relationVerified,
                                   relationDetails: e.relationDetails,

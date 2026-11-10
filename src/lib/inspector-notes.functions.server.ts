@@ -234,7 +234,7 @@ export async function searchInspectorNotes(rawData: unknown, request: Request) {
 }
 
 export async function saveInspectorNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page", "site"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), version: z.string().max(80).optional(), noteType: z.enum(["b55", "b56"]).optional(), tabOrder: z.number().int().positive().optional(), id: z.string().regex(/^\d+$/).optional(), create: z.boolean().optional(), verified: z.boolean().optional(), relationVerified: z.boolean().optional(), relationDetails: z.string().max(100_000).optional(), text: z.string().max(100_000), source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input));
+  const validate = ((input: unknown) => z.object({ key: z.string().min(1).max(600), scope: z.enum(["element", "page", "site"]), page: z.string().max(400), label: z.string().max(400), title: z.string().min(1).max(240), version: z.string().max(80).optional(), noteType: z.enum(["b55", "b56"]).optional(), tabOrder: z.number().int().positive().optional(), id: z.string().regex(/^\d+$/).optional(), create: z.boolean().optional(), verified: z.boolean().optional(), aiLocked: z.boolean().optional(), relationVerified: z.boolean().optional(), relationDetails: z.string().max(100_000).optional(), text: z.string().max(100_000), source: z.object({ file: z.string().min(1).max(300), line: z.number().int().positive(), endLine: z.number().int().positive(), tag: z.string().min(1).max(60), digest: z.string().regex(/^[0-9a-f]{64}$/) }).optional(), alias: z.string().max(600).optional() }).parse(input));
   const data = validate(rawData);
 
     const { verifyResearcher } = await import("./inspector-ai.server");
@@ -357,13 +357,13 @@ export async function unlinkRelatedNote(rawData: unknown, request: Request) {
 }
 
 export async function updateRelatedNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId, title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), todo: z.boolean().optional(), verified: z.boolean(), relationVerified: z.boolean(), relationDetails: z.string().max(100_000) }).parse(input));
+  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId, title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), todo: z.boolean().optional(), aiLocked: z.boolean().optional(), verified: z.boolean(), relationVerified: z.boolean(), relationDetails: z.string().max(100_000) }).parse(input));
   const data = validate(rawData);
 
     const denied = await researcherOnly(request); if (denied) return { error: denied };
     const token = wpToken(request);
     const s = await import('./inspector-notes.server');
-    try { await s.updatePlainNote(data.otherId, { title: data.title, text: data.text, ...(data.version === undefined ? {} : { version: data.version }), ...(data.todo === undefined ? {} : { todo: data.todo }), verified: data.verified, relationVerified: data.relationVerified, relationDetails: data.relationDetails }, token); return { notes: await s.readRelatedNotes(data.id, token) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
+    try { await s.updatePlainNote(data.otherId, { title: data.title, text: data.text, ...(data.version === undefined ? {} : { version: data.version }), ...(data.todo === undefined ? {} : { todo: data.todo }), ...(data.aiLocked === undefined ? {} : { aiLocked: data.aiLocked }), verified: data.verified, relationVerified: data.relationVerified, relationDetails: data.relationDetails }, token); return { notes: await s.readRelatedNotes(data.id, token) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
   
 }
 

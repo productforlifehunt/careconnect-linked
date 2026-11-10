@@ -76,6 +76,7 @@ type NoteDraft = {
   text: string;
   noteType: InspectorNoteType;
   verified: boolean;
+  aiLocked: boolean;
   relationVerified: boolean;
   relationDetails: string;
 };
@@ -166,6 +167,8 @@ export function ManualNotes({
     at?: string | undefined;
   }>({ loading: true });
   const [retry, setRetry] = useState(0);
+  const [aiLocked, setAiLocked] = useState(false);
+  const [savedAiLocked, setSavedAiLocked] = useState(false);
   const [verified, setVerified] = useState(false);
   const [savedVerified, setSavedVerified] = useState(false);
   const [relationVerified, setRelationVerified] = useState(false);
@@ -178,17 +181,18 @@ export function ManualNotes({
   const ready = loadedFor === noteKey;
   const activeKey = useRef(noteKey);
   activeKey.current = noteKey;
-  const revision = `${noteKey}|${selected}|${title}|${version}|${text}|${draftNoteType}|${verified}|${relationVerified}|${relationDetails}`;
+  const revision = `${noteKey}|${selected}|${title}|${version}|${text}|${draftNoteType}|${verified}|${aiLocked}|${relationVerified}|${relationDetails}`;
   const activeRevision = useRef(revision);
   activeRevision.current = revision;
-  const correctionState = useRef({ selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
-  correctionState.current = { selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
+  const correctionState = useRef({ selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
+  correctionState.current = { selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
   const hasUnsavedChanges =
     text !== saved ||
     title !== savedTitle ||
     version !== savedVersion ||
     draftNoteType !== savedNoteType ||
     verified !== savedVerified ||
+    aiLocked !== savedAiLocked ||
     relationVerified !== savedRelationVerified ||
     relationDetails !== savedRelationDetails;
   const legacyKeysKey = legacyKeys?.join("\u0000") || "";
@@ -200,6 +204,7 @@ export function ManualNotes({
           title: string;
           text: string;
           verified: boolean;
+          aiLocked?: boolean | undefined;
           relationVerified?: boolean | undefined;
           relationDetails?: string | undefined;
         }>
@@ -212,6 +217,7 @@ export function ManualNotes({
         current.version !== current.savedVersion ||
         current.draftNoteType !== current.savedNoteType ||
         current.verified !== current.savedVerified ||
+        current.aiLocked !== current.savedAiLocked ||
         current.relationVerified !== current.savedRelationVerified ||
         current.relationDetails !== current.savedRelationDetails
       ) {
@@ -226,6 +232,8 @@ export function ManualNotes({
       setSaved(note.text);
       setTitle(note.title);
       setSavedTitle(note.title);
+      setAiLocked(!!note.aiLocked);
+      setSavedAiLocked(!!note.aiLocked);
       setVerified(note.verified);
       setSavedVerified(note.verified);
       setRelationVerified(!!note.relationVerified);
@@ -281,6 +289,8 @@ export function ManualNotes({
     setCopyVersion("");
     setVersionCopy(null);
     setVerified(false);
+    setAiLocked(false);
+    setSavedAiLocked(false);
     setSavedVerified(false);
     setRelationVerified(false);
     setSavedRelationVerified(false);
@@ -337,6 +347,8 @@ export function ManualNotes({
       setSavedTitle(n?.title || label.slice(0, 240));
       setVersion((n as CCTNote | undefined)?.version || "");
       setSavedVersion((n as CCTNote | undefined)?.version || "");
+      setAiLocked(!!(n as CCTNote | undefined)?.aiLocked);
+      setSavedAiLocked(!!(n as CCTNote | undefined)?.aiLocked);
       setVerified(!!(n as CCTNote | undefined)?.verified);
       setSavedVerified(!!(n as CCTNote | undefined)?.verified);
       setRelationVerified(!!(n as CCTNote | undefined)?.relationVerified);
@@ -461,7 +473,7 @@ export function ManualNotes({
     if (!selected) return;
     setDrafts((current) => ({
       ...current,
-      [selected]: { title, version, text, noteType: draftNoteType, verified, relationVerified, relationDetails },
+      [selected]: { title, version, text, noteType: draftNoteType, verified, aiLocked, relationVerified, relationDetails },
     }));
   };
   const setFieldsFromPositionNote = (note: CCTNote, restoreDraft = true) => {
@@ -477,6 +489,8 @@ export function ManualNotes({
     setSavedVersion(note.version || "");
     setText(draft?.text ?? note.text);
     setSaved(note.text);
+    setAiLocked(draft?.aiLocked ?? !!note.aiLocked);
+    setSavedAiLocked(!!note.aiLocked);
     setVerified(draft?.verified ?? !!note.verified);
     setSavedVerified(!!note.verified);
     setRelationVerified(draft?.relationVerified ?? !!note.relationVerified);
@@ -513,6 +527,8 @@ export function ManualNotes({
       setText("");
       setSaved("");
       setVerified(false);
+    setAiLocked(false);
+    setSavedAiLocked(false);
       setSavedVerified(false);
       setRelationVerified(false);
       setSavedRelationVerified(false);
@@ -604,6 +620,8 @@ export function ManualNotes({
           setText("");
           setSaved("");
           setVerified(false);
+    setAiLocked(false);
+    setSavedAiLocked(false);
           setSavedVerified(false);
           setRelationVerified(false);
           setSavedRelationVerified(false);
@@ -696,6 +714,8 @@ export function ManualNotes({
           setText("");
           setSaved("");
           setVerified(false);
+    setAiLocked(false);
+    setSavedAiLocked(false);
           setSavedVerified(false);
           setRelationVerified(false);
           setSavedRelationVerified(false);
@@ -799,6 +819,7 @@ export function ManualNotes({
                     .map((note) => note.tabOrder || 0),
                 ) + 1,
           verified,
+          aiLocked,
           relationVerified,
           relationDetails,
           text,
@@ -1125,6 +1146,12 @@ export function ManualNotes({
       </AlertDialog>
       {selected && (
       <section role="tabpanel" aria-label={activeType === "b55" ? `${noteScopeLabel}说明注释内容` : `${noteScopeLabel}关联注释内容`} className="space-y-2">
+      <label className="flex items-center gap-2">
+        <Switch aria-label="严禁 AI 编辑" checked={aiLocked} disabled={state.loading || state.saving}
+          onCheckedChange={(value) => { setAiLocked(value); clearSaveNotice(); }} />
+        <span>严禁 AI 编辑</span>
+        {aiLocked !== savedAiLocked && <span className="text-muted-foreground">（未保存）</span>}
+      </label>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
         <label className="block space-y-1">
           <span className="text-muted-foreground">标题</span>

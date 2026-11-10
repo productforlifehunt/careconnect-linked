@@ -58,8 +58,8 @@ export async function explainReadWrite(rawData: unknown, request: Request) {
         originals.push(...related.map(n => ({ ...n, role: noteRole(n.title, 'related_note') })));
       }
       notes = JSON.stringify(found.map(({ key, note, related }) => ({
-        scope: key.startsWith("page|") ? "page" : key.startsWith("site|") ? "site" : "element", role: note ? originals.find(n => n.id === note.id)?.role : null, cct: note ? `CCT324 #${note.id}` : null, a55: data.draft?.title ?? note?.title ?? null, a56: data.draft?.text ?? note?.text ?? null, unsavedDraft: !!data.draft,
-        relatedNotesREL325: [...new Map(related.map(r => [r.id, r])).values()].map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })),
+        scope: key.startsWith("page|") ? "page" : key.startsWith("site|") ? "site" : "element", role: note ? originals.find(n => n.id === note.id)?.role : null, cct: note ? `CCT324 #${note.id}` : null, aiLocked: note?.aiLocked ?? false, a55: data.draft?.title ?? note?.title ?? null, a56: data.draft?.text ?? note?.text ?? null, unsavedDraft: !!data.draft,
+        relatedNotesREL325: [...new Map(related.map(r => [r.id, r])).values()].map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), aiLocked: r.aiLocked, a55: r.title, a56: r.text })),
       })));
     } catch (error) { return { error: `手动注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     let runtime: { page?: string | undefined };
@@ -94,7 +94,7 @@ export async function checkNoteConflicts(rawData: unknown, request: Request) {
       const { readNoteById, readRelatedNotes } = await import("./inspector-notes.server");
       const [note, related] = await Promise.all([readNoteById(data.id, token), readRelatedNotes(data.id, token)]);
       originals = [{ ...note, current: true, role: noteRole(note.title, 'element_note') }, ...related.map(r => ({ ...r, role: noteRole(r.title, 'related_note') }))];
-      payload = JSON.stringify({ note: { cct: `CCT324 #${data.id}`, role: originals[0]?.role, a55: note.title, a56: note.text }, related: related.map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), a55: r.title, a56: r.text })) });
+      payload = JSON.stringify({ note: { cct: `CCT324 #${data.id}`, role: originals[0]?.role, aiLocked: note.aiLocked, a55: note.title, a56: note.text }, related: related.map((r) => ({ cct: `CCT324 #${r.id}`, role: noteRole(r.title, 'related_note'), aiLocked: r.aiLocked, a55: r.title, a56: r.text })) });
     } catch (error) { return { error: `注释读取失败：${error instanceof Error ? error.message : String(error)}`, status: 502 }; }
     const result = await compareNotes(payload);
     return result.report ? { ...result, report: attachCorrectionNotes(result.report, originals) } : result;
@@ -182,8 +182,9 @@ export async function chatAboutCorrection(rawData: unknown, request: Request) {
       const { readInspectionSource } = await import('./inspector-source.server');
       const { formatSourceEvidence } = await import('@/features/inspector/source-evidence');
       const source = await readInspectionSource({ page: data.page });
-      const context = `SERVER_READ_ACTUAL_SOURCE:\n${source.files.length ? formatSourceEvidence(source) : '（未读取到实际代码）'}\nSOURCE_OMISSIONS:${JSON.stringify(source.omissions)}\n\nBASELINE_RELATED_NOTES（视为正确）:\n${JSON.stringify(baseline.map(n => ({ cct: `CCT324 #${n.id}`, a55: n.title, a56: n.text })))}\n\nCURRENT_NOTE（被修改对象）:\n${JSON.stringify(current ? { cct: `CCT324 #${current.id}`, a55: current.title, a56: current.text } : null)}\n\nSUGGESTION（target=${data.target}）原因：${data.reason}\n当前编辑框名字：${data.draftTitle}\n当前编辑框正文：\n${data.draftText}`;
-      return await chatCorrection(context, data.messages);
+      const context = `SERVER_READ_ACTUAL_SOURCE:\n${source.files.length ? formatSourceEvidence(source) : '（未读取到实际代码）'}\nSOURCE_OMISSIONS:${JSON.stringify(source.omissions)}\n\nBASELINE_RELATED_NOTES（视为正确）:\n${JSON.stringify(baseline.map(n => ({ cct: `CCT324 #${n.id}`, aiLocked: n.aiLocked, a55: n.title, a56: n.text })))}\n\nCURRENT_NOTE（被修改对象）:\n${JSON.stringify(current ? { cct: `CCT324 #${current.id}`, aiLocked: current.aiLocked, a55: current.title, a56: current.text } : null)}\n\nSUGGESTION（target=${data.target}）原因：${data.reason}\n当前编辑框名字：${data.draftTitle}\n当前编辑框正文：\n${data.draftText}`;
+      const response = await chatCorrection(context, data.messages);
+      return current?.aiLocked && data.target !== "code" ? { ...response, title: "", text: "" } : response;
     } catch (error) { return { error: error instanceof Error ? error.message : '读取失败' }; }
   
 }
