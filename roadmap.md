@@ -1,3 +1,8 @@
+## Current request: Preserve user's master note and AI editing lock (2026-11-10)
+- [ ] Read #6856 fresh through GUI without editing; align biography to CCT258 a107, phone to CCT151 a98, app scope to a01 and related note descriptions.
+- [ ] Add existing CCT324 a66 lock to both note types and related-note editors, default off and persisted by Save; block AI correction writes using fresh server state while allowing genuine manual edits.
+- [ ] Test lock rules, real frontend Save/reload for both types, and GUI full-body preservation of the master and all locked notes.
+
 ## Current request: Approved post-Draftbit restoration and Edge deployment (2026-11-10)
 - [x] Incoming snapshot 71aa36b0 includes Draftbit 0f934704; restore only the authorized two independent profile-role inspector IDs and their regression test.
 - [x] Restored inspector tests passed 12/12. Actual test1 login and settings show two distinct role IDs; removing development source tags leaves both IDs intact. No profile save performed.
