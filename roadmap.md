@@ -451,7 +451,6 @@
 # UI/UX verification roadmap
 
 ## Current request: Caregiver entry and activation
-- [ ] Replace the separate application with existing login/signup and return to caregiver basic settings; joining sets CCT258 a59 Yes without activating a60.
 - [ ] Gate settings by a59, require the existing basic/service fields before a60 can be enabled, preserve explicit Save and directory a59/a60 filtering.
 - [ ] Update related existing CCT324 notes through WordPress GUI and read back; preserve bindings and REL325.
 - [ ] Run focused rule tests and real browser entry/save/visibility checks; report any unverified environment.
