@@ -18,6 +18,12 @@ vi.mock("@/services/wp-auth", () => ({ wpRequestPasswordReset: vi.fn() }));
 vi.mock("@/components/BrandMark", () => ({ BrandMark: () => null }));
 import Auth from "./Auth";
 
+vi.stubGlobal("ResizeObserver", class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+});
+
 afterEach(() => { cleanup(); vi.clearAllMocks(); m.next = "/become-caregiver"; });
 
 async function submitSignup() {
