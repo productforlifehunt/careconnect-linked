@@ -1,3 +1,10 @@
+## Current request: Caregiver reviews, search chips, speed and preservation (2026-11-10 12:38 UTC)
+- [ ] Verify review author display and restrict edits to the actual author, preserving existing JetEngine ownership.
+- [ ] Make delivery/service labels clickable buttons opening the existing search with that filter selected.
+- [ ] Measure profile and favorite paths; remove proven serial waits and show saving/removing/success states with a circular heart.
+- [ ] Record locked-note second-confirmation and immutable Draftbit incoming-version rules; never overwrite incoming Draftbit work.
+- [ ] Finish prior navigation regression tests and note-relation readback; verify changed flows where possible and report blocked environments.
+
 ## Current request: Named reminder toggles and single global back navigation (2026-11-10 12:23 UTC)
 - [x] Show current app display name in medicine, check-in and location receiver labels, including group check-ins; subscription behavior unchanged.
 - [x] Remove duplicate page back buttons across care pages, error states, resources and messages; retain shared page-header history navigation, pagination and survey-step controls. Resource and inbox selections now participate in browser history.
