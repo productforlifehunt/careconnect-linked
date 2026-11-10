@@ -52,6 +52,7 @@ it("verifies researcher then saves only the exact existing record and preserves 
       relationDetails: "关联核对依据",
     },
     "test-session",
+    "ai",
   );
   expect(mocks.read.mock.calls).toEqual([
     ["6855", "test-session"],
@@ -63,6 +64,11 @@ it("never writes after auth denial", async () => {
   mocks.verify.mockRejectedValue(new Error("只有研究员可以使用"));
   expect((await invoke()).error).toContain("研究员");
   expect(mocks.read).not.toHaveBeenCalled();
+  expect(mocks.update).not.toHaveBeenCalled();
+});
+it("never allows an AI correction to change a locked note even with explicit confirmation", async () => {
+  mocks.read.mockResolvedValue({ ...current, aiLocked: true });
+  expect((await invoke()).error).toContain("严禁 AI 编辑");
   expect(mocks.update).not.toHaveBeenCalled();
 });
 it("never writes over stale content or verified notes without explicit confirmation", async () => {
