@@ -1,3 +1,9 @@
+## Current request: Location notes and schema inventory (2026-11-11)
+- [x] Read all 10,604 CCT324 notes through authorized /afresh API; select location-source bindings, location-specific titles and existing bubble/pause references, excluding unrelated commerce addresses and Afresh risk places.
+- [x] Update 618 unlocked existing note bodies; immediate 618/618 readbacks and independent full-catalogue 618/618 equality passed. Unrelated bodies, all titles/bindings and four locked bodies unchanged. Plugin normalized 605 empty a65/a66 values only; no switch enabled.
+- [x] Document CCT327 six fields, CCT199 a60 and REL328/329/330; CCT258 location switches, snapshots, zones and notifications reused without additional fields. Preserve existing element/page associations and do not alter any WordPress structure.
+- [x] Notes distinguish /find notification-only check-in from GPS snapshot check-in, circle-specific visibility from REL219 care access, display-layer bubble masking from raw API privacy, and actual tested flows from unverified device battery behavior.
+
 ## Current request: Repair preview (2026-11-10 13:31 UTC)
 - [x] Fresh browser reproduced local 500 from legacy ssrLoadModule; published 502 logs identify external @react-router/node.
 - [x] Vite environment API + Lovable-only runnable SSR environment; normalize Connect URL/virtual ID/CSS and let the host alone handle React refresh. Production noExternal=true; native Draftbit refresh preserved. No business or WP data change.
