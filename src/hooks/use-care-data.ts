@@ -1723,8 +1723,8 @@ export function useCaredOneLocationSettings(caredOneId: string | null) {
 export function useShareMyLocation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number | null | undefined; batteryLevel?: number | null | undefined; addressText?: string | null | undefined; isEmergency?: boolean | undefined; enabled?: boolean | undefined }) =>
-      shareMyLocationWordPress(data.latitude, data.longitude, { accuracy: data.accuracy, batteryLevel: data.batteryLevel, addressText: data.addressText, isEmergency: data.isEmergency, enabled: data.enabled }),
+    mutationFn: (data: { latitude: number; longitude: number; accuracy?: number | null | undefined; altitude?: number | null | undefined; heading?: number | null | undefined; speed?: number | null | undefined; batteryLevel?: number | null | undefined; addressText?: string | null | undefined; isEmergency?: boolean | undefined; enabled?: boolean | undefined }) =>
+      shareMyLocationWordPress(data.latitude, data.longitude, { accuracy: data.accuracy, altitude: data.altitude, heading: data.heading, speed: data.speed, batteryLevel: data.batteryLevel, addressText: data.addressText, isEmergency: data.isEmergency, enabled: data.enabled }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["caredOneLocation"] }); qc.invalidateQueries({ queryKey: ["locationHistory"] }); },
   });
 }

@@ -530,6 +530,9 @@ export async function createSafeZoneAlertsForLocation(userId: string, lat: numbe
 
 export async function shareMyLocationWordPress(latitude: number, longitude: number, options?: {
   accuracy?: number | null | undefined;
+  altitude?: number | null | undefined;
+  heading?: number | null | undefined;
+  speed?: number | null | undefined;
   batteryLevel?: number | null | undefined;
   addressText?: string | null | undefined;
   isEmergency?: boolean | undefined;
@@ -543,6 +546,9 @@ export async function shareMyLocationWordPress(latitude: number, longitude: numb
 
   await writeLocationAndCheckZones(latitude, longitude, {
     accuracy: options?.accuracy,
+    altitude: options?.altitude,
+    heading: options?.heading,
+    speed: options?.speed,
     battery_level: options?.batteryLevel,
     address_text: options?.addressText,
     isEmergency: options?.isEmergency,
@@ -655,13 +661,16 @@ export async function respondToLocationRequestWordPress(input: {
 
 /** One snapshot of the signed-in person. a68 b55 marks an emergency-only reading. */
 export async function writeCaredOneSnapshot(
-  position: { latitude: number; longitude: number; accuracy?: number | null | undefined },
+  position: { latitude: number; longitude: number; accuracy?: number | null | undefined; altitude?: number | null | undefined; heading?: number | null | undefined; speed?: number | null | undefined },
   emergencyWithoutPermission: boolean,
 ): Promise<void> {
   const me = getStoredWPUser();
   if (!me?.user_id) throw new Error("Not authenticated");
   await writeLocationSnapshot(position.latitude, position.longitude, {
     accuracy: position.accuracy ?? null,
+    altitude: position.altitude ?? null,
+    heading: position.heading ?? null,
+    speed: position.speed ?? null,
     is_emergency: emergencyWithoutPermission,
     is_cared_one: true,
   });
@@ -675,7 +684,7 @@ export async function writeCaredOneSnapshot(
  */
 export async function answerEmergencyRequestWordPress(input: {
   requesterId: string;
-  position: { latitude: number; longitude: number; accuracy?: number | null | undefined };
+  position: { latitude: number; longitude: number; accuracy?: number | null | undefined; altitude?: number | null | undefined; heading?: number | null | undefined; speed?: number | null | undefined };
 }): Promise<void> {
   const me = getStoredWPUser();
   if (!me?.user_id) throw new Error("Not authenticated");

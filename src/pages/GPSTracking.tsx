@@ -407,7 +407,7 @@ export default function GPSTracking() {
         const pos = await getCurrentPosition({ timeout: 10000 });
         if (!pos) return;
         await writeLocationAndCheckZones(pos.latitude, pos.longitude, {
-          accuracy: pos.accuracy,
+          accuracy: pos.accuracy, altitude: pos.altitude, heading: pos.heading, speed: pos.speed, 
           is_cared_one: selfIsCaredOne,
         });
       } catch {}
@@ -458,7 +458,7 @@ export default function GPSTracking() {
       if (!userId) throw new Error(Z("未登录", "Not authenticated"));
       const pos = await getCurrentPosition({ timeout: 8000 });
       await writeLocationAndCheckZones(pos?.latitude ?? 0, pos?.longitude ?? 0, {
-        accuracy: pos?.accuracy,
+        accuracy: pos?.accuracy, altitude: pos?.altitude, heading: pos?.heading, speed: pos?.speed,
         isEmergency: true,
         is_cared_one: selfIsCaredOne,
       });
@@ -483,7 +483,7 @@ export default function GPSTracking() {
     try {
       const pos = await getCurrentPosition({ timeout: 8000 });
       if (!pos) throw new Error(t("gps.couldNotGetLocation"));
-      await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy, is_cared_one: selfIsCaredOne });
+      await writeLocationAndCheckZones(pos.latitude, pos.longitude, { accuracy: pos.accuracy, altitude: pos.altitude, heading: pos.heading, speed: pos.speed, is_cared_one: selfIsCaredOne });
       await (await import("@/features/location/circle-alerts")).checkInToCircles(`${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)}`);
       refetch();
       toast({ title: Z("已签到，圈子成员已收到通知", "Checked in — your circle was notified") });

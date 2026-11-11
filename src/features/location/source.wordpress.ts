@@ -333,14 +333,20 @@ export async function writeLocationAndCheckZones(
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
 
+  // Battery is read once and used for both the snapshot and the low-battery alert.
+  const [battery, charging] = await Promise.all([
+    opts?.battery_level ?? import("@/lib/locationService").then(m => m.getBatteryLevel()).catch(() => null),
+    opts?.phone_is_charging ?? detectCharging(),
+  ]);
+
   // Write location snapshot
   const snapshot = await writeLocationSnapshot(lat, lng, {
     accuracy: opts?.accuracy,
     altitude: opts?.altitude,
     heading: opts?.heading,
     speed: opts?.speed,
-    battery_level: opts?.battery_level,
-    phone_is_charging: opts?.phone_is_charging,
+    battery_level: battery,
+    phone_is_charging: charging,
     moving_type: opts?.moving_type,
     address_text: opts?.address_text,
     is_emergency: opts?.isEmergency,
@@ -354,7 +360,7 @@ export async function writeLocationAndCheckZones(
       .catch(() => {});
     if (opts?.isEmergency) await check;
     void import("@/features/location/circle-alerts")
-      .then((m) => m.maybeAlertLowBattery(opts?.battery_level, opts?.phone_is_charging))
+      .then((m) => m.maybeAlertLowBattery(battery, charging))
       .catch(() => {});
   }
 
@@ -441,7 +447,7 @@ async function detectCharging(): Promise<boolean | null> {
   try {
     const cap = (window as any)?.Capacitor;
     if (cap?.isNativePlatform?.()) {
-      const { Device } = await import("@capacitor/core" as any);
+      const { Device } = await import("@capacitor/device");
       const info = await Device.getBatteryInfo();
       return typeof info?.isCharging === "boolean" ? info.isCharging : null;
     }

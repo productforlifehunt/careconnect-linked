@@ -1368,7 +1368,7 @@ export const SETTING_SKILLS: SettingSkill[] = [
       if (!pos) throw new Error("Could not read this device's location");
       const { writeLocationAndCheckZones } = await import("@/features/location/source.wordpress");
       await writeLocationAndCheckZones(pos.latitude, pos.longitude, {
-        accuracy: pos.accuracy,
+        accuracy: pos.accuracy, altitude: pos.altitude, heading: pos.heading, speed: pos.speed, 
         is_cared_one: !!(value as any)?.isCaredOne,
       });
     },

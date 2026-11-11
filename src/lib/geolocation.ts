@@ -4,7 +4,20 @@ interface GeoPosition {
   latitude: number;
   longitude: number;
   accuracy: number | null;
+  altitude: number | null;
+  heading: number | null;
+  speed: number | null;
 }
+
+const num = (v: number | null | undefined) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const toGeo = (c: { latitude: number; longitude: number; accuracy?: number | null; altitude?: number | null; heading?: number | null; speed?: number | null }): GeoPosition => ({
+  latitude: c.latitude,
+  longitude: c.longitude,
+  accuracy: num(c.accuracy),
+  altitude: num(c.altitude),
+  heading: num(c.heading),
+  speed: num(c.speed),
+});
 
 /**
  * Get current position using Capacitor on native, browser API on web.
@@ -27,11 +40,7 @@ export async function getCurrentPosition(options?: { timeout?: number | undefine
         enableHighAccuracy: true,
         timeout,
       });
-      return {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        accuracy: pos.coords.accuracy ?? null,
-      };
+      return toGeo(pos.coords);
     } catch {
       return null;
     }
@@ -48,11 +57,7 @@ export async function getCurrentPosition(options?: { timeout?: number | undefine
         maximumAge: 60000,
       });
     });
-    return {
-      latitude: pos.coords.latitude,
-      longitude: pos.coords.longitude,
-      accuracy: pos.coords.accuracy ?? null,
-    };
+    return toGeo(pos.coords);
   } catch {
     return null;
   }
@@ -77,11 +82,7 @@ export function watchPosition(
               errorCallback?.();
               return;
             }
-            callback({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-              accuracy: pos.coords.accuracy ?? null,
-            });
+            callback(toGeo(pos.coords));
           },
         );
       } catch {
@@ -105,11 +106,7 @@ export function watchPosition(
 
   const id = navigator.geolocation.watchPosition(
     (pos) => {
-      callback({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        accuracy: pos.coords.accuracy ?? null,
-      });
+      callback(toGeo(pos.coords));
     },
     () => errorCallback?.(),
     { enableHighAccuracy: true },

@@ -28,7 +28,7 @@ export async function requestLocationPermission(): Promise<"granted" | "denied" 
     // Try Capacitor first
     const cap = (window as any)?.Capacitor;
     if (cap?.isNativePlatform?.()) {
-      const { Geolocation } = await import("@capacitor/core" as any);
+      const { Geolocation } = await import("@capacitor/geolocation");
       const status = await Geolocation.requestPermissions();
       return status.location === "granted" ? "granted" : "denied";
     }
@@ -60,7 +60,7 @@ export async function getCurrentPosition(opts: GetPositionOptions = {}): Promise
   try {
     const cap = (window as any)?.Capacitor;
     if (cap?.isNativePlatform?.()) {
-      const { Geolocation } = await import("@capacitor/core" as any);
+      const { Geolocation } = await import("@capacitor/geolocation");
       const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy, timeout });
       return { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy };
     }
@@ -94,7 +94,7 @@ export async function getBatteryLevel(): Promise<number | null> {
   try {
     const cap = (window as any)?.Capacitor;
     if (cap?.isNativePlatform?.()) {
-      const { Device } = await import("@capacitor/core" as any);
+      const { Device } = await import("@capacitor/device");
       const info = await Device.getBatteryInfo();
       return info.batteryLevel != null ? Math.round(info.batteryLevel * 100) : null;
     }

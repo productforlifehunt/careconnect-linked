@@ -634,7 +634,7 @@ export default function LocationCard({ caredOneId, caredOneName, readOnly = fals
     setSharingMyLocation(true);
     navigator.geolocation.getCurrentPosition(
       pos => {
-        shareLocation.mutate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy }, {
+        shareLocation.mutate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy, altitude: pos.coords.altitude, heading: pos.coords.heading, speed: pos.coords.speed }, {
           onSuccess: () => { setSharingMyLocation(false); toast({ title: isZh ? "已分享您的位置 ✓" : "Your location shared ✓" }); },
           onError: (e: any) => { setSharingMyLocation(false); toast({ title: isZh ? "操作失败" : "Failed", description: e.message, variant: "destructive" }); },
         });
