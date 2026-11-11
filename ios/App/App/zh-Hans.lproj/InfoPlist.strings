@@ -1,0 +1,3 @@
+"NSLocationWhenInUseUsageDescription" = "当你选择向群组分享位置时，读取你的当前位置。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "在你开启位置分享后，切换到后台仍继续定位和监测地点进出。";
+"NSMotionUsageDescription" = "分享位置时，显示你处于静止、步行、跑步、骑行或乘车状态。";

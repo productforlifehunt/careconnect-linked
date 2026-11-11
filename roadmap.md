@@ -1,3 +1,9 @@
+## Current request: Custom Capacitor iOS location plugin (2026-11-11 17:53 UTC)
+- [x] Implement repository-local Swift source for location fields, background collection, motion activity, native circular fences, visits and durable pending samples; CLI generated iOS app and detected custom plugin. SPM package/product naming matches CLI-generated dependency.
+- [x] Connect iOS location reads and sharing to existing CCT213/REL165 writes with acquisition timestamps and existing cared-one relation metadata, preserving web/Android APIs and sharing flags; no new CCT/REL.
+- [x] Adapter/queue/fence/sharing lifecycle tests plus existing location regressions: 33/33 passed. Native background permission descriptions and Chinese localization configured; dependency versions core/ios aligned. Automatic preview check build OK; browser homepage rendered saved provider rows with zero page errors. Native config checks passed (permissions/class list/SPM product/HTTPS target).
+- [ ] Native acceptance blocked: Xcode/macOS/iPhone unavailable; Swift not compiled, background collection/motion/fence/visit not executed. Suspended-webview real-time upload is not implemented (native queue synchronizes when JavaScript resumes); persisted extra accuracy/source/visit fields have no dictionary columns. Draftbit runtime/latest remote synchronization unverified; local saved baseline 162847d3 only.
+
 ## Current request: Verify Word inventory and related location notes (2026-11-11 08:48 UTC)
 - [x] Read the existing Word document, all 10,604 current notes, and current REL325; verify 618 prior location updates and 154 directly referenced notes exist.
 - [x] Inspect /afresh GUI for CCT327/CCT199 and REL328/329/330; identify Word corrections to actual names, DB table name and sharing scope.

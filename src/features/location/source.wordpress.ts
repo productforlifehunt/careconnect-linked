@@ -136,6 +136,8 @@ export async function writeLocationSnapshot(
     is_cared_one?: boolean | undefined;
     /** Person the snapshot belongs to; defaults to the signed-in user. */
     subject_user_id?: string | number | undefined;
+    /** Actual acquisition time, including queued native samples. */
+    captured_at?: string | undefined;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
@@ -162,7 +164,7 @@ export async function writeLocationSnapshot(
       [F.BATTERY_LEVEL]: battery != null ? String(battery) : "",
       [F.PHONE_IS_CHARING]: charging == null ? "" : charging ? O.PHONE_IS_CHARING.YES : O.PHONE_IS_CHARING.NO,
       [F.ADDRESS_TEXT]: opts?.address_text || "",
-      [F.CAPTURED_AT]: new Date().toISOString(),
+      [F.CAPTURED_AT]: opts?.captured_at ?? new Date().toISOString(),
       [F.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION]: opts?.is_emergency ? O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.YES : O.IS_SO_MUCH_OF_AN_EMERGENCY_THAT_WE_DON_T_BOTHER_TO_ASK_FOR_THE_CARED_ONE_S_PERMISSION.NO,
     },
   });
@@ -329,6 +331,7 @@ export async function writeLocationAndCheckZones(
     address_text?: string | null | undefined;
     isEmergency?: boolean | undefined;
     is_cared_one?: boolean | undefined;
+    captured_at?: string | undefined;
   }
 ): Promise<LocationSnapshot | null> {
   const storedUser = getStoredWPUser();
@@ -351,6 +354,7 @@ export async function writeLocationAndCheckZones(
     address_text: opts?.address_text,
     is_emergency: opts?.isEmergency,
     is_cared_one: opts?.is_cared_one,
+    captured_at: opts?.captured_at,
   });
 
   // Leaving a bubble pops it; an SOS bursts every bubble of mine.

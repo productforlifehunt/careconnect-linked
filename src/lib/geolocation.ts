@@ -1,22 +1,30 @@
 import { Capacitor } from "@capacitor/core";
 
-interface GeoPosition {
+export interface GeoPosition {
   latitude: number;
   longitude: number;
   accuracy: number | null;
   altitude: number | null;
   heading: number | null;
   speed: number | null;
+  altitudeAccuracy?: number | null | undefined;
+  headingAccuracy?: number | null | undefined;
+  speedAccuracy?: number | null | undefined;
+  timestamp?: number | undefined;
+  moving_type?: string | undefined;
+  battery_level?: number | null | undefined;
+  phone_is_charging?: boolean | null | undefined;
 }
 
 const num = (v: number | null | undefined) => (typeof v === "number" && Number.isFinite(v) ? v : null);
-const toGeo = (c: { latitude: number; longitude: number; accuracy?: number | null; altitude?: number | null; heading?: number | null; speed?: number | null }): GeoPosition => ({
+export const toGeo = (c: { latitude: number; longitude: number; accuracy?: number | null; altitude?: number | null; heading?: number | null; speed?: number | null; altitudeAccuracy?: number | null | undefined }): GeoPosition => ({
   latitude: c.latitude,
   longitude: c.longitude,
   accuracy: num(c.accuracy),
   altitude: num(c.altitude),
   heading: num(c.heading),
   speed: num(c.speed),
+  altitudeAccuracy: num(c.altitudeAccuracy),
 });
 
 /**
@@ -29,6 +37,10 @@ export async function getCurrentPosition(options?: { timeout?: number | undefine
   // Native (Capacitor)
   if (Capacitor.isNativePlatform()) {
     try {
+      if (Capacitor.getPlatform() === "ios") {
+        const { CareLocation } = await import("@careconnect/location");
+        return await CareLocation.getCurrentPosition({ timeout });
+      }
       const { Geolocation } = await import("@capacitor/geolocation");
       // Request permission first on native
       const perm = await Geolocation.checkPermissions();
@@ -40,7 +52,7 @@ export async function getCurrentPosition(options?: { timeout?: number | undefine
         enableHighAccuracy: true,
         timeout,
       });
-      return toGeo(pos.coords);
+      return { ...toGeo(pos.coords), timestamp: pos.timestamp };
     } catch {
       return null;
     }
@@ -57,7 +69,7 @@ export async function getCurrentPosition(options?: { timeout?: number | undefine
         maximumAge: 60000,
       });
     });
-    return toGeo(pos.coords);
+    return { ...toGeo(pos.coords), timestamp: pos.timestamp };
   } catch {
     return null;
   }
@@ -72,6 +84,7 @@ export function watchPosition(
 ): () => void {
   if (Capacitor.isNativePlatform()) {
     let watchId: string | null = null;
+    let disposed = false;
     (async () => {
       try {
         const { Geolocation } = await import("@capacitor/geolocation");
@@ -85,14 +98,17 @@ export function watchPosition(
             callback(toGeo(pos.coords));
           },
         );
+        if (disposed && watchId != null) await Geolocation.clearWatch({ id: watchId });
       } catch {
         errorCallback?.();
       }
     })();
     return () => {
+      disposed = true;
       if (watchId != null) {
+        const id = watchId;
         import("@capacitor/geolocation").then(({ Geolocation }) => {
-          Geolocation.clearWatch({ id: watchId! });
+          Geolocation.clearWatch({ id });
         });
       }
     };
