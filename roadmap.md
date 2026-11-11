@@ -1,8 +1,8 @@
 ## Current request: Verify Word inventory and related location notes (2026-11-11 08:48 UTC)
 - [x] Read the existing Word document, all 10,604 current notes, and current REL325; verify 618 prior location updates and 154 directly referenced notes exist.
 - [x] Inspect /afresh GUI for CCT327/CCT199 and REL328/329/330; identify Word corrections to actual names, DB table name and sharing scope.
-- [ ] Save corrected versioned Word document after inspecting both rendered pages.
-- [ ] Supplement five unlocked existing group/notification/request/information-card notes and independently read back; preserve every lock, binding and REL325 row.
+- [x] Saved corrected versioned Word document; inspected both rendered pages and moved REL328 to page two to prevent split headers.
+- [x] Supplemented five unlocked existing notes (#10590/#10589/#10563/#7546/#6855), independently read back 5/5; all 10,604 bindings, untargeted bodies, four locked bodies and 11 REL325 rows unchanged. This is the location-addition audit, not full-site or actual UI binding acceptance.
 
 ## Current request: Location notes and schema inventory (2026-11-11)
 - [x] Read all 10,604 CCT324 notes through authorized /afresh API; select location-source bindings, location-specific titles and existing bubble/pause references, excluding unrelated commerce addresses and Afresh risk places.
