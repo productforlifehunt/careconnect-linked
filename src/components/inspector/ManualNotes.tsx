@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { NoteTextarea } from "./NoteTextarea";
 import {
   loadInspectorNotes,
   saveInspectorNote,
@@ -1197,7 +1198,7 @@ export function ManualNotes({
           <span className="text-xs text-muted-foreground">保存后切换分类</span>
         )}
       </label>
-      <Textarea
+      <NoteTextarea
         aria-label="注释内容"
         value={text}
         onChange={(e) => { setText(e.target.value); clearSaveNotice(); }}

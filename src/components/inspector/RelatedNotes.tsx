@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Link2, Plus, Sparkles, Unlink, Copy } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { NoteTextarea } from "./NoteTextarea";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NoteSearchList } from "./NoteSearchList";
@@ -176,7 +177,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                         <Input aria-label="关联注释版本" value={e.version} maxLength={80} placeholder="例如 1.0" disabled={busy} onChange={(ev) => set({ version: ev.target.value })} />
                       </label>
                     </div>
-                    <Textarea
+                    <NoteTextarea
                       aria-label="关联注释内容"
                       rows={8}
                       value={e.text}

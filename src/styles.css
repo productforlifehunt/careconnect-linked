@@ -84,6 +84,11 @@
 }
 
 :root {
+  --note-red: 0 85% 92%;
+  --note-yellow: 52 95% 85%;
+  --note-orange: 30 95% 88%;
+  --note-green: 130 55% 88%;
+  --note-blue: 210 85% 91%;
   --background: 40 20% 98%;
   --foreground: 220 20% 15%;
 
