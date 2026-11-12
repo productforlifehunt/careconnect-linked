@@ -367,7 +367,8 @@ export interface CareGroup {
   created_by: string;
   is_private: boolean;
   group_type: string;
-  join_code: string | null;
+  /** DEPRECATED: join codes live in CCT 200. */
+  join_code?: string | null;
   /** CCT 199 a60 — members can create location bubbles. */
   bubbles_allowed?: boolean;
   invite_code: string | null;

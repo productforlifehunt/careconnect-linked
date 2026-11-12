@@ -176,7 +176,6 @@ export async function updateCareGroupWordPress(id: string, updates: {
   name?: string | undefined;
   description?: string | undefined;
   is_private?: boolean | undefined;
-  join_code?: string | undefined;
   is_active?: boolean | undefined;
   bubbles_allowed?: boolean | undefined;
 }): Promise<void> {
@@ -186,7 +185,6 @@ export async function updateCareGroupWordPress(id: string, updates: {
   if (updates.is_private !== undefined) {
     body[F_GROUP.GROUP_TYPE] = updates.is_private ? O_GROUP.GROUP_TYPE.PRIVATE : O_GROUP.GROUP_TYPE.PUBLIC;
   }
-  if (updates.join_code !== undefined) body[F_GROUP.JOIN_CODE] = updates.join_code;
   if (updates.is_active !== undefined) {
     body[F_GROUP.STATUS] = updates.is_active ? O_GROUP.STATUS.ACTIVE : O_GROUP.STATUS.NO;
   }
@@ -278,7 +276,7 @@ export async function inviteToGroupWordPress(
   } else {
     try {
       const { sendGroupInviteEmail } = await import("@/features/notifications/invite-email");
-      const code = String(group?.[F_GROUP.JOIN_CODE] || "").trim();
+      const code = (await groupJoinCodes(normalizedGroupId).catch(() => [])).find((c) => c.is_active && c.invited_as === "normal group member")?.join_code || "";
       emailResult = (await sendGroupInviteEmail(userIdOrEmail, groupName, url, code)) ? "sent" : "failed";
     } catch { emailResult = "failed"; }
   }
@@ -515,24 +513,30 @@ const SOURCE_LABEL: Record<string, InviteSource> = {
   [O_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED.APP_NATIVE_GENERATED]: "app native generated",
 };
 
-function normalizeInvite(raw: any, groupId?: string | undefined) {
+export function normalizeInvite(raw: any, groupId?: string | undefined) {
   const id = String(raw.id || raw._ID || "");
-  const expiresRaw = raw[F_INVITE.EXPIRES_AT];
-  const expires = expiresRaw ? String(expiresRaw) : null;
+  const hasExpiration = String(raw[F_INVITE.HAS_EXPIRATION] || "") === O_INVITE.HAS_EXPIRATION.YES;
+  const expires = hasExpiration && raw[F_INVITE.EXPIRES_AT] ? String(raw[F_INVITE.EXPIRES_AT]) : null;
   const isExpired = expires ? new Date(expires).getTime() < Date.now() : false;
-  const maxUses = Number(raw[F_INVITE.MAX_USES] || 0);
+  const hasMaxUses = String(raw[F_INVITE.HAS_MAX_USES] || "") === O_INVITE.HAS_MAX_USES.YES;
+  const maxUses = hasMaxUses ? Number(raw[F_INVITE.MAX_USES] || 0) : 0;
   const useCount = Number(raw[F_INVITE.USE_COUNT] || 0);
-  const isRevoked = String(raw[F_INVITE.IS_REVOKED] || "") === O_INVITE.IS_REVOKED.YES;
-  const isExhausted = maxUses > 0 && useCount >= maxUses;
+  // a60 Is active: empty counts as Yes (default).
+  const isRevoked = String(raw[F_INVITE.IS_ACTIVE] || "") === O_INVITE.IS_ACTIVE.NO;
+  const isExhausted = hasMaxUses && useCount >= maxUses;
   return {
     id,
     group_id: groupId || null,
     token: raw[F_INVITE.TOKEN] || "",
     name: raw[F_INVITE.NAME] || "",
     note: raw[F_INVITE.NOTE] || "",
+    kind: (String(raw[F_INVITE.INVITE_LINK_OR_JOIN_CODE] || "") === O_INVITE.INVITE_LINK_OR_JOIN_CODE.PASS_CODE ? "code" : "link") as InviteKind,
+    join_code: raw[F_INVITE.JOIN_CODE] || "",
     invited_as: INVITED_AS_LABEL[String(raw[F_INVITE.THE_USER_IS_INVITED_AS] || "")] || "normal group member",
     source: SOURCE_LABEL[String(raw[F_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED] || "")] || "custom",
+    has_expiration: hasExpiration,
     expires_at: expires,
+    has_max_uses: hasMaxUses,
     max_uses: maxUses,
     use_count: useCount,
     is_revoked: isRevoked,
@@ -542,6 +546,8 @@ function normalizeInvite(raw: any, groupId?: string | undefined) {
     created_at: raw.created_at || raw.cct_created || null,
   };
 }
+
+export type InviteKind = "link" | "code";
 
 /**
  * Only the links the group's owners/admins created themselves are listed
@@ -563,25 +569,32 @@ export async function createGroupInviteWordPress(input: {
   token?: string | undefined;
   invitedAs?: InvitedAs | undefined;
   source?: InviteSource | undefined;
+  kind?: InviteKind | undefined;
+  joinCode?: string | undefined;
 }): Promise<any> {
   const token = (input.token || generateInviteToken()).trim();
   const source: InviteSource = input.source || "custom";
-  const created = await wordpressCCTFetch<any>(T.careGroupInvite.slug, {
-    method: "POST",
-    body: {
-      [F_INVITE.TOKEN]: token,
-      [F_INVITE.NAME]: input.name || "",
-      // App-native one-time links never expire and have no use cap.
-      [F_INVITE.EXPIRES_AT]: source === "app native generated" ? "" : (input.expiresAt || ""),
-      // JetEngine REST validates CCT number columns as strings — send them as strings.
-      [F_INVITE.MAX_USES]: source === "app native generated" ? "0" : String(Number(input.maxUses || 0)),
-      [F_INVITE.USE_COUNT]: "0",
-      [F_INVITE.IS_REVOKED]: O_INVITE.IS_REVOKED.NO,
-      [F_INVITE.NOTE]: input.note || "",
-      [F_INVITE.THE_USER_IS_INVITED_AS]: INVITED_AS_CODE[input.invitedAs || "normal group member"],
-      [F_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED]: SOURCE_CODE[source],
-    },
-  });
+  const native = source === "app native generated";
+  const expires = native ? "" : (input.expiresAt || "");
+  const maxUses = native ? 0 : Number(input.maxUses || 0);
+  const kind: InviteKind = input.kind || "link";
+  const row = {
+    [F_INVITE.TOKEN]: token,
+    [F_INVITE.NAME]: input.name || "",
+    [F_INVITE.HAS_EXPIRATION]: expires ? O_INVITE.HAS_EXPIRATION.YES : O_INVITE.HAS_EXPIRATION.NO,
+    [F_INVITE.EXPIRES_AT]: expires,
+    [F_INVITE.HAS_MAX_USES]: maxUses > 0 ? O_INVITE.HAS_MAX_USES.YES : O_INVITE.HAS_MAX_USES.NO,
+    // JetEngine REST validates CCT number columns as strings — send them as strings.
+    [F_INVITE.MAX_USES]: String(maxUses),
+    [F_INVITE.USE_COUNT]: "0",
+    [F_INVITE.IS_ACTIVE]: O_INVITE.IS_ACTIVE.YES,
+    [F_INVITE.NOTE]: input.note || "",
+    [F_INVITE.THE_USER_IS_INVITED_AS]: INVITED_AS_CODE[input.invitedAs || "normal group member"],
+    [F_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED]: SOURCE_CODE[source],
+    [F_INVITE.INVITE_LINK_OR_JOIN_CODE]: kind === "code" ? O_INVITE.INVITE_LINK_OR_JOIN_CODE.PASS_CODE : O_INVITE.INVITE_LINK_OR_JOIN_CODE.INVITE_LINK,
+    [F_INVITE.JOIN_CODE]: kind === "code" ? String(input.joinCode || "").trim() : "",
+  };
+  const created = await wordpressCCTFetch<any>(T.careGroupInvite.slug, { method: "POST", body: row });
   const groupIdNum = normalizeWpObjectId(input.groupId);
   const inviteId = normalizeWpObjectId(created?.item_id || created?._ID || created?.id);
   if (groupIdNum && inviteId) {
@@ -590,23 +603,8 @@ export async function createGroupInviteWordPress(input: {
       body: { parent_id: groupIdNum, child_id: inviteId, context: "child", store_items_type: "update" },
     });
   }
-  // The CCT POST reply only echoes the new row id, not the stored columns, so
-  // the returned link is rebuilt from what was just written. Without this the
-  // UI would show an empty note / wrong join role until the next refetch.
-  return normalizeInvite({
-    ...created,
-    id: inviteId,
-    [F_INVITE.TOKEN]: token,
-    [F_INVITE.NAME]: input.name || "",
-    [F_INVITE.NOTE]: input.note || "",
-    [F_INVITE.EXPIRES_AT]: source === "app native generated" ? "" : (input.expiresAt || ""),
-    [F_INVITE.MAX_USES]: source === "app native generated" ? "0" : String(Number(input.maxUses || 0)),
-    [F_INVITE.USE_COUNT]: "0",
-    [F_INVITE.IS_REVOKED]: O_INVITE.IS_REVOKED.NO,
-    [F_INVITE.THE_USER_IS_INVITED_AS]: INVITED_AS_CODE[input.invitedAs || "normal group member"],
-    [F_INVITE.CUSTOM_OR_APP_NATIVE_GENERATED]: SOURCE_CODE[source],
-  }, input.groupId);
-
+  // The CCT POST reply only echoes the new row id, so the row is rebuilt from what was written.
+  return normalizeInvite({ ...created, ...row, id: inviteId }, input.groupId);
 }
 
 export async function updateGroupInviteWordPress(id: string, updates: {
@@ -617,15 +615,24 @@ export async function updateGroupInviteWordPress(id: string, updates: {
   maxUses?: number | undefined;
   isRevoked?: boolean | undefined;
   invitedAs?: InvitedAs | undefined;
+  joinCode?: string | undefined;
 }): Promise<void> {
   const body: Record<string, any> = {};
   if (updates.name !== undefined) body[F_INVITE.NAME] = updates.name;
   if (updates.note !== undefined) body[F_INVITE.NOTE] = updates.note;
   if (updates.token !== undefined) body[F_INVITE.TOKEN] = updates.token;
-  if (updates.expiresAt !== undefined) body[F_INVITE.EXPIRES_AT] = updates.expiresAt || "";
-  if (updates.maxUses !== undefined) body[F_INVITE.MAX_USES] = String(Number(updates.maxUses || 0));
+  if (updates.joinCode !== undefined) body[F_INVITE.JOIN_CODE] = updates.joinCode.trim();
+  if (updates.expiresAt !== undefined) {
+    body[F_INVITE.HAS_EXPIRATION] = updates.expiresAt ? O_INVITE.HAS_EXPIRATION.YES : O_INVITE.HAS_EXPIRATION.NO;
+    body[F_INVITE.EXPIRES_AT] = updates.expiresAt || "";
+  }
+  if (updates.maxUses !== undefined) {
+    const n = Number(updates.maxUses || 0);
+    body[F_INVITE.HAS_MAX_USES] = n > 0 ? O_INVITE.HAS_MAX_USES.YES : O_INVITE.HAS_MAX_USES.NO;
+    body[F_INVITE.MAX_USES] = String(n);
+  }
   if (updates.isRevoked !== undefined) {
-    body[F_INVITE.IS_REVOKED] = updates.isRevoked ? O_INVITE.IS_REVOKED.YES : O_INVITE.IS_REVOKED.NO;
+    body[F_INVITE.IS_ACTIVE] = updates.isRevoked ? O_INVITE.IS_ACTIVE.NO : O_INVITE.IS_ACTIVE.YES;
   }
   if (updates.invitedAs !== undefined) body[F_INVITE.THE_USER_IS_INVITED_AS] = INVITED_AS_CODE[updates.invitedAs];
   await wordpressCCTFetch(T.careGroupInvite.slug, { id, method: "PUT", body });
@@ -744,31 +751,44 @@ export async function joinGroupByCodeWordPress(token: string, displayName?: stri
   }
 }
 
+/** All join codes of one group (CCT 200 rows with a64 = Pass code, linked by Rel 222). */
+async function groupJoinCodes(gid: number) {
+  const items = await fetchRelatedCctItems(REL_GROUP_INVITE, String(gid), T.careGroupInvite.slug);
+  return items.map((i: any) => normalizeInvite(i, String(gid))).filter((i) => i.kind === "code" && i.join_code);
+}
+
 /**
- * Join code path (CCT 199 a58): a non-member who types the group's join code
- * gets the group onboarding popup and becomes a normal member.
+ * Join code path (CCT 200, a64 = Pass code): a non-member types one of the
+ * group's join codes on the group page; the code's own expiry, max uses and
+ * a60 decide whether it still works, a62 decides the membership type, and
+ * every successful use adds one to a59.
  */
 export async function joinGroupByJoinCodeWordPress(groupId: string, code: string, displayName?: string | undefined): Promise<any> {
   const gid = normalizeWpObjectId(groupId);
   if (!gid) throw new Error("Invalid care group");
-  const group = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) });
+  const typed = String(code || "").trim().toLowerCase();
+  const [group, codes] = await Promise.all([
+    wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) }),
+    groupJoinCodes(gid),
+  ]);
   if (String(group?.[F_GROUP.STATUS] ?? "") === O_GROUP.STATUS.NO) throw new Error("This care group is no longer active.");
-  const expected = String(group?.[F_GROUP.JOIN_CODE] || "").trim();
-  if (!expected) throw new Error("This care group has no join code. Ask an admin to let you in.");
-  if (expected.toLowerCase() !== String(code || "").trim().toLowerCase()) {
-    throw new Error("That join code is not correct.");
+  const matches = codes.filter((c) => String(c.join_code).trim().toLowerCase() === typed);
+  if (!matches.length) throw new Error("That join code is not correct.");
+  const usable = matches.find((c) => c.is_active);
+  if (!usable) {
+    const m = matches[0]!;
+    throw new Error(m.is_revoked ? "This join code has been turned off." : m.is_expired ? "This join code has expired." : "This join code has reached its maximum uses.");
   }
   const wpUser = getStoredWPUser();
   const userId = wpUser?.user_id ? Number(wpUser.user_id) : 0;
   if (!userId) throw new Error("Please sign in to join this group.");
-  // A personal invitation that is still waiting keeps the role it offered.
   const rels = await wordpressFetch<any[]>(`jet-rel/${REL_GROUP_MEMBER}/children/${gid}`);
   const existing = (Array.isArray(rels) ? rels : []).find((r: any) => Number(r.child_object_id) === userId);
   const decoded = existing ? decodeRel72Meta(existing.meta) : null;
   if (decoded?.invitationStatus === "accepted") {
     return { group_id: String(gid), group_name: group?.[F_GROUP.NAME] || "", already_member: true };
   }
-  const keepTypes = decoded?.invitationStatus === "pending" && decoded.memberTypes.length ? decoded.memberTypes : ["nothing special"];
+  const memberType = usable.invited_as === "owner" ? "owner" : usable.invited_as === "admin" ? "admin" : "nothing special";
   await wordpressFetch(`jet-rel/${REL_GROUP_MEMBER}`, {
     method: "POST",
     body: {
@@ -778,11 +798,16 @@ export async function joinGroupByJoinCodeWordPress(groupId: string, code: string
       store_items_type: "update",
       meta: memberMeta({
         displayName: displayName?.trim() || (await fetchMyAppUserName()),
-        memberTypes: keepTypes,
+        memberTypes: [memberType],
         memberRoles: ["nothing special"],
         invitationStatus: "accepted",
       }),
     },
+  });
+  await wordpressCCTFetch(T.careGroupInvite.slug, {
+    id: String(usable.id),
+    method: "PUT",
+    body: { [F_INVITE.USE_COUNT]: String(usable.use_count + 1) },
   });
   return { group_id: String(gid), group_name: group?.[F_GROUP.NAME] || "", already_member: false };
 }
@@ -816,7 +841,10 @@ export async function fetchGroupLinkStateWordPress(groupId: string): Promise<{
   const gid = normalizeWpObjectId(groupId);
   const empty = { group_id: String(groupId), group_name: "", found: false, is_active: false, has_join_code: false, my_status: "none" as GroupLinkStatus, my_invited_as: "normal group member" as InvitedAs, i_am_admin: false };
   if (!gid) return empty;
-  const group = await wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) }).catch(() => null);
+  const [group, codes] = await Promise.all([
+    wordpressCCTFetch<any>(T.careGroup.slug, { id: String(gid) }).catch(() => null),
+    groupJoinCodes(gid).catch(() => []),
+  ]);
   if (!group || !(group?._ID || group?.item_id || group?.id || group?.[F_GROUP.NAME])) return empty;
   const userId = Number(getStoredWPUser()?.user_id || 0);
   let myStatus: GroupLinkStatus = "none";
@@ -837,7 +865,7 @@ export async function fetchGroupLinkStateWordPress(groupId: string): Promise<{
     group_name: group?.[F_GROUP.NAME] || "",
     found: true,
     is_active: String(group?.[F_GROUP.STATUS] ?? "") !== O_GROUP.STATUS.NO,
-    has_join_code: !!String(group?.[F_GROUP.JOIN_CODE] || "").trim(),
+    has_join_code: codes.some((c) => c.is_active),
     my_status: myStatus,
     my_invited_as: invitedAs,
     i_am_admin: iAmAdmin,

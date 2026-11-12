@@ -52,7 +52,7 @@ export interface CreateQuoteProductInput {
 export async function createQuoteProduct(
   input: CreateQuoteProductInput
 ): Promise<{ id: number; price: number }> {
-  const { quote, vendorUserId, buyerName, sellerName } = input;
+  const { quote, vendorUserId, sellerName } = input;
   if (!quote.amount || quote.amount <= 0) {
     throw new Error("Quote amount must be greater than 0");
   }
@@ -72,18 +72,20 @@ export async function createQuoteProduct(
   // Dokan needs the RAW numeric WP user id (not "wp-1"). Strip any prefix.
   const numericVendorId = String(vendorUserId).replace(/^wp-/, "");
 
+  // Same minimal care keys as a normal booking: WooCommerce/Dokan only carry
+  // the cart line, price and seller; everything else stays in the CCT records.
+  const hourly = quote.mode === "hourly";
   const meta: Array<{ key: string; value: string }> = [
-    { key: "_quote_mode", value: quote.mode },
-    { key: "_quote_amount", value: String(quote.amount) },
     { key: "_dokan_vendor_id", value: numericVendorId },
-    { key: "_is_quote_product", value: "1" },
+    { key: "_is_care_service_product", value: "1" },
+    { key: "_care_service_label", value: label },
+    { key: "_care_service_rate", value: String(hourly ? quote.ratePerHour ?? quote.amount : quote.amount) },
+    { key: "_care_service_unit", value: hourly ? "hour" : "visit" },
+    { key: "_care_service_quantity", value: String(hourly ? quote.hours ?? 1 : 1) },
   ];
-  if (quote.ratePerHour != null) meta.push({ key: "_quote_rate", value: String(quote.ratePerHour) });
-  if (quote.hours != null) meta.push({ key: "_quote_hours", value: String(quote.hours) });
-  if (quote.serviceType) meta.push({ key: "_quote_service_type", value: quote.serviceType });
-  if (quote.delivery) meta.push({ key: "_quote_delivery", value: quote.delivery });
-  if (quote.jobId != null) meta.push({ key: "_quote_job_id", value: String(quote.jobId) });
-  if (buyerName) meta.push({ key: "_quote_buyer", value: buyerName });
+  if (quote.delivery) meta.push({ key: "_care_service_delivery", value: quote.delivery });
+  if (quote.note) meta.push({ key: "_care_service_notes", value: quote.note });
+  if (quote.jobId != null) meta.push({ key: "_care_job_id", value: String(quote.jobId) });
 
   // Buyers have no wc/v3 product-create capability — the wp-admin-ops edge
   // function creates the hidden product with the store keys.

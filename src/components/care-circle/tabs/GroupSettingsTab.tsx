@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Settings, Trash2, Shuffle, Copy, Link2 } from "lucide-react";
-import { careGroupLink, randomJoinCode, cleanJoinCodeInput, JOIN_CODE_MAX_LENGTH } from "@/features/care-groups/join-link";
+import { Settings, Trash2, Copy, Link2 } from "lucide-react";
+import { careGroupLink } from "@/features/care-groups/join-link";
 import { useUpdateMyGroupDisplayName } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -37,7 +37,6 @@ export function GroupSettingsTab({
   const [name, setName] = useState(activeGroup?.name || "");
   const [desc, setDesc] = useState(activeGroup?.description || "");
   const [isPrivate, setIsPrivate] = useState(!!activeGroup?.is_private);
-  const [joinCode, setJoinCode] = useState(activeGroup?.join_code || "");
   const [isActive, setIsActive] = useState(activeGroup?.is_active !== false);
   const [bubbles, setBubbles] = useState(activeGroup?.bubbles_allowed !== false);
   const [origin, setOrigin] = useState("");
@@ -51,10 +50,9 @@ export function GroupSettingsTab({
     setName(activeGroup?.name || "");
     setDesc(activeGroup?.description || "");
     setIsPrivate(!!activeGroup?.is_private);
-    setJoinCode(activeGroup?.join_code || "");
     setIsActive(activeGroup?.is_active !== false);
     setBubbles(activeGroup?.bubbles_allowed !== false);
-  }, [activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private, activeGroup?.join_code, activeGroup?.is_active, activeGroup?.bubbles_allowed]);
+  }, [activeGroup?.id, activeGroup?.name, activeGroup?.description, activeGroup?.is_private, activeGroup?.is_active, activeGroup?.bubbles_allowed]);
 
   useEffect(() => { setMyName(myDisplayName); }, [myDisplayName, activeGroup?.id]);
 
@@ -68,7 +66,7 @@ export function GroupSettingsTab({
 
   const handleSave = () => {
     if (!activeGroupId || !name.trim()) return;
-    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, join_code: joinCode.trim(), bubbles_allowed: bubbles, ...(isActive !== (activeGroup?.is_active !== false) ? { is_active: isActive } : {}) }, {
+    updateGroup.mutate({ id: activeGroupId, name: name.trim(), description: desc || "", is_private: isPrivate, bubbles_allowed: bubbles, ...(isActive !== (activeGroup?.is_active !== false) ? { is_active: isActive } : {}) }, {
       onSuccess: () => toast({ title: Z("群组已更新！", "Group updated!") }),
       onError: (err: any) => toast({ title: Z("保存失败", "Could not save"), description: err?.message, variant: "destructive" }),
     });
@@ -97,15 +95,6 @@ export function GroupSettingsTab({
             <p className="text-xs text-muted-foreground">{Z("只是一个标记。没有搜群功能，外人只能通过群组链接加入。", "A label only. There is no group search; outsiders can only join through the group link.")}</p>
           </div>
           <Switch checked={isPrivate} onCheckedChange={setIsPrivate} />
-        </div>
-        <div>
-          <Label>{Z("加入码", "Join code")}</Label>
-          <p className="text-xs text-muted-foreground mb-2">{Z("默认是 6 位数字，可以改成别的，最多 6 位。不是成员的人打开群组链接后，输入加入码就能加入。留空则只能申请或被邀请。", "Six digits by default; you can change it, up to 6 characters. People who open the group link can join by typing this code. Leave empty so people can only ask to join or be invited.")}</p>
-          <div className="flex gap-2">
-            <Input value={joinCode} maxLength={JOIN_CODE_MAX_LENGTH} aria-label={Z("加入码", "Join code")} onChange={e => setJoinCode(cleanJoinCodeInput(e.target.value))} placeholder={Z("例如 382915", "e.g. 382915")} />
-            <Button type="button" variant="outline" onClick={() => setJoinCode(randomJoinCode())}><Shuffle className="h-4 w-4 mr-1" />{Z("自动生成", "Generate")}</Button>
-            <Button type="button" variant="outline" size="icon" aria-label={Z("复制加入码", "Copy join code")} disabled={!joinCode} onClick={() => { navigator.clipboard?.writeText(joinCode); toast({ title: Z("已复制", "Copied") }); }}><Copy className="h-4 w-4" /></Button>
-          </div>
         </div>
         <div>
           <Label>{Z("群组链接", "Group link")}</Label>

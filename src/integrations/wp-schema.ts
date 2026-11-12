@@ -854,7 +854,7 @@ export const WP = {
         "NAME": "a55",  // Text
         "DESCRIPTION": "a56",  // Textarea
         "GROUP_TYPE": "a57",  // Radio
-        "JOIN_CODE": "a58",  // Text
+        "JOIN_CODE": "a58",  // Text — DEPRECATED: join codes live in CCT 200 (a64 Pass code, a65)
         "STATUS": "a59",  // Radio
         "MEMBERS_CAN_USE_BUBBLES": "a60",  // Radio, added through /afresh GUI 2026-11-11 (empty = allowed)
       },

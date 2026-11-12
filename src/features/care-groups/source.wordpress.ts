@@ -6,7 +6,6 @@ import { T, R } from "@/integrations/wp-schema";
 import { fetchWPUserProfile } from "@/features/shared/wp-users";
 import { dedupeRead } from "@/features/shared/rel-batch";
 import { fetchMyAppUserName } from "@/features/profile/app-user-name";
-import { randomJoinCode } from "./join-link";
 import { readLinkedCCTRows } from '@/features/shared/cct-rows';
 
 // Live JetEngine relations (verified from prd-to-wp-mapping.md)
@@ -16,7 +15,7 @@ function normalizeWpObjectId(value: string | number | null | undefined): number 
   return Number(String(value ?? "").replace(/^wp-/, ""));
 }
 
-// CCT slug: care_group | fields: a55=name, a56=description, a57=group type, a58=join code, a59=status
+// CCT slug: care_group | fields: a55=name, a56=description, a57=group type, a59=status
 // Invite codes/links live on a separate CCT (care_group_invite, Rel 161) — not on the group itself.
 
 /**
@@ -37,7 +36,6 @@ export async function fetchCareGroupsWordPress(): Promise<CareGroup[]> {
     is_private: String(g.a57) === "b56",
     group_type: String(g.a57) === "b56" ? "private" : "public",
     invite_code: null,
-    join_code: g.a58 || null,
     // No default: a missing a59 is unknown, never assumed active.
     is_active: String(g.a59 ?? "") === "b55",
     // a60: only an explicit "No" turns Bubbles off (Life360 default is on).
@@ -173,8 +171,6 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
       a55: group.name,
       a56: group.description || "",
       a57: group.is_private ? "b56" : "b55",
-      // Every new group starts with a six-digit join code (a58).
-      a58: randomJoinCode(),
       a59: "b55",
     },
   });
@@ -202,6 +198,13 @@ export async function createCareGroupWordPress(group: { name: string; descriptio
     } catch (e) {
       console.warn("Failed to auto-add creator as member:", e);
     }
+  }
+  if (groupId) {
+    // Every new group starts with one six-digit join code (CCT 200, a64 = Pass code).
+    const [{ createGroupInviteWordPress }, { randomJoinCode }] = await Promise.all([
+      import("./source.wordpress-extended"), import("./join-link"),
+    ]);
+    await createGroupInviteWordPress({ groupId: String(groupId), kind: "code", joinCode: randomJoinCode() });
   }
   return result as unknown as CareGroup;
 }

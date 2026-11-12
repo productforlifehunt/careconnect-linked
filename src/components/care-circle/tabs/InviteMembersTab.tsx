@@ -8,9 +8,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { UserPlus, Mail, Clock, X, Heart, MoreVertical, Trash2, Link2, Copy, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { useGroupInvites, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles, useUserCaredOnes } from "@/hooks/use-care-data";
+import { useGroupInvites, useCreateGroupInvite, useUpdateGroupInvite, useDeleteGroupInvite, useSearchProfiles, useUserCaredOnes } from "@/hooks/use-care-data";
 import type { InvitedAs } from "@/features/care-groups/source.wordpress-extended";
-import { careGroupLink } from "@/features/care-groups/join-link";
+import { careGroupLink, randomJoinCode, cleanJoinCodeInput, JOIN_CODE_MAX_LENGTH } from "@/features/care-groups/join-link";
 
 interface InviteMembersTabProps {
   members: any[];
@@ -36,8 +36,28 @@ export function InviteMembersTab({
   const { data: inviteSearchResults } = useSearchProfiles(inviteSearch);
   const { data: myCaredOnes } = useUserCaredOnes();
 
-  // Older per-link invites (CCT 200) still work; none are created any more.
-  const { data: legacyLinks = [] } = useGroupInvites(activeGroupId);
+  // CCT 200 rows: join codes (a64 Pass code) and older invite links.
+  const { data: invites = [] } = useGroupInvites(activeGroupId);
+  const legacyLinks = invites.filter((i: any) => i.kind !== "code");
+  const joinCodes = invites.filter((i: any) => i.kind === "code");
+  const createInvite = useCreateGroupInvite();
+  const [newCode, setNewCode] = useState("");
+  const [newCodeName, setNewCodeName] = useState("");
+  const [newCodeExpires, setNewCodeExpires] = useState("");
+  const [newCodeMax, setNewCodeMax] = useState("");
+  const [newCodeAs, setNewCodeAs] = useState<InvitedAs>("normal group member");
+  const addJoinCode = () => {
+    if (!activeGroupId) return;
+    const code = newCode.trim() || randomJoinCode();
+    createInvite.mutate({
+      groupId: activeGroupId, kind: "code", joinCode: code, name: newCodeName.trim(), invitedAs: newCodeAs,
+      expiresAt: newCodeExpires ? new Date(newCodeExpires).toISOString() : "",
+      maxUses: Number(newCodeMax || 0),
+    }, {
+      onSuccess: () => { setNewCode(""); setNewCodeName(""); setNewCodeExpires(""); setNewCodeMax(""); toast({ title: Z("加入码已添加", "Join code added") }); },
+      onError: (err: any) => toast({ title: Z("添加失败", "Could not add"), description: err?.message, variant: "destructive" }),
+    });
+  };
   const updateInvite = useUpdateGroupInvite();
   const deleteInvite = useDeleteGroupInvite();
 
@@ -204,8 +224,62 @@ export function InviteMembersTab({
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground mt-1">
-              {Z("每个群组只有这一个链接，链接里没有加入码。对方打开后输入加入码，或者申请加入；加入码在「群组设置」里。", "This group's one link — it never contains the join code. People who open it type the join code or ask to join. The join code is in Group Setting.")}
+              {Z("每个群组只有这一个链接，链接里没有加入码。对方打开后输入加入码，或者申请加入；加入码在下方。", "This group's one link — it never contains the join code. People who open it type the join code or ask to join. Join codes are below.")}
             </p>
+          </div>
+
+          <div className="border-t pt-3">
+            <h4 className="text-sm font-medium text-foreground mb-1">{Z("加入码", "Join codes")}</h4>
+            <p className="text-[11px] text-muted-foreground mb-2">{Z("一个群组可以有多个加入码。每个可以不设期限、不限人数，也可以设到期时间或最多使用人数。对方打开群组链接后输入任意一个有效加入码即可加入。", "A group can have several join codes. Each can have no expiry and no limit, or an expiry time or a maximum number of uses. People who open the group link can join with any valid code.")}</p>
+            <div className="space-y-2 mb-3">
+              {joinCodes.map((inv: any) => {
+                const status = inv.is_revoked ? Z("已停用", "Off") : inv.is_expired ? Z("已过期", "Expired") : inv.is_exhausted ? Z("已用完", "Used up") : Z("有效", "Active");
+                return (
+                  <div key={inv.id} data-testid="join-code-row" className="rounded-lg border p-2 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm text-foreground">{inv.join_code}</span>
+                        <Badge variant={inv.is_active ? "default" : "outline"} className="text-[10px] h-4">{status}</Badge>
+                        {inv.name && <span className="text-xs text-muted-foreground truncate">{inv.name}</span>}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {roleLabel(inv.invited_as)} · {inv.expires_at ? Z(`到期 ${new Date(inv.expires_at).toLocaleString()}`, `Expires ${new Date(inv.expires_at).toLocaleString()}`) : Z("不过期", "No expiry")} · {inv.has_max_uses ? `${inv.use_count}/${inv.max_uses}` : Z(`已用 ${inv.use_count} 次 · 不限次数`, `Used ${inv.use_count} · no limit`)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={Z("复制加入码", "Copy join code")} onClick={() => { navigator.clipboard?.writeText(inv.join_code); toast({ title: Z("已复制", "Copied") }); }}><Copy className="h-4 w-4" /></Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" aria-label={Z("加入码操作", "Join code actions")}><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => updateInvite.mutate({ id: inv.id, isRevoked: !inv.is_revoked })}><Ban className="h-3.5 w-3.5 mr-2" /> {inv.is_revoked ? Z("重新启用", "Turn on") : Z("停用", "Turn off")}</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteInvite.mutate({ id: inv.id })}><Trash2 className="h-3.5 w-3.5 mr-2" /> {Z("删除", "Delete")}</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="rounded-lg border p-2 space-y-2">
+              <div className="flex gap-2">
+                <Input value={newCode} maxLength={JOIN_CODE_MAX_LENGTH} aria-label={Z("新加入码", "New join code")} onChange={e => setNewCode(cleanJoinCodeInput(e.target.value))} placeholder={Z("留空自动生成 6 位数字", "Leave empty for 6 random digits")} />
+                <Input value={newCodeName} onChange={e => setNewCodeName(e.target.value)} placeholder={Z("名称（可不填）", "Name (optional)")} />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Input type="datetime-local" value={newCodeExpires} aria-label={Z("到期时间（可不填）", "Expires (optional)")} onChange={e => setNewCodeExpires(e.target.value)} />
+                <Input type="number" min={1} value={newCodeMax} onChange={e => setNewCodeMax(e.target.value)} placeholder={Z("最多使用人数（可不填）", "Max uses (optional)")} />
+                <Select value={newCodeAs} onValueChange={(v) => setNewCodeAs(v as InvitedAs)}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal group member">{Z("普通成员", "Member")}</SelectItem>
+                    <SelectItem value="admin">{Z("管理员", "Admin")}</SelectItem>
+                    <SelectItem value="owner">{Z("拥有者", "Owner")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" className="w-full" onClick={addJoinCode} disabled={createInvite.isPending}>{Z("添加加入码", "Add join code")}</Button>
+            </div>
           </div>
 
           {legacyLinks.length > 0 && (

@@ -720,7 +720,7 @@ export function useDeleteGroupPost() {
 export function useUpdateCareGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; name?: string | undefined; description?: string | undefined; is_private?: boolean | undefined; join_code?: string | undefined; is_active?: boolean | undefined; bubbles_allowed?: boolean | undefined }) => updateCareGroupWordPress(id, updates),
+    mutationFn: ({ id, ...updates }: { id: string; name?: string | undefined; description?: string | undefined; is_private?: boolean | undefined; is_active?: boolean | undefined; bubbles_allowed?: boolean | undefined }) => updateCareGroupWordPress(id, updates),
     // Patch the cached list first so a rename shows instantly, then refetch.
     onSuccess: (_d, vars: any) => {
       qc.setQueryData(["careGroups"], (prev: any) =>
@@ -771,7 +771,7 @@ export function useGroupInvites(groupId: string | null) {
 export function useCreateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { groupId: string; name: string; note?: string | undefined; expiresAt?: string | null | undefined; maxUses?: number | undefined; token?: string | undefined; invitedAs?: InvitedAs | undefined; source?: "custom" | "app native generated" | undefined }) =>
+    mutationFn: (input: { groupId: string; name?: string | undefined; kind?: "link" | "code" | undefined; joinCode?: string | undefined; note?: string | undefined; expiresAt?: string | null | undefined; maxUses?: number | undefined; token?: string | undefined; invitedAs?: InvitedAs | undefined; source?: "custom" | "app native generated" | undefined }) =>
       createGroupInviteWordPress(input),
     onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["groupInvites", vars.groupId] }); },
   });
@@ -780,7 +780,7 @@ export function useCreateGroupInvite() {
 export function useUpdateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; groupId?: string | undefined; name?: string | undefined; note?: string | undefined; token?: string | undefined; expiresAt?: string | null | undefined; maxUses?: number | undefined; isRevoked?: boolean | undefined; invitedAs?: InvitedAs | undefined }) =>
+    mutationFn: ({ id, ...updates }: { id: string; groupId?: string | undefined; name?: string | undefined; note?: string | undefined; token?: string | undefined; expiresAt?: string | null | undefined; maxUses?: number | undefined; isRevoked?: boolean | undefined; invitedAs?: InvitedAs | undefined; joinCode?: string | undefined }) =>
       updateGroupInviteWordPress(id, updates),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["groupInvites"] }); },
   });

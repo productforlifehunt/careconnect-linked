@@ -66,14 +66,10 @@ it("never puts the join code in the group link", () => {
   expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/care-circle/199`);
 });
 
-it("keeps the same group link when the join code is empty or changed", () => {
+it("keeps the same group link without any join code on the settings page", () => {
   renderSettings({ ...group, join_code: "" });
   expect((screen.getByLabelText("群组链接") as HTMLInputElement).value).toBe(`${window.location.origin}/care-circle/199`);
-  const code = screen.getByLabelText("加入码") as HTMLInputElement;
-  expect(code.maxLength).toBe(6);
-  fireEvent.click(screen.getByRole("button", { name: /自动生成/ }));
-  expect(code.value).toMatch(/^\d{6}$/);
-  expect((screen.getByLabelText("群组链接") as HTMLInputElement).value).toBe(`${window.location.origin}/care-circle/199`);
+  expect(screen.queryByLabelText("加入码")).toBeNull();
 });
 
 it("treats the group's home page address as its one link", () => {
