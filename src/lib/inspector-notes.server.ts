@@ -195,31 +195,37 @@ function mapRow(row: CCTRow): CCTNote {
 /** Filter on the existing a59 field; never download the entire note catalogue for one element. */
 async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
   const { routePattern } = await import("@/features/inspector/route-key");
+  const { pageBindingNeedle } = await import("@/features/inspector/position-bindings");
   // Legacy record-specific keys retain their exact spelling. Query their full anchor then verify
   // the complete key, rather than rewriting or guessing a different element's binding.
   const pattern = routePattern(key);
   const parts = key.split("|");
-  const needle =
-    pattern || key.includes("/:id") ? parts.slice(2).join("|") : key;
-  const encoded = JSON.stringify(needle).slice(1, -1);
-  const rows: CCTRow[] = [];
-  for (let offset = 0; ; offset += 100) {
-    const filters = [{ field: "a59", operator: "LIKE", value: encoded }];
-    const result = await wp(
-      `?_limit=100&_offset=${offset}&_orderby=_ID&_order=asc&_filters=${encodeURIComponent(JSON.stringify(filters))}`,
-      "GET",
-      undefined,
-      token,
-    );
-    if (!Array.isArray(result)) throw new Error("位置绑定读取异常。");
-    rows.push(...(result as CCTRow[]));
-    if (result.length < 100) break;
-  }
-  return rows.filter((row) =>
-    positionBindings(row.a59, String(row._ID)).some((b) =>
-      samePosition(b.key, key),
-    ),
-  );
+  const needles = key.startsWith("page|")
+    ? pageBindingNeedle(key)
+    : [JSON.stringify(pattern || key.includes("/:id") ? parts.slice(2).join("|") : key).slice(1, -1)];
+  const read = async (needle: string) => {
+    const rows: CCTRow[] = [];
+    for (let offset = 0; ; offset += 100) {
+      const filters = [{ field: "a59", operator: "LIKE", value: needle }];
+      const result = await wp(
+        `?_limit=100&_offset=${offset}&_orderby=_ID&_order=asc&_filters=${encodeURIComponent(JSON.stringify(filters))}`,
+        "GET",
+        undefined,
+        token,
+      );
+      if (!Array.isArray(result)) throw new Error("位置绑定读取异常。");
+      rows.push(...(result as CCTRow[]));
+      if (result.length < 100) break;
+    }
+    return rows;
+  };
+  const seen = new Set<string>();
+  return (await Promise.all(needles.map(read))).flat().filter((row) => {
+    const id = String(row._ID);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return positionBindings(row.a59, id).some((b) => samePosition(b.key, key));
+  });
 }
 async function storedBindingRow(
   key: string,

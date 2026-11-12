@@ -23,10 +23,10 @@ export function siteInventory(routes: { path: string; files: string[] }[], bindi
   for (const binding of bindings) {
     const parts = binding.key.split('|');
     if (parts[0] === 'site') {
-      if (binding.scope !== 'site' || !binding.id || !siteId || parts[1] !== siteId) continue;
+      if (binding.scope !== 'site' || !binding.id || !siteId || (parts[1] !== siteId && parts[1] !== 'challenged-all')) continue;
       for (const page of pages.values()) {
         const routeSite = new URLSearchParams(page.path.split('?')[1] || '').get('__site');
-        const belongs = routeSite ? routeSite === siteId : siteId === 'challenged' || siteId === 'carecnc';
+        const belongs = parts[1] === 'challenged-all' || (routeSite ? routeSite === siteId : siteId === 'challenged' || siteId === 'carecnc');
         if (!belongs) continue;
         page.noteIds.push(binding.id);
         page.siteNoteIds = [...new Set([...(page.siteNoteIds || []), binding.id])];

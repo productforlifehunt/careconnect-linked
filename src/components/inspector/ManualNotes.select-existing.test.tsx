@@ -123,8 +123,8 @@ it.each([
 );
 
 it.each([
-  ["b55", "全站说明注释"],
-  ["b56", "全站关联注释"],
+  ["b55", "全子App说明注释"],
+  ["b56", "全子App关联注释"],
 ] as const)("links an existing %s note immediately for the site", async (noteType, typeLabel) => {
   const noteKey = `site|challenged|${noteType}`;
   mocks.load.mockResolvedValue({ notes: [] });
@@ -134,7 +134,7 @@ it.each([
 
   render(<ManualNotes noteKey={noteKey} scope="site" page="/" label="ChallengeD 全站" />);
   await screen.findByText("当前没有已保存的注释");
-  if (noteType === "b56") fireEvent.click(screen.getByRole("tab", { name: "全站关联注释" }));
+  if (noteType === "b56") fireEvent.click(screen.getByRole("tab", { name: "全子App关联注释" }));
   fireEvent.click(screen.getByRole("button", { name: "新增关联已有注释" }));
   fireEvent.click(await screen.findByRole("button", { name: /Picked note.*#10567/ }));
 

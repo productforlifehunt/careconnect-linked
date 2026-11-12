@@ -17,7 +17,8 @@ function pathFromRouteFile(file: string): string {
 
 export async function discoverSitePages(bindings: SiteBinding[], siteId?: string): Promise<SitePage[]> {
   const routes: { path: string; files: string[] }[] = [];
-  const sharedSite = siteId === 'challenged' || siteId === 'carecnc';
+  const all = siteId === 'challenged-all';
+  const sharedSite = all || siteId === 'challenged' || siteId === 'carecnc';
   const routeEntries = !siteId || sharedSite ? Object.entries(ROUTES) : [];
   for (let index = 0; index < routeEntries.length; index += 6) {
     await Promise.all(routeEntries.slice(index, index + 6).map(async ([file, load]) => {
@@ -28,6 +29,7 @@ export async function discoverSitePages(bindings: SiteBinding[], siteId?: string
   }
   const appEntries = Object.entries(APPS).filter(([file]) => {
     if (!siteId) return true;
+    if (all) return true;
     if (sharedSite) return false;
     const folder = siteId === 'notchsafety' ? 'safety' : siteId === 'esm_survey' ? 'esm' : siteId;
     return file.includes(`/pages/${folder}/`);

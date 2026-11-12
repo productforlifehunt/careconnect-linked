@@ -12,7 +12,7 @@ it('one click processes all page roots and leaves unbound pages red without extr
   mocks.discover.mockResolvedValue([{path:'/circle',files:['pages/CareCircle.tsx'],noteIds:['1','3'],elementNotes:1,pageNotes:1,siteNotes:0},{path:'/inbox',files:[],noteIds:[],elementNotes:0,pageNotes:0,siteNotes:0}]);
   mocks.evidence.mockResolvedValue({chunks:['code'],omissions:[],files:1});
   mocks.analyze.mockResolvedValue({report});
-  render(<SiteAnalysis />); fireEvent.click(screen.getByRole('button',{name:'一键全站 AI 分析'}));
+  render(<SiteAnalysis />); fireEvent.click(screen.getByRole('button',{name:'一键全子App AI 分析'}));
   await waitFor(() => expect(mocks.analyze).toHaveBeenCalledTimes(2));
   await waitFor(() => expect(screen.getByText(/已返回 3\/3 项/)).toBeDefined());
   expect(mocks.analyze.mock.calls.map(call => call[0].data.noteId)).toEqual(['1','3']);
@@ -23,7 +23,7 @@ it('pauses on failure, continues remaining work only, and never automatically re
   mocks.discover.mockResolvedValue([{path:'/circle',files:[],noteIds:['1','3'],elementNotes:1,pageNotes:1,siteNotes:0}]);
   mocks.evidence.mockResolvedValue({chunks:['code'],omissions:[],files:1});
   mocks.analyze.mockResolvedValueOnce({error:'AI timeout'}).mockResolvedValueOnce({report});
-  render(<SiteAnalysis />); fireEvent.click(screen.getByRole('button',{name:'一键全站 AI 分析'}));
+  render(<SiteAnalysis />); fireEvent.click(screen.getByRole('button',{name:'一键全子App AI 分析'}));
   await waitFor(() => expect(screen.getByRole('button',{name:'继续未分析项'})).toBeDefined());
   expect(mocks.analyze).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button',{name:'继续未分析项'}));

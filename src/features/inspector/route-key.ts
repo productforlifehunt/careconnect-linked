@@ -28,3 +28,17 @@ export function findSameElementNote<T>(notes: Map<string, T>, key: string): T | 
   for (const [k, v] of notes) if (routePattern(k) === pattern) return v;
   return undefined;
 }
+
+/** This app's "所有子App" scope key; distinct from other apps sharing CCT324. */
+export const ALL_SUB_APPS = "challenged-all";
+/** A page is its route (record ids as :id) on one sub-app, never a deployment host. */
+export function pagePositionKey(pathname: string, site: string): string {
+  const path = (pathname.split("?")[0] || "/").replace(/\/\d+(?=\/|$)/g, "/:id").replace(/(.)\/$/, "$1");
+  return `page|${path}?__site=${encodeURIComponent(site)}`;
+}
+const PARAM_NAMES: Record<string, string> = { "cared-ones": "Cared One ID", "care-circle": "Group ID", circle: "Group ID", group: "Group ID", caregiver: "Caregiver ID" };
+/** Shown path: /cared-ones/46/medicine -> /cared-ones/{Cared One ID}/medicine. */
+export function pageDisplayPath(pathname: string): string {
+  const parts = (pathname.split("?")[0] || "/").split("/");
+  return parts.map((seg, i) => /^\d+$/.test(seg) ? `{${PARAM_NAMES[parts[i - 1] || ""] || "ID"}}` : seg).join("/");
+}

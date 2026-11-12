@@ -113,7 +113,7 @@ export function ManualNotes({
   buildEvidence?: () => string;
   evidenceReady?: boolean;
 }) {
-  const noteScopeLabel = scope === "site" ? "全站" : "页面";
+  const noteScopeLabel = scope === "site" ? noteKey === "site|challenged-all" ? "所有子App" : "全子App" : "页面";
   const loadOne = loadInspectorNotes;
   const save = saveInspectorNote;
   const select = selectInspectorNote;
@@ -977,7 +977,7 @@ export function ManualNotes({
       {state.unlinkError && <p role="alert" className="text-destructive">解除关联失败：{state.unlinkError}</p>}
       {scope === "site" && (
         <p className="text-muted-foreground">
-          此处的注释关联到 {label}；同一注释可同时保留多个页面、元素和全站关联。
+          此处的注释关联到 {label}；同一注释可同时保留多个页面、元素、全子App和所有子App关联。
         </p>
       )}
       {state.warning && (
@@ -1126,7 +1126,7 @@ export function ManualNotes({
             <AlertDialogTitle>永久删除这条笔记？</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget
-                ? `将删除「${deleteTarget.title || `注释 #${deleteTarget.id}`}」及它在所有页面、元素和全站的位置关联，也会移除它与其他笔记之间的关联。此操作无法恢复。`
+                ? `将删除「${deleteTarget.title || `注释 #${deleteTarget.id}`}」及它在所有页面、元素、全子App和所有子App的位置关联，也会移除它与其他笔记之间的关联。此操作无法恢复。`
                 : "此操作无法恢复。"}
             </AlertDialogDescription>
           </AlertDialogHeader>

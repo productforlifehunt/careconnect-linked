@@ -67,18 +67,18 @@ export function SiteAnalysis({ siteId = 'challenged', siteName = 'ChallengeD' }:
   };
   return <section className="space-y-3 text-xs">
     <div className="flex flex-wrap gap-2">
-      <Button size="sm" onClick={() => void run()} disabled={running}><Globe className="mr-1 h-4 w-4" />一键全站 AI 分析</Button>
+      <Button size="sm" onClick={() => void run()} disabled={running}><Globe className="mr-1 h-4 w-4" />一键{siteId === "challenged-all" ? "所有子App" : "全子App"} AI 分析</Button>
       {running && <Button size="sm" variant="outline" onClick={() => { stop.current = true; setPhase('停止排队中；当前分析返回后停止'); }}><Square className="mr-1 h-4 w-4" />停止</Button>}
       {!running && cursor.current < work.current.length && <Button size="sm" variant="outline" onClick={() => void run(true)}><Play className="mr-1 h-4 w-4" />继续未分析项</Button>}
       {results.length > 0 && <Button size="sm" variant="outline" onClick={download}><Download className="mr-1 h-4 w-4" />下载报告</Button>}
     </div>
-    <p>{siteName} 全站 {totals.pages} 个页面范围；已返回 {totals.processed}/{totals.expected} 项，成功返回 {totals.completed} 项，失败 {totals.failures} 项，冲突或疑点 {totals.findings} 项。</p>
+    <p>{siteName} {totals.pages} 个页面范围；已返回 {totals.processed}/{totals.expected} 项，成功返回 {totals.completed} 项，失败 {totals.failures} 项，冲突或疑点 {totals.findings} 项。</p>
     {expected > 0 && <p className={totals.complete ? 'text-foreground' : 'text-destructive'}>证据完整的注释 {totals.completeNotes}/{totals.boundNotes}；{totals.complete ? '本次静态核查范围已完成' : '未完成，不能认定全站一致'}。</p>}
     <p role="status">{phase}</p>
     {error && <p role="alert" className="text-destructive">{error}</p>}
-    <p className="text-muted-foreground">范围：{siteName} 的全部页面代码、已绑定全站／整页／元素注释及各自直接关联注释。未绑定页面、缺失代码和未实测状态列为未完成；无关联注释不作任意两两比较。逐项分析会产生 AI 费用。</p>
+    <p className="text-muted-foreground">范围：{siteName} 的全部页面代码、已绑定全子App／所有子App／整页／元素注释及各自直接关联注释。未绑定页面、缺失代码和未实测状态列为未完成；无关联注释不作任意两两比较。逐项分析会产生 AI 费用。</p>
     {pages.map(page => <details key={page.path} className="border-b border-border pb-2">
-      <summary className={`cursor-pointer break-words ${results.some(r => r.page === page.path && (r.error || r.report?.findings.length)) ? 'text-destructive' : ''}`}>{page.path} · 全站绑定 {page.siteNotes} · 整页绑定 {page.pageNotes} · 元素绑定 {page.elementNotes} · 已返回 {results.filter(r => r.page === page.path).length} 项 · 冲突或疑点 {results.filter(r => r.page === page.path).reduce((sum, r) => sum + (r.report?.findings.length || (r.error ? 1 : 0)), 0)}</summary>
+      <summary className={`cursor-pointer break-words ${results.some(r => r.page === page.path && (r.error || r.report?.findings.length)) ? 'text-destructive' : ''}`}>{page.path} · 子App范围绑定 {page.siteNotes} · 整页绑定 {page.pageNotes} · 元素绑定 {page.elementNotes} · 已返回 {results.filter(r => r.page === page.path).length} 项 · 冲突或疑点 {results.filter(r => r.page === page.path).reduce((sum, r) => sum + (r.report?.findings.length || (r.error ? 1 : 0)), 0)}</summary>
       <div className="mt-2 space-y-2">{results.filter(r => r.page === page.path).map((result, index) => <div key={index}>
         <p>注释 {result.noteId ? `#${result.noteId}` : '未绑定'} · 代码分片 {result.chunk}/{result.chunks}</p>
         {result.error && <p role="alert" className="text-destructive">{result.error}</p>}

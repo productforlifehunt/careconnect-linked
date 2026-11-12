@@ -38,7 +38,7 @@ import {
 } from "@/features/inspector/decode";
 import { ReadWriteNarrative } from "./ReadWriteNarrative";
 import { ManualNotes } from "./ManualNotes";
-import { elementAlias } from "@/features/inspector/route-key";
+import { ALL_SUB_APPS, elementAlias, pageDisplayPath, pagePositionKey } from "@/features/inspector/route-key";
 import {
   inspectElement,
   inspectorTarget,
@@ -79,7 +79,7 @@ function accountMatches(text: string): string[] {
     .map(([k, v]) => `${k} = “${String(v).slice(0, 60)}”`);
 }
 
-type Tab = "element" | "page" | "site";
+type Tab = "element" | "page" | "site" | "allSites";
 type Sub = "rw" | "ai" | "notes";
 
 function useRecorded(): RecordedRequest[] {
@@ -395,10 +395,11 @@ export default function ReadWriteInspector() {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<Tab>("element");
   const [sub, setSub] = useState<Sub>("rw");
-  const [notes, setNotes] = useState<{ element: string; page: string; site: string }>({
+  const [notes, setNotes] = useState<{ element: string; page: string; site: string; allSites: string }>({
     element: "",
     page: "",
     site: "",
+    allSites: "",
   });
   const [selected, setSelected] = useState<Element | null>(null);
   const [hoverBox, setHoverBox] = useState<DOMRect | null>(null);
@@ -816,6 +817,8 @@ export default function ReadWriteInspector() {
   const narrRef = useRef<HTMLDivElement | null>(null);
   const pageNarrRef = useRef<HTMLDivElement | null>(null);
   const pathname = path.split("?")[0]!;
+  const pageNoteKey = pagePositionKey(pathname, inspectorSiteId);
+  const pageLabel = pageDisplayPath(pathname);
   // Fixed list slots (stat cards drawn by one JSX line) get their own note; data rows of one list share theirs.
   // One identity in the editor preview and the published site: component names + markup position, never source lines.
   const elementKey = info ? stableElementKey(pathname, info.anchor) : "";
@@ -1292,8 +1295,8 @@ export default function ReadWriteInspector() {
             </Button>
           </div>
           {toolStatus && <p role="status" className="px-3 py-1 text-xs text-muted-foreground">{toolStatus}</p>}
-          <div className="flex gap-1 border-b border-border p-2 text-xs">
-            {(["element", "page", "site"] as Tab[]).map((t) => (
+          <div className="grid grid-cols-2 gap-1 border-b border-border p-2 text-xs">
+            {(["element", "page", "site", "allSites"] as Tab[]).map((t) => (
               <Button
                 key={t}
                 size="sm"
@@ -1304,12 +1307,12 @@ export default function ReadWriteInspector() {
                   ? "元素 / Element"
                   : t === "page"
                     ? "整页 / Page"
-                    : "全站 / Site"}
+                    : t === "site" ? "全子App" : "所有子App"}
               </Button>
             ))}
           </div>
           <div className="flex gap-1 border-b border-border p-2 text-xs">
-            {(tab === "site" ? (["rw", "notes"] as Sub[]) : (["rw", "ai", "notes"] as Sub[])).map((t) => (
+            {(tab === "site" || tab === "allSites" ? (["rw", "notes"] as Sub[]) : (["rw", "ai", "notes"] as Sub[])).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -1317,10 +1320,10 @@ export default function ReadWriteInspector() {
                 className={`rounded-md border px-2 py-1 ${sub === t ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground"}`}
               >
                 {t === "rw"
-                  ? tab === "site" ? "全站 AI 分析" : "读写分析"
+                  ? tab === "site" ? "全子App AI 分析" : tab === "allSites" ? "所有子App AI 分析" : "读写分析"
                   : t === "ai"
                     ? "AI 分析"
-                    : `手动注释${(tab === "element" ? notes.element : tab === "page" ? notes.page : notes.site) ? " ●" : ""}`}
+                    : `手动注释${notes[tab] ? " ●" : ""}`}
               </button>
             ))}
           </div>
@@ -1338,8 +1341,23 @@ export default function ReadWriteInspector() {
                   noteKey={`site|${inspectorSiteId}`}
                   scope="site"
                   page="/"
-                  label={`全站 / ${inspectorSiteName}`}
+                  label={`全子App / ${inspectorSiteName}`}
                   onChange={(t) => setNotes((n) => ({ ...n, site: t }))}
+                />
+              </div>
+            )}
+            <div className={tab === "allSites" && sub === "rw" ? "" : "hidden"}>
+              <SiteAnalysis siteId={ALL_SUB_APPS} siteName="所有子App" />
+            </div>
+            {on && (
+              <div className={tab === "allSites" && sub === "notes" ? "" : "hidden"}>
+                <ManualNotes
+                  key={`site|${ALL_SUB_APPS}`}
+                  noteKey={`site|${ALL_SUB_APPS}`}
+                  scope="site"
+                  page="/"
+                  label="所有子App"
+                  onChange={(t) => setNotes((n) => ({ ...n, allSites: t }))}
                 />
               </div>
             )}
@@ -1389,7 +1407,7 @@ export default function ReadWriteInspector() {
                     mode="origin"
                     ready={!!info}
                     label="生成 AI 分析 / Generate AI analysis"
-                    noteKeys={[elementKey, legacyKey, `page|${pathname}`]}
+                    noteKeys={[elementKey, legacyKey, pageNoteKey]}
                   />
                 </div>
                 <div
@@ -1573,7 +1591,7 @@ export default function ReadWriteInspector() {
             {tab === "page" && (
               <>
                 <div className="text-xs">
-                  页面 / Page: <span className="font-mono">{path}</span>
+                  页面 / Page: <span className="font-mono">{pageLabel}</span>
                 </div>
                 <div className={sub === "ai" ? "" : "hidden"}>
                   <AiExplain
@@ -1581,7 +1599,7 @@ export default function ReadWriteInspector() {
                     build={pageContext}
                     ready={pageRefsDone}
                     label="生成整页 AI 分析 / Generate page AI analysis"
-                    noteKeys={[`page|${pathname}`]}
+                    noteKeys={[pageNoteKey]}
                   />
                 </div>
                 <div className={sub === "rw" ? "space-y-4" : "hidden"}>
@@ -1621,11 +1639,11 @@ export default function ReadWriteInspector() {
                 className={tab === "page" && sub === "notes" ? "" : "hidden"}
               >
                 <ManualNotes
-                  key={`page|${pathname}`}
-                  noteKey={`page|${pathname}`}
+                  key={pageNoteKey}
+                  noteKey={pageNoteKey}
                   scope="page"
-                  page={pathname}
-                  label={pathname}
+                  page={pageNoteKey.slice(5)}
+                  label={pageLabel}
                   buildEvidence={pageContext}
                   evidenceReady={pageRefsDone}
                   onChange={(t) => setNotes((n) => ({ ...n, page: t }))}
