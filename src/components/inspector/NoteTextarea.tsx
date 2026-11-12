@@ -9,16 +9,15 @@ const COLORS = [
   { name: "蓝", v: "--note-blue" },
 ];
 
-export type Mark = { s: string; c: number };
+export type Mark = { a: number; b: number; c: number };
 type Part = { start: number; end: number; color?: number | undefined };
 
-/** Highlights every occurrence of each user-marked phrase; later marks win. */
+/** Colors exactly the selected character ranges; later marks win. */
 export function markedParts(text: string, marks: Mark[]): Part[] {
   const color: (number | undefined)[] = new Array(text.length);
   for (const m of marks) {
-    if (!m.s) continue;
-    for (let i = text.indexOf(m.s); i >= 0; i = text.indexOf(m.s, i + m.s.length))
-      for (let k = i; k < i + m.s.length; k++) color[k] = m.c < 0 ? undefined : m.c;
+    if (typeof m.a !== "number") continue;
+    for (let k = m.a; k < Math.min(m.b, text.length); k++) color[k] = m.c < 0 ? undefined : m.c;
   }
   const parts: Part[] = [];
   for (let i = 0; i < text.length; ) {
@@ -70,8 +69,7 @@ export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value">
   const paint = (c: number) => {
     const el = ref.current;
     if (!el || el.selectionStart === el.selectionEnd) return;
-    const s = el.value.slice(el.selectionStart, el.selectionEnd);
-    const next = [...marks.filter((m) => m.s !== s), { s, c }];
+    const next = [...marks, { a: el.selectionStart, b: el.selectionEnd, c }];
     setMarks(next);
     if (markKey) localStorage.setItem(key(markKey), JSON.stringify(next));
   };
