@@ -179,6 +179,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                     </div>
                     <NoteTextarea
                       aria-label="关联注释内容"
+                      markKey={String(n.id)}
                       rows={8}
                       value={e.text}
                       disabled={busy}

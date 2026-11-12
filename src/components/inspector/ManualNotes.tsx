@@ -1200,6 +1200,7 @@ export function ManualNotes({
       </label>
       <NoteTextarea
         aria-label="注释内容"
+        markKey={selected || undefined}
         value={text}
         onChange={(e) => { setText(e.target.value); clearSaveNotice(); }}
         rows={8}

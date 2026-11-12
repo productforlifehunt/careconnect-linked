@@ -9,35 +9,41 @@ const COLORS = [
   { name: "蓝", v: "--note-blue" },
 ];
 
+export type Mark = { s: string; c: number };
 type Part = { start: number; end: number; color?: number };
 
-/** Splits text into blank-line separated paragraphs with offsets. */
-export function noteParagraphs(text: string): Part[] {
-  const parts: Part[] = [];
-  const re = /\n[ \t]*\n+/g;
-  let last = 0;
-  let n = 0;
-  let m: RegExpExecArray | null;
-  const push = (s: number, e: number) => {
-    if (text.slice(s, e).trim()) parts.push({ start: s, end: e, color: n++ % COLORS.length });
-    else if (e > s) parts.push({ start: s, end: e });
-  };
-  while ((m = re.exec(text))) {
-    push(last, m.index);
-    parts.push({ start: m.index, end: m.index + m[0].length });
-    last = m.index + m[0].length;
+/** Highlights every occurrence of each user-marked phrase; later marks win. */
+export function markedParts(text: string, marks: Mark[]): Part[] {
+  const color: (number | undefined)[] = new Array(text.length);
+  for (const m of marks) {
+    if (!m.s) continue;
+    for (let i = text.indexOf(m.s); i >= 0; i = text.indexOf(m.s, i + m.s.length))
+      for (let k = i; k < i + m.s.length; k++) color[k] = m.c < 0 ? undefined : m.c;
   }
-  push(last, text.length);
+  const parts: Part[] = [];
+  for (let i = 0; i < text.length; ) {
+    let j = i + 1;
+    while (j < text.length && color[j] === color[i]) j++;
+    parts.push({ start: i, end: j, color: color[i] });
+    i = j;
+  }
   return parts;
 }
 
-export function NoteTextarea(props: Omit<TextareaProps, "value"> & { value: string }) {
+const key = (k: string) => `inspector-note-marks:${k}`;
+
+export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value"> & { value: string; markKey?: string }) {
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const back = React.useRef<HTMLDivElement>(null);
   const [view, setView] = React.useState({ caret: 1, visible: 0, top: 1 });
+  const [marks, setMarks] = React.useState<Mark[]>([]);
   const text = props.value;
-  const parts = React.useMemo(() => noteParagraphs(text), [text]);
+  const parts = React.useMemo(() => markedParts(text, marks), [text, marks]);
   const total = text ? text.split("\n").length : 0;
+
+  React.useEffect(() => {
+    try { setMarks(markKey ? JSON.parse(localStorage.getItem(key(markKey)) || "[]") : []); } catch { setMarks([]); }
+  }, [markKey]);
 
   const measure = React.useCallback(() => {
     const el = ref.current;
@@ -61,34 +67,27 @@ export function NoteTextarea(props: Omit<TextareaProps, "value"> & { value: stri
     return () => ro.disconnect();
   }, [measure, text]);
 
-  const pick = (p: Part) => {
+  const paint = (c: number) => {
     const el = ref.current;
-    if (!el) return;
-    el.focus();
-    el.setSelectionRange(p.start, p.end);
-    const lh = parseFloat(getComputedStyle(el).lineHeight) || 20;
-    el.scrollTop = (text.slice(0, p.start).split("\n").length - 1) * lh;
-    measure();
+    if (!el || el.selectionStart === el.selectionEnd) return;
+    const s = el.value.slice(el.selectionStart, el.selectionEnd);
+    const next = [...marks.filter((m) => m.s !== s), { s, c }];
+    setMarks(next);
+    if (markKey) localStorage.setItem(key(markKey), JSON.stringify(next));
   };
 
-  const colored = parts.filter((p) => p.color !== undefined);
   return (
     <div className="space-y-1">
-      {colored.length > 1 && (
-        <div className="flex flex-wrap gap-1" aria-label="段落">
-          {colored.map((p, i) => (
-            <button
-              key={p.start}
-              type="button"
-              onClick={() => pick(p)}
-              className="rounded border border-input px-1.5 text-xs"
-              style={{ background: `hsl(var(${COLORS[p.color!]!.v}))` }}
-            >
-              {i + 1} {COLORS[p.color!]!.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-1" aria-label="标色">
+        {COLORS.map((c, i) => (
+          <button key={c.name} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => paint(i)}
+            className="rounded border border-input px-1.5 text-xs" style={{ background: `hsl(var(${c.v}))` }}>
+            {c.name}
+          </button>
+        ))}
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => paint(-1)}
+          className="rounded border border-input px-1.5 text-xs">清除</button>
+      </div>
       <div className="relative">
         <div
           ref={back}
