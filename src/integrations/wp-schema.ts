@@ -947,7 +947,7 @@ export const WP = {
         "TASK_TYPE": "a57",  // Checkbox
         "PEOPLE_NEEDED": "a58",  // Number
         "LOCATION": "a59",  // Text
-        "PHOTO": "a60",  // ?
+        "PHOTO": "a60",  // Gallery
         "DATE_OF_THE_TASK": "a61",  // Date
         "TASK_START_TIME": "a62",  // Datetime
         "TASK_END_TIME": "a63",  // Datetime
