@@ -10,7 +10,7 @@ const COLORS = [
 ];
 
 export type Mark = { s: string; c: number };
-type Part = { start: number; end: number; color?: number };
+type Part = { start: number; end: number; color?: number | undefined };
 
 /** Highlights every occurrence of each user-marked phrase; later marks win. */
 export function markedParts(text: string, marks: Mark[]): Part[] {
@@ -32,7 +32,7 @@ export function markedParts(text: string, marks: Mark[]): Part[] {
 
 const key = (k: string) => `inspector-note-marks:${k}`;
 
-export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value"> & { value: string; markKey?: string }) {
+export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value"> & { value: string; markKey?: string | undefined }) {
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const back = React.useRef<HTMLDivElement>(null);
   const [view, setView] = React.useState({ caret: 1, visible: 0, top: 1 });
