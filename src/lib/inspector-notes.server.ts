@@ -224,6 +224,7 @@ async function bindingRows(key: string, token?: string): Promise<CCTRow[]> {
     const id = String(row._ID);
     if (seen.has(id)) return false;
     seen.add(id);
+    if (row.a57 && row.a57 !== "ChallengeD") return false;
     return positionBindings(row.a59, id).some((b) => samePosition(b.key, key));
   });
 }
