@@ -864,7 +864,7 @@ export const WP = {
         "MEMBERS_CAN_USE_BUBBLES": { "YES": "b55", "NO": "b56" },
       },
     },
-    /** 200. Care group invite link */
+    /** 200. Care group invite link and join code */
     "200": {
       id: 200,
       slug: "care_group_invite",
@@ -872,18 +872,25 @@ export const WP = {
       f: {
         "TOKEN": "a55",  // Text
         "NAME": "a56",  // Text
-        "EXPIRES_AT": "a57",  // Datetime
-        "MAX_USES": "a58",  // Number
+        "HAS_EXPIRATION": "a571",  // Radio
+        "EXPIRES_AT": "a572",  // Datetime
+        "HAS_MAX_USES": "a581",  // Radio
+        "MAX_USES": "a582",  // Number
         "USE_COUNT": "a59",  // Number
-        "IS_REVOKED": "a60",  // Radio
-        "NOTE": "a61",  // Textarea
+        "IS_ACTIVE": "a60",  // Radio
+        "NOTE": "a61",  // Text
         "THE_USER_IS_INVITED_AS": "a62",  // Radio
         "CUSTOM_OR_APP_NATIVE_GENERATED": "a63",  // Radio
+        "INVITE_LINK_OR_JOIN_CODE": "a64",  // Radio
+        "JOIN_CODE": "a65",  // Text
       },
       opt: {
-        "IS_REVOKED": { "YES": "b55", "NO": "b56" },
+        "HAS_EXPIRATION": { "YES": "b55", "NO": "b56" },
+        "HAS_MAX_USES": { "YES": "b55", "NO": "b56" },
+        "IS_ACTIVE": { "YES": "b55", "NO": "b56" },
         "THE_USER_IS_INVITED_AS": { "NORMAL_GROUP_MEMBER": "b55", "OWNER": "b56", "ADMIN": "b57" },
         "CUSTOM_OR_APP_NATIVE_GENERATED": { "CUSTOM": "b55", "APP_NATIVE_GENERATED": "b56" },
+        "INVITE_LINK_OR_JOIN_CODE": { "INVITE_LINK": "b55", "PASS_CODE": "b56" },
       },
     },
     /** 201. The related private member groups of one 199. care group */
