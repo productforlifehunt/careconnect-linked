@@ -117,7 +117,7 @@ it.each([
     });
     expect(await screen.findByText(`${typeLabel} · 1 条`)).toBeDefined();
     expect(await screen.findByText(/已关联「Picked note」.*CCT324 #10567/)).toBeDefined();
-    expect(screen.getByRole("button", { name: /1\. Picked note/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /1\. #\d+ · Picked note/ })).toBeDefined();
     expect(screen.queryByRole("button", { name: "锁定选择" })).toBeNull();
   },
 );
@@ -189,8 +189,8 @@ it("adds an existing note without replacing the notes already linked to this pos
   fireEvent.click(await screen.findByRole("button", { name: /Picked note.*#10567/ }));
 
   expect(await screen.findByText("页面说明注释 · 2 条")).toBeDefined();
-  expect(screen.getByRole("button", { name: "1. Existing note" })).toBeDefined();
-  expect(screen.getByRole("button", { name: "2. Picked note" })).toBeDefined();
+  expect(screen.getByRole("button", { name: /^1\. #\d+ · Existing note$/ })).toBeDefined();
+  expect(screen.getByRole("button", { name: /^2\. #\d+ · Picked note$/ })).toBeDefined();
   expect(await screen.findByText(/已关联「Picked note」.*CCT324 #10567/)).toBeDefined();
 });
 
@@ -217,7 +217,7 @@ it.each(["b55", "b56"] as const)("unlinks a %s note from the selected position a
   fireEvent.click(screen.getByRole("button", { name: "解除关联：First note" }));
   expect(await screen.findByText("正在解除「First note」与当前位置的关联…")).toBeDefined();
   expect(await screen.findByText(`${listTitle}1 条`)).toBeDefined();
-  expect(screen.getByRole("button", { name: "1. Second note" })).toBeDefined();
+  expect(screen.getByRole("button", { name: /^1\. #\d+ · Second note$/ })).toBeDefined();
   expect(screen.getByRole("textbox", { name: "注释内容" })).toHaveValue("Second body");
   expect(await screen.findByText(/已解除「First note」与当前位置的关联/)).toBeDefined();
   expect(mocks.unlink).toHaveBeenCalledWith({ data: { key: noteKey, id: "10566" } });

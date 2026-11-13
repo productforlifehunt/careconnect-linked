@@ -1082,7 +1082,7 @@ export function ManualNotes({
                   className="cursor-grab"
                   disabled={state.saving}
                 >
-                  {index + 1}. {note.title || `注释 #${note.id}`}
+                  {index + 1}. #{note.id} · {note.title || `注释 #${note.id}`}
                 </Button>
                 <Button
                   type="button"
@@ -1155,7 +1155,7 @@ export function ManualNotes({
       </label>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
         <label className="block space-y-1">
-          <span className="text-muted-foreground">标题</span>
+          <span className="text-muted-foreground">标题{selected ? ` · Post ID #${selected}` : ""}</span>
           <Input
             aria-label="注释名字"
             value={title}
