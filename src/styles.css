@@ -108,7 +108,7 @@
   --muted-foreground: 220 10% 45%;
 
   --accent: 173 35% 90%;
-  --accent-foreground: 173 80% 26%;
+  --accent-foreground: 173 100% 41%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
@@ -124,7 +124,7 @@
   --sidebar-primary: 173 100% 41%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 173 35% 92%;
-  --sidebar-accent-foreground: 173 80% 26%;
+  --sidebar-accent-foreground: 173 100% 41%;
   --sidebar-border: 173 18% 90%;
   --sidebar-ring: 173 100% 41%;
 
@@ -310,7 +310,7 @@
   --secondary: 173 40% 94%;
   --secondary-foreground: 173 80% 26%;
   --accent: 173 40% 94%;
-  --accent-foreground: 173 80% 26%;
+  --accent-foreground: 173 100% 41%;
   --muted: 0 0% 96%;
   --muted-foreground: 0 0% 45%;
   --border: 0 0% 90%;
@@ -331,7 +331,7 @@
   --sidebar-primary: 173 100% 41%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 173 40% 94%;
-  --sidebar-accent-foreground: 173 80% 26%;
+  --sidebar-accent-foreground: 173 100% 41%;
   --sidebar-border: 0 0% 92%;
   --sidebar-ring: 173 100% 41%;
 
@@ -388,7 +388,7 @@
   --primary: 173 100% 41%;
   --primary-foreground: 0 0% 100%;
   --accent: 173 40% 94%;
-  --accent-foreground: 173 80% 26%;
+  --accent-foreground: 173 100% 41%;
   --muted: 0 0% 96%;
   --muted-foreground: 0 0% 45%;
   --ring: 173 100% 41%;
@@ -400,7 +400,7 @@
   --sidebar-primary: 173 100% 41%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 173 40% 94%;
-  --sidebar-accent-foreground: 173 80% 26%;
+  --sidebar-accent-foreground: 173 100% 41%;
   --sidebar-border: 0 0% 92%;
   --sidebar-ring: 173 100% 41%;
 
