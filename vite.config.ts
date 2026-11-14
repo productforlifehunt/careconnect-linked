@@ -37,7 +37,7 @@ const requestUrlPlugin: Plugin = {
     if (id.endsWith("/src/styles.css?url")) {
       return 'export default "/src/styles.css?direct";';
     }
-    if (id === "\0virtual:react-router/inject-hmr-runtime") {
+    if (id === "\0virtual:react-router/inject-hmr-runtime" && process.env["LOVABLE_DEV_SERVER_KIND"] !== "vite") {
       return 'import "/@oj/refresh-preamble.js";';
     }
     return null;
@@ -52,7 +52,7 @@ const requestUrlPlugin: Plugin = {
 
 export default defineConfig(({ command }) => {
   const lovableDev = command === "serve" && Boolean(process.env["LOVABLE_PROJECT_ID"]);
-  const routerPlugins = reactRouter().filter(plugin => !lovableDev || plugin.name !== "react-router:react-refresh-babel");
+  const routerPlugins = reactRouter().filter(plugin => !lovableDev || process.env["LOVABLE_DEV_SERVER_KIND"] === "vite" || plugin.name !== "react-router:react-refresh-babel");
   return ({
   environments: {
     ...(lovableDev ? { ssr: { dev: { createEnvironment: (name, config) => createRunnableDevEnvironment(name, config) } } } : {}),
