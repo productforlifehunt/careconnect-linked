@@ -536,7 +536,7 @@ export default function CareCircle() {
 
       {editingPost && (
         <Suspense fallback={null}>
-          <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} />
+          <EditPostDialog post={editingPost} onClose={() => setEditingPost(null)} updatePost={updatePost} memberCategories={memberCategories || []} members={members || []} />
         </Suspense>
       )}
       {addCaredOneOpen && (

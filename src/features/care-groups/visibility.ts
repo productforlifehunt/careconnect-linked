@@ -215,3 +215,17 @@ export async function setTaskVisibility(taskId: string | number, subgroupIds: nu
   ]);
 }
 
+
+/** Read the current visibility links of one post (for editing). */
+export async function getPostVisibility(postId: string | number) {
+  const pid = Number(String(postId).replace(/^wp-/, ""));
+  const read = async (rel: number) => {
+    if (!pid) return [] as number[];
+    const r = await wordpressFetch<any[]>(`jet-rel/${rel}/children/${pid}`);
+    return (Array.isArray(r) ? r : []).map((x: any) => Number(x.child_object_id)).filter(Boolean);
+  };
+  const [subgroupIds, userIds, hiddenSubgroupIds, hiddenUserIds] = await Promise.all([
+    read(REL_POST_SUBGROUPS), read(REL_POST_USERS), read(REL_POST_HIDDEN_SUBGROUPS), read(REL_POST_HIDDEN_USERS),
+  ]);
+  return { subgroupIds, userIds, hiddenSubgroupIds, hiddenUserIds };
+}

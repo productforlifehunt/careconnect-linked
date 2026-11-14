@@ -698,7 +698,7 @@ export function useCreateGroupPost() {
 export function useUpdateGroupPost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...updates }: { id: string; content?: string | undefined; title?: string | undefined; is_pinned?: boolean | undefined; scheduled_at?: string | null | undefined; subgroupIds?: number[] | undefined; visibilityUserIds?: number[] | undefined; hiddenSubgroupIds?: number[] | undefined; hiddenUserIds?: number[] | undefined }) => {
+    mutationFn: async ({ id, subgroupIds, visibilityUserIds, hiddenSubgroupIds, hiddenUserIds, ...updates }: { id: string; content?: string | undefined; title?: string | undefined; type?: string | undefined; is_pinned?: boolean | undefined; scheduled_at?: string | null | undefined; subgroupIds?: number[] | undefined; visibilityUserIds?: number[] | undefined; hiddenSubgroupIds?: number[] | undefined; hiddenUserIds?: number[] | undefined }) => {
       await updateGroupPostWordPress(id, updates);
       if (subgroupIds || visibilityUserIds || hiddenSubgroupIds || hiddenUserIds) {
         await setPostVisibility(id, subgroupIds || [], visibilityUserIds || [], hiddenSubgroupIds || [], hiddenUserIds || []);

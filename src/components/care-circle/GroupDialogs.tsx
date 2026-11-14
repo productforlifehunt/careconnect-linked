@@ -11,6 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, Search, X, Heart, Trash2, KeyRound } from "lucide-react";
 import { useUpdateMyGroupDisplayName, useSearchProfiles, useAddCaredOneToGroup, useUpdateCareGroup, useDeleteCareGroup, useUserCaredOnes } from "@/hooks/use-care-data";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VisibilityPicker, EMPTY_VISIBILITY, type VisibilityValue } from "./VisibilityPicker";
+import { getPostVisibility } from "@/features/care-groups/visibility";
 import { useTranslation } from "react-i18next";
 
 function useZ() {
@@ -145,21 +148,28 @@ export function GroupSettingsDialog({
 
 // ─── Edit Post Dialog ───────────────────────────────────────
 export function EditPostDialog({
-  post, onClose, updatePost,
+  post, onClose, updatePost, memberCategories = [], members = [],
 }: {
-  post: any; onClose: () => void; updatePost: any;
+  post: any; onClose: () => void; updatePost: any; memberCategories?: any[]; members?: any[];
 }) {
   const { toast } = useToast();
   const Z = useZ();
   const [content, setContent] = useState(post?.content || "");
   const [title, setTitle] = useState(post?.title || "");
+  const [type, setType] = useState(post?.type || "discussion");
+  const [scheduledAt, setScheduledAt] = useState(post?.scheduled_at ? String(post.scheduled_at).slice(0, 16).replace(" ", "T") : "");
+  const [visibility, setVisibility] = useState<VisibilityValue>(EMPTY_VISIBILITY);
 
   // Re-fill the fields whenever a different post is opened for editing,
   // because this dialog stays mounted while `post` changes.
   useEffect(() => {
     setContent(post?.content || "");
     setTitle(post?.title || "");
-  }, [post?.id, post?.content, post?.title]);
+    setType(post?.type || "discussion");
+    setScheduledAt(post?.scheduled_at ? String(post.scheduled_at).slice(0, 16).replace(" ", "T") : "");
+    setVisibility(EMPTY_VISIBILITY);
+    if (post?.id) getPostVisibility(post.id).then(setVisibility).catch(() => undefined);
+  }, [post?.id, post?.content, post?.title, post?.type, post?.scheduled_at]);
 
   return (
     <Dialog open={!!post} onOpenChange={(open) => !open && onClose()}>
@@ -168,9 +178,28 @@ export function EditPostDialog({
         <div className="space-y-4 mt-2">
           <div><Label>{Z("标题", "Title")}</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder={Z("可选标题", "Optional title")} /></div>
           <div><Label>{Z("内容", "Content")}</Label><Textarea value={content} onChange={e => setContent(e.target.value)} rows={4} /></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="discussion">{Z("讨论", "Discussion")}</SelectItem>
+                <SelectItem value="announcement">{Z("公告", "Announcement")}</SelectItem>
+                <SelectItem value="wish">{Z("祝福", "Well Wish")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <VisibilityPicker value={visibility} onChange={setVisibility} memberCategories={memberCategories} members={members} />
+          </div>
+          {type === "announcement" && (
+            <div><Label>{Z("排期发布（可选）", "Schedule (optional)")}</Label><Input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} /></div>
+          )}
           <Button variant="coral" className="w-full" onClick={() => {
             if (!post) return;
-            updatePost.mutate({ id: post.id, updates: { content, title: title || null } }, {
+            updatePost.mutate({
+              id: post.id, content, title: title || "", type,
+              scheduled_at: type === "announcement" && scheduledAt ? scheduledAt.replace("T", " ") + ":00" : null,
+              subgroupIds: visibility.subgroupIds, visibilityUserIds: visibility.userIds,
+              hiddenSubgroupIds: visibility.hiddenSubgroupIds, hiddenUserIds: visibility.hiddenUserIds,
+            }, {
               onSuccess: () => { onClose(); toast({ title: Z("帖子已更新！", "Post updated!") }); },
             });
           }} disabled={updatePost.isPending || !content.trim()}>{Z("保存修改", "Save Changes")}</Button>
