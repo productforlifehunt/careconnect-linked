@@ -20,6 +20,7 @@ import {
   aiBrand,
   buildFallbackReply,
   buildSystemPrompt,
+  isAISite,
   stripFillerOpening,
   TTS_READER_SYSTEM_PROMPT,
 } from "../_shared/ai-prompts.ts";
@@ -143,6 +144,7 @@ async function handleChat(req: Request): Promise<Response> {
       language?: string;
       site?: string;
     };
+    if (!isAISite(payload?.site)) return new Response(JSON.stringify({ error: "site must be challenged, carecnc or notchsafety" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const messages = Array.isArray(payload?.messages)
       ? payload.messages.filter((m) => typeof m?.role === "string" && typeof m?.content === "string")
@@ -208,6 +210,7 @@ async function handleStream(req: Request, allowVision = false): Promise<Response
       site?: string;
       contextPrompt?: string;
     };
+    if (!isAISite(site)) return new Response(JSON.stringify({ error: "site must be challenged, carecnc or notchsafety" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(

@@ -686,14 +686,7 @@ export async function resolveGroupFacts(
     const groups = await wpFetchCareGroups();
     const g = groups.find((x: any) => String(x.id) === String(groupId));
     if (!g) return "";
-    return join([
-      line(Z(isChinese, "群组名称", "Group name"), g?.name || groupName),
-      line(Z(isChinese, "群组说明", "Group description"), g?.description),
-      line(
-        Z(isChinese, "私密性", "Privacy"),
-        g?.is_private ? Z(isChinese, "私密群组", "private") : Z(isChinese, "公开群组", "open")
-      ),
-    ]);
+    return line(Z(isChinese, "群组名称", "Group name"), g?.name || groupName);
   } catch {
     return "";
   }

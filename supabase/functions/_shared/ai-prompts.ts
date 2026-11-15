@@ -22,6 +22,10 @@ function persona(site: string | undefined): Persona | undefined {
   return Object.hasOwn(PERSONAS, id) ? PERSONAS[id as AISiteId] : undefined;
 }
 
+export function isAISite(site: unknown): site is AISiteId {
+  return typeof site === "string" && Object.hasOwn(PERSONAS, site);
+}
+
 function isZhLang(language: string | undefined): boolean {
   return String(language || "auto").toLowerCase().startsWith("zh");
 }
