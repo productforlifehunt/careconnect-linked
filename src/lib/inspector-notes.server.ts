@@ -1,3 +1,4 @@
+import { type Mark, readNoteMarks, writeNoteMarks } from "@/features/inspector/note-marks";
 import { createClient } from "@supabase/supabase-js";
 import {
   bindCCTNotes,
@@ -31,6 +32,7 @@ export interface InspectorNote {
   aiLocked?: boolean | undefined;
   relationVerified?: boolean | undefined;
   relationDetails?: string | undefined;
+  marks?: Mark[] | undefined;
   source?:
     | {
         file: string;
@@ -173,6 +175,7 @@ function mapRow(row: CCTRow): CCTNote {
     id: String(row._ID),
     title: row.a55,
     text: row.a56,
+    marks: readNoteMarks(row.a59),
     version: row[NOTE_FIELDS["版本"]] || "",
     noteType: row[NOTE_FIELDS["笔记类型"]] === WP.cct["324"].opt["NOTE_TYPE"]["PAGE_ASSOCIATION"]
       ? "b56"
@@ -632,6 +635,7 @@ export async function selectNote(
     await updatePlainNote(binding.id, {
       title: row.a55 || "",
       text: row.a56 || "",
+      marks: readNoteMarks(row.a59),
       verified: row.a58 === "b55",
       relationVerified: row[NOTE_FIELDS["已手动核对笔记关联"]] === NOTE_RELATION_VERIFIED["YES"],
       relationDetails: row[NOTE_FIELDS["已手动核对笔记关联详情"]] || "",
@@ -733,7 +737,7 @@ export async function writeNote(
 export async function updateBoundNote(
   key: string,
   id: string,
-  note: { title: string; text: string; version: string; noteType: "b55" | "b56"; tabOrder: number; verified: boolean; aiLocked?: boolean | undefined; relationVerified: boolean; relationDetails: string },
+  note: { title: string; text: string; version: string; noteType: "b55" | "b56"; tabOrder: number; verified: boolean; aiLocked?: boolean | undefined; relationVerified: boolean; relationDetails: string; marks?: Mark[] | undefined },
   token?: string,
 ): Promise<CCTNote> {
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
@@ -757,6 +761,7 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
   relationVerified: boolean;
   relationDetails: string;
   version: string;
+  marks?: Mark[] | undefined;
 } | null> {
   const stored = await storedBindingRow(key, token);
   if (!stored?.binding.id) return null;
@@ -766,6 +771,7 @@ export async function readCCTNoteForKey(key: string, token?: string): Promise<{
     id: binding.id,
     title: row.a55 || "",
     text: row.a56 || "",
+    marks: readNoteMarks(row.a59),
     todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
     aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
     verified: row.a58 === "b55",
@@ -817,6 +823,7 @@ export interface RelatedNote {
   verified: boolean;
   relationVerified: boolean;
   relationDetails: string;
+  marks?: Mark[] | undefined;
 }
 async function relIds(
   side: "parents" | "children",
@@ -891,6 +898,7 @@ export async function readRelatedNotes(
       id: nid,
       title: row.a55 || "",
       text: row.a56 || "",
+      marks: readNoteMarks(row.a59),
       side,
       todo: noteTodo(row[NOTE_FIELDS["待完成"]]),
       aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
@@ -907,6 +915,7 @@ export async function readRelatedNotes(
 export async function updatePlainNote(
   id: string,
   note: {
+    marks?: Mark[] | undefined;
     title: string;
     text: string;
     verified: boolean;
@@ -926,10 +935,12 @@ export async function updatePlainNote(
     if (noteTodo(current[NOTE_FIELDS["严禁ai编辑"]]))
       throw new Error("这条笔记已开启严禁 AI 编辑，不能修改任何文字，也不能由 AI 解锁。");
   }
+  const markRow = note.marks === undefined ? undefined : (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   await wp(
     `/${id}`,
     "POST",
     {
+      ...(note.marks === undefined ? {} : { a59: writeNoteMarks(markRow?.a59, note.marks) }),
       a55: note.title,
       a56: note.text,
       a58: note.verified ? "b55" : "b56",
@@ -949,6 +960,7 @@ export async function updatePlainNote(
   if (
     String(row._ID) !== id ||
     row.a55 !== note.title ||
+    (note.marks !== undefined && JSON.stringify(readNoteMarks(row.a59)) !== JSON.stringify(note.marks)) ||
     row.a56 !== note.text ||
     (row.a58 === "b55") !== note.verified ||
     row[NOTE_FIELDS["已手动核对笔记关联"]] !==
@@ -1094,6 +1106,7 @@ export async function readNoteById(
   aiLocked: boolean;
   relationVerified: boolean;
   relationDetails: string;
+  marks?: Mark[] | undefined;
 }> {
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (String(row._ID) !== id) throw new Error("所选注释不存在。");
@@ -1101,6 +1114,7 @@ export async function readNoteById(
     id,
     title: row.a55 || "",
     text: row.a56 || "",
+    marks: readNoteMarks(row.a59),
     version: row[NOTE_FIELDS["版本"]] || "",
     verified: row.a58 === "b55",
     aiLocked: noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]),
@@ -1178,6 +1192,7 @@ export async function duplicateNoteVersion(
     {
       a55: source.a55 || "",
       a56: source.a56 || "",
+      ...(readNoteMarks(source.a59) === undefined ? {} : { a59: writeNoteMarks(undefined, readNoteMarks(source.a59) ?? []) }),
       ...(source.a57 ? { a57: source.a57 } : {}),
       a58: source.a58 || "b56",
       [NOTE_FIELDS["版本"]]: version,

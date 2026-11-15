@@ -1,3 +1,4 @@
+import { type Mark } from "@/features/inspector/note-marks";
 /** Source-verified annotations stay private in the existing notes cache. */
 export interface SourceAnnotation {
   key: string;
@@ -12,6 +13,7 @@ export interface SourceAnnotation {
   verified?: boolean | undefined;
   relationVerified?: boolean | undefined;
   relationDetails?: string | undefined;
+  marks?: Mark[] | undefined;
   source?: { file: string; line: number; endLine: number; tag: string; digest: string } | undefined;
   alias?: string | undefined;
 }

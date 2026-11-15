@@ -1,3 +1,8 @@
+## Current request: Persist manual note colors (2026-11-15)
+- [x] Save exact character marks with the existing note record; main and related editors enable Save on color changes, retain local marks as unsaved import.
+- [x] 46/46 focused tests passed: main/related color-only Save, exact repeated-word selection, same-record persistence/readback and binding/body preservation. Automatic build OK.
+- [ ] Authenticated live save/reload blocked: supplied challenged account is denied researcher sign-in; no production note changed. Draftbit latest revision/runtime unverified.
+
 ## Current request: Custom Capacitor iOS location plugin (2026-11-11 17:53 UTC)
 - [x] Implement repository-local Swift source for location fields, background collection, motion activity, native circular fences, visits and durable pending samples; CLI generated iOS app and detected custom plugin. SPM package/product naming matches CLI-generated dependency.
 - [x] Connect iOS location reads and sharing to existing CCT213/REL165 writes with acquisition timestamps and existing cared-one relation metadata, preserving web/Android APIs and sharing flags; no new CCT/REL.

@@ -4,6 +4,7 @@ import {
   readNoteForFingerprint,
   readNotesForPosition,
   selectNote,
+  updateBoundNote,
   unlinkNoteFromPosition,
 } from "./inspector-notes.server";
 import { WP } from "@/integrations/wp-schema";
@@ -317,4 +318,17 @@ it("recovers one source-verified note with public CCT reads, but refuses ambiguo
   expect(
     await readNoteForFingerprint("el|/test|one", fp, "p", "/test"),
   ).toBeNull();
+});
+
+it("persists precise colors in the same note and preserves bindings and body", async () => {
+  const f = fixture();
+  const marks = [{ a: 2, b: 3, c: 0 }];
+  const result = await updateBoundNote(binding.key, binding.id, {
+    title: "个人设置表单", text: "不可改变的原正文", version: "1.0", noteType: "b55", tabOrder: 1,
+    verified: true, relationVerified: true, relationDetails: "现有 REL325 关系已核对", marks,
+  });
+  expect(result.marks).toEqual(marks);
+  expect(JSON.parse(String(f.getRow().a59))).toEqual({ ...original, inspectorMarks: marks });
+  expect(f.getRow().a56).toBe("不可改变的原正文");
+  expect((await readNoteForKey(binding.key))?.marks).toEqual(marks);
 });

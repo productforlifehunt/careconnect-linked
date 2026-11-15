@@ -166,6 +166,7 @@ it("loads and edits relation review fields on an existing linked note", async ()
     data: {
       id: "101",
       otherId: "202",
+      marks: [],
       title: "关联说明",
       aiLocked: false,
       version: "",
@@ -195,6 +196,7 @@ it("shows and saves a related note's to-do status", async () => {
     data: {
       id: "101",
       otherId: "202",
+      marks: [],
       title: "进行中的说明",
       aiLocked: false,
       version: "",
@@ -223,4 +225,19 @@ it("copies a related note with its version and opens the copy for editing on Yes
   fireEvent.click(screen.getByRole("button", { name: "是，打开新版本" }));
   expect(screen.getByRole("button", { name: /#303 · 关联说明/ }).getAttribute("aria-expanded")).toBe("true");
   expect(await screen.findByRole("textbox", { name: "关联注释版本" })).toHaveValue("2.0");
+});
+
+it("color-only edits save exact ranges and reload from the note", async () => {
+  const note = { id: "202", title: "标色测试", version: "", text: "同词同词", side: "child" as const, todo: false, verified: false, relationVerified: false, relationDetails: "", marks: [] };
+  mocks.list.mockResolvedValue({ notes: [note] });
+  mocks.update.mockImplementation(async ({ data }) => ({ notes: [{ ...note, marks: data.marks }] }));
+  const r = render(<RelatedNotes noteId="101" />);
+  fireEvent.click(await screen.findByRole("button", { name: /#202 · 标色测试/ }));
+  const input = screen.getByLabelText("关联注释内容") as HTMLTextAreaElement;
+  input.setSelectionRange(2, 4);
+  fireEvent.click(screen.getByRole("button", { name: /^红$/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^保存$/ }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledWith({ data: expect.objectContaining({ text: "同词同词", marks: [{ a: 2, b: 4, c: 0 }] }) }));
+  await screen.findByText("修改成功");
+  expect(r.container.querySelectorAll('[aria-hidden] span')[0]?.textContent).toBe("同词");
 });

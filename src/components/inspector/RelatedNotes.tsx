@@ -1,3 +1,4 @@
+import { legacyNoteMarks, type Mark } from "@/features/inspector/note-marks";
 /** REL325 related manual notes for the current CCT324 note: collapsed list, link/unlink/create, and an AI conflict check. */
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Link2, Plus, Sparkles, Unlink, Copy } from "lucide-react";
@@ -14,8 +15,8 @@ import type { ConflictReport } from '@/features/inspector/conflict-report';
 import type { CCTNote } from '@/features/inspector/cct-notes';
 import { ConflictReportView } from './ConflictReportView';
 
-type Related = { id: string; title: string; version: string; text: string; side: "parent" | "child"; todo: boolean; aiLocked?: boolean | undefined; verified: boolean; relationVerified: boolean; relationDetails: string };
-type Edit = { title: string; version: string; text: string; todo: boolean; aiLocked?: boolean | undefined; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Related = { marks?: Mark[] | undefined; id: string; title: string; version: string; text: string; side: "parent" | "child"; todo: boolean; aiLocked?: boolean | undefined; verified: boolean; relationVerified: boolean; relationDetails: string };
+type Edit = { marks?: Mark[] | undefined; title: string; version: string; text: string; todo: boolean; aiLocked?: boolean | undefined; verified: boolean; relationVerified: boolean; relationDetails: string };
 
 export function RelatedNotes({ noteId }: { noteId: string }) {
   const list = listRelatedNotes; const link = linkRelatedNote;
@@ -142,6 +143,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
             <div className="space-y-2 border-t p-2">
               {(() => {
                 const e = edits[n.id] || {
+                  marks: n.marks,
                   title: n.title,
                   version: n.version || "",
                   text: n.text,
@@ -154,6 +156,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                 const set = (v: Partial<Edit>) =>
                   { setState((current) => ({ ...current, success: undefined, error: undefined })); setEdits((m) => ({ ...m, [n.id]: { ...e, ...v } })); };
                 const dirty =
+                  JSON.stringify(e.marks ?? []) !== JSON.stringify(n.marks ?? []) ||
                   e.title !== n.title ||
                   e.version !== (n.version || "") ||
                   e.text !== n.text ||
@@ -180,6 +183,8 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                     <NoteTextarea
                       aria-label="关联注释内容"
                       markKey={String(n.id)}
+                      marks={e.marks}
+                      onMarksChange={(marks) => set({ marks })}
                       rows={8}
                       value={e.text}
                       disabled={busy}
@@ -246,6 +251,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                                 data: {
                                   id: noteId,
                                   otherId: n.id,
+                                  marks: e.marks ?? legacyNoteMarks(n.id),
                                   title: e.title.trim(),
                                   version: e.version,
                                   text: e.text,

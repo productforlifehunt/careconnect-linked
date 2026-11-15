@@ -48,6 +48,7 @@ export function replaceCCTNote(notes: Map<string, SourceAnnotation>, updated: CC
       next.set(key, {
         ...note,
         text: updated.text,
+        marks: updated.marks,
         title: updated.title,
         version: updated.version,
         noteType: updated.noteType,

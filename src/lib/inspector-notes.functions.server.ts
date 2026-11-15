@@ -3,6 +3,7 @@ import { z } from "zod";
 /** Researcher-only: read manual notes for an element and its page. */
 /** Researcher-only: read every saved note in one call (the inspector caches them in the browser). */
 /** Researcher-only: save (overwrite) the manual note for one element or page. */
+const marksSchema = z.array(z.object({ a: z.number().int().nonnegative(), b: z.number().int().nonnegative(), c: z.number().int().min(-1).max(4) })).optional();
 const noteId = z.string().regex(/^\d+$/);
 /** Explicit user submission to one existing record; never creates bindings or relations. */
 function wpToken(request: Request): string | undefined {
@@ -258,6 +259,7 @@ export async function updateBoundInspectorNote(rawData: unknown, request: Reques
     relationVerified: z.boolean(),
     relationDetails: z.string().max(100_000),
     aiLocked: z.boolean().optional(),
+    marks: marksSchema,
   }).parse(rawData);
   const denied = await researcherOnly(request);
   if (denied) return { error: denied };
@@ -357,13 +359,13 @@ export async function unlinkRelatedNote(rawData: unknown, request: Request) {
 }
 
 export async function updateRelatedNote(rawData: unknown, request: Request) {
-  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId, title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), todo: z.boolean().optional(), aiLocked: z.boolean().optional(), verified: z.boolean(), relationVerified: z.boolean(), relationDetails: z.string().max(100_000) }).parse(input));
+  const validate = ((input: unknown) => z.object({ id: noteId, otherId: noteId, marks: marksSchema, title: z.string().min(1).max(240), text: z.string().max(100_000), version: z.string().max(80).optional(), todo: z.boolean().optional(), aiLocked: z.boolean().optional(), verified: z.boolean(), relationVerified: z.boolean(), relationDetails: z.string().max(100_000) }).parse(input));
   const data = validate(rawData);
 
     const denied = await researcherOnly(request); if (denied) return { error: denied };
     const token = wpToken(request);
     const s = await import('./inspector-notes.server');
-    try { await s.updatePlainNote(data.otherId, { title: data.title, text: data.text, ...(data.version === undefined ? {} : { version: data.version }), ...(data.todo === undefined ? {} : { todo: data.todo }), ...(data.aiLocked === undefined ? {} : { aiLocked: data.aiLocked }), verified: data.verified, relationVerified: data.relationVerified, relationDetails: data.relationDetails }, token); return { notes: await s.readRelatedNotes(data.id, token) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
+    try { await s.updatePlainNote(data.otherId, { title: data.title, text: data.text, ...(data.marks === undefined ? {} : { marks: data.marks }), ...(data.version === undefined ? {} : { version: data.version }), ...(data.todo === undefined ? {} : { todo: data.todo }), ...(data.aiLocked === undefined ? {} : { aiLocked: data.aiLocked }), verified: data.verified, relationVerified: data.relationVerified, relationDetails: data.relationDetails }, token); return { notes: await s.readRelatedNotes(data.id, token) }; } catch (e) { return { error: e instanceof Error ? e.message : '保存失败' }; }
   
 }
 

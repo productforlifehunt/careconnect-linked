@@ -42,6 +42,7 @@ export function createNotesCache() {
           values?.set(key, {
             ...existing,
             text: note.text,
+            marks: note.marks,
             title: note.title,
             version: note.version,
             noteType: note.noteType,

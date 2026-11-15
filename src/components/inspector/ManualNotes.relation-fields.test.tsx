@@ -148,3 +148,20 @@ it.each(['b55', 'b56'] as const)('saves the AI lock without altering the %s note
   await waitFor(() => expect(mocks.save).toHaveBeenCalledWith({ data: expect.objectContaining({ aiLocked: true, text: '已有内容', title: '群组注释', noteType }) }));
   expect(await screen.findByText('「群组注释」已保存并读回确认。')).toBeDefined();
 });
+
+it("enables main-note Save when only a selected character changes color", async () => {
+  const note = { ...original, key: "page|/color-save", id: "404", marks: [] };
+  mocks.load.mockResolvedValue({ notes: [note] });
+  mocks.list.mockResolvedValue({ notes: [note] });
+  mocks.save.mockImplementation(async ({ data }) => ({ note: { ...note, ...data } }));
+  render(<ManualNotes noteKey={note.key} scope="page" page="/color-save" label="颜色" />);
+  const ta = await screen.findByRole("textbox", { name: "注释内容" }) as HTMLTextAreaElement;
+  const save = screen.getByRole("button", { name: "保存注释" });
+  expect(save.hasAttribute("disabled")).toBe(true);
+  ta.setSelectionRange(1, 2);
+  fireEvent.click(screen.getByRole("button", { name: /^绿$/ }));
+  expect(save.hasAttribute("disabled")).toBe(false);
+  fireEvent.click(save);
+  await waitFor(() => expect(mocks.save).toHaveBeenCalledWith({ data: expect.objectContaining({ id: "404", text: "已有内容", marks: [{ a: 1, b: 2, c: 3 }] }) }));
+  await screen.findByText("「群组注释」已保存并读回确认。");
+});

@@ -1,4 +1,6 @@
 import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { legacyNoteMarks, type Mark } from "@/features/inspector/note-marks";
 import { Textarea, type TextareaProps } from "@/components/ui/textarea";
 
 const COLORS = [
@@ -9,7 +11,7 @@ const COLORS = [
   { name: "蓝", v: "--note-blue" },
 ];
 
-export type Mark = { a: number; b: number; c: number };
+export type { Mark } from "@/features/inspector/note-marks";
 type Part = { start: number; end: number; color?: number | undefined };
 
 /** Colors exactly the selected character ranges; later marks win. */
@@ -29,9 +31,7 @@ export function markedParts(text: string, marks: Mark[]): Part[] {
   return parts;
 }
 
-const key = (k: string) => `inspector-note-marks:${k}`;
-
-export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value"> & { value: string; markKey?: string | undefined }) {
+export function NoteTextarea({ markKey, marks: savedMarks, onMarksChange, ...props }: Omit<TextareaProps, "value"> & { value: string; markKey?: string | undefined; marks?: Mark[] | undefined; onMarksChange?: ((marks: Mark[]) => void) | undefined }) {
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const back = React.useRef<HTMLDivElement>(null);
   const [view, setView] = React.useState({ caret: 1, visible: 0, top: 1 });
@@ -41,8 +41,10 @@ export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value">
   const total = text ? text.split("\n").length : 0;
 
   React.useEffect(() => {
-    try { setMarks(markKey ? JSON.parse(localStorage.getItem(key(markKey)) || "[]") : []); } catch { setMarks([]); }
-  }, [markKey]);
+    const next = savedMarks ?? legacyNoteMarks(markKey);
+    setMarks(next);
+    if (savedMarks === undefined && next.length) onMarksChange?.(next);
+  }, [markKey, savedMarks]);
 
   const measure = React.useCallback(() => {
     const el = ref.current;
@@ -68,23 +70,23 @@ export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value">
 
   const paint = (c: number) => {
     const el = ref.current;
-    if (!el || el.selectionStart === el.selectionEnd) return;
+    if (!el || props.disabled || el.selectionStart === el.selectionEnd) return;
     const next = [...marks, { a: el.selectionStart, b: el.selectionEnd, c }];
     setMarks(next);
-    if (markKey) localStorage.setItem(key(markKey), JSON.stringify(next));
+    onMarksChange?.(next);
   };
 
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap gap-1" aria-label="标色">
         {COLORS.map((c, i) => (
-          <button key={c.name} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => paint(i)}
+          <Button size="sm" variant="outline" disabled={props.disabled} key={c.name} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => paint(i)}
             className="rounded border border-input px-1.5 text-xs" style={{ background: `hsl(var(${c.v}))` }}>
             {c.name}
-          </button>
+          </Button>
         ))}
-        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => paint(-1)}
-          className="rounded border border-input px-1.5 text-xs">清除</button>
+        <Button size="sm" variant="outline" disabled={props.disabled} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => paint(-1)}
+          className="rounded border border-input px-1.5 text-xs">清除</Button>
       </div>
       <div className="relative">
         <div
@@ -94,7 +96,7 @@ export function NoteTextarea({ markKey, ...props }: Omit<TextareaProps, "value">
           style={{ scrollbarGutter: "stable" }}
         >
           {parts.map((p) => (
-            <span key={p.start} style={p.color === undefined ? undefined : { background: `hsl(var(${COLORS[p.color]!.v}))` }}>
+            <span key={p.start} style={p.color === undefined ? undefined : { background: `hsl(var(${COLORS[p.color]?.v}))` }}>
               {text.slice(p.start, p.end)}
             </span>
           ))}

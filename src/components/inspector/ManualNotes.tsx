@@ -1,3 +1,4 @@
+import { legacyNoteMarks, type Mark } from "@/features/inspector/note-marks";
 /** Researcher manual notes for the selected element or the whole page, saved privately so they survive refresh/close. */
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ const onePending = new Map<string, Promise<OneLoad>>();
 
 type InspectorNoteType = "b55" | "b56";
 type NoteDraft = {
+  marks?: Mark[] | undefined;
   title: string;
   version: string;
   text: string;
@@ -148,6 +150,8 @@ export function ManualNotes({
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [saved, setSaved] = useState("");
+  const [marks, setMarks] = useState<Mark[] | undefined>();
+  const [savedMarks, setSavedMarks] = useState<Mark[] | undefined>();
   const [state, setState] = useState<{
     loading?: boolean;
     saving?: boolean;
@@ -188,6 +192,7 @@ export function ManualNotes({
   const correctionState = useRef({ selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
   correctionState.current = { selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
   const hasUnsavedChanges =
+    JSON.stringify(marks ?? []) !== JSON.stringify(savedMarks ?? []) ||
     text !== saved ||
     title !== savedTitle ||
     version !== savedVersion ||
@@ -231,6 +236,7 @@ export function ManualNotes({
       }
       setText(note.text);
       setSaved(note.text);
+
       setTitle(note.title);
       setSavedTitle(note.title);
       setAiLocked(!!note.aiLocked);
@@ -283,6 +289,7 @@ export function ManualNotes({
     setDrafts({});
     setText("");
     setSaved("");
+    setMarks(undefined); setSavedMarks(undefined);
     setTitle(label.slice(0, 240));
     setSavedTitle("");
     setVersion("");
@@ -331,6 +338,7 @@ export function ManualNotes({
       if (hasPositionNotes) setPositionNotes(migration.positionNotes || []);
       setText(n?.text || "");
       setSaved(n?.text || "");
+      setMarks(n?.marks); setSavedMarks(n?.marks);
       onChange?.(n?.text || "");
       setState({
         loading: !hasPositionNotes,
@@ -408,6 +416,7 @@ export function ManualNotes({
     else {
       setText("");
       setSaved("");
+    setMarks(undefined); setSavedMarks(undefined);
       onChange?.("");
       const keys = [noteKey];
       let pending = onePending.get(cacheKey);
@@ -474,7 +483,7 @@ export function ManualNotes({
     if (!selected) return;
     setDrafts((current) => ({
       ...current,
-      [selected]: { title, version, text, noteType: draftNoteType, verified, aiLocked, relationVerified, relationDetails },
+      [selected]: { marks, title, version, text, noteType: draftNoteType, verified, aiLocked, relationVerified, relationDetails },
     }));
   };
   const setFieldsFromPositionNote = (note: CCTNote, restoreDraft = true) => {
@@ -490,6 +499,7 @@ export function ManualNotes({
     setSavedVersion(note.version || "");
     setText(draft?.text ?? note.text);
     setSaved(note.text);
+    setSavedMarks(note.marks); setMarks(draft?.marks ?? note.marks);
     setAiLocked(draft?.aiLocked ?? !!note.aiLocked);
     setSavedAiLocked(!!note.aiLocked);
     setVerified(draft?.verified ?? !!note.verified);
@@ -527,6 +537,7 @@ export function ManualNotes({
       setSavedVersion("");
       setText("");
       setSaved("");
+    setMarks(undefined); setSavedMarks(undefined);
       setVerified(false);
     setAiLocked(false);
     setSavedAiLocked(false);
@@ -620,6 +631,7 @@ export function ManualNotes({
           setSavedVersion("");
           setText("");
           setSaved("");
+    setMarks(undefined); setSavedMarks(undefined);
           setVerified(false);
     setAiLocked(false);
     setSavedAiLocked(false);
@@ -714,6 +726,7 @@ export function ManualNotes({
           setSavedVersion("");
           setText("");
           setSaved("");
+    setMarks(undefined); setSavedMarks(undefined);
           setVerified(false);
     setAiLocked(false);
     setSavedAiLocked(false);
@@ -807,6 +820,7 @@ export function ManualNotes({
         data: {
           key: noteKey,
           id: selected,
+          marks: marks ?? legacyNoteMarks(selected),
           title,
           version,
           noteType: draftNoteType,
@@ -1201,6 +1215,8 @@ export function ManualNotes({
       <NoteTextarea
         aria-label="注释内容"
         markKey={selected || undefined}
+        marks={marks}
+        onMarksChange={(next) => { setMarks(next); clearSaveNotice(); }}
         value={text}
         onChange={(e) => { setText(e.target.value); clearSaveNotice(); }}
         rows={8}
