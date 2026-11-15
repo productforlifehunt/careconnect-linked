@@ -5,6 +5,7 @@ import {
   readNotesForPosition,
   selectNote,
   updateBoundNote,
+  writeNote,
   unlinkNoteFromPosition,
 } from "./inspector-notes.server";
 import { WP } from "@/integrations/wp-schema";
@@ -331,4 +332,12 @@ it("persists precise colors in the same note and preserves bindings and body", a
   expect(JSON.parse(String(f.getRow().a59))).toEqual({ ...original, inspectorMarks: marks });
   expect(f.getRow().a56).toBe("不可改变的原正文");
   expect((await readNoteForKey(binding.key))?.marks).toEqual(marks);
+});
+
+it("general note save keeps colors and unrelated position metadata", async () => {
+  const f = fixture();
+  const marks = [{ a: 0, b: 1, c: 1 }];
+  const result = await writeNote({ ...binding, title: "个人设置表单", text: "不可改变的原正文", version: "1.0", noteType: "b55", tabOrder: 1, verified: true, relationVerified: true, relationDetails: "现有 REL325 关系已核对", marks });
+  expect(result.marks).toEqual(marks);
+  expect(JSON.parse(String(f.getRow().a59))).toEqual({ ...original, inspectorMarks: marks });
 });

@@ -189,8 +189,8 @@ export function ManualNotes({
   const revision = `${noteKey}|${selected}|${title}|${version}|${text}|${draftNoteType}|${verified}|${aiLocked}|${relationVerified}|${relationDetails}`;
   const activeRevision = useRef(revision);
   activeRevision.current = revision;
-  const correctionState = useRef({ selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
-  correctionState.current = { selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
+  const correctionState = useRef({ marks, savedMarks, selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails });
+  correctionState.current = { marks, savedMarks, selected, title, text, savedTitle, saved, version, savedVersion, draftNoteType, savedNoteType, verified, savedVerified, aiLocked, savedAiLocked, relationVerified, relationDetails, savedRelationVerified, savedRelationDetails };
   const hasUnsavedChanges =
     JSON.stringify(marks ?? []) !== JSON.stringify(savedMarks ?? []) ||
     text !== saved ||
@@ -207,6 +207,7 @@ export function ManualNotes({
       const note = (
         event as CustomEvent<{
           id: string;
+          marks?: Mark[] | undefined;
           title: string;
           text: string;
           verified: boolean;
@@ -218,6 +219,7 @@ export function ManualNotes({
       const current = correctionState.current;
       if (note.id !== current.selected) return;
       if (
+        JSON.stringify(current.marks ?? []) !== JSON.stringify(current.savedMarks ?? []) ||
         current.text !== current.saved ||
         current.title !== current.savedTitle ||
         current.version !== current.savedVersion ||
@@ -236,7 +238,7 @@ export function ManualNotes({
       }
       setText(note.text);
       setSaved(note.text);
-
+      setMarks(note.marks); setSavedMarks(note.marks);
       setTitle(note.title);
       setSavedTitle(note.title);
       setAiLocked(!!note.aiLocked);

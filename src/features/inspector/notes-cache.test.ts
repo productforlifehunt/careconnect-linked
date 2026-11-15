@@ -75,3 +75,14 @@ it("does not overwrite a confirmed save with an older in-flight read", async () 
   finish({ notes: [note] });
   expect((await read).get(note.key)?.text).toBe("新的注释");
 });
+
+it("propagates saved colors to every position for the same note", async () => {
+  const cache = createNotesCache();
+  const first = { ...note, id: "9", marks: [], key: "page|/one" };
+  const second = { ...first, key: "el|/two" };
+  await cache.load("s", async () => ({ notes: [first, second] }));
+  const marks = [{ a: 1, b: 2, c: 2 }];
+  cache.put("s", { ...first, key: "cct|9", marks });
+  expect(cache.peek("s")?.get(first.key)?.marks).toEqual(marks);
+  expect(cache.peek("s")?.get(second.key)?.marks).toEqual(marks);
+});

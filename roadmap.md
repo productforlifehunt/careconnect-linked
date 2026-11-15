@@ -1,3 +1,7 @@
+## Current request: Sweep all note-color paths
+- [x] Read main/related/new-note editors, switching, cache, binding operations, AI corrections, version copies and server read/write paths. Fixed general save/new related-note omissions, color-only stale detection, related cache propagation, and version color readback checks.
+- [ ] Real researcher save/reload still blocked by supplied test account role; Draftbit runtime unverified. No existing records or permissions altered.
+
 ## Current request: Persist manual note colors (2026-11-15)
 - [x] Save exact character marks with the existing note record; main and related editors enable Save on color changes, retain local marks as unsaved import.
 - [x] 46/46 focused tests passed: main/related color-only Save, exact repeated-word selection, same-record persistence/readback and binding/body preservation. Automatic build OK.

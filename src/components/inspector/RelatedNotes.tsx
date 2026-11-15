@@ -1,3 +1,5 @@
+import { inspectorNotesCache } from "@/features/inspector/notes-cache";
+import { getWPToken } from "@/services/wp-auth";
 import { legacyNoteMarks, type Mark } from "@/features/inspector/note-marks";
 /** REL325 related manual notes for the current CCT324 note: collapsed list, link/unlink/create, and an AI conflict check. */
 import { useEffect, useRef, useState } from "react";
@@ -27,7 +29,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [state, setState] = useState<{ loading?: boolean; busy?: boolean; activity?: string | undefined; error?: string | undefined; success?: string | undefined }>({ loading: true });
   const [pick, setPick] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; version: string; text: string; todo: boolean; relationVerified: boolean; relationDetails: string } | null>(null);
+  const [draft, setDraft] = useState<{ marks?: Mark[] | undefined; title: string; version: string; text: string; todo: boolean; relationVerified: boolean; relationDetails: string } | null>(null);
   const [ai, setAi] = useState<{ loading?: boolean; report?: ConflictReport; error?: string }>({});
   const [copyVersion, setCopyVersion] = useState<Record<string, string>>({});
   const [copyState, setCopyState] = useState<{ sourceId: string; version: string; note?: CCTNote; error?: string; saving?: boolean } | null>(null);
@@ -50,7 +52,9 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
     const id = noteId; setState({ busy: true, activity });
     try {
       const r = await fn(); if (active.current !== id) return false;
-      if (r.notes) { setNotes(r.notes); setState({ success }); setAi({}); return true; }
+      if (r.notes) {
+        r.notes.forEach((note) => inspectorNotesCache.put(getWPToken() || "", { ...note, key: `cct|${note.id}`, updatedAt: "" }));
+        setNotes(r.notes); setState({ success }); setAi({}); return true; }
       setState({ error: r.error || "失败" }); return false;
     } catch (e) { if (active.current === id) setState({ error: String(e) }); return false; }
     finally { if (active.current === id) setState((current) => ({ ...current, busy: false, activity: undefined })); }
@@ -337,6 +341,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
           disabled={busy}
           onClick={() =>
             setDraft({
+              marks: [],
               title: "",
               version: "",
               text: "",
@@ -394,7 +399,9 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
           <label className="block space-y-1 text-sm"><span>版本</span>
             <Input aria-label="新关联注释版本" value={draft.version} maxLength={80} placeholder="例如 1.0" onChange={(e) => setDraft({ ...draft, version: e.target.value })} />
           </label>
-          <Textarea
+          <NoteTextarea
+            marks={draft.marks}
+            onMarksChange={(marks) => setDraft({ ...draft, marks })}
             rows={6}
             placeholder="内容"
             value={draft.text}
@@ -452,6 +459,7 @@ export function RelatedNotes({ noteId }: { noteId: string }) {
                         id: noteId,
                         create: {
                           title: d.title.trim(),
+                          marks: d.marks,
                           version: d.version,
                           text: d.text,
                           todo: d.todo,

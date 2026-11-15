@@ -22,6 +22,7 @@ it("copies every direct REL325 edge and links the new version without changing e
       a56: "完整正文",
       a58: "b55",
       a59: JSON.stringify({
+        inspectorMarks: [{ a: 1, b: 2, c: 3 }],
         inspectorBindings: [{ key: "page|/x", id: "10" }],
       }),
       a60: "b55",
@@ -110,7 +111,8 @@ it("copies every direct REL325 edge and links the new version without changing e
     a61: "核对说明",
     a62: "2.0",
   });
-  expect(createBodies[0]).not.toHaveProperty("a59");
+  expect(JSON.parse(String(createBodies[0]?.["a59"]))).toEqual({ inspectorMarks: [{ a: 1, b: 2, c: 3 }] });
+  expect(copy.marks).toEqual([{ a: 1, b: 2, c: 3 }]);
   expect(edges).toContainEqual({ parent_object_id: 5, child_object_id: 11 });
   expect(edges).toContainEqual({ parent_object_id: 11, child_object_id: 20 });
   expect(edges).toContainEqual({

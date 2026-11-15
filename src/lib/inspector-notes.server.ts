@@ -667,6 +667,7 @@ export async function writeNote(
       a55: note.title || note.label,
       a56: note.text,
       a57: "ChallengeD",
+      ...(note.marks === undefined ? {} : { a59: writeNoteMarks(undefined, note.marks) }),
       [NOTE_FIELDS["版本"]]: note.version || "",
       [NOTE_FIELDS["笔记类型"]]: note.noteType || WP.cct["324"].opt["NOTE_TYPE"]["PAGE_DESCRIPTION"],
       [NOTE_FIELDS["笔记标签顺序"]]: String(note.tabOrder ?? 1),
@@ -686,7 +687,9 @@ export async function writeNote(
     if (!/^\d+$/.test(id))
       throw new Error("没有返回新注释编号，请重新读取列表，勿重复新建。");
   } else {
+    const markRow = note.marks === undefined ? undefined : (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
     await wp(`/${id}`, "POST", {
+      ...(note.marks === undefined ? {} : { a59: writeNoteMarks(markRow?.a59, note.marks) }),
       a55: note.title || note.label,
       a56: note.text,
       [NOTE_FIELDS["版本"]]: note.version || "",
@@ -704,6 +707,7 @@ export async function writeNote(
   if (
     row.a56 !== note.text ||
     row.a55 !== (note.title || note.label) ||
+    (note.marks !== undefined && JSON.stringify(readNoteMarks(row.a59)) !== JSON.stringify(note.marks)) ||
     (note.aiLocked !== undefined && noteTodo(row[NOTE_FIELDS["严禁ai编辑"]]) !== note.aiLocked) ||
     (isNew && row.a57 !== "ChallengeD") ||
     (row[NOTE_FIELDS["版本"]] || "") !== (note.version || "") ||
@@ -1128,7 +1132,7 @@ export async function noteTitle(id: string, token?: string): Promise<string> {
   return (await readNoteById(id, token)).title;
 }
 export async function createPlainNote(
-  note: { title: string; text: string; relationVerified: boolean; relationDetails: string; version?: string | undefined; todo?: boolean | undefined },
+  note: { marks?: Mark[] | undefined; title: string; text: string; relationVerified: boolean; relationDetails: string; version?: string | undefined; todo?: boolean | undefined },
   token?: string,
 ): Promise<string> {
   const result = (await wp(
@@ -1136,6 +1140,7 @@ export async function createPlainNote(
     "POST",
     {
       a55: note.title,
+      ...(note.marks === undefined ? {} : { a59: writeNoteMarks(undefined, note.marks) }),
       a56: note.text,
       [NOTE_FIELDS["版本"]]: note.version || "",
       [NOTE_FIELDS["已手动核对笔记关联"]]: note.relationVerified
@@ -1158,6 +1163,7 @@ export async function createPlainNote(
   const row = (await wp(`/${id}`, "GET", undefined, token)) as CCTRow;
   if (
     row.a55 !== note.title ||
+    (note.marks !== undefined && JSON.stringify(readNoteMarks(row.a59)) !== JSON.stringify(note.marks)) ||
     row.a56 !== note.text ||
     (row[NOTE_FIELDS["版本"]] || "") !== (note.version || "") ||
     row[NOTE_FIELDS["已手动核对笔记关联"]] !==
@@ -1221,6 +1227,7 @@ export async function duplicateNoteVersion(
     String(fresh._ID) !== newId ||
     fresh.a55 !== (source.a55 || "") ||
     fresh.a56 !== (source.a56 || "") ||
+    JSON.stringify(readNoteMarks(fresh.a59)) !== JSON.stringify(readNoteMarks(source.a59)) ||
     (fresh.a57 || "") !== (source.a57 || "") ||
     (fresh.a58 || "b56") !== (source.a58 || "b56") ||
     (fresh[NOTE_FIELDS["版本"]] || "") !== version ||

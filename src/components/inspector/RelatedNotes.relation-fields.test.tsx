@@ -100,6 +100,7 @@ it("creates a linked note with relation review fields", async () => {
     data: {
       id: "101",
       create: {
+        marks: [],
         title: "并列说明",
         version: "",
         text: "新内容",
@@ -240,4 +241,19 @@ it("color-only edits save exact ranges and reload from the note", async () => {
   await waitFor(() => expect(mocks.update).toHaveBeenCalledWith({ data: expect.objectContaining({ text: "同词同词", marks: [{ a: 2, b: 4, c: 0 }] }) }));
   await screen.findByText("修改成功");
   expect(r.container.querySelectorAll('[aria-hidden] span')[0]?.textContent).toBe("同词");
+});
+
+it("new related notes submit their selected colors with the first save", async () => {
+  mocks.list.mockResolvedValue({ notes: [] });
+  mocks.link.mockResolvedValue({ notes: [] });
+  render(<RelatedNotes noteId="101" />);
+  await screen.findByText("关联注释 · 0 条");
+  fireEvent.click(screen.getByRole("button", { name: "新建关联注释" }));
+  fireEvent.change(screen.getByPlaceholderText("名字"), { target: { value: "新标色" } });
+  const ta = screen.getByPlaceholderText("内容") as HTMLTextAreaElement;
+  fireEvent.change(ta, { target: { value: "同同" } });
+  ta.setSelectionRange(1, 2);
+  fireEvent.click(screen.getByRole("button", { name: /^蓝$/ }));
+  fireEvent.click(screen.getByRole("button", { name: "保存并关联" }));
+  await waitFor(() => expect(mocks.link).toHaveBeenCalledWith({ data: { id: "101", create: expect.objectContaining({ text: "同同", marks: [{ a: 1, b: 2, c: 4 }] }) } }));
 });
